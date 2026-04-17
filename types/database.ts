@@ -1145,6 +1145,32 @@ export interface Database {
         Args: { p_need_date: string; p_notes?: string | null };
         Returns: string;
       };
+      pr_generate_quotations: {
+        Args: { p_pr_no: string };
+        Returns: string[];
+      };
+      upsert_supplier_price: {
+        Args: {
+          p_week_id: number;
+          p_supplier_id: string;
+          p_commodity: string;
+          p_ingredient_name: string;
+          p_price_per_kg?: number | null;
+          p_price_per_item?: number | null;
+          p_unit?: string | null;
+          p_item_code?: string | null;
+          p_notes?: string | null;
+        };
+        Returns: Record<string, unknown> | null;
+      };
+      import_price_list_json: {
+        Args: { p_period_id: number; p_payload: unknown };
+        Returns: {
+          rows_processed: number;
+          cells_upserted: number;
+          suppliers_missing: string[];
+        }[];
+      };
       pr_allocation_summary: {
         Args: { p_pr_no: string };
         Returns: {
