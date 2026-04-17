@@ -5,16 +5,25 @@ import { Nav } from "@/components/nav";
 import { TransactionLog, type TxRow } from "@/components/transaction-log";
 import {
   Badge,
-  CategoryBadge,
   EmptyState,
   KpiGrid,
   KpiTile,
   NoticeCard,
   PageContainer,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
+import {
+  ScheduleTable,
+  VolumeMatrixTable,
+  PlanningTable,
+  StockAlertTable,
+  SupplierSpendTable,
+  type ScheduleRow,
+  type VolumeRow,
+  type PlanRow,
+  type StockAlertRow,
+  type SupplierSpendRow
+} from "@/components/dashboard-tables";
 import {
   formatIDR,
   formatKg,
@@ -270,6 +279,62 @@ export default async function DashboardPage() {
 
   // status today (used by KPI tile below; status chip lives in <Nav>)
   const todayPlan = planning.find((p) => p.op_date === today);
+  void todayPlan;
+
+  // Serializable rows for client-side sortable tables
+  const scheduleRows: ScheduleRow[] = planning.map((p) => {
+    const d = new Date(p.op_date + "T00:00:00");
+    const dayName = DAYS.long[lang][d.getDay()];
+    const dateLabel = `${dayName}, ${d.getDate()} ${MONTHS.long[lang][d.getMonth()]} ${d.getFullYear()}`;
+    const porsi = porsiByDate.get(p.op_date);
+    return {
+      op_date: p.op_date,
+      dateLabel,
+      menu_name: p.menu_name,
+      operasional: p.operasional,
+      schools: schoolsPerDate.get(p.op_date)?.size ?? 0,
+      kecil: porsi?.kecil ?? 0,
+      besar: porsi?.besar ?? 0,
+      total: porsi?.total ?? p.porsi_total
+    };
+  });
+
+  const monthLabels: Record<string, string> = Object.fromEntries(
+    months.map((m) => [m, monthLabel(m)])
+  );
+  const volumeRows: VolumeRow[] = topItems.map((code) => ({
+    code,
+    category: commodityCategory(code),
+    total: itemTotals.get(code) ?? 0,
+    monthly: Object.fromEntries(
+      months.map((m) => [m, matrix[code]?.[m] ?? 0])
+    )
+  }));
+
+  const planRows: PlanRow[] = planning.map((p) => ({
+    op_date: p.op_date,
+    menu_name: p.menu_name,
+    operasional: p.operasional,
+    porsi_total: p.porsi_total,
+    total_kg: Number(p.total_kg),
+    short_items: p.short_items
+  }));
+
+  const stockAlertRows: StockAlertRow[] = shortItems.slice(0, 10).map((s) => ({
+    item_code: s.item_code,
+    required: Number(s.required),
+    on_hand: Number(s.on_hand),
+    gap: Number(s.gap),
+    unit: s.unit
+  }));
+
+  const supplierSpendRows: SupplierSpendRow[] = topSup.map((s) => ({
+    supplier_id: s.supplier_id,
+    supplier_name: s.supplier_name,
+    supplier_type: s.supplier_type,
+    invoice_count: s.invoice_count,
+    total_spend: Number(s.total_spend)
+  }));
 
   return (
     <div>
@@ -328,81 +393,7 @@ export default async function DashboardPage() {
           {planning.length === 0 ? (
             <EmptyState message={t("dashboard.scheduleEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm tabular-nums">
-                <THead>
-                  <th className="w-12 py-2 pl-2 pr-3 text-center">
-                    {t("dashboard.tblNo", lang)}
-                  </th>
-                  <th className="py-2 pr-3">
-                    {t("dashboard.tblDayDate", lang)}
-                  </th>
-                  <th className="py-2 pr-3">
-                    {t("dashboard.tblMenuName", lang)}
-                  </th>
-                  <th className="py-2 pr-3 text-right">
-                    {t("dashboard.tblSchools", lang)}
-                  </th>
-                  <th className="py-2 pr-3 text-right">
-                    {t("dashboard.tblPorsiKecil", lang)}
-                  </th>
-                  <th className="py-2 pr-3 text-right">
-                    {t("dashboard.tblPorsiBesar", lang)}
-                  </th>
-                  <th className="py-2 pr-3 text-right">
-                    {t("dashboard.tblPorsiTotal", lang)}
-                  </th>
-                </THead>
-                <tbody>
-                  {planning.map((p, idx) => {
-                    const d = new Date(p.op_date + "T00:00:00");
-                    const dayName = DAYS.long[lang][d.getDay()];
-                    const dateLabel = `${dayName}, ${d.getDate()} ${MONTHS.long[lang][d.getMonth()]} ${d.getFullYear()}`;
-                    const porsi = porsiByDate.get(p.op_date);
-                    const schoolsCount =
-                      schoolsPerDate.get(p.op_date)?.size ?? 0;
-                    const kecil = porsi?.kecil ?? 0;
-                    const besar = porsi?.besar ?? 0;
-                    const totalPorsi = porsi?.total ?? p.porsi_total;
-                    return (
-                      <tr
-                        key={p.op_date}
-                        className="row-hover border-b border-ink/5"
-                      >
-                        <td className="py-2 pl-2 pr-3 text-center font-mono text-xs text-ink2">
-                          {idx + 1}
-                        </td>
-                        <td className="py-2 pr-3">
-                          <div className="font-semibold">{dateLabel}</div>
-                          {!p.operasional && (
-                            <Badge tone="warn" className="mt-1">
-                              {t("dashboard.badgeNonOp", lang)}
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3 text-xs">
-                          {p.menu_name ?? (
-                            <span className="text-ink2/60">—</span>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {formatNumber(schoolsCount, lang)}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {formatNumber(kecil, lang)}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {formatNumber(besar, lang)}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs font-black">
-                          {formatNumber(totalPorsi, lang)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
+            <ScheduleTable rows={scheduleRows} lang={lang} />
           )}
         </Section>
 
@@ -427,100 +418,13 @@ export default async function DashboardPage() {
               message={t("dashboard.volumeEmptyMsg", lang)}
             />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm tabular-nums">
-                <THead>
-                  <th className="w-10 py-2 pl-2 pr-3 text-center">{t("dashboard.tblNo", lang)}</th>
-                  <th className="py-2 pr-3">{t("dashboard.tblCommodity", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.category", lang)}</th>
-                  {months.map((m) => (
-                    <th key={m} className="py-2 pr-3 text-right">
-                      {monthLabel(m)}
-                    </th>
-                  ))}
-                  <th className="py-2 pl-4 pr-3 text-right">{t("dashboard.tblTotalKg", lang)}</th>
-                </THead>
-                <tbody>
-                  {topItems.map((code, i) => {
-                    const total = itemTotals.get(code) ?? 0;
-                    const rowMax = Math.max(
-                      1,
-                      ...months.map((m) => matrix[code][m] ?? 0)
-                    );
-                    const share =
-                      maxItemTotal > 0 ? total / maxItemTotal : 0;
-                    const cat = commodityCategory(code);
-                    const rankTone =
-                      i === 0
-                        ? "bg-emerald-600 text-white"
-                        : i === 1
-                          ? "bg-emerald-200 text-emerald-900"
-                          : i === 2
-                            ? "bg-emerald-100 text-emerald-900"
-                            : "bg-slate-100 text-ink2";
-                    return (
-                      <tr
-                        key={code}
-                        className="row-hover border-b border-ink/5 odd:bg-slate-50/50"
-                      >
-                        <td className="py-2 pl-2 pr-3">
-                          <span
-                            className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-display text-[11px] font-bold ${rankTone}`}
-                          >
-                            {i + 1}
-                          </span>
-                        </td>
-                        <td className="py-2 pr-3 text-left font-semibold">
-                          {displayCode(code)}
-                        </td>
-                        <td className="py-2 pr-3 text-left">
-                          <CategoryBadge category={cat} size="sm" />
-                        </td>
-                        {months.map((m) => {
-                          const v = matrix[code][m] ?? 0;
-                          const intensity = v / rowMax;
-                          const bg =
-                            intensity >= 0.95
-                              ? "bg-emerald-100/80"
-                              : intensity >= 0.7
-                                ? "bg-emerald-50"
-                                : intensity >= 0.4
-                                  ? "bg-emerald-50/50"
-                                  : "";
-                          return (
-                            <td
-                              key={m}
-                              className={`py-2 pr-3 text-right font-mono text-xs ${bg}`}
-                            >
-                              {formatNumber(v, lang, {
-                                maximumFractionDigits: 1
-                              })}
-                            </td>
-                          );
-                        })}
-                        <td className="py-2 pl-4 pr-3">
-                          <div className="flex items-center justify-end gap-3">
-                            <div className="relative hidden h-1.5 w-20 overflow-hidden rounded-full bg-slate-200/70 md:block">
-                              <div
-                                className="absolute inset-y-0 left-0 rounded-full bg-emerald-500"
-                                style={{
-                                  width: `${Math.max(4, share * 100)}%`
-                                }}
-                              />
-                            </div>
-                            <span className="font-mono text-xs font-black">
-                              {formatNumber(total, lang, {
-                                maximumFractionDigits: 0
-                              })}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
+            <VolumeMatrixTable
+              rows={volumeRows}
+              months={months}
+              monthLabels={monthLabels}
+              maxItemTotal={maxItemTotal}
+              lang={lang}
+            />
           )}
         </Section>
 
@@ -533,52 +437,7 @@ export default async function DashboardPage() {
             {planning.length === 0 ? (
               <EmptyState message={t("dashboard.planningEmpty", lang)} />
             ) : (
-              <TableWrap>
-                <table className="w-full text-sm">
-                  <THead>
-                    <th className="py-2 pr-3">{t("dashboard.tblDate", lang)}</th>
-                    <th className="py-2 pr-3">{t("dashboard.tblMenu", lang)}</th>
-                    <th className="py-2 pr-3 text-right">{t("dashboard.tblPorsi", lang)}</th>
-                    <th className="py-2 pr-3 text-right">{t("dashboard.tblKebutuhan", lang)}</th>
-                    <th className="py-2 pr-3 text-right">{t("dashboard.tblShort", lang)}</th>
-                  </THead>
-                  <tbody>
-                    {planning.map((p) => (
-                      <tr
-                        key={p.op_date}
-                        className="row-hover border-b border-ink/5"
-                      >
-                        <td className="py-2 pr-3">
-                          <div className="font-mono text-[11px]">
-                            {p.op_date}
-                          </div>
-                          {!p.operasional && (
-                            <Badge tone="warn" className="mt-1">
-                              {t("dashboard.badgeNonOp", lang)}
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3 text-xs">
-                          {p.menu_name ?? (
-                            <span className="text-ink2/60">—</span>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {formatNumber(p.porsi_total, lang)}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {formatKg(Number(p.total_kg), 1)}
-                        </td>
-                        <td
-                          className={`py-2 pr-3 text-right font-mono text-xs font-black ${p.short_items > 0 ? "text-red-700" : "text-emerald-700"}`}
-                        >
-                          {p.short_items}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </TableWrap>
+              <PlanningTable rows={planRows} lang={lang} />
             )}
           </Section>
 
@@ -602,37 +461,7 @@ export default async function DashboardPage() {
                 message={t("dashboard.stockAlertEmpty", lang)}
               />
             ) : (
-              <TableWrap>
-                <table className="w-full text-sm">
-                  <THead>
-                    <th className="py-2 pr-3">{t("dashboard.tblItem", lang)}</th>
-                    <th className="py-2 pr-3 text-right">{t("dashboard.tblButuh", lang)}</th>
-                    <th className="py-2 pr-3 text-right">{t("dashboard.tblAda", lang)}</th>
-                    <th className="py-2 pr-3 text-right">{t("dashboard.tblKurang", lang)}</th>
-                  </THead>
-                  <tbody>
-                    {shortItems.slice(0, 10).map((s) => (
-                      <tr
-                        key={s.item_code}
-                        className="row-hover border-b border-ink/5"
-                      >
-                        <td className="py-2 pr-3 font-semibold">
-                          {displayCode(s.item_code)}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {Number(s.required).toFixed(2)}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {Number(s.on_hand).toFixed(2)}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs font-black text-red-700">
-                          {Number(s.gap).toFixed(2)} {s.unit}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </TableWrap>
+              <StockAlertTable rows={stockAlertRows} lang={lang} />
             )}
           </Section>
         </div>
@@ -649,39 +478,7 @@ export default async function DashboardPage() {
           {topSup.length === 0 ? (
             <EmptyState message={t("dashboard.supplierSpendEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">{t("dashboard.tblNo", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
-                  <th className="py-2 pr-3">{t("dashboard.tblType", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("dashboard.tblInvoice", lang)}</th>
-                  <th className="py-2 pr-3">{t("dashboard.tblTotalSpend", lang)}</th>
-                </THead>
-                <tbody>
-                  {topSup.map((s, i) => (
-                    <tr
-                      key={s.supplier_id}
-                      className="row-hover border-b border-ink/5"
-                    >
-                      <td className="py-2 pr-3 text-ink2">{i + 1}</td>
-                      <td className="py-2 pr-3 font-semibold">
-                        {s.supplier_name}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <Badge tone="neutral">{s.supplier_type}</Badge>
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {s.invoice_count}
-                      </td>
-                      <td className="py-2 pr-3 text-left font-mono text-xs font-black">
-                        {formatIDR(Number(s.total_spend))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <SupplierSpendTable rows={supplierSpendRows} lang={lang} />
           )}
         </Section>
 

@@ -129,6 +129,10 @@ export const LANG_KEYS = {
   "common.time": { ID: "Waktu", EN: "Time" },
   "common.ref": { ID: "Referensi", EN: "Reference" },
   "common.confirm": { ID: "Konfirmasi", EN: "Confirm" },
+  "common.searchPlaceholder": { ID: "Cari di tabel…", EN: "Search table…" },
+  "common.showingRows": { ID: "{visible} dari {total} baris", EN: "{visible} of {total} rows" },
+  "common.sortedBy": { ID: "Diurutkan", EN: "Sorted by" },
+  "common.exportExcel": { ID: "Ekspor Excel", EN: "Export Excel" },
 
   // ---------------- Dashboard (/dashboard) ----------------
   "dashboard.notActiveTitle": { ID: "Akun belum aktif", EN: "Account not yet active" },

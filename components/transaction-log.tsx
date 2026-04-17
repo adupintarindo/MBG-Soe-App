@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { formatIDR } from "@/lib/engine";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
+import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 
 export type TxRow = {
   id: number;
@@ -113,49 +114,77 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
         </div>
       ) : (
         <div className="max-h-[440px] overflow-auto rounded-xl ring-1 ring-ink/10">
-          <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-primary-gradient shadow-[inset_0_-1px_0_rgba(255,255,255,0.12),inset_0_1px_0_rgba(255,255,255,0.08)]">
-              <tr className="text-center text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/95">
-                <th className="px-3 py-2.5">{t("tx.colDate", lang)}</th>
-                <th className="px-3 py-2.5">{t("tx.colType", lang)}</th>
-                <th className="px-3 py-2.5">{t("tx.colRef", lang)}</th>
-                <th className="px-3 py-2.5 text-left">{t("tx.colSupplier", lang)}</th>
-                <th className="px-3 py-2.5 text-left">{t("tx.colDescription", lang)}</th>
-                <th className="px-3 py-2.5">{t("tx.colAmount", lang)}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr
-                  key={r.id}
-                  className="border-t border-ink/5 hover:bg-ink/[0.02]"
-                >
-                  <td className="whitespace-nowrap px-3 py-2 text-center font-mono text-[11px]">
-                    {r.tx_date}
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-black ${TYPE_BADGE[r.tx_type]}`}
-                    >
-                      {TYPE_LABELS[r.tx_type]}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-center font-mono text-[11px]">
-                    {r.ref_no ?? "—"}
-                  </td>
-                  <td className="px-3 py-2 text-left">{r.supplier_name ?? "—"}</td>
-                  <td className="px-3 py-2 text-left text-ink2">
-                    {r.description ?? "—"}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-left font-mono">
-                    {r.amount == null ? "—" : formatIDR(Number(r.amount))}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <SortableTable<TxRow>
+            stickyHeader
+            rowKey={(r) => r.id}
+            initialSort={{ key: "date", dir: "desc" }}
+            columns={txColumns(lang)}
+            rows={filtered}
+          />
         </div>
       )}
     </section>
   );
+}
+
+function txColumns(lang: "ID" | "EN"): SortableColumn<TxRow>[] {
+  return [
+    {
+      key: "date",
+      label: t("tx.colDate", lang),
+      sortValue: (r) => r.tx_date,
+      render: (r) => (
+        <span className="whitespace-nowrap font-mono text-[11px]">
+          {r.tx_date}
+        </span>
+      )
+    },
+    {
+      key: "type",
+      label: t("tx.colType", lang),
+      sortValue: (r) => r.tx_type,
+      render: (r) => (
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-black ${TYPE_BADGE[r.tx_type]}`}
+        >
+          {TYPE_LABELS[r.tx_type]}
+        </span>
+      )
+    },
+    {
+      key: "ref",
+      label: t("tx.colRef", lang),
+      sortValue: (r) => r.ref_no ?? "",
+      render: (r) => (
+        <span className="font-mono text-[11px]">{r.ref_no ?? "—"}</span>
+      )
+    },
+    {
+      key: "supplier",
+      label: t("tx.colSupplier", lang),
+      align: "left",
+      sortValue: (r) => r.supplier_name ?? "",
+      render: (r) => r.supplier_name ?? "—"
+    },
+    {
+      key: "desc",
+      label: t("tx.colDescription", lang),
+      align: "left",
+      sortValue: (r) => r.description ?? "",
+      render: (r) => (
+        <span className="text-ink2">{r.description ?? "—"}</span>
+      )
+    },
+    {
+      key: "amount",
+      label: t("tx.colAmount", lang),
+      align: "left",
+      sortValue: (r) => Number(r.amount ?? 0),
+      render: (r) => (
+        <span className="whitespace-nowrap font-mono">
+          {r.amount == null ? "—" : formatIDR(Number(r.amount))}
+        </span>
+      )
+    }
+  ];
 }
