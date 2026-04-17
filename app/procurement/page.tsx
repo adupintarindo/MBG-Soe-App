@@ -45,6 +45,22 @@ const QT_STATUS_COLOR: Record<string, string> = {
   expired: "bg-slate-100 text-slate-500"
 };
 
+const PR_STATUS_COLOR: Record<string, string> = {
+  draft: "bg-slate-100 text-slate-800",
+  allocated: "bg-amber-100 text-amber-900",
+  quotations_issued: "bg-blue-100 text-blue-800",
+  completed: "bg-emerald-100 text-emerald-900",
+  cancelled: "bg-red-100 text-red-800"
+};
+
+interface PrRow {
+  no: string;
+  need_date: string;
+  status: string;
+  notes: string | null;
+  created_at: string;
+}
+
 interface PoRow {
   no: string;
   po_date: string;
@@ -117,6 +133,7 @@ export default async function ProcurementPage() {
     receiptsRes,
     suppliersRes,
     qtsRes,
+    prsRes,
     ncrs,
     ncrStats
   ] = await Promise.all([
@@ -150,6 +167,11 @@ export default async function ProcurementPage() {
       )
       .order("quote_date", { ascending: false })
       .limit(50),
+    supabase
+      .from("purchase_requisitions")
+      .select("no, need_date, status, notes, created_at")
+      .order("created_at", { ascending: false })
+      .limit(30),
     listNcr(supabase, { limit: 50 }).catch(() => []),
     ncrSnapshot(supabase).catch(() => ({
       total: 0,
@@ -167,6 +189,7 @@ export default async function ProcurementPage() {
   const receipts = (receiptsRes.data ?? []) as ReceiptRow[];
   const suppliers = (suppliersRes.data ?? []) as SupplierLite[];
   const quotations = (qtsRes.data ?? []) as QtRow[];
+  const prs = (prsRes.data ?? []) as PrRow[];
 
   // Stage 2: fetch child tables scoped only to the 50 displayed POs/GRNs
   const poNos = pos.map((p) => p.no);
@@ -252,23 +275,32 @@ export default async function ProcurementPage() {
       <PageContainer>
         <PageHeader
           icon="🧾"
-          title="Pengadaan · Quotation · PO · GRN · Invoice"
+          title="Pengadaan · PR · Quotation · PO · GRN · Invoice"
           subtitle={
             <>
-              {quotations.length} Quotation · {poCount} PO · {grnCount} GRN ·{" "}
-              {invCount} Invoice · outstanding{" "}
+              {prs.length} PR · {quotations.length} Quotation · {poCount} PO ·{" "}
+              {grnCount} GRN · {invCount} Invoice · outstanding{" "}
               <b className="text-red-700">{formatIDR(invOutstanding)}</b>
             </>
           }
           actions={
             canWrite ? (
-              <LinkButton
-                href="/procurement/quotation/new"
-                variant="primary"
-                size="sm"
-              >
-                + Buat Quotation
-              </LinkButton>
+              <div className="flex flex-wrap items-center gap-2">
+                <LinkButton
+                  href="/procurement/requisition/new"
+                  variant="gold"
+                  size="sm"
+                >
+                  + Buat PR (split supplier)
+                </LinkButton>
+                <LinkButton
+                  href="/procurement/quotation/new"
+                  variant="primary"
+                  size="sm"
+                >
+                  + Buat Quotation
+                </LinkButton>
+              </div>
             ) : null
           }
         />
