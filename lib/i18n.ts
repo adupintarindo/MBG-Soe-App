@@ -1041,6 +1041,29 @@ export const LANG_KEYS = {
   "suppliers.statusAwaiting": { ID: "awaiting", EN: "awaiting" },
   "suppliers.statusDraft": { ID: "draft", EN: "draft" },
   "suppliers.statusRejected": { ID: "rejected", EN: "rejected" },
+  "suppliers.searchPh": {
+    ID: "Cari nama, ID, PIC, komoditas, alamat…",
+    EN: "Search name, ID, PIC, commodity, address…"
+  },
+  "suppliers.filterType": { ID: "Tipe", EN: "Type" },
+  "suppliers.filterStatus": { ID: "Status", EN: "Status" },
+  "suppliers.filterAll": { ID: "Semua", EN: "All" },
+  "suppliers.sortBy": { ID: "Urutkan", EN: "Sort" },
+  "suppliers.sortScoreDesc": { ID: "Skor tertinggi", EN: "Highest score" },
+  "suppliers.sortScoreAsc": { ID: "Skor terendah", EN: "Lowest score" },
+  "suppliers.sortNameAsc": { ID: "Nama A–Z", EN: "Name A–Z" },
+  "suppliers.sortNameDesc": { ID: "Nama Z–A", EN: "Name Z–A" },
+  "suppliers.sortSpendDesc": { ID: "Belanja terbanyak", EN: "Highest spend" },
+  "suppliers.sortItemsDesc": { ID: "Item terbanyak", EN: "Most items" },
+  "suppliers.resultCount": {
+    ID: "{n} dari {total} supplier",
+    EN: "{n} of {total} suppliers"
+  },
+  "suppliers.emptyFilter": {
+    ID: "Tidak ada supplier yang cocok. Reset filter untuk lihat semua.",
+    EN: "No suppliers match. Reset filters to see all."
+  },
+  "suppliers.reset": { ID: "Reset", EN: "Reset" },
 
   // ---------------- Supplier Detail (/suppliers/[id]) ----------------
   "supplierDetail.subPic": { ID: "PIC", EN: "PIC" },
