@@ -47,18 +47,34 @@ create policy "sch_att: op/gz/admin write" on public.school_attendance
   with check (public.current_role() in ('admin','operator','ahli_gizi'));
 `;
 
+const PROJECT_REF = "ubqxxsmrntdrdamlclus";
+
+function resolveDbUrl() {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  const pw = process.env.SUPABASE_DB_PASSWORD;
+  if (!pw) return null;
+  const encoded = encodeURIComponent(pw);
+  // Direct connection (region-agnostic). Pooler alt: postgres.<ref>@aws-0-<region>.pooler.supabase.com:6543
+  return `postgresql://postgres:${encoded}@db.${PROJECT_REF}.supabase.co:5432/postgres`;
+}
+
 async function main() {
   loadEnvLocal();
-  const url = process.env.DATABASE_URL;
+  const url = resolveDbUrl();
   if (!url) {
-    console.error("✗ DATABASE_URL belum di-set.");
+    console.error("✗ Credential DB belum di-set.");
     console.error("");
-    console.error("Cara cepat:");
-    console.error("  1. Buka https://supabase.com/dashboard/project/ubqxxsmrntdrdamlclus/settings/database");
-    console.error("  2. Scroll ke 'Connection string' → pilih 'URI' → copy (password-nya auto-filled)");
-    console.error("  3. Tambahin ke .env.local:");
-    console.error("       DATABASE_URL=\"postgresql://postgres.ubqxxsmrntdrdamlclus:<PASSWORD>@aws-0-<region>.pooler.supabase.com:6543/postgres\"");
-    console.error("  4. Re-run: node supabase/_apply-rls-fix.js");
+    console.error("Pilih salah satu (hanya perlu sekali):");
+    console.error("");
+    console.error("  [A] Paling gampang — cuma password DB:");
+    console.error("      1. Buka https://supabase.com/dashboard/project/" + PROJECT_REF + "/settings/database");
+    console.error("      2. Copy 'Database password' (atau reset kalau lupa)");
+    console.error("      3. Tambahin ke .env.local:");
+    console.error("           SUPABASE_DB_PASSWORD=\"<password-copy-dari-dashboard>\"");
+    console.error("      4. Re-run: node supabase/_apply-rls-fix.js");
+    console.error("");
+    console.error("  [B] Full URL (kalau mau override region atau pakai direct connection):");
+    console.error("      DATABASE_URL=\"postgresql://postgres.<ref>:<pw>@aws-0-<region>.pooler.supabase.com:6543/postgres\"");
     process.exit(1);
   }
 
