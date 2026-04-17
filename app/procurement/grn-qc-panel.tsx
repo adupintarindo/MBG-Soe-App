@@ -1,0 +1,746 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Badge, EmptyState, TableWrap, THead } from "@/components/ui";
+import type {
+  GrnQcCheck,
+  NcrEntry,
+  QcResult,
+  NcrSeverity,
+  NcrStatus
+} from "@/lib/engine";
+
+const RESULT_TONE: Record<QcResult, string> = {
+  pass: "bg-emerald-100 text-emerald-800",
+  minor: "bg-amber-100 text-amber-900",
+  major: "bg-orange-100 text-orange-900",
+  critical: "bg-red-100 text-red-800",
+  na: "bg-slate-100 text-slate-700"
+};
+
+const SEV_TONE: Record<NcrSeverity, string> = {
+  minor: "bg-amber-100 text-amber-900",
+  major: "bg-orange-100 text-orange-900",
+  critical: "bg-red-100 text-red-800"
+};
+
+const STATUS_TONE: Record<NcrStatus, string> = {
+  open: "bg-red-100 text-red-800",
+  in_progress: "bg-amber-100 text-amber-900",
+  resolved: "bg-emerald-100 text-emerald-800",
+  waived: "bg-slate-100 text-slate-700"
+};
+
+interface GrnRow {
+  no: string;
+  po_no: string | null;
+  grn_date: string;
+  status: string;
+  qc_note: string | null;
+}
+
+interface GrnQcAggregate {
+  grn_no: string;
+  total: number;
+  fail: number;
+  has_critical: boolean;
+}
+
+interface Props {
+  grns: GrnRow[];
+  qcAgg: GrnQcAggregate[];
+  ncrs: NcrEntry[];
+  canWrite: boolean;
+  supplierIds: Record<string, string>; // po_no → supplier_id
+  supplierNames: Record<string, string>; // supplier_id → name
+}
+
+export function GrnQcPanel({
+  grns,
+  qcAgg,
+  ncrs,
+  canWrite,
+  supplierIds,
+  supplierNames
+}: Props) {
+  const [openGrn, setOpenGrn] = useState<string | null>(null);
+  const [openNcr, setOpenNcr] = useState(false);
+
+  const aggMap = useMemo(() => {
+    const m = new Map<string, GrnQcAggregate>();
+    for (const a of qcAgg) m.set(a.grn_no, a);
+    return m;
+  }, [qcAgg]);
+
+  const ncrByGrn = useMemo(() => {
+    const m = new Map<string, NcrEntry[]>();
+    for (const n of ncrs) {
+      if (!n.grn_no) continue;
+      const list = m.get(n.grn_no) ?? [];
+      list.push(n);
+      m.set(n.grn_no, list);
+    }
+    return m;
+  }, [ncrs]);
+
+  const activeNcr = ncrs.filter((n) =>
+    ["open", "in_progress"].includes(n.status)
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-[13px] text-ink2">
+          {grns.length} GRN · {qcAgg.length} dengan QC · {activeNcr.length}{" "}
+          NCR aktif
+        </div>
+        {canWrite && (
+          <button
+            type="button"
+            onClick={() => setOpenNcr(true)}
+            className="rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-card hover:bg-red-700"
+          >
+            + Non-Conformance
+          </button>
+        )}
+      </div>
+
+      <TableWrap>
+        <table className="w-full text-sm">
+          <THead>
+            <th className="py-2 pr-3">GRN</th>
+            <th className="py-2 pr-3">Tanggal</th>
+            <th className="py-2 pr-3">PO</th>
+            <th className="py-2 pr-3">Supplier</th>
+            <th className="py-2 pr-3 text-center">QC</th>
+            <th className="py-2 pr-3 text-center">NCR</th>
+            <th className="py-2 pr-3">Status</th>
+            <th className="py-2 pr-3 text-right"></th>
+          </THead>
+          <tbody>
+            {grns.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-3">
+                  <EmptyState message="Belum ada GRN." />
+                </td>
+              </tr>
+            )}
+            {grns.map((g) => {
+              const agg = aggMap.get(g.no);
+              const supId = g.po_no ? supplierIds[g.po_no] : undefined;
+              const supName = supId ? supplierNames[supId] : null;
+              const grnNcrs = ncrByGrn.get(g.no) ?? [];
+              const activeGrnNcr = grnNcrs.filter((n) =>
+                ["open", "in_progress"].includes(n.status)
+              ).length;
+              return (
+                <tr
+                  key={g.no}
+                  className="row-hover cursor-pointer border-b border-ink/5"
+                  onClick={() => setOpenGrn(g.no)}
+                >
+                  <td className="py-2 pr-3 font-mono text-xs font-black">
+                    {g.no}
+                  </td>
+                  <td className="py-2 pr-3 text-xs">{g.grn_date}</td>
+                  <td className="py-2 pr-3 font-mono text-[11px]">
+                    {g.po_no ?? "—"}
+                  </td>
+                  <td className="py-2 pr-3 text-xs">{supName ?? "—"}</td>
+                  <td className="py-2 pr-3 text-center">
+                    {agg ? (
+                      <span
+                        className={`font-mono text-[11px] font-black ${
+                          agg.has_critical
+                            ? "text-red-700"
+                            : agg.fail > 0
+                              ? "text-amber-700"
+                              : "text-emerald-700"
+                        }`}
+                      >
+                        {agg.total - agg.fail}/{agg.total}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-ink2/50">—</span>
+                    )}
+                  </td>
+                  <td className="py-2 pr-3 text-center">
+                    {activeGrnNcr > 0 ? (
+                      <Badge tone="bad">{activeGrnNcr}</Badge>
+                    ) : grnNcrs.length > 0 ? (
+                      <Badge tone="neutral">{grnNcrs.length}</Badge>
+                    ) : (
+                      <span className="text-[11px] text-ink2/50">—</span>
+                    )}
+                  </td>
+                  <td className="py-2 pr-3">
+                    <Badge
+                      tone={
+                        g.status === "ok"
+                          ? "ok"
+                          : g.status === "rejected"
+                            ? "bad"
+                            : g.status === "partial"
+                              ? "warn"
+                              : "neutral"
+                      }
+                    >
+                      {g.status}
+                    </Badge>
+                  </td>
+                  <td className="py-2 pr-3 text-right">
+                    <span className="text-[11px] font-bold text-accent-strong">
+                      QC →
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </TableWrap>
+
+      {ncrs.length > 0 && (
+        <div>
+          <div className="mb-2 text-xs font-bold uppercase tracking-wide text-ink2/70">
+            Non-Conformance Log · {ncrs.length} entri
+          </div>
+          <TableWrap>
+            <table className="w-full text-sm">
+              <THead>
+                <th className="py-2 pr-3">NCR</th>
+                <th className="py-2 pr-3">GRN</th>
+                <th className="py-2 pr-3">Supplier</th>
+                <th className="py-2 pr-3">Severity</th>
+                <th className="py-2 pr-3">Issue</th>
+                <th className="py-2 pr-3">Status</th>
+                <th className="py-2 pr-3">Dilaporkan</th>
+                <th className="py-2 pr-3"></th>
+              </THead>
+              <tbody>
+                {ncrs.slice(0, 20).map((n) => (
+                  <NcrRow
+                    key={n.id}
+                    n={n}
+                    canWrite={canWrite}
+                    supplierName={
+                      n.supplier_id ? supplierNames[n.supplier_id] : null
+                    }
+                  />
+                ))}
+              </tbody>
+            </table>
+          </TableWrap>
+        </div>
+      )}
+
+      {openGrn && (
+        <GrnQcDetail
+          grnNo={openGrn}
+          itemCode={null}
+          canWrite={canWrite}
+          onClose={() => setOpenGrn(null)}
+        />
+      )}
+
+      {openNcr && canWrite && (
+        <NewNcrDialog onClose={() => setOpenNcr(false)} grns={grns} />
+      )}
+    </div>
+  );
+}
+
+function NcrRow({
+  n,
+  canWrite,
+  supplierName
+}: {
+  n: NcrEntry;
+  canWrite: boolean;
+  supplierName: string | null;
+}) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+
+  const setStatus = (status: NcrStatus) => {
+    const body: Record<string, unknown> = { status };
+    if (status === "resolved" || status === "waived") {
+      const ca = window.prompt(
+        "Corrective action (singkat, muncul di log):",
+        n.corrective_action ?? ""
+      );
+      if (ca === null) return;
+      body.corrective_action = ca.trim() || null;
+    }
+    start(async () => {
+      await fetch(`/api/ncr/${n.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      router.refresh();
+    });
+  };
+
+  return (
+    <tr className="row-hover border-b border-ink/5">
+      <td className="py-2 pr-3 font-mono text-[11px] font-black">
+        {n.ncr_no ?? `#${n.id}`}
+      </td>
+      <td className="py-2 pr-3 font-mono text-[11px]">{n.grn_no ?? "—"}</td>
+      <td className="py-2 pr-3 text-xs">{supplierName ?? n.supplier_id ?? "—"}</td>
+      <td className="py-2 pr-3">
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_TONE[n.severity]}`}
+        >
+          {n.severity}
+        </span>
+      </td>
+      <td className="py-2 pr-3 text-xs">
+        <div className="line-clamp-2">{n.issue}</div>
+        {n.corrective_action && (
+          <div className="text-[10px] italic text-emerald-700">
+            ✓ {n.corrective_action}
+          </div>
+        )}
+      </td>
+      <td className="py-2 pr-3">
+        {canWrite ? (
+          <select
+            disabled={pending}
+            value={n.status}
+            onChange={(e) => setStatus(e.target.value as NcrStatus)}
+            className="rounded-md border border-ink/10 bg-white px-2 py-0.5 text-[10px] font-bold"
+          >
+            <option value="open">open</option>
+            <option value="in_progress">in_progress</option>
+            <option value="resolved">resolved</option>
+            <option value="waived">waived</option>
+          </select>
+        ) : (
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_TONE[n.status]}`}
+          >
+            {n.status}
+          </span>
+        )}
+      </td>
+      <td className="py-2 pr-3 text-[10px] text-ink2">
+        {new Date(n.reported_at).toLocaleDateString("id-ID")}
+      </td>
+      <td className="py-2 pr-3 text-right">
+        {n.cost_impact_idr && n.cost_impact_idr > 0 && (
+          <span className="font-mono text-[10px] text-red-700">
+            -{Number(n.cost_impact_idr).toLocaleString("id-ID")}
+          </span>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function GrnQcDetail({
+  grnNo,
+  itemCode,
+  canWrite,
+  onClose
+}: {
+  grnNo: string;
+  itemCode: string | null;
+  canWrite: boolean;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [checks, setChecks] = useState<GrnQcCheck[]>([]);
+  const [draft, setDraft] = useState<
+    Array<{
+      checkpoint: string;
+      is_critical: boolean;
+      result: QcResult;
+      note: string;
+    }>
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, start] = useTransition();
+
+  const loadChecks = async () => {
+    setLoading(true);
+    const res = await fetch(`/api/grn-qc/list?grn=${encodeURIComponent(grnNo)}`);
+    if (res.ok) {
+      const j = (await res.json()) as { checks: GrnQcCheck[] };
+      setChecks(j.checks ?? []);
+    }
+    setLoading(false);
+  };
+
+  const loadTemplate = async (itemForTemplate: string) => {
+    const res = await fetch(
+      `/api/grn-qc/template?item=${encodeURIComponent(itemForTemplate)}`
+    );
+    if (res.ok) {
+      const j = (await res.json()) as {
+        template: Array<{
+          checkpoint: string;
+          is_critical: boolean;
+        }>;
+      };
+      setDraft(
+        (j.template ?? []).map((t) => ({
+          checkpoint: t.checkpoint,
+          is_critical: t.is_critical,
+          result: "pass" as QcResult,
+          note: ""
+        }))
+      );
+    }
+  };
+
+  // Initial load
+  useMemo(() => {
+    loadChecks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grnNo]);
+
+  const submit = () => {
+    if (draft.length === 0) return;
+    start(async () => {
+      await fetch("/api/grn-qc", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          grn_no: grnNo,
+          item_code: itemCode,
+          checks: draft
+        })
+      });
+      setDraft([]);
+      await loadChecks();
+      router.refresh();
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-paper shadow-2xl">
+        <div className="sticky top-0 flex items-center justify-between border-b border-ink/10 bg-paper px-5 py-3">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/60">
+              QC Checklist
+            </div>
+            <div className="font-mono text-sm font-black">{grnNo}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1 text-ink2 hover:bg-ink/5"
+            aria-label="Tutup"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-5">
+          {canWrite && draft.length === 0 && (
+            <TemplateLoader onLoad={loadTemplate} />
+          )}
+
+          {canWrite && draft.length > 0 && (
+            <div className="mb-4 space-y-2 rounded-xl bg-amber-50 p-3 ring-1 ring-amber-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-900">
+                  Draft Pemeriksaan · {draft.length} checkpoint
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDraft([])}
+                  className="text-[10px] text-amber-900 underline"
+                >
+                  Reset
+                </button>
+              </div>
+              {draft.map((d, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 rounded-lg bg-white p-2 text-xs"
+                >
+                  <span className="flex-1">
+                    {d.checkpoint}
+                    {d.is_critical && (
+                      <span className="ml-1 text-red-600">★</span>
+                    )}
+                  </span>
+                  <select
+                    value={d.result}
+                    onChange={(e) => {
+                      const v = e.target.value as QcResult;
+                      setDraft((prev) =>
+                        prev.map((p, i) =>
+                          i === idx ? { ...p, result: v } : p
+                        )
+                      );
+                    }}
+                    className="rounded border border-ink/10 px-1 py-0.5 text-[10px] font-bold"
+                  >
+                    <option value="pass">pass</option>
+                    <option value="minor">minor</option>
+                    <option value="major">major</option>
+                    <option value="critical">critical</option>
+                    <option value="na">N/A</option>
+                  </select>
+                  <input
+                    type="text"
+                    value={d.note}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDraft((prev) =>
+                        prev.map((p, i) =>
+                          i === idx ? { ...p, note: v } : p
+                        )
+                      );
+                    }}
+                    placeholder="catatan"
+                    className="w-32 rounded border border-ink/10 px-1 py-0.5 text-[10px]"
+                  />
+                </div>
+              ))}
+              <button
+                type="button"
+                disabled={saving}
+                onClick={submit}
+                className="w-full rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {saving ? "Menyimpan…" : `Simpan ${draft.length} Checkpoint`}
+              </button>
+            </div>
+          )}
+
+          <div className="mb-2 text-xs font-bold uppercase tracking-wide text-ink2/70">
+            Hasil Pemeriksaan ({checks.length})
+          </div>
+          {loading && <div className="text-xs text-ink2">Memuat…</div>}
+          {!loading && checks.length === 0 && (
+            <EmptyState message="Belum ada pemeriksaan untuk GRN ini." />
+          )}
+          {checks.length > 0 && (
+            <div className="space-y-1">
+              {checks.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between gap-2 rounded-lg bg-white p-2 text-xs ring-1 ring-ink/5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-semibold">
+                      {c.checkpoint}
+                      {c.is_critical && (
+                        <span className="ml-1 text-red-600">★</span>
+                      )}
+                    </div>
+                    {c.note && (
+                      <div className="text-[10px] italic text-ink2">
+                        {c.note}
+                      </div>
+                    )}
+                  </div>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${RESULT_TONE[c.result]}`}
+                  >
+                    {c.result}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TemplateLoader({ onLoad }: { onLoad: (item: string) => void }) {
+  const [item, setItem] = useState("");
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (item.trim()) onLoad(item.trim());
+      }}
+      className="mb-3 flex gap-2 rounded-xl bg-white p-3 ring-1 ring-ink/5"
+    >
+      <input
+        type="text"
+        value={item}
+        onChange={(e) => setItem(e.target.value)}
+        placeholder="Kode item (contoh: Beras Putih)"
+        className="flex-1 rounded-lg border border-ink/10 px-2 py-1 text-xs"
+      />
+      <button
+        type="submit"
+        className="rounded-lg bg-accent-strong px-3 py-1 text-xs font-bold text-white hover:brightness-110"
+      >
+        Muat Template
+      </button>
+    </form>
+  );
+}
+
+function NewNcrDialog({
+  onClose,
+  grns
+}: {
+  onClose: () => void;
+  grns: GrnRow[];
+}) {
+  const router = useRouter();
+  const [saving, start] = useTransition();
+  const [form, setForm] = useState({
+    grn_no: "",
+    severity: "minor" as NcrSeverity,
+    issue: "",
+    qty_affected: "",
+    unit: "",
+    cost_impact_idr: ""
+  });
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.issue.trim()) return;
+    start(async () => {
+      await fetch("/api/ncr", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          grn_no: form.grn_no || null,
+          severity: form.severity,
+          issue: form.issue,
+          qty_affected: form.qty_affected
+            ? Number(form.qty_affected)
+            : null,
+          unit: form.unit || null,
+          cost_impact_idr: form.cost_impact_idr
+            ? Number(form.cost_impact_idr)
+            : null
+        })
+      });
+      router.refresh();
+      onClose();
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <form
+        onSubmit={submit}
+        className="w-full max-w-lg space-y-3 rounded-2xl bg-paper p-5 shadow-2xl"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black">Buat Non-Conformance</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-ink2 hover:text-ink"
+          >
+            ✕
+          </button>
+        </div>
+
+        <label className="block text-xs">
+          <span className="mb-1 block font-bold">GRN (opsional)</span>
+          <select
+            value={form.grn_no}
+            onChange={(e) => setForm({ ...form, grn_no: e.target.value })}
+            className="w-full rounded-lg border border-ink/10 px-2 py-1.5 text-xs"
+          >
+            <option value="">— tidak terhubung —</option>
+            {grns.map((g) => (
+              <option key={g.no} value={g.no}>
+                {g.no} · {g.grn_date}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block text-xs">
+          <span className="mb-1 block font-bold">Severity</span>
+          <select
+            value={form.severity}
+            onChange={(e) =>
+              setForm({ ...form, severity: e.target.value as NcrSeverity })
+            }
+            className="w-full rounded-lg border border-ink/10 px-2 py-1.5 text-xs"
+          >
+            <option value="minor">minor</option>
+            <option value="major">major</option>
+            <option value="critical">critical</option>
+          </select>
+        </label>
+
+        <label className="block text-xs">
+          <span className="mb-1 block font-bold">Issue *</span>
+          <textarea
+            required
+            value={form.issue}
+            onChange={(e) => setForm({ ...form, issue: e.target.value })}
+            rows={3}
+            className="w-full rounded-lg border border-ink/10 px-2 py-1.5 text-xs"
+            placeholder="Deskripsi masalah (mis. Beras berkutu 3 karung, tidak sesuai sample)"
+          />
+        </label>
+
+        <div className="grid grid-cols-3 gap-2">
+          <label className="block text-xs">
+            <span className="mb-1 block font-bold">Qty</span>
+            <input
+              type="number"
+              step="0.01"
+              value={form.qty_affected}
+              onChange={(e) =>
+                setForm({ ...form, qty_affected: e.target.value })
+              }
+              className="w-full rounded-lg border border-ink/10 px-2 py-1.5 text-xs"
+            />
+          </label>
+          <label className="block text-xs">
+            <span className="mb-1 block font-bold">Unit</span>
+            <input
+              type="text"
+              value={form.unit}
+              onChange={(e) => setForm({ ...form, unit: e.target.value })}
+              placeholder="kg"
+              className="w-full rounded-lg border border-ink/10 px-2 py-1.5 text-xs"
+            />
+          </label>
+          <label className="block text-xs">
+            <span className="mb-1 block font-bold">Kerugian (IDR)</span>
+            <input
+              type="number"
+              step="1"
+              value={form.cost_impact_idr}
+              onChange={(e) =>
+                setForm({ ...form, cost_impact_idr: e.target.value })
+              }
+              className="w-full rounded-lg border border-ink/10 px-2 py-1.5 text-xs"
+            />
+          </label>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg bg-ink/5 px-3 py-1.5 text-xs font-bold text-ink"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {saving ? "Menyimpan…" : "Simpan NCR"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

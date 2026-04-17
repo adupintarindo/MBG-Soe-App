@@ -141,6 +141,44 @@ create table public.supplier_items (
   primary key (supplier_id, item_code)
 );
 
+-- Supplier onboarding action tracker (dari Onboarding MBG Suppliers docx + MoM)
+create type public.action_status as enum (
+  'open','in_progress','blocked','done','cancelled'
+);
+create type public.action_priority as enum ('low','medium','high','critical');
+create type public.action_source as enum (
+  'onboarding','mom','field','audit','ad_hoc'
+);
+
+create table public.supplier_actions (
+  id bigserial primary key,
+  supplier_id text references public.suppliers(id) on delete cascade,
+  -- Untuk action lintas-supplier (contoh: "Set up dual sourcing") simpan daftar
+  -- commodity/area yang terkait tanpa kunci hard ke suppliers
+  related_scope text,
+  title text not null,
+  description text,
+  category text,                          -- dual_sourcing, logistics, qc, pricing, admin, legal, lta, capacity
+  priority public.action_priority not null default 'medium',
+  status public.action_status not null default 'open',
+  owner text not null default 'IFSR-WFP',
+  owner_user_id uuid references auth.users(id),
+  target_date date,
+  done_at timestamptz,
+  done_by uuid references auth.users(id),
+  blocked_reason text,
+  output_notes text,                      -- deliverable yang diharapkan
+  source public.action_source not null default 'onboarding',
+  source_ref text,                        -- mis. "Onboarding 30 Mar 2026 R1"
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id),
+  updated_at timestamptz not null default now()
+);
+create index idx_supaction_sup on public.supplier_actions(supplier_id);
+create index idx_supaction_status on public.supplier_actions(status);
+create index idx_supaction_prio on public.supplier_actions(priority, target_date);
+create index idx_supaction_target on public.supplier_actions(target_date) where status in ('open','in_progress','blocked');
+
 -- ============================================================================
 -- 2. PLANNING: MENU_ASSIGN, CUSTOM_MENUS, NON_OP
 -- ============================================================================
@@ -319,6 +357,27 @@ create trigger trg_stock_touch before update on public.stock
   for each row execute function public.touch_updated_at();
 create trigger trg_settings_touch before update on public.settings
   for each row execute function public.touch_updated_at();
+create trigger trg_supaction_touch before update on public.supplier_actions
+  for each row execute function public.touch_updated_at();
+
+-- Auto-stamp done_at ketika status berubah ke 'done'
+create or replace function public.stamp_action_done()
+returns trigger language plpgsql as $$
+begin
+  if new.status = 'done' and (old.status is distinct from 'done') then
+    new.done_at = now();
+    if new.done_by is null then
+      new.done_by = auth.uid();
+    end if;
+  elsif new.status <> 'done' then
+    new.done_at = null;
+    new.done_by = null;
+  end if;
+  return new;
+end; $$;
+
+create trigger trg_supaction_done before update on public.supplier_actions
+  for each row execute function public.stamp_action_done();
 
 -- Auto-sync stock saat stock_moves insert
 create or replace function public.apply_stock_move()

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import {
   formatIDR,
@@ -69,17 +70,9 @@ interface MoveRow {
 export default async function StockPage() {
   const supabase = createClient();
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, active, supplier_id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile || !profile.active) redirect("/dashboard");
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
+  if (!profile.active) redirect("/dashboard");
 
   const today = toISODate(new Date());
 
@@ -146,6 +139,9 @@ export default async function StockPage() {
             <>
               <LinkButton href="/procurement" variant="secondary" size="sm">
                 🧾 PO / GRN
+              </LinkButton>
+              <LinkButton href="/menu/variance" variant="secondary" size="sm">
+                📉 BOM Variance
               </LinkButton>
               <LinkButton href="/planning" variant="primary" size="sm">
                 📈 Kebutuhan →

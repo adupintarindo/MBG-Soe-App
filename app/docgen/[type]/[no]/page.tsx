@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/auth";
 import { formatIDR } from "@/lib/engine";
 import { PrintButton } from "./print-button";
 
@@ -126,17 +127,9 @@ export default async function DocDetailPage({ params }: PageProps) {
   if (!["po", "grn", "invoice", "ba"].includes(type)) notFound();
 
   const supabase = createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, active")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile || !profile.active) redirect("/dashboard");
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
+  if (!profile.active) redirect("/dashboard");
 
   let content: React.ReactNode = null;
   let docStatus = "—";

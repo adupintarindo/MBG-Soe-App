@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { PrefsProvider } from "@/lib/prefs-context";
 
@@ -20,7 +20,22 @@ const PREFS_INIT_SCRIPT = `(() => {
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  display: "swap"
+  display: "swap",
+  weight: ["400", "500", "600", "700"]
+});
+
+const display = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  weight: ["500", "600", "700", "800"]
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+  weight: ["400", "500", "600", "700"]
 });
 
 export const metadata: Metadata = {
@@ -56,7 +71,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={inter.variable} suppressHydrationWarning>
+    <html
+      lang="id"
+      className={`${inter.variable} ${display.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{ __html: PREFS_INIT_SCRIPT }}

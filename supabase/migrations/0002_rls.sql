@@ -8,14 +8,15 @@
 --   viewer     → read-only semua (kecuali invites & profiles orang lain)
 -- ============================================================================
 
-alter table public.profiles       enable row level security;
-alter table public.invites        enable row level security;
-alter table public.items          enable row level security;
-alter table public.menus          enable row level security;
-alter table public.menu_bom       enable row level security;
-alter table public.schools        enable row level security;
-alter table public.suppliers      enable row level security;
-alter table public.supplier_items enable row level security;
+alter table public.profiles         enable row level security;
+alter table public.invites          enable row level security;
+alter table public.items            enable row level security;
+alter table public.menus            enable row level security;
+alter table public.menu_bom         enable row level security;
+alter table public.schools          enable row level security;
+alter table public.suppliers        enable row level security;
+alter table public.supplier_items   enable row level security;
+alter table public.supplier_actions enable row level security;
 alter table public.menu_assign    enable row level security;
 alter table public.custom_menus   enable row level security;
 alter table public.non_op_days    enable row level security;
@@ -88,6 +89,30 @@ create policy "supitems: read own or staff" on public.supplier_items
   );
 create policy "supitems: admin write" on public.supplier_items
   for all using (public.is_admin()) with check (public.is_admin());
+
+-- supplier_actions:
+--   · admin/operator/ahli_gizi/viewer → read semua
+--   · supplier → read hanya action untuk supplier_id-nya
+--   · admin/operator → full write (tambah, edit, delete action)
+--   · supplier → boleh update status action miliknya (misal: mark done setelah deliver dokumen)
+create policy "supactions: read staff or own-supplier" on public.supplier_actions
+  for select using (
+    auth.uid() is not null and (
+      public.current_role() in ('admin','operator','ahli_gizi','viewer')
+      or (public.current_role() = 'supplier' and supplier_id = public.current_supplier_id())
+    )
+  );
+create policy "supactions: op/admin write" on public.supplier_actions
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+create policy "supactions: supplier update own" on public.supplier_actions
+  for update using (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  ) with check (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  );
 
 -- ============================================================================
 -- PLANNING

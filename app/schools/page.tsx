@@ -9,8 +9,24 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { SchoolAttendancePanel } from "./attendance-panel";
 
 export const dynamic = "force-dynamic";
+
+function nextSevenDateISO(): string[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const arr: string[] = [];
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    arr.push(`${y}-${m}-${day}`);
+  }
+  return arr;
+}
 
 const LEVEL_COLOR: Record<string, string> = {
   "PAUD/TK": "bg-pink-50 text-pink-900 ring-pink-200",
@@ -48,20 +64,29 @@ function porsiEff(s: {
 export default async function SchoolsPage() {
   const supabase = createClient();
 
-  const [profile, schoolsResult] = await Promise.all([
+  const days = nextSevenDateISO();
+
+  const [profile, schoolsResult, attendanceResult] = await Promise.all([
     getSessionProfile(),
     supabase
       .from("schools")
       .select(
         "id, name, level, students, kelas13, kelas46, guru, distance_km, pic, phone, address, active"
       )
-      .order("id")
+      .order("id"),
+    supabase
+      .from("school_attendance")
+      .select("school_id, att_date, qty")
+      .gte("att_date", days[0])
+      .lte("att_date", days[days.length - 1])
   ]);
 
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
 
   const schools = schoolsResult.data ?? [];
+  const attendance = attendanceResult.data ?? [];
+  const canEdit = profile.role === "admin" || profile.role === "operator";
 
   const totals = schools.reduce(
     (acc, s) => {
@@ -131,6 +156,25 @@ export default async function SchoolsPage() {
             );
           })}
         </section>
+
+        <SchoolAttendancePanel
+          schools={schools
+            .filter((s) => s.active)
+            .map((s) => ({
+              id: s.id,
+              name: s.name,
+              level: s.level,
+              students: Number(s.students),
+              kelas13: Number(s.kelas13 ?? 0),
+              kelas46: Number(s.kelas46 ?? 0)
+            }))}
+          attendance={attendance.map((a) => ({
+            school_id: a.school_id,
+            att_date: a.att_date,
+            qty: Number(a.qty)
+          }))}
+          canEdit={canEdit}
+        />
 
         <Section
           title="Roster Sekolah · Breakdown Porsi"

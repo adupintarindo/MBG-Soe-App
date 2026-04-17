@@ -28,15 +28,12 @@ export const LANG_KEYS = {
   tabCalendar: { ID: "Kalender Menu", EN: "Menu Calendar" },
   tabPlanning: { ID: "Rencana Kebutuhan", EN: "Planning" },
   tabStock: { ID: "Kartu Stok", EN: "Stock Card" },
-  tabPO: { ID: "PO / WO", EN: "PO / WO" },
-  tabGRN: { ID: "GRN · QC", EN: "GRN · QC" },
-  tabInvoice: { ID: "Invoice", EN: "Invoice" },
+  tabProcurement: { ID: "Pengadaan", EN: "Procurement" },
   tabSuppliers: { ID: "Supplier", EN: "Suppliers" },
-  tabQuotation: { ID: "Quotation", EN: "Quotation" },
-  tabDocgen: { ID: "Doc Generator", EN: "Doc Generator" },
+  tabDocgen: { ID: "Dokumen", EN: "Documents" },
   tabSOP: { ID: "SOP", EN: "SOP" },
-  tabAdmin: { ID: "Admin", EN: "Admin" },
-  tabData: { ID: "Data Master", EN: "Master Data" }
+  tabData: { ID: "Data Master", EN: "Master Data" },
+  tabAdmin: { ID: "Admin", EN: "Admin" }
 } as const;
 
 export type LangKey = keyof typeof LANG_KEYS;

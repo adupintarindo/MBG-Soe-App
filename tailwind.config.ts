@@ -56,13 +56,29 @@ const config: Config = {
           "Roboto",
           "sans-serif"
         ],
-        mono: [
+        display: [
+          "var(--font-display)",
+          "Plus Jakarta Sans",
           "var(--font-inter)",
           "Inter",
           "ui-sans-serif",
           "system-ui",
           "sans-serif"
+        ],
+        mono: [
+          "var(--font-mono)",
+          "JetBrains Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Consolas",
+          "monospace"
         ]
+      },
+      letterSpacing: {
+        tightish: "-0.011em",
+        snug: "-0.014em",
+        crisp: "-0.018em"
       },
       boxShadow: {
         card: "0 2px 14px rgba(11,37,69,.08)",

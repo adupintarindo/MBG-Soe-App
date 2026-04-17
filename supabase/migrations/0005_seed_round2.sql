@@ -157,3 +157,118 @@ insert into public.stock_moves (item_code, delta, reason, ref_doc, ref_no, note)
   ('Minyak Goreng', 90, 'receipt', 'grn', 'GRN-2026-0003', 'Terima dari Rajawali'),
   ('Garam', 20, 'receipt', 'grn', 'GRN-2026-0003', 'Terima dari Rajawali'),
   ('Gula', 30, 'receipt', 'grn', 'GRN-2026-0003', 'Terima dari Rajawali');
+
+-- ============================================================================
+-- Supplier Onboarding Action Tracker
+-- Sumber: 20260327_Onboarding MBG Suppliers_wfp.docx (meeting 27 Mar 2026)
+-- Penanggung jawab default: IFSR-WFP field team
+-- Target dates di-anchor dari meeting date 27 Mar 2026 + durasi di docx
+-- ============================================================================
+insert into public.supplier_actions
+  (supplier_id, related_scope, title, description, category, priority, status,
+   owner, target_date, source, source_ref, created_at)
+values
+  -- Item 1: Dual sourcing untuk bahan kritikal (eggs, tofu, LPG, rice)
+  (null, 'Eggs · Tofu · LPG · Rice',
+   'Identifikasi supplier cadangan untuk bahan kritikal',
+   'Lakukan due diligence & onboarding supplier alternatif (dual sourcing) untuk telur, tahu, LPG, dan beras. Risiko single-source dinilai tinggi mengingat volume harian SPPG Nunumeu.',
+   'Risk Mitigation', 'high', 'open',
+   'IFSR-WFP + SPPG Nunumeu', '2026-04-10',
+   'onboarding', 'docx:20260327/Item-1', '2026-03-27 10:00'),
+
+  -- Item 2: Validasi kapasitas tahu CV Maju Lancar
+  (null, 'CV Maju Lancar (Tahu)',
+   'Verifikasi kapasitas produksi harian tahu',
+   'Kunjungi fasilitas produksi CV Maju Lancar, ukur kapasitas harian vs. kebutuhan SPPG (~80 kg/hari). Evaluasi perlu tidaknya supplier kedua.',
+   'Capacity Check', 'high', 'in_progress',
+   'IFSR-WFP', '2026-04-10',
+   'onboarding', 'docx:20260327/Item-2', '2026-03-27 10:05'),
+
+  -- Item 3: Logistik ikan PT Alger Karya Utama
+  (null, 'PT Alger Karya Utama (Ikan)',
+   'Finalisasi skema logistik cold-chain ikan segar',
+   'Konfirmasi SOP transportasi ikan (ice-box/reefer), frekuensi delivery, dan titik serah. Pastikan QC standar memenuhi syarat SPPG.',
+   'Logistics', 'high', 'open',
+   'IFSR-WFP', '2026-04-03',
+   'onboarding', 'docx:20260327/Item-3', '2026-03-27 10:10'),
+
+  -- Item 4: QC pisang dari Pisang Efron
+  (null, 'Pisang Efron',
+   'Tentukan standar QC pisang (ukuran, kematangan, packing)',
+   'Susun acceptance criteria pisang untuk SPPG: grade ukuran, tingkat kematangan saat delivery, kemasan, toleransi reject. Edukasi supplier.',
+   'Quality Control', 'medium', 'open',
+   'Ahli Gizi SPPG', '2026-04-10',
+   'onboarding', 'docx:20260327/Item-4', '2026-03-27 10:15'),
+
+  -- Item 5: Price confirmation gate (SEMUA supplier)
+  (null, 'ALL suppliers',
+   'Pasang gate konfirmasi harga sebelum PO dirilis',
+   'Standarkan alur: setiap PO harus punya konfirmasi tertulis harga dari supplier <48 jam sebelum rilis. Mencegah sengketa harga saat invoice.',
+   'Process / Governance', 'high', 'in_progress',
+   'Operator SPPG', '2026-03-30',
+   'onboarding', 'docx:20260327/Item-5', '2026-03-27 10:20'),
+
+  -- Item 6: Consignment SOP untuk Triananta Wijaya & Blivo
+  (null, 'CV Triananta Wijaya · CV Blivo',
+   'Susun SOP konsinyasi (consignment terms)',
+   'Draft kontrak konsinyasi: scope barang, siapa menanggung susut, ritme stok-opname, mekanisme settlement. Review oleh legal WFP.',
+   'Legal / SOP', 'medium', 'open',
+   'IFSR-WFP Legal', '2026-04-10',
+   'onboarding', 'docx:20260327/Item-6', '2026-03-27 10:25'),
+
+  -- Item 7: Admin gaps Karya Utama (beras)
+  (null, 'Karya Utama (Beras)',
+   'Lengkapi dokumen administratif supplier beras',
+   'NPWP, NIB, sertifikat halal/mutu beras, bukti sumber gabah. Tanpa ini LTA tidak bisa di-teken.',
+   'Compliance / Docs', 'medium', 'open',
+   'IFSR-WFP', '2026-04-03',
+   'onboarding', 'docx:20260327/Item-7', '2026-03-27 10:30'),
+
+  -- Item 8: Farmer Group Tunmuni
+  (null, 'Farmer Group Tunmuni',
+   'Formalisasi kelompok tani Tunmuni sebagai supplier',
+   'Fasilitasi pendirian koperasi/legal entity, bimbingan SOP panen & pasca-panen, matching komoditas ke kebutuhan SPPG. Target awal: sayur dataran tinggi.',
+   'Supplier Development', 'medium', 'open',
+   'IFSR-WFP + Dinas Koperasi', '2026-04-24',
+   'onboarding', 'docx:20260327/Item-8', '2026-03-27 10:35'),
+
+  -- Item 9: PO cancellation policy (TLM, all)
+  (null, 'TLM · ALL',
+   'Susun kebijakan pembatalan PO',
+   'Kondisi pembatalan (force majeure, QC gagal, supplier wanprestasi), konsekuensi finansial, lead-time notifikasi. Harmonisasi di LTA template.',
+   'Legal / SOP', 'high', 'open',
+   'IFSR-WFP Legal', '2026-04-03',
+   'onboarding', 'docx:20260327/Item-9', '2026-03-27 10:40'),
+
+  -- Item 10: Scope expansion Nusantara Pangan
+  (null, 'CV Nusantara Pangan',
+   'Evaluasi perluasan scope supply (selain LPG)',
+   'Supplier menawarkan tambahan komoditas sembako (gula, minyak, tepung). Lakukan price discovery & cross-check dengan incumbent supplier.',
+   'Scope / Pricing', 'medium', 'open',
+   'Operator SPPG', '2026-04-10',
+   'onboarding', 'docx:20260327/Item-10', '2026-03-27 10:45'),
+
+  -- Item 11: Revisi LTA cooking gas (Nusantara Pangan & Wijaya)
+  (null, 'CV Nusantara Pangan · CV Triananta Wijaya',
+   'Revisi LTA LPG · klausul safety & distribusi',
+   'Tambahkan klausul safety tabung (segel, SNI, expiry), frekuensi rotasi, SLA respon emergency. Draft revisi dikirim ke WFP legal.',
+   'Legal / LTA', 'high', 'open',
+   'IFSR-WFP Legal', '2026-04-03',
+   'onboarding', 'docx:20260327/Item-11', '2026-03-27 10:50'),
+
+  -- Item 12: Validasi LPG Red & White Coop
+  (null, 'Red & White Coop (LPG)',
+   'Validasi kapasitas & legalitas Red & White Coop',
+   'Cek izin usaha LPG (agen/pangkalan resmi Pertamina), kapasitas tabung, area cakupan Soe-TTS. Penting untuk strategi dual-source LPG.',
+   'Due Diligence', 'medium', 'open',
+   'IFSR-WFP', '2026-04-10',
+   'onboarding', 'docx:20260327/Item-12', '2026-03-27 10:55'),
+
+  -- Item 13: Follow up BULOG NTT — maps to SUP-01
+  ('SUP-01', null,
+   'Follow up tanda tangan LTA Bulog NTT',
+   'LTA Bulog NTT masih status awaiting. Follow up tanggal tanda tangan, siapkan draft final, koordinasi jadwal pimpinan Bulog.',
+   'LTA / Contract', 'medium', 'in_progress',
+   'IFSR-WFP', '2026-03-30',
+   'onboarding', 'docx:20260327/Item-13', '2026-03-27 11:00')
+on conflict do nothing;

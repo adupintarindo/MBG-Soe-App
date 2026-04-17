@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { InviteForm } from "./invite-form";
 import {
@@ -17,18 +18,9 @@ export const dynamic = "force-dynamic";
 export default async function InvitePage() {
   const supabase = createClient();
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, active")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile || profile.role !== "admin" || !profile.active) {
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
+  if (profile.role !== "admin" || !profile.active) {
     redirect("/dashboard?err=admin_only");
   }
 

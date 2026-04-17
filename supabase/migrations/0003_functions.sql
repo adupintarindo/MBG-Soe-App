@@ -199,3 +199,202 @@ drop trigger if exists trg_auth_user_created on auth.users;
 create trigger trg_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- ============================================================================
+-- SUPPLIER ACTION TRACKER RPCs
+-- Sumber: Onboarding MBG Suppliers (WFP × IFSR × FFI, Soe)
+-- ============================================================================
+
+-- List actions (optional filter by supplier_id, status, source)
+-- RLS tetap berlaku: supplier hanya lihat action miliknya.
+create or replace function public.list_supplier_actions(
+  p_supplier_id text default null,
+  p_status public.action_status default null,
+  p_source public.action_source default null
+) returns table (
+  id bigint,
+  supplier_id text,
+  supplier_name text,
+  related_scope text,
+  title text,
+  description text,
+  category text,
+  priority public.action_priority,
+  status public.action_status,
+  owner text,
+  target_date date,
+  done_at timestamptz,
+  blocked_reason text,
+  output_notes text,
+  source public.action_source,
+  source_ref text,
+  days_to_target int,
+  is_overdue boolean,
+  created_at timestamptz,
+  updated_at timestamptz
+) language sql stable as $$
+  select
+    a.id,
+    a.supplier_id,
+    s.name as supplier_name,
+    a.related_scope,
+    a.title,
+    a.description,
+    a.category,
+    a.priority,
+    a.status,
+    a.owner,
+    a.target_date,
+    a.done_at,
+    a.blocked_reason,
+    a.output_notes,
+    a.source,
+    a.source_ref,
+    case
+      when a.target_date is null then null
+      else (a.target_date - current_date)::int
+    end as days_to_target,
+    (a.target_date is not null
+      and a.target_date < current_date
+      and a.status in ('open','in_progress','blocked')) as is_overdue,
+    a.created_at,
+    a.updated_at
+  from public.supplier_actions a
+  left join public.suppliers s on s.id = a.supplier_id
+  where (p_supplier_id is null or a.supplier_id = p_supplier_id)
+    and (p_status is null or a.status = p_status)
+    and (p_source is null or a.source = p_source)
+  order by
+    case a.status
+      when 'blocked' then 0
+      when 'open' then 1
+      when 'in_progress' then 2
+      when 'done' then 3
+      when 'cancelled' then 4
+    end,
+    case a.priority
+      when 'critical' then 0
+      when 'high' then 1
+      when 'medium' then 2
+      when 'low' then 3
+    end,
+    a.target_date nulls last,
+    a.id;
+$$;
+
+-- Update status action (admin/operator bebas, supplier hanya boleh update action miliknya via RLS)
+create or replace function public.update_action_status(
+  p_id bigint,
+  p_status public.action_status,
+  p_notes text default null,
+  p_blocked_reason text default null
+) returns public.supplier_actions
+language plpgsql as $$
+declare
+  v_row public.supplier_actions;
+begin
+  update public.supplier_actions
+     set status = p_status,
+         output_notes = coalesce(p_notes, output_notes),
+         blocked_reason = case
+           when p_status = 'blocked' then coalesce(p_blocked_reason, blocked_reason)
+           else null
+         end
+   where id = p_id
+   returning * into v_row;
+
+  if v_row.id is null then
+    raise exception 'Action % not found or not permitted', p_id;
+  end if;
+
+  return v_row;
+end; $$;
+
+-- Readiness snapshot untuk KPI dashboard
+create or replace function public.action_readiness_snapshot()
+returns table (
+  total int,
+  open_cnt int,
+  in_progress_cnt int,
+  blocked_cnt int,
+  done_cnt int,
+  cancelled_cnt int,
+  overdue_cnt int,
+  high_priority_open int,
+  readiness_pct numeric
+) language sql stable as $$
+  with base as (
+    select *
+    from public.supplier_actions
+  )
+  select
+    count(*)::int as total,
+    count(*) filter (where status = 'open')::int,
+    count(*) filter (where status = 'in_progress')::int,
+    count(*) filter (where status = 'blocked')::int,
+    count(*) filter (where status = 'done')::int,
+    count(*) filter (where status = 'cancelled')::int,
+    count(*) filter (
+      where target_date is not null
+        and target_date < current_date
+        and status in ('open','in_progress','blocked')
+    )::int as overdue_cnt,
+    count(*) filter (
+      where priority in ('high','critical')
+        and status in ('open','in_progress','blocked')
+    )::int as high_priority_open,
+    case
+      when count(*) filter (where status <> 'cancelled') = 0 then 0
+      else round(
+        100.0 * count(*) filter (where status = 'done')::numeric
+        / nullif(count(*) filter (where status <> 'cancelled'), 0),
+        1
+      )
+    end as readiness_pct
+  from base;
+$$;
+
+-- List action yang sudah lewat target (untuk alerting)
+create or replace function public.overdue_actions()
+returns table (
+  id bigint,
+  supplier_id text,
+  supplier_name text,
+  related_scope text,
+  title text,
+  priority public.action_priority,
+  status public.action_status,
+  target_date date,
+  days_late int,
+  owner text
+) language sql stable as $$
+  select
+    a.id,
+    a.supplier_id,
+    s.name as supplier_name,
+    a.related_scope,
+    a.title,
+    a.priority,
+    a.status,
+    a.target_date,
+    (current_date - a.target_date)::int as days_late,
+    a.owner
+  from public.supplier_actions a
+  left join public.suppliers s on s.id = a.supplier_id
+  where a.target_date is not null
+    and a.target_date < current_date
+    and a.status in ('open','in_progress','blocked')
+  order by
+    (current_date - a.target_date) desc,
+    case a.priority
+      when 'critical' then 0
+      when 'high' then 1
+      when 'medium' then 2
+      when 'low' then 3
+    end;
+$$;
+
+grant execute on function public.list_supplier_actions(text, public.action_status, public.action_source) to authenticated;
+grant execute on function public.update_action_status(bigint, public.action_status, text, text) to authenticated;
+grant execute on function public.action_readiness_snapshot() to authenticated;
+grant execute on function public.overdue_actions() to authenticated;

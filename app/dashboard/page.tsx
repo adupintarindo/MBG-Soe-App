@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { TransactionLog, type TxRow } from "@/components/transaction-log";
 import {
@@ -35,23 +36,15 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const supabase = createClient();
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, active, supplier_id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile || !profile.active) {
+  if (!profile.active) {
     return (
       <main className="mx-auto max-w-xl px-6 py-16">
         <NoticeCard title="Akun belum aktif" tone="warn">
           <p>
-            Email <span className="font-mono font-bold">{user.email}</span>{" "}
+            Email <span className="font-mono font-bold">{profile.email}</span>{" "}
             sudah masuk ke sistem, tapi admin belum meng-aktifkan profil Anda.
             Hubungi admin untuk diverifikasi.
           </p>
@@ -91,7 +84,7 @@ export default async function DashboardPage() {
     monthlyRequirements(supabase, mrStart, 4).catch(
       () => [] as MonthlyRequirement[]
     ),
-    topSuppliersBySpend(supabase, monthStart, today, 10).catch(
+    topSuppliersBySpend(supabase, monthStart, today, 1000).catch(
       () => [] as TopSupplier[]
     ),
     dailyPlanning(supabase, 10).catch(() => [] as DailyPlan[]),
@@ -399,10 +392,10 @@ export default async function DashboardPage() {
           </Section>
         </div>
 
-        {/* Top Supplier */}
+        {/* Nilai belanja semua supplier bertransaksi */}
         <Section
-          title="🏪 Top Supplier · Nilai Belanja Bulan Ini"
-          hint={`Periode ${monthStart} s.d. ${today}`}
+          title="🏪 Nilai Belanja Supplier · Bulan Ini"
+          hint={`Periode ${monthStart} s.d. ${today} · ${topSup.length} supplier bertransaksi`}
         >
           {topSup.length === 0 ? (
             <EmptyState message="Belum ada invoice bulan ini." />

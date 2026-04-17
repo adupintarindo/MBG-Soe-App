@@ -82,6 +82,35 @@ export async function porsiCounts(supabase: Client, date: string): Promise<Porsi
   );
 }
 
+export interface PorsiCountsTiered {
+  paud: number;
+  sd13: number;
+  sd46: number;
+  smp_plus: number;
+  total: number;
+  operasional: boolean;
+}
+
+export async function porsiCountsTiered(
+  supabase: Client,
+  date: string
+): Promise<PorsiCountsTiered> {
+  const { data, error } = await supabase
+    .rpc("porsi_counts_tiered", { p_date: date })
+    .single();
+  if (error) throw error;
+  return (
+    data ?? {
+      paud: 0,
+      sd13: 0,
+      sd46: 0,
+      smp_plus: 0,
+      total: 0,
+      operasional: false
+    }
+  );
+}
+
 export async function porsiEffective(supabase: Client, date: string): Promise<number> {
   const { data, error } = await supabase.rpc("porsi_effective", { p_date: date });
   if (error) throw error;
@@ -170,6 +199,368 @@ export async function dashboardKpis(supabase: Client): Promise<DashboardKpis> {
       menu_today_id: null,
       menu_today_name: null,
       suppliers_active: 0
+    }
+  );
+}
+
+// ---------- BOM Variance (plan vs actual) ----------
+
+export interface BomVarianceRow {
+  item_code: string;
+  name_en: string | null;
+  unit: string;
+  category: Database["public"]["Enums"]["item_category"];
+  plan_kg: number;
+  actual_kg: number;
+  variance_kg: number;
+  variance_pct: number | null;
+  flag: "OVER" | "UNDER" | "OK" | string;
+}
+
+export interface BomVarianceSummary {
+  total_items: number;
+  over_cnt: number;
+  under_cnt: number;
+  ok_cnt: number;
+  total_plan_kg: number;
+  total_actual_kg: number;
+  total_variance_kg: number;
+  total_variance_pct: number | null;
+}
+
+export interface BomVarianceMenuRow {
+  menu_id: number;
+  menu_name: string;
+  days_served: number;
+  plan_porsi: number;
+  plan_kg_total: number;
+  plan_cost_idr: number;
+}
+
+export async function bomVariance(
+  supabase: Client,
+  start: string,
+  end: string,
+  thresholdPct = 10
+): Promise<BomVarianceRow[]> {
+  const { data, error } = await supabase.rpc("bom_variance", {
+    p_start: start,
+    p_end: end,
+    p_threshold_pct: thresholdPct
+  });
+  if (error) throw error;
+  return (data ?? []) as BomVarianceRow[];
+}
+
+export async function bomVarianceSummary(
+  supabase: Client,
+  start: string,
+  end: string,
+  thresholdPct = 10
+): Promise<BomVarianceSummary> {
+  const { data, error } = await supabase.rpc("bom_variance_summary", {
+    p_start: start,
+    p_end: end,
+    p_threshold_pct: thresholdPct
+  });
+  if (error) throw error;
+  const row = (data ?? [])[0] as BomVarianceSummary | undefined;
+  return (
+    row ?? {
+      total_items: 0,
+      over_cnt: 0,
+      under_cnt: 0,
+      ok_cnt: 0,
+      total_plan_kg: 0,
+      total_actual_kg: 0,
+      total_variance_kg: 0,
+      total_variance_pct: null
+    }
+  );
+}
+
+export async function bomVarianceByMenu(
+  supabase: Client,
+  start: string,
+  end: string
+): Promise<BomVarianceMenuRow[]> {
+  const { data, error } = await supabase.rpc("bom_variance_by_menu", {
+    p_start: start,
+    p_end: end
+  });
+  if (error) throw error;
+  return (data ?? []) as BomVarianceMenuRow[];
+}
+
+// ---------- Supplier Action Tracker (Onboarding / MoM / Field) ----------
+
+export type ActionStatus = Database["public"]["Enums"]["action_status"];
+export type ActionPriority = Database["public"]["Enums"]["action_priority"];
+export type ActionSource = Database["public"]["Enums"]["action_source"];
+
+export interface SupplierAction {
+  id: number;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  related_scope: string | null;
+  title: string;
+  description: string | null;
+  category: string | null;
+  priority: ActionPriority;
+  status: ActionStatus;
+  owner: string;
+  target_date: string | null;
+  done_at: string | null;
+  blocked_reason: string | null;
+  output_notes: string | null;
+  source: ActionSource;
+  source_ref: string | null;
+  days_to_target: number | null;
+  is_overdue: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ActionReadinessSnapshot {
+  total: number;
+  open_cnt: number;
+  in_progress_cnt: number;
+  blocked_cnt: number;
+  done_cnt: number;
+  cancelled_cnt: number;
+  overdue_cnt: number;
+  high_priority_open: number;
+  readiness_pct: number;
+}
+
+export interface OverdueAction {
+  id: number;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  related_scope: string | null;
+  title: string;
+  priority: ActionPriority;
+  status: ActionStatus;
+  target_date: string;
+  days_late: number;
+  owner: string;
+}
+
+export async function listSupplierActions(
+  supabase: Client,
+  opts: {
+    supplierId?: string | null;
+    status?: ActionStatus | null;
+    source?: ActionSource | null;
+  } = {}
+): Promise<SupplierAction[]> {
+  const { data, error } = await supabase.rpc("list_supplier_actions", {
+    p_supplier_id: opts.supplierId ?? null,
+    p_status: opts.status ?? null,
+    p_source: opts.source ?? null
+  });
+  if (error) throw error;
+  return (data ?? []) as SupplierAction[];
+}
+
+export async function updateActionStatus(
+  supabase: Client,
+  id: number,
+  status: ActionStatus,
+  notes: string | null = null,
+  blockedReason: string | null = null
+) {
+  const { data, error } = await supabase.rpc("update_action_status", {
+    p_id: id,
+    p_status: status,
+    p_notes: notes,
+    p_blocked_reason: blockedReason
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function actionReadinessSnapshot(
+  supabase: Client
+): Promise<ActionReadinessSnapshot> {
+  const { data, error } = await supabase
+    .rpc("action_readiness_snapshot")
+    .single();
+  if (error) throw error;
+  return (
+    data ?? {
+      total: 0,
+      open_cnt: 0,
+      in_progress_cnt: 0,
+      blocked_cnt: 0,
+      done_cnt: 0,
+      cancelled_cnt: 0,
+      overdue_cnt: 0,
+      high_priority_open: 0,
+      readiness_pct: 0
+    }
+  );
+}
+
+export async function overdueActions(
+  supabase: Client
+): Promise<OverdueAction[]> {
+  const { data, error } = await supabase.rpc("overdue_actions");
+  if (error) throw error;
+  return (data ?? []) as OverdueAction[];
+}
+
+// ---------- GRN QC Checks + Non-Conformance ----------
+
+export type QcResult = Database["public"]["Enums"]["qc_result"];
+export type NcrSeverity = Database["public"]["Enums"]["ncr_severity"];
+export type NcrStatus = Database["public"]["Enums"]["ncr_status"];
+
+export interface QcTemplate {
+  id: number;
+  category: Database["public"]["Enums"]["item_category"];
+  checkpoint: string;
+  expected: string | null;
+  is_critical: boolean;
+  sort_order: number;
+}
+
+export interface GrnQcCheck {
+  id: number;
+  grn_no: string;
+  item_code: string | null;
+  checkpoint: string;
+  is_critical: boolean;
+  result: QcResult;
+  note: string | null;
+  photo_url: string | null;
+  checked_by: string | null;
+  checked_at: string;
+}
+
+export interface NcrEntry {
+  id: number;
+  ncr_no: string | null;
+  grn_no: string | null;
+  supplier_id: string | null;
+  item_code: string | null;
+  severity: NcrSeverity;
+  status: NcrStatus;
+  issue: string;
+  root_cause: string | null;
+  corrective_action: string | null;
+  qty_affected: number | null;
+  unit: string | null;
+  cost_impact_idr: number | null;
+  reported_at: string;
+  resolved_at: string | null;
+  photo_url: string | null;
+  linked_action_id: number | null;
+}
+
+export interface GrnQcSummary {
+  total: number;
+  pass: number;
+  minor: number;
+  major: number;
+  critical: number;
+  fail_total: number;
+  has_critical: boolean;
+}
+
+export interface NcrSnapshot {
+  total: number;
+  open_cnt: number;
+  in_progress_cnt: number;
+  resolved_cnt: number;
+  critical_open: number;
+  avg_resolve_days: number | null;
+}
+
+export async function qcTemplateForItem(
+  supabase: Client,
+  itemCode: string
+): Promise<QcTemplate[]> {
+  const { data, error } = await supabase.rpc("qc_template_for_item", {
+    p_item: itemCode
+  });
+  if (error) throw error;
+  return (data ?? []) as QcTemplate[];
+}
+
+export async function listGrnQcChecks(
+  supabase: Client,
+  grnNo: string
+): Promise<GrnQcCheck[]> {
+  const { data, error } = await supabase
+    .from("grn_qc_checks")
+    .select(
+      "id, grn_no, item_code, checkpoint, is_critical, result, note, photo_url, checked_by, checked_at"
+    )
+    .eq("grn_no", grnNo)
+    .order("checked_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as GrnQcCheck[];
+}
+
+export async function grnQcSummary(
+  supabase: Client,
+  grnNo: string
+): Promise<GrnQcSummary> {
+  const { data, error } = await supabase.rpc("grn_qc_summary", {
+    p_grn_no: grnNo
+  });
+  if (error) throw error;
+  const row = (data ?? [])[0] as GrnQcSummary | undefined;
+  return (
+    row ?? {
+      total: 0,
+      pass: 0,
+      minor: 0,
+      major: 0,
+      critical: 0,
+      fail_total: 0,
+      has_critical: false
+    }
+  );
+}
+
+export async function listNcr(
+  supabase: Client,
+  opts: {
+    status?: NcrStatus;
+    supplierId?: string;
+    grnNo?: string;
+    limit?: number;
+  } = {}
+): Promise<NcrEntry[]> {
+  let q = supabase
+    .from("non_conformance_log")
+    .select(
+      "id, ncr_no, grn_no, supplier_id, item_code, severity, status, issue, root_cause, corrective_action, qty_affected, unit, cost_impact_idr, reported_at, resolved_at, photo_url, linked_action_id"
+    )
+    .order("reported_at", { ascending: false });
+  if (opts.status) q = q.eq("status", opts.status);
+  if (opts.supplierId) q = q.eq("supplier_id", opts.supplierId);
+  if (opts.grnNo) q = q.eq("grn_no", opts.grnNo);
+  if (opts.limit) q = q.limit(opts.limit);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as NcrEntry[];
+}
+
+export async function ncrSnapshot(supabase: Client): Promise<NcrSnapshot> {
+  const { data, error } = await supabase.rpc("ncr_open_snapshot");
+  if (error) throw error;
+  const row = (data ?? [])[0] as NcrSnapshot | undefined;
+  return (
+    row ?? {
+      total: 0,
+      open_cnt: 0,
+      in_progress_cnt: 0,
+      resolved_cnt: 0,
+      critical_open: 0,
+      avg_resolve_days: null
     }
   );
 }

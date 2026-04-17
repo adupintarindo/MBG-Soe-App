@@ -27,12 +27,14 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="flex items-center gap-2 text-xl font-black tracking-tight text-ink sm:text-2xl">
+        <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-crisp text-ink sm:text-[1.75rem]">
           {icon && <span className="shrink-0 text-2xl leading-none">{icon}</span>}
           <span className="truncate">{title}</span>
         </h1>
         {subtitle && (
-          <p className="mt-1 text-sm text-ink2/80">{subtitle}</p>
+          <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink2/80">
+            {subtitle}
+          </p>
         )}
       </div>
       {actions && (
@@ -79,12 +81,14 @@ export function Section({
         <header className={`flex flex-wrap items-center justify-between gap-3 ${noPad ? "px-5 pt-5" : "mb-4"}`}>
           <div className="min-w-0">
             {title && (
-              <h2 className="text-sm font-black uppercase tracking-wide text-ink">
+              <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.08em] text-ink">
                 {title}
               </h2>
             )}
             {hint && (
-              <p className="mt-1 text-[11px] text-ink2/70">{hint}</p>
+              <p className="mt-1 text-[11.5px] leading-relaxed text-ink2/70">
+                {hint}
+              </p>
             )}
           </div>
           {actions && (
@@ -125,16 +129,24 @@ export function KpiTile({
   size = "lg"
 }: KpiTileProps) {
   const sizeCls =
-    size === "lg" ? "text-2xl" : size === "md" ? "text-xl leading-tight" : "text-base leading-snug";
+    size === "lg"
+      ? "text-[1.75rem] leading-none"
+      : size === "md"
+        ? "text-xl leading-tight"
+        : "text-base leading-snug";
   return (
     <div className="rounded-2xl bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-cardlg">
-      <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-ink2/80">
+      <div className="mb-1.5 flex items-center gap-2 font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-ink2/80">
         {icon && <span className="text-sm">{icon}</span>}
         <span className="truncate">{label}</span>
       </div>
-      <div className={`font-black ${sizeCls} ${TONE_VALUE[tone]}`}>{value}</div>
+      <div
+        className={`font-display font-extrabold tracking-crisp tabular-nums ${sizeCls} ${TONE_VALUE[tone]}`}
+      >
+        {value}
+      </div>
       {sub && (
-        <div className="mt-1 text-[11px] font-semibold text-ink2/70">{sub}</div>
+        <div className="mt-1 text-[11.5px] font-semibold text-ink2/70">{sub}</div>
       )}
     </div>
   );
@@ -176,7 +188,7 @@ const BADGE_TONE: Record<NonNullable<BadgeProps["tone"]>, string> = {
 export function Badge({ tone = "neutral", children, className = "" }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${BADGE_TONE[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-display text-[10.5px] font-bold tracking-[0.02em] ${BADGE_TONE[tone]} ${className}`}
     >
       {children}
     </span>
@@ -229,13 +241,13 @@ interface BtnStyleProps {
 
 function btnClass({ variant = "primary", size = "md" }: BtnStyleProps): string {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-xl font-bold shadow-card transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex items-center justify-center gap-2 rounded-xl font-display font-bold tracking-[0.005em] shadow-card transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
   const sz =
     size === "sm"
-      ? "px-3 py-1.5 text-[11px]"
+      ? "px-3 py-1.5 text-[11.5px]"
       : size === "lg"
-        ? "px-5 py-3 text-sm"
-        : "px-4 py-2 text-xs";
+        ? "px-5 py-3 text-[14px]"
+        : "px-4 py-2 text-[12.5px]";
   const variantCls =
     variant === "primary"
       ? "bg-ink text-white hover:bg-ink2"
@@ -307,10 +319,10 @@ export function FieldLabel({
   hint?: ReactNode;
 }) {
   return (
-    <span className="mb-1 flex items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-wide text-ink2">
+    <span className="mb-1 flex items-center justify-between gap-2 font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-ink2">
       <span>{children}</span>
       {hint && (
-        <span className="text-[10px] font-semibold normal-case text-ink2/70">
+        <span className="text-[10px] font-semibold normal-case tracking-normal text-ink2/70">
           {hint}
         </span>
       )}
@@ -341,7 +353,7 @@ export function TableWrap({ children }: { children: ReactNode }) {
 export function THead({ children }: { children: ReactNode }) {
   return (
     <thead>
-      <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
+      <tr className="border-b border-ink/10 text-left font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-ink2">
         {children}
       </tr>
     </thead>

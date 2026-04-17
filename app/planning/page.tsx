@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import {
   dailyPlanning,
@@ -36,17 +37,9 @@ interface ItemLite {
 export default async function PlanningPage() {
   const supabase = createClient();
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, active, supplier_id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile || !profile.active) redirect("/dashboard");
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
+  if (!profile.active) redirect("/dashboard");
 
   const now = new Date();
   const monthStart = toISODate(new Date(now.getFullYear(), now.getMonth(), 1));

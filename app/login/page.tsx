@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button, FieldLabel, Input } from "@/components/ui";
 
@@ -15,10 +15,12 @@ export default function LoginPage() {
 
 function LoginInner() {
   const supabase = createClient();
+  const router = useRouter();
   const params = useSearchParams();
   const nextPath = params.get("next") || "/dashboard";
 
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
   );
@@ -29,12 +31,42 @@ function LoginInner() {
     setStatus("sending");
     setError(null);
 
+    const trimmedEmail = email.trim().toLowerCase();
+
+    // Dev shortcut: admin / admin → instant session via /api/dev-login
+    if (trimmedEmail === "admin" && password === "admin") {
+      try {
+        const res = await fetch("/api/dev-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: "admin",
+            password: "admin",
+            next: nextPath
+          })
+        });
+        const data = (await res.json()) as { ok?: boolean; redirect?: string; error?: string };
+        if (!res.ok || !data.ok) {
+          setStatus("error");
+          setError(data.error ?? "Gagal login admin.");
+          return;
+        }
+        router.replace(data.redirect ?? nextPath);
+        router.refresh();
+      } catch (err) {
+        setStatus("error");
+        setError(err instanceof Error ? err.message : "Network error.");
+      }
+      return;
+    }
+
+    // Normal magic-link flow
     const redirectTo =
       (process.env.NEXT_PUBLIC_SITE_URL || window.location.origin) +
       `/auth/callback?next=${encodeURIComponent(nextPath)}`;
 
     const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
+      email: trimmedEmail,
       options: {
         emailRedirectTo: redirectTo
       }
@@ -100,26 +132,40 @@ function LoginInner() {
                 </h2>
                 <p className="mt-1 text-[12px] text-ink2/75">
                   Kami akan mengirim tautan masuk sekali pakai ke email Anda —
-                  tanpa password.
+                  tanpa password. Dev shortcut:{" "}
+                  <span className="font-mono font-bold">admin / admin</span>.
                 </p>
               </div>
 
               <label className="block">
                 <FieldLabel>Email terdaftar</FieldLabel>
                 <Input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@instansi.go.id"
-                  autoComplete="email"
+                  autoComplete="username"
                   autoFocus
+                />
+              </label>
+
+              <label className="block">
+                <FieldLabel hint="kosongkan untuk magic link">
+                  Password
+                </FieldLabel>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••"
+                  autoComplete="current-password"
                 />
               </label>
 
               {error && (
                 <div className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-800 ring-1 ring-red-200">
-                  <b>Gagal kirim link.</b> {error}
+                  <b>Gagal masuk.</b> {error}
                 </div>
               )}
 
@@ -130,7 +176,7 @@ function LoginInner() {
                 disabled={status === "sending"}
                 className="w-full"
               >
-                {status === "sending" ? "Mengirim…" : "Kirim Magic Link →"}
+                {status === "sending" ? "Memproses…" : "Masuk →"}
               </Button>
 
               <p className="pt-1 text-[11px] leading-relaxed text-ink2/70">

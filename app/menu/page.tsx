@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { formatIDR } from "@/lib/engine";
 import {
@@ -30,20 +31,26 @@ const CAT_COLOR: Record<string, string> = {
   LAIN: "bg-gray-50 text-gray-900 ring-gray-200"
 };
 
+const CAT_ICON: Record<string, string> = {
+  BERAS: "🌾",
+  HEWANI: "🍗",
+  NABATI: "🫘",
+  SAYUR_HIJAU: "🥬",
+  SAYUR: "🥕",
+  UMBI: "🥔",
+  BUMBU: "🧅",
+  REMPAH: "🌶️",
+  SEMBAKO: "🛒",
+  BUAH: "🍎",
+  LAIN: "🍽️"
+};
+
 export default async function MenuMasterPage() {
   const supabase = createClient();
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, active, supplier_id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile || !profile.active) redirect("/dashboard");
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
+  if (!profile.active) redirect("/dashboard");
 
   // Fetch all menus + BOM + items + supplier_items in parallel
   const [menusRes, bomRes, itemsRes, supItemsRes] = await Promise.all([
@@ -51,7 +58,11 @@ export default async function MenuMasterPage() {
       .from("menus")
       .select("id, name, name_en, cycle_day, active, notes")
       .order("id"),
-    supabase.from("menu_bom").select("menu_id, item_code, grams_per_porsi"),
+    supabase
+      .from("menu_bom")
+      .select(
+        "menu_id, item_code, grams_per_porsi, grams_paud, grams_sd13, grams_sd46, grams_smp"
+      ),
     supabase
       .from("items")
       .select("code, name_en, unit, category, price_idr, vol_weekly, active")
@@ -81,6 +92,10 @@ export default async function MenuMasterPage() {
     menu_id: number;
     item_code: string;
     grams_per_porsi: number | string;
+    grams_paud: number | string;
+    grams_sd13: number | string;
+    grams_sd46: number | string;
+    grams_smp: number | string;
   }
   interface SupItemRow {
     supplier_id: string;
@@ -95,13 +110,31 @@ export default async function MenuMasterPage() {
 
   const itemByCode = new Map(items.map((i) => [i.code, i]));
 
-  // Group BOM by menu
-  const bomByMenu = new Map<number, { item_code: string; grams: number }[]>();
+  // Group BOM by menu — ikut tiered gramasi
+  type BomEntry = {
+    item_code: string;
+    grams: number;
+    paud: number;
+    sd13: number;
+    sd46: number;
+    smp: number;
+    tiered: boolean;
+  };
+  const bomByMenu = new Map<number, BomEntry[]>();
   for (const row of bom) {
     const list = bomByMenu.get(row.menu_id) ?? [];
+    const paud = Number(row.grams_paud ?? 0);
+    const sd13 = Number(row.grams_sd13 ?? 0);
+    const sd46 = Number(row.grams_sd46 ?? 0);
+    const smp = Number(row.grams_smp ?? 0);
     list.push({
       item_code: row.item_code,
-      grams: Number(row.grams_per_porsi)
+      grams: Number(row.grams_per_porsi),
+      paud,
+      sd13,
+      sd46,
+      smp,
+      tiered: paud + sd13 + sd46 + smp > 0
     });
     bomByMenu.set(row.menu_id, list);
   }
@@ -154,13 +187,16 @@ export default async function MenuMasterPage() {
           subtitle={
             <>
               Siklus {menus.length} hari · {totalItems} komoditas · {totalBOM}{" "}
-              entri BOM · porsi weight kecil 0.7 · besar 1.0
+              entri BOM · 4-tier gramasi (PAUD 3-5 / SD 6-9 / SD 10-12 / SMP+)
             </>
           }
           actions={
             <>
               <LinkButton href="/calendar" variant="secondary" size="sm">
                 📅 Kalender Menu
+              </LinkButton>
+              <LinkButton href="/menu/variance" variant="secondary" size="sm">
+                📉 BOM Variance
               </LinkButton>
               <LinkButton href="/planning" variant="primary" size="sm">
                 📊 Rencana Kebutuhan →
@@ -241,9 +277,12 @@ export default async function MenuMasterPage() {
                     <table className="w-full text-xs">
                       <thead className="bg-paper text-[10px] font-bold uppercase tracking-wide text-ink2">
                         <tr>
-                          <th className="px-3 py-2 text-left">Item</th>
-                          <th className="px-3 py-2 text-left">Kategori</th>
-                          <th className="px-3 py-2 text-right">g/Porsi</th>
+                          <th className="px-2 py-2 text-left">Item</th>
+                          <th className="px-2 py-2 text-left">Kat</th>
+                          <th className="px-1.5 py-2 text-right" title="PAUD 3-5 th">P</th>
+                          <th className="px-1.5 py-2 text-right" title="SD 1-3 (6-9 th)">SD₁₃</th>
+                          <th className="px-1.5 py-2 text-right" title="SD 4-6 (10-12 th)">SD₄₆</th>
+                          <th className="px-1.5 py-2 text-right" title="SMP+ & Guru">S+</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -255,24 +294,38 @@ export default async function MenuMasterPage() {
                               key={r.item_code}
                               className="border-t border-ink/5"
                             >
-                              <td className="px-3 py-1.5 font-semibold text-ink">
+                              <td className="px-2 py-1.5 font-semibold text-ink">
                                 {r.item_code}
                               </td>
-                              <td className="px-3 py-1.5">
+                              <td className="px-2 py-1.5">
                                 <span
-                                  className={`rounded-full px-2 py-0.5 text-[9px] font-bold ring-1 ${CAT_COLOR[cat] ?? CAT_COLOR.LAIN}`}
+                                  className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ring-1 ${CAT_COLOR[cat] ?? CAT_COLOR.LAIN}`}
                                 >
-                                  {cat}
+                                  <span aria-hidden className="text-[11px] leading-none">
+                                    {CAT_ICON[cat] ?? CAT_ICON.LAIN}
+                                  </span>
                                 </span>
                               </td>
-                              <td className="px-3 py-1.5 text-right font-mono font-black text-ink">
-                                {r.grams.toFixed(1)}
+                              <td className="px-1.5 py-1.5 text-right font-mono text-ink">
+                                {r.tiered ? r.paud.toFixed(1) : "—"}
+                              </td>
+                              <td className="px-1.5 py-1.5 text-right font-mono text-ink">
+                                {r.tiered ? r.sd13.toFixed(1) : "—"}
+                              </td>
+                              <td className="px-1.5 py-1.5 text-right font-mono font-black text-ink">
+                                {r.tiered ? r.sd46.toFixed(1) : r.grams.toFixed(1)}
+                              </td>
+                              <td className="px-1.5 py-1.5 text-right font-mono text-ink">
+                                {r.tiered ? r.smp.toFixed(1) : "—"}
                               </td>
                             </tr>
                           );
                         })}
                       </tbody>
                     </table>
+                    <div className="border-t border-ink/5 bg-paper px-2 py-1 text-[9px] text-ink2/70">
+                      Gramasi: P=PAUD 3-5 · SD₁₃=SD 6-9 · <b>SD₄₆=SD 10-12 (baseline besar)</b> · S+=SMP/SMA/SMK+Guru
+                    </div>
                   </div>
                 )}
               </article>
@@ -309,8 +362,11 @@ export default async function MenuMasterPage() {
                     </td>
                     <td className="py-2 pr-3">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_COLOR[it.category] ?? CAT_COLOR.LAIN}`}
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_COLOR[it.category] ?? CAT_COLOR.LAIN}`}
                       >
+                        <span aria-hidden className="text-[12px] leading-none">
+                          {CAT_ICON[it.category] ?? CAT_ICON.LAIN}
+                        </span>
                         {it.category}
                       </span>
                     </td>

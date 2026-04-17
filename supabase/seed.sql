@@ -78,42 +78,12 @@ insert into public.items(code,name_en,unit,category,price_idr,vol_weekly) values
  ('Buah - Jeruk','Orange','kg','BUAH',22000,50)
 on conflict (code) do nothing;
 
--- ---- MENUS (14-day cycle ringkas · tambah BOM nanti via UI) ---------------
-insert into public.menus(id,name,name_en,cycle_day) values
- (1,'Nasi Ayam Wortel Jagung','Rice w/ Chicken & Veg',1),
- (2,'Nasi Ikan Tuna Tumis Sayur','Rice w/ Tuna & Stir-fry',2),
- (3,'Nasi Telur Balado Buncis','Rice w/ Egg Balado & Green Bean',3),
- (4,'Nasi Ikan Kembung Kangkung','Rice w/ Mackerel & Water Spinach',4),
- (5,'Nasi Ayam Kecap Bayam','Rice w/ Soy Chicken & Spinach',5),
- (6,'Nasi Tahu Tempe Sawi','Rice w/ Tofu-Tempeh & Mustard',6),
- (7,'Nasi Ikan Tongkol Labu Siam','Rice w/ Skipjack & Chayote',7),
- (8,'Nasi Telur Dadar Wortel','Rice w/ Omelette & Carrot',8),
- (9,'Nasi Ayam Goreng Kacang Panjang','Rice w/ Fried Chicken & Long Bean',9),
- (10,'Nasi Daging Cincang Sayur Asem','Rice w/ Minced Beef & Veg Soup',10),
- (11,'Nasi Ikan Tuna Bumbu Kuning','Rice w/ Yellow Tuna',11),
- (12,'Nasi Ayam Sayur Lodeh','Rice w/ Chicken & Coconut Veg',12),
- (13,'Nasi Tahu Rica Sawi','Rice w/ Spicy Tofu & Mustard',13),
- (14,'Nasi Ikan Kembung Bayam','Rice w/ Mackerel & Spinach',14)
-on conflict (id) do nothing;
-
--- ---- SIMPLIFIED BOM (gram per porsi) ---------------
--- NOTE: nilai ini placeholder; validasi dengan ahli gizi sebelum go-live.
-insert into public.menu_bom(menu_id,item_code,grams_per_porsi) values
- (1,'Beras Putih',100),(1,'Ayam Segar',45),(1,'Wortel',30),(1,'Jagung Manis',25),(1,'Minyak Goreng',5),(1,'Bawang Merah',3),(1,'Bawang Putih',2),(1,'Garam',1),(1,'Buah - Pisang',80),
- (2,'Beras Putih',100),(2,'Ikan Tuna',50),(2,'Kangkung',35),(2,'Bawang Putih',2),(2,'Cabai Merah',1),(2,'Minyak Goreng',5),(2,'Buah - Pepaya',80),
- (3,'Beras Putih',100),(3,'Telur Ayam',55),(3,'Buncis',35),(3,'Cabai Merah',2),(3,'Bawang Merah',3),(3,'Minyak Goreng',5),(3,'Buah - Melon',80),
- (4,'Beras Putih',100),(4,'Ikan Kembung',50),(4,'Kangkung',35),(4,'Bawang Putih',2),(4,'Minyak Goreng',5),(4,'Buah - Semangka',80),
- (5,'Beras Putih',100),(5,'Ayam Segar',45),(5,'Bayam',35),(5,'Kecap Manis',5),(5,'Bawang Putih',2),(5,'Minyak Goreng',5),(5,'Buah - Jeruk',80),
- (6,'Beras Putih',100),(6,'Tahu',40),(6,'Tempe',30),(6,'Sawi Hijau',35),(6,'Bawang Merah',3),(6,'Kecap Manis',3),(6,'Minyak Goreng',5),(6,'Buah - Pisang',80),
- (7,'Beras Putih',100),(7,'Ikan Tongkol',50),(7,'Labu Siam',35),(7,'Bawang Putih',2),(7,'Minyak Goreng',5),(7,'Buah - Pepaya',80),
- (8,'Beras Putih',100),(8,'Telur Ayam',55),(8,'Wortel',30),(8,'Bawang Merah',3),(8,'Minyak Goreng',5),(8,'Buah - Melon',80),
- (9,'Beras Putih',100),(9,'Ayam Segar',45),(9,'Kacang Panjang',35),(9,'Bawang Putih',2),(9,'Minyak Goreng',6),(9,'Buah - Semangka',80),
- (10,'Beras Putih',100),(10,'Daging Sapi',35),(10,'Wortel',25),(10,'Kacang Panjang',20),(10,'Bawang Merah',3),(10,'Bawang Putih',2),(10,'Garam',1),(10,'Buah - Jeruk',80),
- (11,'Beras Putih',100),(11,'Ikan Tuna',50),(11,'Kunyit',1),(11,'Jahe',1),(11,'Bawang Merah',3),(11,'Minyak Goreng',5),(11,'Buncis',30),(11,'Buah - Pisang',80),
- (12,'Beras Putih',100),(12,'Ayam Segar',45),(12,'Labu Siam',25),(12,'Wortel',20),(12,'Bawang Merah',3),(12,'Bawang Putih',2),(12,'Minyak Goreng',5),(12,'Buah - Pepaya',80),
- (13,'Beras Putih',100),(13,'Tahu',50),(13,'Sawi Hijau',35),(13,'Cabai Merah',3),(13,'Bawang Merah',3),(13,'Minyak Goreng',5),(13,'Buah - Melon',80),
- (14,'Beras Putih',100),(14,'Ikan Kembung',50),(14,'Bayam',35),(14,'Bawang Putih',2),(14,'Minyak Goreng',5),(14,'Buah - Semangka',80)
-on conflict (menu_id,item_code) do nothing;
+-- ---- MENUS + BOM ------------------------------------------------------------
+-- Siklus menu 10-hari + BOM tiered (PAUD/SD1-3/SD4-6/SMP+) sekarang di-own
+-- oleh migration 0011_menus_adjusted_tiered.sql. Sumber: ADJUSTED Costing
+-- Sheet Dish 06042026 (WFP × IFSR × FFI, SPPG Nunumeu).
+-- Seed.sql tidak lagi insert menus / menu_bom / menu_assign untuk hindari
+-- drift — jalankan migration 0011 setelah seed.sql.
 
 -- ---- SUPPLIERS (12 · hasil Vendor Matrix) ----------------------------------
 insert into public.suppliers(id,name,type,commodity,pic,phone,address,email,notes,score,status) values
@@ -171,23 +141,4 @@ on conflict (supplier_id,item_code) do nothing;
 
 -- Opening stock (kosong sementara; operator input via UI sebelum go-live)
 
--- ---- MENU_ASSIGN go-live (14-day cycle dari 2026-05-04) --------------------
--- Mon=1 Tue=2 ... skip weekend; auto 14-day rotation
-do $$
-declare
-  d date;
-  i int := 0;
-  m smallint := 1;
-begin
-  d := date '2026-05-04';
-  while d < date '2026-07-31' loop
-    if extract(dow from d) not in (0,6) then
-      insert into public.menu_assign(assign_date, menu_id)
-      values (d, m)
-      on conflict (assign_date) do nothing;
-      m := m + 1; if m > 14 then m := 1; end if;
-      i := i + 1;
-    end if;
-    d := d + 1;
-  end loop;
-end $$;
+-- menu_assign: lihat migration 0011 (10-day cycle, regenerated on run).
