@@ -111,8 +111,24 @@ export interface Database {
         Relationships: [];
       };
       menu_bom: {
-        Row: { menu_id: number; item_code: string; grams_per_porsi: number };
-        Insert: { menu_id: number; item_code: string; grams_per_porsi: number };
+        Row: {
+          menu_id: number;
+          item_code: string;
+          grams_per_porsi: number;
+          grams_paud: number;
+          grams_sd13: number;
+          grams_sd46: number;
+          grams_smp: number;
+        };
+        Insert: {
+          menu_id: number;
+          item_code: string;
+          grams_per_porsi: number;
+          grams_paud?: number;
+          grams_sd13?: number;
+          grams_sd46?: number;
+          grams_smp?: number;
+        };
         Update: Partial<Database["public"]["Tables"]["menu_bom"]["Insert"]>;
         Relationships: [];
       };
@@ -146,6 +162,25 @@ export interface Database {
           active?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["schools"]["Insert"]>;
+        Relationships: [];
+      };
+      school_attendance: {
+        Row: {
+          school_id: string;
+          att_date: string;
+          qty: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          school_id: string;
+          att_date: string;
+          qty: number;
+          updated_by?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["school_attendance"]["Insert"]
+        >;
         Relationships: [];
       };
       suppliers: {
@@ -198,6 +233,175 @@ export interface Database {
         };
         Update: Partial<
           Database["public"]["Tables"]["supplier_items"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      supplier_certs: {
+        Row: {
+          id: number;
+          supplier_id: string;
+          name: string;
+          valid_until: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          supplier_id: string;
+          name: string;
+          valid_until?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["supplier_certs"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      qc_checklist_templates: {
+        Row: {
+          id: number;
+          category: Database["public"]["Enums"]["item_category"];
+          item_code: string | null;
+          checkpoint: string;
+          expected: string | null;
+          is_critical: boolean;
+          sort_order: number;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          category: Database["public"]["Enums"]["item_category"];
+          item_code?: string | null;
+          checkpoint: string;
+          expected?: string | null;
+          is_critical?: boolean;
+          sort_order?: number;
+          active?: boolean;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["qc_checklist_templates"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      grn_qc_checks: {
+        Row: {
+          id: number;
+          grn_no: string;
+          item_code: string | null;
+          checkpoint: string;
+          is_critical: boolean;
+          result: Database["public"]["Enums"]["qc_result"];
+          note: string | null;
+          photo_url: string | null;
+          checked_by: string | null;
+          checked_at: string;
+        };
+        Insert: {
+          id?: number;
+          grn_no: string;
+          item_code?: string | null;
+          checkpoint: string;
+          is_critical?: boolean;
+          result?: Database["public"]["Enums"]["qc_result"];
+          note?: string | null;
+          photo_url?: string | null;
+          checked_by?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["grn_qc_checks"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      non_conformance_log: {
+        Row: {
+          id: number;
+          ncr_no: string | null;
+          grn_no: string | null;
+          supplier_id: string | null;
+          item_code: string | null;
+          severity: Database["public"]["Enums"]["ncr_severity"];
+          status: Database["public"]["Enums"]["ncr_status"];
+          issue: string;
+          root_cause: string | null;
+          corrective_action: string | null;
+          qty_affected: number | null;
+          unit: string | null;
+          cost_impact_idr: number | null;
+          reported_at: string;
+          reported_by: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          photo_url: string | null;
+          linked_action_id: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          ncr_no?: string | null;
+          grn_no?: string | null;
+          supplier_id?: string | null;
+          item_code?: string | null;
+          severity?: Database["public"]["Enums"]["ncr_severity"];
+          status?: Database["public"]["Enums"]["ncr_status"];
+          issue: string;
+          root_cause?: string | null;
+          corrective_action?: string | null;
+          qty_affected?: number | null;
+          unit?: string | null;
+          cost_impact_idr?: number | null;
+          reported_by?: string | null;
+          photo_url?: string | null;
+          linked_action_id?: number | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["non_conformance_log"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      supplier_actions: {
+        Row: {
+          id: number;
+          supplier_id: string | null;
+          related_scope: string | null;
+          title: string;
+          description: string | null;
+          category: string | null;
+          priority: Database["public"]["Enums"]["action_priority"];
+          status: Database["public"]["Enums"]["action_status"];
+          owner: string;
+          owner_user_id: string | null;
+          target_date: string | null;
+          done_at: string | null;
+          done_by: string | null;
+          blocked_reason: string | null;
+          output_notes: string | null;
+          source: Database["public"]["Enums"]["action_source"];
+          source_ref: string | null;
+          created_at: string;
+          created_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          supplier_id?: string | null;
+          related_scope?: string | null;
+          title: string;
+          description?: string | null;
+          category?: string | null;
+          priority?: Database["public"]["Enums"]["action_priority"];
+          status?: Database["public"]["Enums"]["action_status"];
+          owner?: string;
+          owner_user_id?: string | null;
+          target_date?: string | null;
+          done_at?: string | null;
+          done_by?: string | null;
+          blocked_reason?: string | null;
+          output_notes?: string | null;
+          source?: Database["public"]["Enums"]["action_source"];
+          source_ref?: string | null;
+          created_by?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["supplier_actions"]["Insert"]
         >;
         Relationships: [];
       };
@@ -424,6 +628,66 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["settings"]["Insert"]>;
         Relationships: [];
       };
+      quotations: {
+        Row: {
+          no: string;
+          supplier_id: string;
+          quote_date: string;
+          valid_until: string | null;
+          need_date: string | null;
+          status: Database["public"]["Enums"]["quotation_status"];
+          total: number;
+          notes: string | null;
+          converted_po_no: string | null;
+          created_at: string;
+          created_by: string | null;
+          responded_at: string | null;
+          responded_by: string | null;
+        };
+        Insert: {
+          no?: string;
+          supplier_id: string;
+          quote_date?: string;
+          valid_until?: string | null;
+          need_date?: string | null;
+          status?: Database["public"]["Enums"]["quotation_status"];
+          total?: number;
+          notes?: string | null;
+          converted_po_no?: string | null;
+          created_by?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["quotations"]["Insert"]>;
+        Relationships: [];
+      };
+      quotation_rows: {
+        Row: {
+          qt_no: string;
+          line_no: number;
+          item_code: string;
+          qty: number;
+          unit: string;
+          price_suggested: number | null;
+          price_quoted: number | null;
+          qty_quoted: number | null;
+          note: string | null;
+          subtotal: number;
+        };
+        Insert: {
+          qt_no: string;
+          line_no: number;
+          item_code: string;
+          qty: number;
+          unit: string;
+          price_suggested?: number | null;
+          price_quoted?: number | null;
+          qty_quoted?: number | null;
+          note?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["quotation_rows"]["Insert"]
+        >;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -435,6 +699,63 @@ export interface Database {
           guru: number;
           total: number;
           operasional: boolean;
+        }[];
+      };
+      porsi_counts_tiered: {
+        Args: { p_date: string };
+        Returns: {
+          paud: number;
+          sd13: number;
+          sd46: number;
+          smp_plus: number;
+          total: number;
+          operasional: boolean;
+        }[];
+      };
+      bom_variance: {
+        Args: {
+          p_start: string;
+          p_end: string;
+          p_threshold_pct?: number;
+        };
+        Returns: {
+          item_code: string;
+          name_en: string | null;
+          unit: string;
+          category: Database["public"]["Enums"]["item_category"];
+          plan_kg: number;
+          actual_kg: number;
+          variance_kg: number;
+          variance_pct: number | null;
+          flag: string;
+        }[];
+      };
+      bom_variance_summary: {
+        Args: {
+          p_start: string;
+          p_end: string;
+          p_threshold_pct?: number;
+        };
+        Returns: {
+          total_items: number;
+          over_cnt: number;
+          under_cnt: number;
+          ok_cnt: number;
+          total_plan_kg: number;
+          total_actual_kg: number;
+          total_variance_kg: number;
+          total_variance_pct: number | null;
+        }[];
+      };
+      bom_variance_by_menu: {
+        Args: { p_start: string; p_end: string };
+        Returns: {
+          menu_id: number;
+          menu_name: string;
+          days_served: number;
+          plan_porsi: number;
+          plan_kg_total: number;
+          plan_cost_idr: number;
         }[];
       };
       porsi_effective: {
@@ -539,6 +860,120 @@ export interface Database {
           suppliers_active: number;
         }[];
       };
+      list_supplier_actions: {
+        Args: {
+          p_supplier_id?: string | null;
+          p_status?: Database["public"]["Enums"]["action_status"] | null;
+          p_source?: Database["public"]["Enums"]["action_source"] | null;
+        };
+        Returns: {
+          id: number;
+          supplier_id: string | null;
+          supplier_name: string | null;
+          related_scope: string | null;
+          title: string;
+          description: string | null;
+          category: string | null;
+          priority: Database["public"]["Enums"]["action_priority"];
+          status: Database["public"]["Enums"]["action_status"];
+          owner: string;
+          target_date: string | null;
+          done_at: string | null;
+          blocked_reason: string | null;
+          output_notes: string | null;
+          source: Database["public"]["Enums"]["action_source"];
+          source_ref: string | null;
+          days_to_target: number | null;
+          is_overdue: boolean;
+          created_at: string;
+          updated_at: string;
+        }[];
+      };
+      update_action_status: {
+        Args: {
+          p_id: number;
+          p_status: Database["public"]["Enums"]["action_status"];
+          p_notes?: string | null;
+          p_blocked_reason?: string | null;
+        };
+        Returns: Database["public"]["Tables"]["supplier_actions"]["Row"];
+      };
+      action_readiness_snapshot: {
+        Args: Record<string, never>;
+        Returns: {
+          total: number;
+          open_cnt: number;
+          in_progress_cnt: number;
+          blocked_cnt: number;
+          done_cnt: number;
+          cancelled_cnt: number;
+          overdue_cnt: number;
+          high_priority_open: number;
+          readiness_pct: number;
+        }[];
+      };
+      overdue_actions: {
+        Args: Record<string, never>;
+        Returns: {
+          id: number;
+          supplier_id: string | null;
+          supplier_name: string | null;
+          related_scope: string | null;
+          title: string;
+          priority: Database["public"]["Enums"]["action_priority"];
+          status: Database["public"]["Enums"]["action_status"];
+          target_date: string;
+          days_late: number;
+          owner: string;
+        }[];
+      };
+      qc_template_for_item: {
+        Args: { p_item: string };
+        Returns: {
+          id: number;
+          category: Database["public"]["Enums"]["item_category"];
+          checkpoint: string;
+          expected: string | null;
+          is_critical: boolean;
+          sort_order: number;
+        }[];
+      };
+      grn_qc_summary: {
+        Args: { p_grn_no: string };
+        Returns: {
+          total: number;
+          pass: number;
+          minor: number;
+          major: number;
+          critical: number;
+          fail_total: number;
+          has_critical: boolean;
+        }[];
+      };
+      ncr_open_snapshot: {
+        Args: Record<string, never>;
+        Returns: {
+          total: number;
+          open_cnt: number;
+          in_progress_cnt: number;
+          resolved_cnt: number;
+          critical_open: number;
+          avg_resolve_days: number | null;
+        }[];
+      };
+      quotation_seed_from_date: {
+        Args: { p_date: string };
+        Returns: {
+          item_code: string;
+          qty: number;
+          unit: string;
+          price_suggested: number | null;
+        }[];
+      };
+      convert_quotation_to_po: {
+        Args: { p_qt_no: string };
+        Returns: string;
+      };
     };
     Enums: {
       user_role: "admin" | "operator" | "ahli_gizi" | "supplier" | "viewer";
@@ -590,6 +1025,25 @@ export interface Database {
         | "payment"
         | "adjustment"
         | "receipt";
+      action_status:
+        | "open"
+        | "in_progress"
+        | "blocked"
+        | "done"
+        | "cancelled";
+      action_priority: "low" | "medium" | "high" | "critical";
+      action_source: "onboarding" | "mom" | "field" | "audit" | "ad_hoc";
+      qc_result: "pass" | "minor" | "major" | "critical" | "na";
+      ncr_severity: "minor" | "major" | "critical";
+      ncr_status: "open" | "in_progress" | "resolved" | "waived";
+      quotation_status:
+        | "draft"
+        | "sent"
+        | "responded"
+        | "accepted"
+        | "converted"
+        | "rejected"
+        | "expired";
     };
     CompositeTypes: Record<string, never>;
   };

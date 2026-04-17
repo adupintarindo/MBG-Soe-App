@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getHoliday } from "@/lib/holidays";
 
 interface MenuRow {
   id: number;
@@ -29,32 +30,36 @@ interface ItemRow {
   active: boolean;
 }
 
+interface SchoolRow {
+  id: string;
+  name: string;
+  level: string;
+  students: number;
+  kelas13: number;
+  kelas46: number;
+  guru: number;
+}
+
+interface AttendanceRow {
+  school_id: string;
+  att_date: string;
+  qty: number;
+}
+
 interface Props {
-  matrix: string[][]; // ISO dates
+  matrix: string[][]; // ISO dates (Mon..Sun rows)
+  monthYear: number;
+  monthMonth: number; // 1..12
   todayIso: string;
   menus: MenuRow[];
   items: ItemRow[];
   initialAssigns: AssignRow[];
   initialNonOps: NonOpRow[];
+  schools: SchoolRow[];
+  initialAttendance: AttendanceRow[];
+  recipientCount: number;
   canWrite: boolean;
 }
-
-const MENU_HUE = [
-  "bg-sky-100 text-sky-900",
-  "bg-emerald-100 text-emerald-900",
-  "bg-amber-100 text-amber-900",
-  "bg-rose-100 text-rose-900",
-  "bg-indigo-100 text-indigo-900",
-  "bg-teal-100 text-teal-900",
-  "bg-orange-100 text-orange-900",
-  "bg-violet-100 text-violet-900",
-  "bg-lime-100 text-lime-900",
-  "bg-pink-100 text-pink-900",
-  "bg-cyan-100 text-cyan-900",
-  "bg-fuchsia-100 text-fuchsia-900",
-  "bg-yellow-100 text-yellow-900",
-  "bg-green-100 text-green-900"
-];
 
 const DOW_ID = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const DOW_LONG_ID = [
@@ -123,11 +128,16 @@ const CAT_BUCKET: Record<string, "karbo" | "protein" | "sayur" | "buah" | null> 
 
 export function CalendarGrid({
   matrix,
+  monthYear,
+  monthMonth,
   todayIso,
   menus,
   items,
   initialAssigns,
   initialNonOps,
+  schools,
+  initialAttendance,
+  recipientCount,
   canWrite
 }: Props) {
   const router = useRouter();
@@ -138,6 +148,12 @@ export function CalendarGrid({
   );
   const [nonOpByDate, setNonOpByDate] = useState(
     () => new Map(initialNonOps.map((n) => [n.op_date, n]))
+  );
+  const [attByKey, setAttByKey] = useState(
+    () =>
+      new Map(
+        initialAttendance.map((a) => [`${a.school_id}|${a.att_date}`, a.qty])
+      )
   );
   const [openDate, setOpenDate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +174,7 @@ export function CalendarGrid({
     if (!canWrite) return;
     const dow = dayOfWeek(iso);
     if (dow === 0 || dow === 6) return;
+    if (getHoliday(iso)) return;
     setError(null);
     setOpenDate(iso);
   }
@@ -262,20 +279,89 @@ export function CalendarGrid({
     startTransition(() => router.refresh());
   }
 
+  async function saveAttendance(
+    iso: string,
+    entries: { school_id: string; qty: number | null }[]
+  ) {
+    setError(null);
+    const toUpsert = entries
+      .filter((e) => e.qty !== null && !Number.isNaN(e.qty))
+      .map((e) => ({ school_id: e.school_id, att_date: iso, qty: e.qty! }));
+    const toDelete = entries.filter((e) => e.qty === null).map((e) => e.school_id);
+
+    if (toUpsert.length > 0) {
+      const { error: err } = await supabase
+        .from("school_attendance")
+        .upsert(toUpsert as never, { onConflict: "school_id,att_date" });
+      if (err) {
+        setError(err.message);
+        return;
+      }
+    }
+    if (toDelete.length > 0) {
+      const { error: err } = await supabase
+        .from("school_attendance")
+        .delete()
+        .eq("att_date", iso)
+        .in("school_id", toDelete);
+      if (err) {
+        setError(err.message);
+        return;
+      }
+    }
+
+    setAttByKey((prev) => {
+      const next = new Map(prev);
+      for (const row of toUpsert) {
+        next.set(`${row.school_id}|${iso}`, row.qty);
+      }
+      for (const sid of toDelete) {
+        next.delete(`${sid}|${iso}`);
+      }
+      return next;
+    });
+    startTransition(() => router.refresh());
+  }
+
+  const recipientLabel = `${recipientCount.toLocaleString("id-ID")} penerima`;
+
   return (
     <>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {matrix.flat().map((iso) => {
           const [y, m, d] = iso.split("-").map(Number);
           const dt = new Date(y, m - 1, d);
           const dow = dt.getDay();
           const isWknd = dow === 0 || dow === 6;
           const isToday = iso === todayIso;
-          const assign = assignByDate.get(iso);
-          const nonOp = nonOpByDate.get(iso);
-          const menuIdx = assign ? (menuIndexById.get(assign.menu_id) ?? -1) : -1;
-          const menu = assign ? menus[menuIdx] : null;
-          const clickable = !isWknd && canWrite;
+          const inMonth = m === monthMonth && y === monthYear;
+          const holidayName = getHoliday(iso);
+          const assign = !holidayName ? assignByDate.get(iso) : undefined;
+          const nonOp = !holidayName ? nonOpByDate.get(iso) : undefined;
+          const menu = assign
+            ? menus[menuIndexById.get(assign.menu_id) ?? -1] ?? null
+            : null;
+          const clickable = !isWknd && !holidayName && canWrite;
+
+          let toneCls =
+            "border border-ink/10 bg-white text-ink hover:border-ink/20";
+          if (holidayName) {
+            toneCls = "border border-rose-300 bg-rose-100 text-rose-900";
+          } else if (nonOp) {
+            toneCls = "border border-orange-300 bg-orange-100 text-orange-900";
+          } else if (menu) {
+            toneCls =
+              "border border-transparent bg-gradient-to-b from-blue-800 to-blue-700 text-white shadow-card";
+          } else if (isWknd) {
+            toneCls =
+              "border border-amber-200 bg-amber-50 text-amber-900/70";
+          }
+
+          const dimCls = inMonth ? "" : "opacity-40";
+          const ringCls = isToday ? "ring-2 ring-accent ring-offset-1" : "";
+          const cursorCls = clickable
+            ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-cardlg"
+            : "cursor-default";
 
           return (
             <button
@@ -283,45 +369,57 @@ export function CalendarGrid({
               type="button"
               disabled={!clickable}
               onClick={() => openEditor(iso)}
-              className={`min-h-[74px] rounded-lg border p-1.5 text-left text-[10px] transition ${
-                isWknd
-                  ? "border-ink/5 bg-paper/60 opacity-60"
+              title={
+                holidayName
+                  ? `${holidayName} · ${iso}`
                   : nonOp
-                    ? "border-amber-300 bg-amber-50"
+                    ? `Non-Op: ${nonOp.reason}`
                     : menu
-                      ? `border-transparent ${MENU_HUE[menuIdx % MENU_HUE.length]}`
-                      : "border-ink/10 bg-white"
-              } ${isToday ? "ring-2 ring-accent" : ""} ${
-                clickable
-                  ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-card"
-                  : "cursor-default"
-              }`}
+                      ? `M${menu.id} · ${menu.name}`
+                      : iso
+              }
+              className={`flex min-h-[92px] flex-col rounded-xl p-2 text-left text-[10px] transition ${toneCls} ${dimCls} ${ringCls} ${cursorCls}`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-1">
                 <span
-                  className={`font-black ${isToday ? "text-accent" : ""}`}
+                  className={`text-sm font-black leading-none ${
+                    menu ? "text-white" : ""
+                  } ${isToday && !menu ? "text-accent" : ""}`}
                 >
                   {d}
                 </span>
-                {d === 1 && (
-                  <span className="text-[9px] font-bold uppercase opacity-70">
-                    {dt.toLocaleDateString("id-ID", { month: "short" })}
+                {holidayName ? (
+                  <span className="text-sm leading-none">🚫</span>
+                ) : nonOp ? (
+                  <span className="text-sm leading-none">🚫</span>
+                ) : menu ? (
+                  <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[9px] font-black uppercase tracking-wide text-white">
+                    M{menu.id}
                   </span>
-                )}
+                ) : null}
               </div>
-              {nonOp ? (
-                <div className="mt-1 line-clamp-2 font-semibold text-amber-800">
-                  🚫 {nonOp.reason}
+
+              {holidayName ? (
+                <div className="mt-1 line-clamp-3 text-[10px] font-bold leading-tight">
+                  {holidayName}
+                </div>
+              ) : nonOp ? (
+                <div className="mt-1 line-clamp-3 text-[10px] font-bold leading-tight">
+                  {nonOp.reason}
                 </div>
               ) : menu ? (
-                <div className="mt-1">
-                  <div className="font-mono text-[9px] opacity-70">
-                    H{menu.cycle_day}
+                <div className="mt-1 flex flex-1 flex-col justify-between gap-1">
+                  <div className="line-clamp-2 text-[11px] font-bold leading-tight">
+                    {menu.name}
                   </div>
-                  <div className="line-clamp-2 font-semibold">{menu.name}</div>
+                  <div className="text-[9px] font-semibold uppercase tracking-wide text-white/85">
+                    {recipientLabel}
+                  </div>
                 </div>
-              ) : !isWknd ? (
-                <div className="mt-1 text-ink2/40">— klik untuk assign</div>
+              ) : isWknd ? null : inMonth ? (
+                <div className="mt-1 text-[10px] font-semibold text-ink2/40">
+                  klik untuk assign
+                </div>
               ) : null}
             </button>
           );
@@ -333,6 +431,11 @@ export function CalendarGrid({
           iso={openDate}
           menus={menus}
           items={items}
+          schools={schools}
+          attendanceForDate={schools.map((s) => ({
+            school_id: s.id,
+            qty: attByKey.get(`${s.id}|${openDate}`) ?? null
+          }))}
           assign={assignByDate.get(openDate) ?? null}
           nonOp={nonOpByDate.get(openDate) ?? null}
           error={error}
@@ -342,6 +445,7 @@ export function CalendarGrid({
           onClearAssign={clearAssign}
           onMarkNonOp={markNonOp}
           onClearNonOp={clearNonOp}
+          onSaveAttendance={saveAttendance}
         />
       )}
 
@@ -359,6 +463,8 @@ interface EditProps {
   iso: string;
   menus: MenuRow[];
   items: ItemRow[];
+  schools: SchoolRow[];
+  attendanceForDate: { school_id: string; qty: number | null }[];
   assign: AssignRow | null;
   nonOp: NonOpRow | null;
   error: string | null;
@@ -368,12 +474,18 @@ interface EditProps {
   onClearAssign: (iso: string) => Promise<void>;
   onMarkNonOp: (iso: string, reason: string) => Promise<void>;
   onClearNonOp: (iso: string) => Promise<void>;
+  onSaveAttendance: (
+    iso: string,
+    entries: { school_id: string; qty: number | null }[]
+  ) => Promise<void>;
 }
 
 function EditModal({
   iso,
   menus,
   items,
+  schools,
+  attendanceForDate,
   assign,
   nonOp,
   error,
@@ -382,7 +494,8 @@ function EditModal({
   onSaveAssign,
   onClearAssign,
   onMarkNonOp,
-  onClearNonOp
+  onClearNonOp,
+  onSaveAttendance
 }: EditProps) {
   const { y, m, d, date } = parseIso(iso);
   const dowLong = DOW_LONG_ID[date.getDay()];
@@ -399,6 +512,44 @@ function EditModal({
   const [buah, setBuah] = useState<string>("");
   const [note, setNote] = useState<string>(assign?.note ?? "");
   const [reason, setReason] = useState<string>(nonOp?.reason ?? "");
+
+  const initialAttMap = useMemo(() => {
+    const m = new Map<string, number | null>();
+    for (const e of attendanceForDate) m.set(e.school_id, e.qty);
+    return m;
+  }, [attendanceForDate]);
+  // empty string = full roster (no override); numeric string = override qty
+  const [attInputs, setAttInputs] = useState<Record<string, string>>(() => {
+    const o: Record<string, string> = {};
+    for (const s of schools) {
+      const q = initialAttMap.get(s.id);
+      o[s.id] = q == null ? "" : String(q);
+    }
+    return o;
+  });
+
+  async function handleSaveAttendance() {
+    const entries = schools.map((s) => {
+      const raw = attInputs[s.id]?.trim() ?? "";
+      if (raw === "") return { school_id: s.id, qty: null };
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n < 0) return { school_id: s.id, qty: null };
+      return { school_id: s.id, qty: Math.min(Math.floor(n), s.students) };
+    });
+    await onSaveAttendance(iso, entries);
+  }
+
+  const totalOverride = schools.reduce((sum, s) => {
+    const raw = attInputs[s.id]?.trim() ?? "";
+    if (raw === "") return sum + (Number(s.students) || 0);
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0) return sum;
+    return sum + Math.min(Math.floor(n), s.students);
+  }, 0);
+  const totalFullRoster = schools.reduce(
+    (s, x) => s + (Number(x.students) || 0),
+    0
+  );
 
   const currentMenu = useMemo(
     () => (assign ? menus.find((mm) => mm.id === assign.menu_id) ?? null : null),
@@ -635,6 +786,126 @@ function EditModal({
                       Hapus Assignment
                     </button>
                   )}
+                </div>
+              </section>
+
+              {/* Section 4 · Konfirmasi Kehadiran */}
+              <section className="rounded-2xl bg-white p-4 ring-1 ring-ink/10">
+                <div className="mb-3 flex items-center gap-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-[11px] font-black text-white">
+                    4
+                  </span>
+                  <h3 className="text-sm font-black text-ink">
+                    👥 Konfirmasi Kehadiran per Sekolah
+                  </h3>
+                </div>
+                <p className="mb-3 text-[11px] text-ink2/70">
+                  Kosongkan untuk pakai <b>full roster</b> ({totalFullRoster.toLocaleString("id-ID")}). Isi angka override kalau ada guru absen, ujian, atau event khusus. Rasio hadir otomatis diterapkan proporsional ke porsi kecil/besar/guru.
+                </p>
+
+                <div className="overflow-hidden rounded-xl ring-1 ring-ink/10">
+                  <table className="w-full text-xs">
+                    <thead className="bg-paper">
+                      <tr className="text-left text-[10px] font-black uppercase tracking-wide text-ink2">
+                        <th className="px-3 py-2">Sekolah</th>
+                        <th className="px-3 py-2 text-center">Lvl</th>
+                        <th className="px-3 py-2 text-right">Siswa</th>
+                        <th className="px-3 py-2 text-right">Hadir</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {schools.map((s) => {
+                        const raw = attInputs[s.id] ?? "";
+                        const effective = raw === "" ? s.students : Number(raw);
+                        const pct =
+                          s.students > 0
+                            ? Math.round((effective / s.students) * 100)
+                            : 0;
+                        return (
+                          <tr
+                            key={s.id}
+                            className="border-t border-ink/5 hover:bg-paper/60"
+                          >
+                            <td className="px-3 py-2">
+                              <div className="font-bold text-ink">{s.name}</div>
+                              <div className="font-mono text-[10px] text-ink2/60">
+                                {s.id}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-center text-[10px] font-bold text-ink2">
+                              {s.level}
+                            </td>
+                            <td className="px-3 py-2 text-right font-mono text-ink2">
+                              {s.students}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={s.students}
+                                  value={raw}
+                                  onChange={(e) =>
+                                    setAttInputs((p) => ({
+                                      ...p,
+                                      [s.id]: e.target.value
+                                    }))
+                                  }
+                                  placeholder={String(s.students)}
+                                  className="w-20 rounded-lg border border-ink/20 bg-white px-2 py-1 text-right font-mono text-xs"
+                                />
+                                <span
+                                  className={`w-10 font-mono text-[10px] ${
+                                    pct >= 90
+                                      ? "text-emerald-700"
+                                      : pct >= 70
+                                        ? "text-amber-700"
+                                        : "text-red-700"
+                                  }`}
+                                >
+                                  {pct}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot className="bg-paper/60">
+                      <tr>
+                        <td colSpan={2} className="px-3 py-2 text-[11px] font-black text-ink">
+                          Total efektif
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-[11px] text-ink2">
+                          {totalFullRoster.toLocaleString("id-ID")}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-[11px] font-black text-ink">
+                          {totalOverride.toLocaleString("id-ID")}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    onClick={handleSaveAttendance}
+                    disabled={busy}
+                    className="rounded-xl bg-ink px-4 py-2 text-xs font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
+                  >
+                    💾 Simpan Kehadiran
+                  </button>
+                  <button
+                    onClick={() =>
+                      setAttInputs(
+                        Object.fromEntries(schools.map((s) => [s.id, ""]))
+                      )
+                    }
+                    disabled={busy}
+                    className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-ink ring-1 ring-ink/15 hover:bg-paper disabled:opacity-50"
+                  >
+                    Reset ke Full Roster
+                  </button>
                 </div>
               </section>
             </>

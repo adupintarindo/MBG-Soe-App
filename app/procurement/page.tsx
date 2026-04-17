@@ -1,17 +1,21 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
-import { formatIDR } from "@/lib/engine";
+import { formatIDR, listNcr, ncrSnapshot } from "@/lib/engine";
+import Link from "next/link";
 import {
   EmptyState,
   KpiGrid,
   KpiTile,
+  LinkButton,
   PageContainer,
   PageHeader,
   Section,
   TableWrap,
   THead
 } from "@/components/ui";
+import { GrnQcPanel } from "./grn-qc-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -24,18 +28,21 @@ const PO_STATUS_COLOR: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800"
 };
 
-const GRN_STATUS_COLOR: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-900",
-  ok: "bg-emerald-100 text-emerald-800",
-  partial: "bg-orange-100 text-orange-900",
-  rejected: "bg-red-100 text-red-800"
-};
-
 const INV_STATUS_COLOR: Record<string, string> = {
   issued: "bg-blue-100 text-blue-800",
   paid: "bg-emerald-100 text-emerald-800",
   overdue: "bg-red-100 text-red-800",
   cancelled: "bg-slate-100 text-slate-700"
+};
+
+const QT_STATUS_COLOR: Record<string, string> = {
+  draft: "bg-slate-100 text-slate-800",
+  sent: "bg-blue-100 text-blue-800",
+  responded: "bg-amber-100 text-amber-900",
+  accepted: "bg-emerald-100 text-emerald-900",
+  converted: "bg-green-100 text-green-900",
+  rejected: "bg-red-100 text-red-800",
+  expired: "bg-slate-100 text-slate-500"
 };
 
 interface PoRow {
@@ -48,6 +55,16 @@ interface PoRow {
   pay_method: string | null;
   top: string | null;
   notes: string | null;
+}
+interface QtRow {
+  no: string;
+  supplier_id: string;
+  quote_date: string;
+  valid_until: string | null;
+  need_date: string | null;
+  total: number | string;
+  status: string;
+  converted_po_no: string | null;
 }
 interface PoLineRow {
   po_no: string;
@@ -88,47 +105,69 @@ interface SupplierLite {
 export default async function ProcurementPage() {
   const supabase = createClient();
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
+  if (!profile.active) redirect("/dashboard");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, active, supplier_id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile || !profile.active) redirect("/dashboard");
-
-  const [posRes, poRowsRes, grnsRes, invoicesRes, receiptsRes, suppliersRes] =
-    await Promise.all([
-      supabase
-        .from("purchase_orders")
-        .select(
-          "no, po_date, supplier_id, delivery_date, total, status, pay_method, top, notes"
-        )
-        .order("po_date", { ascending: false })
-        .limit(50),
-      supabase
-        .from("po_rows")
-        .select("po_no, line_no, item_code, qty, unit, price"),
-      supabase
-        .from("grns")
-        .select("no, po_no, grn_date, status, qc_note")
-        .order("grn_date", { ascending: false })
-        .limit(50),
-      supabase
-        .from("invoices")
-        .select("no, po_no, inv_date, supplier_id, total, due_date, status")
-        .order("inv_date", { ascending: false })
-        .limit(50),
-      supabase
-        .from("receipts")
-        .select("id, ref, note, photo_url, created_at")
-        .order("created_at", { ascending: false })
-        .limit(20),
-      supabase.from("suppliers").select("id, name")
-    ]);
+  const [
+    posRes,
+    poRowsRes,
+    grnsRes,
+    invoicesRes,
+    receiptsRes,
+    suppliersRes,
+    qcAggRes,
+    qtsRes,
+    ncrs,
+    ncrStats
+  ] = await Promise.all([
+    supabase
+      .from("purchase_orders")
+      .select(
+        "no, po_date, supplier_id, delivery_date, total, status, pay_method, top, notes"
+      )
+      .order("po_date", { ascending: false })
+      .limit(50),
+    supabase
+      .from("po_rows")
+      .select("po_no, line_no, item_code, qty, unit, price"),
+    supabase
+      .from("grns")
+      .select("no, po_no, grn_date, status, qc_note")
+      .order("grn_date", { ascending: false })
+      .limit(50),
+    supabase
+      .from("invoices")
+      .select("no, po_no, inv_date, supplier_id, total, due_date, status")
+      .order("inv_date", { ascending: false })
+      .limit(50),
+    supabase
+      .from("receipts")
+      .select("id, ref, note, photo_url, created_at")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase.from("suppliers").select("id, name"),
+    supabase
+      .from("grn_qc_checks")
+      .select("grn_no, result")
+      .limit(5000),
+    supabase
+      .from("quotations")
+      .select(
+        "no, supplier_id, quote_date, valid_until, need_date, total, status, converted_po_no"
+      )
+      .order("quote_date", { ascending: false })
+      .limit(50),
+    listNcr(supabase, { limit: 50 }).catch(() => []),
+    ncrSnapshot(supabase).catch(() => ({
+      total: 0,
+      open_cnt: 0,
+      in_progress_cnt: 0,
+      resolved_cnt: 0,
+      critical_open: 0,
+      avg_resolve_days: null
+    }))
+  ]);
 
   const pos = (posRes.data ?? []) as PoRow[];
   const poRows = (poRowsRes.data ?? []) as PoLineRow[];
@@ -136,6 +175,38 @@ export default async function ProcurementPage() {
   const invoices = (invoicesRes.data ?? []) as InvoiceRow[];
   const receipts = (receiptsRes.data ?? []) as ReceiptRow[];
   const suppliers = (suppliersRes.data ?? []) as SupplierLite[];
+  const qcRows = (qcAggRes.data ?? []) as Array<{
+    grn_no: string;
+    result: string;
+  }>;
+  const quotations = (qtsRes.data ?? []) as QtRow[];
+
+  // Aggregate QC per GRN
+  const qcMap = new Map<
+    string,
+    { grn_no: string; total: number; fail: number; has_critical: boolean }
+  >();
+  for (const r of qcRows) {
+    const agg = qcMap.get(r.grn_no) ?? {
+      grn_no: r.grn_no,
+      total: 0,
+      fail: 0,
+      has_critical: false
+    };
+    agg.total += 1;
+    if (r.result !== "pass" && r.result !== "na") agg.fail += 1;
+    if (r.result === "critical") agg.has_critical = true;
+    qcMap.set(r.grn_no, agg);
+  }
+  const qcAgg = Array.from(qcMap.values());
+
+  const poSupplierMap: Record<string, string> = {};
+  for (const p of pos) poSupplierMap[p.no] = p.supplier_id;
+  const supplierNameMap: Record<string, string> = {};
+  for (const s of suppliers) supplierNameMap[s.id] = s.name;
+
+  const canWrite =
+    profile.role === "admin" || profile.role === "operator";
 
   const supMap = new Map(suppliers.map((s) => [s.id, s.name]));
   const rowCountByPO = new Map<string, number>();
@@ -169,12 +240,24 @@ export default async function ProcurementPage() {
       <PageContainer>
         <PageHeader
           icon="🧾"
-          title="Pengadaan · PO · GRN · Invoice"
+          title="Pengadaan · Quotation · PO · GRN · Invoice"
           subtitle={
             <>
-              {poCount} PO · {grnCount} GRN · {invCount} Invoice · outstanding{" "}
+              {quotations.length} Quotation · {poCount} PO · {grnCount} GRN ·{" "}
+              {invCount} Invoice · outstanding{" "}
               <b className="text-red-700">{formatIDR(invOutstanding)}</b>
             </>
+          }
+          actions={
+            canWrite ? (
+              <LinkButton
+                href="/procurement/quotation/new"
+                variant="primary"
+                size="sm"
+              >
+                + Buat Quotation
+              </LinkButton>
+            ) : null
           }
         />
 
@@ -208,7 +291,95 @@ export default async function ProcurementPage() {
             tone={overdueCount > 0 ? "bad" : "warn"}
             sub={`${overdueCount} overdue`}
           />
+          <KpiTile
+            icon="🧪"
+            label="NCR Aktif"
+            value={(ncrStats.open_cnt + ncrStats.in_progress_cnt).toString()}
+            tone={
+              ncrStats.critical_open > 0
+                ? "bad"
+                : ncrStats.open_cnt > 0
+                  ? "warn"
+                  : "ok"
+            }
+            sub={`${ncrStats.critical_open} critical · avg resolve ${ncrStats.avg_resolve_days ?? "—"} hari`}
+          />
         </KpiGrid>
+
+        <Section
+          title="📄 Quotations · RFQ"
+          hint="Draft harga ke supplier sebelum PO · export .xlsx untuk supplier tanda tangan/edit, lalu convert ke PO."
+          actions={
+            canWrite ? (
+              <Link
+                href="/procurement/quotation/new"
+                className="rounded-lg bg-ink px-3 py-1.5 text-[11px] font-black text-white shadow-card hover:bg-ink2"
+              >
+                + Buat Baru
+              </Link>
+            ) : null
+          }
+        >
+          {quotations.length === 0 ? (
+            <EmptyState message="Belum ada quotation. Klik 'Buat Baru' untuk mulai." />
+          ) : (
+            <TableWrap>
+              <table className="w-full text-sm">
+                <THead>
+                  <th className="py-2 pr-3">No</th>
+                  <th className="py-2 pr-3">Tanggal</th>
+                  <th className="py-2 pr-3">Supplier</th>
+                  <th className="py-2 pr-3">Butuh</th>
+                  <th className="py-2 pr-3">Berlaku s/d</th>
+                  <th className="py-2 pr-3 text-right">Nilai</th>
+                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">PO</th>
+                  <th className="py-2 pr-3"></th>
+                </THead>
+                <tbody>
+                  {quotations.map((q) => (
+                    <tr key={q.no} className="row-hover border-b border-ink/5">
+                      <td className="py-2 pr-3 font-mono text-xs font-black">
+                        {q.no}
+                      </td>
+                      <td className="py-2 pr-3 text-xs">{q.quote_date}</td>
+                      <td className="py-2 pr-3 text-xs">
+                        {supMap.get(q.supplier_id) ?? q.supplier_id}
+                      </td>
+                      <td className="py-2 pr-3 text-xs">
+                        {q.need_date ?? "—"}
+                      </td>
+                      <td className="py-2 pr-3 text-xs">
+                        {q.valid_until ?? "—"}
+                      </td>
+                      <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                        {formatIDR(Number(q.total))}
+                      </td>
+                      <td className="py-2 pr-3">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${QT_STATUS_COLOR[q.status] ?? QT_STATUS_COLOR.draft}`}
+                        >
+                          {q.status}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-3 font-mono text-xs">
+                        {q.converted_po_no ?? "—"}
+                      </td>
+                      <td className="py-2 pr-3 text-right">
+                        <Link
+                          href={`/procurement/quotation/${encodeURIComponent(q.no)}`}
+                          className="text-[11px] font-bold text-accent-strong hover:underline"
+                        >
+                          Detail →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+          )}
+        </Section>
 
         <Section title="📝 Purchase Orders" hint="50 PO terbaru">
           {pos.length === 0 ? (
@@ -267,45 +438,19 @@ export default async function ProcurementPage() {
           )}
         </Section>
 
-        <Section title="📦 Goods Receipt Notes" hint="50 GRN terbaru">
-          {grns.length === 0 ? (
-            <EmptyState message="Belum ada GRN." />
-          ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">No GRN</th>
-                  <th className="py-2 pr-3">Tanggal</th>
-                  <th className="py-2 pr-3">PO Referensi</th>
-                  <th className="py-2 pr-3">QC</th>
-                  <th className="py-2 pr-3">Status</th>
-                </THead>
-                <tbody>
-                  {grns.map((g) => (
-                    <tr key={g.no} className="row-hover border-b border-ink/5">
-                      <td className="py-2 pr-3 font-mono text-xs font-black">
-                        {g.no}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">{g.grn_date}</td>
-                      <td className="py-2 pr-3 font-mono text-xs">
-                        {g.po_no ?? "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-xs text-ink2/70">
-                        {g.qc_note ?? "—"}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${GRN_STATUS_COLOR[g.status] ?? GRN_STATUS_COLOR.pending}`}
-                        >
-                          {g.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
-          )}
+        <Section
+          title="📦 GRN · QC Checklist · Non-Conformance"
+          hint="Klik baris untuk buat pemeriksaan QC dari template · NCR dicatat per severity."
+          accent={ncrStats.critical_open > 0 ? "bad" : "default"}
+        >
+          <GrnQcPanel
+            grns={grns}
+            qcAgg={qcAgg}
+            ncrs={ncrs}
+            canWrite={canWrite}
+            supplierIds={poSupplierMap}
+            supplierNames={supplierNameMap}
+          />
         </Section>
 
         <Section title="💰 Invoice" hint="50 invoice terbaru">

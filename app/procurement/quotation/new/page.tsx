@@ -1,0 +1,78 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/auth";
+import { Nav } from "@/components/nav";
+import {
+  LinkButton,
+  PageContainer,
+  PageHeader,
+  Section
+} from "@/components/ui";
+import { QuotationForm } from "./quotation-form";
+
+export const dynamic = "force-dynamic";
+
+const WRITE_ROLES = new Set(["admin", "operator"]);
+
+interface SupplierLite {
+  id: string;
+  name: string;
+  status: string;
+}
+interface ItemLite {
+  code: string;
+  name_en: string | null;
+  unit: string;
+  category: string;
+  active: boolean;
+}
+
+export default async function NewQuotationPage() {
+  const supabase = createClient();
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
+  if (!WRITE_ROLES.has(profile.role)) redirect("/procurement");
+
+  const [supRes, itemsRes] = await Promise.all([
+    supabase
+      .from("suppliers")
+      .select("id, name, status")
+      .in("status", ["signed", "awaiting"])
+      .order("name"),
+    supabase
+      .from("items")
+      .select("code, name_en, unit, category, active")
+      .eq("active", true)
+      .order("code")
+  ]);
+
+  const suppliers = (supRes.data ?? []) as SupplierLite[];
+  const items = (itemsRes.data ?? []) as ItemLite[];
+
+  return (
+    <div>
+      <Nav
+        email={profile.email}
+        role={profile.role}
+        fullName={profile.full_name}
+      />
+
+      <PageContainer>
+        <PageHeader
+          icon="📄"
+          title="Buat Quotation Baru"
+          subtitle="Draft harga ke supplier · isi manual atau seed dari tanggal menu · export .xlsx untuk ditandatangani supplier."
+          actions={
+            <LinkButton href="/procurement" variant="secondary" size="sm">
+              ← Kembali
+            </LinkButton>
+          }
+        />
+
+        <Section noPad>
+          <QuotationForm suppliers={suppliers} items={items} />
+        </Section>
+      </PageContainer>
+    </div>
+  );
+}

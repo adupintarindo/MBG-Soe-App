@@ -1,59 +1,35 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { toISODate } from "@/lib/engine";
+import { getHoliday, holidaysInRange } from "@/lib/holidays";
 import { CalendarGrid } from "./calendar-grid";
 import {
-  Badge,
   LinkButton,
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-// Build 10-week matrix starting from current ISO week Monday
-function buildMatrix(anchor: Date, weeks = 10): Date[][] {
-  const monday = new Date(anchor);
-  const dow = monday.getDay(); // 0 Sun .. 6 Sat
-  const offset = dow === 0 ? -6 : 1 - dow;
-  monday.setDate(monday.getDate() + offset);
-  monday.setHours(0, 0, 0, 0);
-
-  const rows: Date[][] = [];
-  for (let w = 0; w < weeks; w++) {
-    const week: Date[] = [];
-    for (let d = 0; d < 7; d++) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + w * 7 + d);
-      week.push(date);
-    }
-    rows.push(week);
-  }
-  return rows;
-}
+const MONTH_LONG_ID = [
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember"
+];
 
 const WRITE_ROLES = new Set(["admin", "operator", "ahli_gizi"]);
-
-const MENU_HUE = [
-  "bg-sky-100 text-sky-900",
-  "bg-emerald-100 text-emerald-900",
-  "bg-amber-100 text-amber-900",
-  "bg-rose-100 text-rose-900",
-  "bg-indigo-100 text-indigo-900",
-  "bg-teal-100 text-teal-900",
-  "bg-orange-100 text-orange-900",
-  "bg-violet-100 text-violet-900",
-  "bg-lime-100 text-lime-900",
-  "bg-pink-100 text-pink-900",
-  "bg-cyan-100 text-cyan-900",
-  "bg-fuchsia-100 text-fuchsia-900",
-  "bg-yellow-100 text-yellow-900",
-  "bg-green-100 text-green-900"
-];
 
 interface MenuLite {
   id: number;
@@ -76,28 +52,89 @@ interface ItemLite {
   category: string;
   active: boolean;
 }
+interface SchoolLite {
+  id: string;
+  name: string;
+  level: string;
+  students: number;
+  kelas13: number;
+  kelas46: number;
+  guru: number;
+}
+interface AttendanceRow {
+  school_id: string;
+  att_date: string;
+  qty: number;
+}
 
-export default async function CalendarPage() {
+function parseMonthParam(s: string | undefined): { year: number; month: number } {
+  if (s) {
+    const m = /^(\d{4})-(\d{1,2})$/.exec(s);
+    if (m) {
+      const y = Number(m[1]);
+      const mo = Number(m[2]);
+      if (mo >= 1 && mo <= 12) return { year: y, month: mo };
+    }
+  }
+  const t = new Date();
+  return { year: t.getFullYear(), month: t.getMonth() + 1 };
+}
+
+// Build full-month grid (Mon..Sun rows). Pads leading/trailing days from neighbouring months.
+function buildMonthMatrix(year: number, month: number): Date[][] {
+  const first = new Date(year, month - 1, 1);
+  const last = new Date(year, month, 0);
+
+  const start = new Date(first);
+  const dow0 = first.getDay(); // 0..6 (Sun..Sat)
+  const offsetStart = dow0 === 0 ? -6 : 1 - dow0;
+  start.setDate(first.getDate() + offsetStart);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(last);
+  const dowL = last.getDay();
+  const offsetEnd = dowL === 0 ? 0 : 7 - dowL;
+  end.setDate(last.getDate() + offsetEnd);
+
+  const rows: Date[][] = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    const week: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+      week.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    rows.push(week);
+  }
+  return rows;
+}
+
+function fmtMonthKey(y: number, m: number): string {
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+
+export default async function CalendarPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ month?: string }> | { month?: string };
+}) {
   const supabase = createClient();
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
+  if (!profile.active) redirect("/dashboard");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, active, supplier_id")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile || !profile.active) redirect("/dashboard");
-
-  const today = new Date();
-  const matrix = buildMatrix(today, 10);
+  const sp = (await Promise.resolve(searchParams)) ?? {};
+  const { year, month } = parseMonthParam(sp.month);
+  const matrix = buildMonthMatrix(year, month);
   const start = toISODate(matrix[0][0]);
   const end = toISODate(matrix[matrix.length - 1][6]);
 
-  const [menusRes, assignRes, nonOpRes, itemsRes] = await Promise.all([
+  const today = new Date();
+  const todayIso = toISODate(today);
+  const currentMonthKey = fmtMonthKey(today.getFullYear(), today.getMonth() + 1);
+
+  const [menusRes, assignRes, nonOpRes, itemsRes, schoolsRes, attRes] = await Promise.all([
     supabase
       .from("menus")
       .select("id, name, name_en, cycle_day")
@@ -116,27 +153,92 @@ export default async function CalendarPage() {
       .from("items")
       .select("code, name_en, category, active")
       .eq("active", true)
-      .order("code")
+      .order("code"),
+    supabase
+      .from("schools")
+      .select("id, name, level, students, kelas13, kelas46, guru")
+      .eq("active", true)
+      .order("id"),
+    supabase
+      .from("school_attendance")
+      .select("school_id, att_date, qty")
+      .gte("att_date", start)
+      .lte("att_date", end)
   ]);
 
   const menus = (menusRes.data ?? []) as MenuLite[];
-  const assigns = (assignRes.data ?? []) as AssignRow[];
+  let assigns = (assignRes.data ?? []) as AssignRow[];
   const nonOps = (nonOpRes.data ?? []) as NonOpRow[];
   const items = (itemsRes.data ?? []) as ItemLite[];
+  const schools = (schoolsRes.data ?? []) as SchoolLite[];
+  const attendance = (attRes.data ?? []) as AttendanceRow[];
+  const recipientCount = schools.reduce(
+    (sum, s) => sum + (Number(s.students) || 0) + (Number(s.guru) || 0),
+    0
+  );
 
-  const menuById = new Map(menus.map((m) => [m.id, m]));
   const assignByDate = new Map(assigns.map((a) => [a.assign_date, a]));
   const nonOpByDate = new Map(nonOps.map((n) => [n.op_date, n]));
 
-  const todayStr = toISODate(today);
+  // Auto-assign M1..Mn rolling kalau bulan ini belum disentuh sama sekali.
+  // Override manual tetap menang karena hanya jalan saat assigns kosong.
+  const assignsInThisMonth = assigns.filter((a) => {
+    const [y, mo] = a.assign_date.split("-").map(Number);
+    return y === year && mo === month;
+  });
+  if (
+    WRITE_ROLES.has(profile.role) &&
+    menus.length > 0 &&
+    assignsInThisMonth.length === 0
+  ) {
+    const autoRows: { assign_date: string; menu_id: number; note: null }[] = [];
+    let opIdx = 0;
+    for (const week of matrix) {
+      for (const d of week) {
+        if (d.getMonth() + 1 !== month) continue;
+        const iso = toISODate(d);
+        const dow = d.getDay();
+        if (dow === 0 || dow === 6) continue;
+        if (getHoliday(iso)) continue;
+        if (nonOpByDate.has(iso)) continue;
+        autoRows.push({
+          assign_date: iso,
+          menu_id: menus[opIdx % menus.length].id,
+          note: null
+        });
+        opIdx++;
+      }
+    }
+    if (autoRows.length > 0) {
+      const { error: upsertErr } = await supabase
+        .from("menu_assign")
+        .upsert(autoRows as never, { onConflict: "assign_date" });
+      if (!upsertErr) {
+        for (const r of autoRows) {
+          assignByDate.set(r.assign_date, {
+            assign_date: r.assign_date,
+            menu_id: r.menu_id,
+            note: null
+          });
+        }
+        assigns = Array.from(assignByDate.values());
+      }
+    }
+  }
 
   let opDays = 0;
   let nonOpDays = 0;
   let unassigned = 0;
+  let holDays = 0;
   for (const week of matrix) {
     for (const d of week) {
+      if (d.getMonth() + 1 !== month) continue;
       const iso = toISODate(d);
       const isWknd = d.getDay() === 0 || d.getDay() === 6;
+      if (getHoliday(iso)) {
+        holDays++;
+        continue;
+      }
       if (isWknd) continue;
       if (nonOpByDate.has(iso)) {
         nonOpDays++;
@@ -146,6 +248,19 @@ export default async function CalendarPage() {
       }
     }
   }
+
+  const holidaysData = holidaysInRange(start, end);
+
+  const prevYear = month === 1 ? year - 1 : year;
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const prevHref = `/calendar?month=${fmtMonthKey(prevYear, prevMonth)}`;
+  const nextHref = `/calendar?month=${fmtMonthKey(nextYear, nextMonth)}`;
+  const todayHref = `/calendar?month=${currentMonthKey}`;
+
+  const monthLabel = `${MONTH_LONG_ID[month - 1]} ${year}`;
+  const isCurrentMonth = fmtMonthKey(year, month) === currentMonthKey;
 
   return (
     <div>
@@ -161,8 +276,8 @@ export default async function CalendarPage() {
           title="Kalender Menu"
           subtitle={
             <>
-              10 minggu ke depan · {opDays} hari operasional · {nonOpDays}{" "}
-              non-op ·{" "}
+              {monthLabel} · {opDays} hari operasional · {holDays} libur ·{" "}
+              {nonOpDays} non-op ·{" "}
               {unassigned > 0 ? (
                 <span className="font-bold text-red-700">
                   {unassigned} belum di-assign
@@ -181,106 +296,147 @@ export default async function CalendarPage() {
           }
         />
 
+        <Section noPad className="overflow-hidden">
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <LinkButton
+                href={prevHref}
+                variant="secondary"
+                size="sm"
+                aria-label="Bulan sebelumnya"
+              >
+                ◀
+              </LinkButton>
+              <div className="min-w-[160px] px-2 text-center text-base font-black text-ink sm:text-lg">
+                {monthLabel}
+              </div>
+              <LinkButton
+                href={nextHref}
+                variant="secondary"
+                size="sm"
+                aria-label="Bulan berikutnya"
+              >
+                ▶
+              </LinkButton>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <LinkButton
+                href={todayHref}
+                variant={isCurrentMonth ? "ghost" : "primary"}
+                size="sm"
+              >
+                Hari Ini
+              </LinkButton>
+              <span className="text-[11px] font-semibold text-ink2/70">
+                👥 {recipientCount.toLocaleString("id-ID")} penerima/hari
+              </span>
+            </div>
+          </div>
+
+          {/* Day-of-week header */}
+          <div className="grid grid-cols-7 gap-1 border-b border-ink/5 px-4 py-2">
+            {["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"].map((d) => (
+              <div
+                key={d}
+                className="text-center text-[10px] font-black uppercase tracking-wide text-ink2/70"
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Grid */}
+          <div className="px-4 py-3">
+            <CalendarGrid
+              matrix={matrix.map((week) => week.map((d) => toISODate(d)))}
+              monthYear={year}
+              monthMonth={month}
+              todayIso={todayIso}
+              menus={menus}
+              items={items}
+              initialAssigns={assigns}
+              initialNonOps={nonOps}
+              schools={schools}
+              initialAttendance={attendance}
+              recipientCount={recipientCount}
+              canWrite={WRITE_ROLES.has(profile.role)}
+            />
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap items-center gap-4 border-t border-ink/10 bg-paper/40 px-5 py-3 text-[11px] font-semibold text-ink2">
+            <LegendSwatch
+              className="bg-gradient-to-b from-blue-800 to-blue-700"
+              label="Hari Menu"
+            />
+            <LegendSwatch
+              className="bg-rose-100 ring-1 ring-rose-300"
+              label="Libur Nasional"
+            />
+            <LegendSwatch
+              className="bg-amber-50 ring-1 ring-amber-200"
+              label="Weekend"
+            />
+            <LegendSwatch
+              className="bg-orange-100 ring-1 ring-orange-300"
+              label="Tidak Operasional"
+            />
+            <span className="ml-auto text-ink2/60">
+              💡 Klik tanggal untuk assign menu / tandai Tidak Operasional
+            </span>
+          </div>
+        </Section>
+
+        {holidaysData.length > 0 && (
+          <Section
+            title="Libur Nasional Bulan Ini"
+            hint="Dihitung otomatis sebagai non-operasional."
+          >
+            <div className="flex flex-wrap gap-2">
+              {holidaysData.map((h) => (
+                <span
+                  key={`${h.date}-${h.name}`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-900 ring-1 ring-rose-200"
+                >
+                  <span className="font-mono text-[10px] opacity-70">
+                    {h.date}
+                  </span>
+                  <span>{h.name}</span>
+                </span>
+              ))}
+            </div>
+          </Section>
+        )}
+
         <Section
-          title={`Legend · ${menus.length} Menu Siklus`}
-          hint="Klik tanggal pada grid untuk assign/tandai non-op (khusus admin/operator/ahli gizi)."
+          title={`${menus.length} Menu Siklus`}
+          hint="Daftar menu yang siap di-assign ke kalender."
         >
           <div className="flex flex-wrap gap-2">
-            {menus.map((m, i) => (
+            {menus.map((m) => (
               <span
                 key={m.id}
-                className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${MENU_HUE[i % MENU_HUE.length]}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ink ring-1 ring-ink/10"
               >
-                <span className="font-mono opacity-60">H{m.cycle_day}</span>{" "}
+                <span className="rounded bg-gradient-to-b from-blue-800 to-blue-700 px-1.5 py-0.5 font-mono text-[10px] font-black text-white">
+                  M{m.id}
+                </span>
                 {m.name}
               </span>
             ))}
           </div>
         </Section>
-
-        <Section noPad className="overflow-hidden">
-          <div className="p-4">
-            <div className="mb-2 grid grid-cols-7 gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-              {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
-                <div key={d} className="text-center">
-                  {d}
-                </div>
-              ))}
-            </div>
-            <CalendarGrid
-              matrix={matrix.map((week) => week.map((d) => toISODate(d)))}
-              todayIso={todayStr}
-              menus={menus}
-              items={items}
-              initialAssigns={assigns}
-              initialNonOps={nonOps}
-              canWrite={WRITE_ROLES.has(profile.role)}
-            />
-          </div>
-        </Section>
-
-        <Section title="14 Hari Ke Depan · Rencana Menu">
-          <TableWrap>
-            <table className="w-full text-sm">
-              <THead>
-                <th className="py-2 pr-3">Tanggal</th>
-                <th className="py-2 pr-3">Hari</th>
-                <th className="py-2 pr-3">Menu / Status</th>
-                <th className="py-2 pr-3">Catatan</th>
-              </THead>
-              <tbody>
-                {Array.from({ length: 14 }).map((_, i) => {
-                  const d = new Date(today);
-                  d.setDate(today.getDate() + i);
-                  const iso = toISODate(d);
-                  const isWknd = d.getDay() === 0 || d.getDay() === 6;
-                  const assign = assignByDate.get(iso);
-                  const nonOp = nonOpByDate.get(iso);
-                  const menu = assign ? menuById.get(assign.menu_id) : null;
-                  return (
-                    <tr
-                      key={iso}
-                      className="row-hover border-b border-ink/5"
-                    >
-                      <td className="py-2 pr-3 font-mono text-xs">
-                        {d.toLocaleDateString("id-ID", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric"
-                        })}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">
-                        {d.toLocaleDateString("id-ID", { weekday: "long" })}
-                      </td>
-                      <td className="py-2 pr-3">
-                        {isWknd ? (
-                          <Badge tone="muted">Weekend</Badge>
-                        ) : nonOp ? (
-                          <Badge tone="warn">
-                            🚫 Non-Op · {nonOp.reason}
-                          </Badge>
-                        ) : menu ? (
-                          <span className="font-semibold text-ink">
-                            <span className="font-mono text-[11px] text-ink2/70">
-                              H{menu.cycle_day}
-                            </span>{" "}
-                            {menu.name}
-                          </span>
-                        ) : (
-                          <Badge tone="bad">⚠ Belum di-assign</Badge>
-                        )}
-                      </td>
-                      <td className="py-2 pr-3 text-xs text-ink2/70">
-                        {assign?.note || nonOp?.reason || "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </TableWrap>
-        </Section>
       </PageContainer>
     </div>
+  );
+}
+
+function LegendSwatch({ className, label }: { className: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className={`inline-block h-3.5 w-3.5 rounded ${className}`} />
+      <span>{label}</span>
+    </span>
   );
 }

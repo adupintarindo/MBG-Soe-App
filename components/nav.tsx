@@ -21,47 +21,45 @@ interface NavProps {
   menuToday?: MenuToday | null;
 }
 
+type TabGroup = "home" | "plan" | "buy" | "run" | "audit" | "admin";
+
 interface TabCard {
   href: string;
   labelKey: LangKey;
   icon: string;
+  group: TabGroup;
   show: (role: UserRole) => boolean;
 }
 
 const TABS: TabCard[] = [
-  { href: "/dashboard", labelKey: "tabDashboard", icon: "📊", show: () => true },
-  { href: "/schools", labelKey: "tabSchools", icon: "🏫", show: () => true },
-  { href: "/menu", labelKey: "tabMenu", icon: "🍲", show: () => true },
+  { href: "/dashboard", labelKey: "tabDashboard", icon: "📊", group: "home", show: () => true },
+  { href: "/menu", labelKey: "tabMenu", icon: "🍲", group: "plan", show: () => true },
   {
     href: "/calendar",
     labelKey: "tabCalendar",
     icon: "🗓️",
+    group: "plan",
     show: (r) => canWriteMenu(r) || r === "viewer"
   },
-  { href: "/planning", labelKey: "tabPlanning", icon: "📋", show: () => true },
+  { href: "/planning", labelKey: "tabPlanning", icon: "📋", group: "plan", show: () => true },
+  {
+    href: "/procurement",
+    labelKey: "tabProcurement",
+    icon: "🧾",
+    group: "buy",
+    show: () => true
+  },
+  { href: "/suppliers", labelKey: "tabSuppliers", icon: "🤝", group: "buy", show: () => true },
   {
     href: "/stock",
     labelKey: "tabStock",
     icon: "📦",
+    group: "run",
     show: (r) => canWriteStock(r) || r === "viewer" || r === "ahli_gizi"
   },
-  { href: "/procurement#po", labelKey: "tabPO", icon: "📄", show: () => true },
-  { href: "/procurement#grn", labelKey: "tabGRN", icon: "📥", show: () => true },
-  {
-    href: "/procurement#invoice",
-    labelKey: "tabInvoice",
-    icon: "💰",
-    show: () => true
-  },
-  { href: "/suppliers", labelKey: "tabSuppliers", icon: "🤝", show: () => true },
-  {
-    href: "/procurement#quotation",
-    labelKey: "tabQuotation",
-    icon: "📝",
-    show: () => true
-  },
-  { href: "/docgen", labelKey: "tabDocgen", icon: "🖨️", show: () => true },
-  { href: "/sop", labelKey: "tabSOP", icon: "📚", show: () => true }
+  { href: "/schools", labelKey: "tabSchools", icon: "🏫", group: "run", show: () => true },
+  { href: "/docgen", labelKey: "tabDocgen", icon: "🖨️", group: "audit", show: () => true },
+  { href: "/sop", labelKey: "tabSOP", icon: "📚", group: "audit", show: () => true }
 ];
 
 const DAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
@@ -145,17 +143,10 @@ function computeStatus(
 }
 
 function isActive(href: string, current: string): boolean {
-  if (href.includes("#")) {
-    if (current === href) return true;
-    if (
-      href === "/procurement#po" &&
-      (current === "/procurement" || current === "/procurement#")
-    ) {
-      return true;
-    }
-    return false;
-  }
   if (href === "/dashboard") return current === "/dashboard";
+  if (href === "/procurement") {
+    return current === "/procurement" || current.startsWith("/procurement");
+  }
   return current === href || current.startsWith(href + "/");
 }
 
@@ -198,17 +189,48 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
     ? computeStatus(now, menuToday ?? null, lang)
     : { tone: "muted" as StatusTone, text: "—", dot: "bg-slate-400" };
   const visible = TABS.filter((tab) => tab.show(role));
+  const adminTabs: TabCard[] = canInvite(role)
+    ? [
+        {
+          href: "/admin/data",
+          labelKey: "tabData",
+          icon: "🗃️",
+          group: "admin",
+          show: () => true
+        },
+        {
+          href: "/admin/invite",
+          labelKey: "tabAdmin",
+          icon: "🛡️",
+          group: "admin",
+          show: () => true
+        }
+      ]
+    : [];
+  const allTabs = [...visible, ...adminTabs];
   const displayName = fullName || email.split("@")[0];
+
+  const isTabActive = (tab: TabCard) => {
+    if (tab.href === "/admin/data") {
+      return current.startsWith("/admin/data");
+    }
+    if (tab.href === "/admin/invite") {
+      return (
+        current.startsWith("/admin") && !current.startsWith("/admin/data")
+      );
+    }
+    return isActive(tab.href, current);
+  };
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b transition ${
+      className={`border-b transition ${
         scrolled
-          ? "border-primary/10 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:border-gold/15 dark:bg-d-bg/90 dark:supports-[backdrop-filter]:bg-d-bg/75"
-          : "border-transparent bg-paper/0 dark:border-d-border/20 dark:bg-d-bg/60 dark:supports-[backdrop-filter]:bg-d-bg/50 dark:backdrop-blur"
+          ? "border-primary/10 bg-white/85 dark:border-gold/15 dark:bg-d-bg/90"
+          : "border-transparent bg-paper/0 dark:border-d-border/20 dark:bg-d-bg/60"
       }`}
     >
-      <div className="mx-auto max-w-7xl px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-6">
+      <div className="mx-auto max-w-7xl px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-5">
         {/* === Top row: brand + utility chips === */}
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5">
           <div className="flex items-center gap-3">
@@ -322,70 +344,37 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
         <nav
           aria-label="Modul utama"
           ref={tabsRef}
-          className="rounded-3xl bg-white/70 p-2 shadow-cardlg ring-1 ring-primary/5 backdrop-blur dark:bg-d-surface/70 dark:shadow-cardlg-dark dark:ring-d-border/30 sm:p-3"
+          className="rounded-3xl border border-primary/10 bg-white/80 p-2 shadow-card ring-1 ring-primary/5 backdrop-blur dark:border-d-border/40 dark:bg-d-surface/70 dark:shadow-card-dark dark:ring-d-border/30"
         >
-          {/* Mobile horizontal scroller */}
-          <div className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1 sm:hidden">
-            {visible.map((tab) => (
-              <TabPillMobile
+          {/* Mobile: 4-col grid */}
+          <div className="grid grid-cols-4 gap-2 sm:hidden">
+            {allTabs.map((tab) => (
+              <TabTile
                 key={tab.href + tab.labelKey}
                 href={tab.href}
                 label={t(tab.labelKey, lang)}
                 icon={tab.icon}
-                active={isActive(tab.href, current)}
+                active={isTabActive(tab)}
               />
             ))}
-            {canInvite(role) && (
-              <>
-                <TabPillMobile
-                  href="/admin/data"
-                  label={t("tabData", lang)}
-                  icon="🗃️"
-                  active={current.startsWith("/admin/data")}
-                />
-                <TabPillMobile
-                  href="/admin/invite"
-                  label={t("tabAdmin", lang)}
-                  icon="🛡️"
-                  active={
-                    current.startsWith("/admin") &&
-                    !current.startsWith("/admin/data")
-                  }
-                />
-              </>
-            )}
           </div>
 
-          {/* Desktop grid */}
-          <div className="hidden grid-cols-3 gap-2 sm:grid sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 lg:gap-3">
-            {visible.map((tab) => (
-              <TabButton
+          {/* Desktop: dynamic N cols × 2 rows untuk simetri penuh */}
+          <div
+            className="hidden gap-2 sm:grid"
+            style={{
+              gridTemplateColumns: `repeat(${Math.ceil(allTabs.length / 2)}, minmax(0, 1fr))`
+            }}
+          >
+            {allTabs.map((tab) => (
+              <TabTile
                 key={tab.href + tab.labelKey}
                 href={tab.href}
                 label={t(tab.labelKey, lang)}
                 icon={tab.icon}
-                active={isActive(tab.href, current)}
+                active={isTabActive(tab)}
               />
             ))}
-            {canInvite(role) && (
-              <>
-                <TabButton
-                  href="/admin/data"
-                  label={t("tabData", lang)}
-                  icon="🗃️"
-                  active={current.startsWith("/admin/data")}
-                />
-                <TabButton
-                  href="/admin/invite"
-                  label={t("tabAdmin", lang)}
-                  icon="🛡️"
-                  active={
-                    current.startsWith("/admin") &&
-                    !current.startsWith("/admin/data")
-                  }
-                />
-              </>
-            )}
           </div>
         </nav>
       </div>
@@ -416,7 +405,7 @@ function Chip({
   );
 }
 
-function TabButton({
+function TabTile({
   href,
   label,
   icon,
@@ -432,59 +421,32 @@ function TabButton({
       href={href}
       data-active={active}
       aria-current={active ? "page" : undefined}
-      className={`group relative flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3 text-center transition lg:gap-3 lg:py-4 ${
+      title={label}
+      className={`group relative flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-3 text-center transition sm:gap-3 sm:py-4 ${
         active
-          ? "bg-primary-gradient text-white shadow-cardlg dark:bg-primary-gradient-dark dark:shadow-cardlg-dark"
-          : "bg-white text-primary ring-1 ring-primary/5 hover:-translate-y-0.5 hover:shadow-card dark:bg-d-surface-2 dark:text-d-text dark:ring-d-border/30 dark:hover:shadow-card-dark"
+          ? "bg-primary-gradient text-white shadow-cardlg ring-1 ring-gold/40 dark:bg-primary-gradient-dark"
+          : "bg-paper/70 text-primary ring-1 ring-primary/10 hover:-translate-y-0.5 hover:bg-white hover:shadow-card dark:bg-d-surface-2/60 dark:text-d-text dark:ring-d-border/30 dark:hover:bg-d-surface-2"
       }`}
     >
       <span
-        className={`flex h-10 w-10 items-center justify-center rounded-xl text-2xl shadow-card transition lg:h-12 lg:w-12 lg:text-3xl ${
+        className={`flex h-11 w-11 items-center justify-center rounded-2xl text-xl transition sm:h-14 sm:w-14 sm:text-2xl ${
           active
-            ? "bg-white/15 backdrop-blur-sm"
-            : "bg-paper group-hover:bg-white dark:bg-d-bg dark:group-hover:bg-d-surface"
+            ? "bg-white/15 ring-1 ring-white/25"
+            : "bg-white shadow-card ring-1 ring-primary/5 dark:bg-d-surface dark:ring-d-border/40 dark:shadow-card-dark"
         }`}
+        aria-hidden
       >
         {icon}
       </span>
-      <span
-        className={`text-[12px] font-black leading-tight lg:text-[13px] ${
-          active ? "text-white" : "text-primary dark:text-d-text"
-        }`}
-      >
+      <span className="text-[11px] font-bold leading-tight sm:text-[12.5px]">
         {label}
       </span>
       {active && (
-        <span className="absolute bottom-1.5 h-1 w-10 rounded-full bg-gold" />
+        <span
+          aria-hidden
+          className="absolute inset-x-5 bottom-2 h-0.5 rounded-full bg-gold"
+        />
       )}
-    </Link>
-  );
-}
-
-function TabPillMobile({
-  href,
-  label,
-  icon,
-  active
-}: {
-  href: string;
-  label: string;
-  icon: string;
-  active: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      data-active={active}
-      aria-current={active ? "page" : undefined}
-      className={`flex min-w-[88px] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-2xl px-3 py-2.5 text-center transition ${
-        active
-          ? "bg-primary-gradient text-white shadow-card dark:bg-primary-gradient-dark"
-          : "bg-white text-primary ring-1 ring-primary/5 dark:bg-d-surface-2 dark:text-d-text dark:ring-d-border/30"
-      }`}
-    >
-      <span className="text-xl leading-none">{icon}</span>
-      <span className="text-[11px] font-black leading-tight">{label}</span>
     </Link>
   );
 }
