@@ -216,12 +216,11 @@ export default async function ProcurementPage() {
   const canWrite =
     profile.role === "admin" || profile.role === "operator";
 
-  const supMap = new Map(suppliers.map((s) => [s.id, s.name]));
-  const rowCountByPO = new Map<string, number>();
-  const qtyByPO = new Map<string, number>();
+  const rowCountByPORecord: Record<string, number> = {};
+  const qtyByPORecord: Record<string, number> = {};
   for (const r of poRows) {
-    rowCountByPO.set(r.po_no, (rowCountByPO.get(r.po_no) ?? 0) + 1);
-    qtyByPO.set(r.po_no, (qtyByPO.get(r.po_no) ?? 0) + Number(r.qty));
+    rowCountByPORecord[r.po_no] = (rowCountByPORecord[r.po_no] ?? 0) + 1;
+    qtyByPORecord[r.po_no] = (qtyByPORecord[r.po_no] ?? 0) + Number(r.qty);
   }
 
   const poCount = pos.length;
@@ -407,48 +406,7 @@ export default async function ProcurementPage() {
           {invoices.length === 0 ? (
             <EmptyState message={t("procurement.invEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">{t("procurement.colInvoiceNo", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.date", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
-                  <th className="py-2 pr-3">{t("procurement.colPO", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.total", lang)}</th>
-                  <th className="py-2 pr-3">{t("procurement.colDueDate", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.status", lang)}</th>
-                </THead>
-                <tbody>
-                  {invoices.map((i) => (
-                    <tr key={i.no} className="row-hover border-b border-ink/5">
-                      <td className="py-2 pr-3 font-mono text-xs font-black">
-                        {i.no}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">{i.inv_date}</td>
-                      <td className="py-2 pr-3 text-xs">
-                        {supMap.get(i.supplier_id) ?? i.supplier_id}
-                      </td>
-                      <td className="py-2 pr-3 font-mono text-xs">
-                        {i.po_no ?? "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-left font-mono text-xs font-black">
-                        {formatIDR(Number(i.total))}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">
-                        {i.due_date ?? "—"}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${INV_STATUS_COLOR[i.status] ?? INV_STATUS_COLOR.issued}`}
-                        >
-                          {i.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <InvoiceTable rows={invoices} supplierNames={supplierNameMap} />
           )}
         </Section>
 

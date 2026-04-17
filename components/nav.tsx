@@ -166,9 +166,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
   }, [pathname, hash]);
 
   const current = pathname + hash;
-  const status = now
-    ? computeStatus(now, menuToday ?? null, lang)
-    : { tone: "muted" as StatusTone, text: "—", dot: "bg-slate-400" };
+  const status = computeStatus(now, menuToday ?? null, lang);
   const visible = TABS.filter((tab) => tab.show(role));
   const adminTabs: TabCard[] = canInvite(role)
     ? [
@@ -232,15 +230,22 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Chip icon="📆" text={now ? formatDate(now, lang) : "—"} hideOnMobile />
-            <Chip icon="🕐" text={now ? formatTimeWITA(now) : "—"} mono />
+            <Chip icon="📆" text={formatDate(now, lang)} hideOnMobile suppressHydrationWarning />
+            <Chip icon="🕐" text={formatTimeWITA(now)} mono suppressHydrationWarning />
 
             <div
               className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold shadow-card dark:bg-d-surface-2 dark:shadow-card-dark"
               title={status.text}
+              suppressHydrationWarning
             >
-              <span className={`inline-block h-2 w-2 rounded-full ${status.dot}`} />
-              <span className="hidden text-primary dark:text-d-text sm:inline">
+              <span
+                className={`inline-block h-2 w-2 rounded-full ${status.dot}`}
+                suppressHydrationWarning
+              />
+              <span
+                className="hidden text-primary dark:text-d-text sm:inline"
+                suppressHydrationWarning
+              >
                 {status.text}
               </span>
             </div>
@@ -367,12 +372,14 @@ function Chip({
   icon,
   text,
   mono = false,
-  hideOnMobile = false
+  hideOnMobile = false,
+  suppressHydrationWarning = false
 }: {
   icon: string;
   text: string;
   mono?: boolean;
   hideOnMobile?: boolean;
+  suppressHydrationWarning?: boolean;
 }) {
   return (
     <div
@@ -381,7 +388,12 @@ function Chip({
       }`}
     >
       <span aria-hidden>{icon}</span>
-      <span className={mono ? "font-mono" : ""}>{text}</span>
+      <span
+        className={mono ? "font-mono" : ""}
+        suppressHydrationWarning={suppressHydrationWarning}
+      >
+        {text}
+      </span>
     </div>
   );
 }
