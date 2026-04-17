@@ -12,6 +12,9 @@ import {
   PageHeader,
   Section
 } from "@/components/ui";
+import { t } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +46,7 @@ interface SupplierLite {
 
 export default async function DocGenPage() {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -84,40 +88,41 @@ export default async function DocGenPage() {
       <PageContainer>
         <PageHeader
           icon="📄"
-          title="Document Generator"
-          subtitle="Preview & print dokumen resmi SPPG · PO · GRN · Invoice · Berita Acara"
+          title={t("docgen.title", lang)}
+          subtitle={t("docgen.subtitle", lang)}
         />
 
         <KpiGrid>
           <KpiTile
             icon="📝"
-            label="Purchase Order"
+            label={t("docgen.kpiPO", lang)}
             value={pos.length.toString()}
-            sub="Order ke supplier"
+            sub={t("docgen.kpiPOSub", lang)}
           />
           <KpiTile
             icon="📦"
-            label="GRN"
+            label={t("docgen.kpiGRN", lang)}
             value={grns.length.toString()}
-            sub="Berita Acara Terima"
+            sub={t("docgen.kpiGRNSub", lang)}
           />
           <KpiTile
             icon="💰"
-            label="Invoice"
+            label={t("docgen.kpiInvoice", lang)}
             value={invoices.length.toString()}
-            sub="Tagihan supplier"
+            sub={t("docgen.kpiInvoiceSub", lang)}
           />
           <KpiTile
             icon="🧾"
-            label="Kontrak LTA"
+            label={t("docgen.kpiLTA", lang)}
             value={suppliers.length.toString()}
-            sub="Long-Term Agreement"
+            sub={t("docgen.kpiLTASub", lang)}
           />
         </KpiGrid>
 
         <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <DocList
-            title="Purchase Orders"
+            lang={lang}
+            title={t("docgen.listPO", lang)}
             icon="📝"
             docs={pos.map((p) => ({
               no: p.no,
@@ -129,7 +134,8 @@ export default async function DocGenPage() {
             }))}
           />
           <DocList
-            title="Goods Receipt Notes"
+            lang={lang}
+            title={t("docgen.listGRN", lang)}
             icon="📦"
             docs={grns.map((g) => ({
               no: g.no,
@@ -141,7 +147,8 @@ export default async function DocGenPage() {
             }))}
           />
           <DocList
-            title="Invoice"
+            lang={lang}
+            title={t("docgen.listInvoice", lang)}
             icon="💰"
             docs={invoices.map((i) => ({
               no: i.no,
@@ -161,10 +168,12 @@ export default async function DocGenPage() {
 function DocList({
   title,
   icon,
-  docs
+  docs,
+  lang
 }: {
   title: string;
   icon: string;
+  lang: Lang;
   docs: {
     no: string;
     date: string;
@@ -177,7 +186,7 @@ function DocList({
   return (
     <Section title={`${icon} ${title}`} className="mb-0">
       {docs.length === 0 ? (
-        <EmptyState message="Belum ada dokumen." />
+        <EmptyState message={t("docgen.empty", lang)} />
       ) : (
         <ul className="space-y-2 text-sm">
           {docs.map((d) => (
@@ -204,7 +213,7 @@ function DocList({
                     </div>
                   )}
                   <div className="text-[11px] font-bold text-accent-strong">
-                    Print →
+                    {t("docgen.print", lang)}
                   </div>
                 </div>
               </a>

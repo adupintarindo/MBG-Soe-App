@@ -1061,6 +1061,28 @@ export const LANG_KEYS = {
     EN: "Read-only — your role does not have edit access."
   },
 
+  // ---------------- DocGen (/docgen) ----------------
+  "docgen.title": { ID: "Document Generator", EN: "Document Generator" },
+  "docgen.subtitle": {
+    ID: "Preview & print dokumen resmi SPPG · PO · GRN · Invoice · Berita Acara",
+    EN: "Preview & print official SPPG documents · PO · GRN · Invoice · Receipt Notes"
+  },
+  "docgen.kpiPO": { ID: "Purchase Order", EN: "Purchase Order" },
+  "docgen.kpiPOSub": { ID: "Order ke supplier", EN: "Orders to suppliers" },
+  "docgen.kpiGRN": { ID: "GRN", EN: "GRN" },
+  "docgen.kpiGRNSub": { ID: "Berita Acara Terima", EN: "Goods Receipt Notes" },
+  "docgen.kpiInvoice": { ID: "Invoice", EN: "Invoice" },
+  "docgen.kpiInvoiceSub": { ID: "Tagihan supplier", EN: "Supplier invoices" },
+  "docgen.kpiLTA": { ID: "Kontrak LTA", EN: "LTA Contract" },
+  "docgen.kpiLTASub": { ID: "Long-Term Agreement", EN: "Long-Term Agreement" },
+  "docgen.listPO": { ID: "Purchase Orders", EN: "Purchase Orders" },
+  "docgen.listGRN": { ID: "Goods Receipt Notes", EN: "Goods Receipt Notes" },
+  "docgen.listInvoice": { ID: "Invoice", EN: "Invoice" },
+  "docgen.empty": { ID: "Belum ada dokumen.", EN: "No documents yet." },
+  "docgen.print": { ID: "Print →", EN: "Print →" },
+  "docgen.printBtn": { ID: "🖨️ Print / Save PDF", EN: "🖨️ Print / Save PDF" },
+  "docgen.back": { ID: "← Kembali", EN: "← Back" },
+
   // ---------------- BOM Variance (/menu/variance) ----------------
   "variance.title": { ID: "BOM Variance · Plan vs Actual", EN: "BOM Variance · Plan vs Actual" },
   "variance.subtitle": {
