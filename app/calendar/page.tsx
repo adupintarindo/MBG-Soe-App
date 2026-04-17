@@ -2,10 +2,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/nav";
 import { toISODate } from "@/lib/engine";
+import { CalendarGrid } from "./calendar-grid";
 
 export const dynamic = "force-dynamic";
 
-// Build 8-week matrix starting from current ISO week Monday
+// Build 10-week matrix starting from current ISO week Monday
 function buildMatrix(anchor: Date, weeks = 10): Date[][] {
   const monday = new Date(anchor);
   const dow = monday.getDay(); // 0 Sun .. 6 Sat
@@ -25,6 +26,8 @@ function buildMatrix(anchor: Date, weeks = 10): Date[][] {
   }
   return rows;
 }
+
+const WRITE_ROLES = new Set(["admin", "operator", "ahli_gizi"]);
 
 const MENU_HUE = [
   "bg-sky-100 text-sky-900",
@@ -63,7 +66,7 @@ export default async function CalendarPage() {
   const start = toISODate(matrix[0][0]);
   const end = toISODate(matrix[matrix.length - 1][6]);
 
-  const [menusRes, assignRes, nonOpRes] = await Promise.all([
+  const [menusRes, assignRes, nonOpRes, itemsRes] = await Promise.all([
     supabase
       .from("menus")
       .select("id, name, name_en, cycle_day")
@@ -77,12 +80,18 @@ export default async function CalendarPage() {
       .from("non_op_days")
       .select("op_date, reason")
       .gte("op_date", start)
-      .lte("op_date", end)
+      .lte("op_date", end),
+    supabase
+      .from("items")
+      .select("code, name_en, category, active")
+      .eq("active", true)
+      .order("code")
   ]);
 
   const menus = menusRes.data ?? [];
   const assigns = assignRes.data ?? [];
   const nonOps = nonOpRes.data ?? [];
+  const items = itemsRes.data ?? [];
 
   const menuById = new Map(menus.map((m) => [m.id, m]));
   const assignByDate = new Map(assigns.map((a) => [a.assign_date, a]));
@@ -160,63 +169,15 @@ export default async function CalendarPage() {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-1">
-            {matrix.flat().map((d) => {
-              const iso = toISODate(d);
-              const isWknd = d.getDay() === 0 || d.getDay() === 6;
-              const isToday = iso === todayStr;
-              const assign = assignByDate.get(iso);
-              const nonOp = nonOpByDate.get(iso);
-              const menu = assign ? menuById.get(assign.menu_id) : null;
-              const menuIndex = menu ? menus.findIndex((m) => m.id === menu.id) : -1;
-              const day = d.getDate();
-              const month = d.toLocaleDateString("id-ID", { month: "short" });
-
-              return (
-                <div
-                  key={iso}
-                  className={`min-h-[74px] rounded-lg border p-1.5 text-[10px] ${
-                    isWknd
-                      ? "border-ink/5 bg-paper/60 opacity-60"
-                      : nonOp
-                        ? "border-amber-300 bg-amber-50"
-                        : menu
-                          ? `border-transparent ${MENU_HUE[menuIndex % MENU_HUE.length]}`
-                          : "border-ink/10 bg-white"
-                  } ${isToday ? "ring-2 ring-accent" : ""}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`font-black ${isToday ? "text-accent" : ""}`}
-                    >
-                      {day}
-                    </span>
-                    {d.getDate() === 1 && (
-                      <span className="text-[9px] font-bold uppercase opacity-70">
-                        {month}
-                      </span>
-                    )}
-                  </div>
-                  {nonOp ? (
-                    <div className="mt-1 line-clamp-2 font-semibold text-amber-800">
-                      🚫 {nonOp.reason}
-                    </div>
-                  ) : menu ? (
-                    <div className="mt-1">
-                      <div className="font-mono text-[9px] opacity-70">
-                        H{menu.cycle_day}
-                      </div>
-                      <div className="line-clamp-2 font-semibold">
-                        {menu.name}
-                      </div>
-                    </div>
-                  ) : !isWknd ? (
-                    <div className="mt-1 text-ink2/40">—</div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
+          <CalendarGrid
+            matrix={matrix.map((week) => week.map((d) => toISODate(d)))}
+            todayIso={todayStr}
+            menus={menus}
+            items={items}
+            initialAssigns={assigns}
+            initialNonOps={nonOps}
+            canWrite={WRITE_ROLES.has(profile.role)}
+          />
         </section>
 
         {/* Upcoming list */}

@@ -1,6 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { PrefsProvider } from "@/lib/prefs-context";
+
+const PREFS_INIT_SCRIPT = `(() => {
+  try {
+    var t = localStorage.getItem('mbg-theme');
+    var l = localStorage.getItem('mbg-lang');
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    var r = document.documentElement;
+    if (t === 'dark') r.classList.add('dark'); else r.classList.remove('dark');
+    r.style.colorScheme = t;
+    r.setAttribute('lang', l === 'EN' ? 'en' : 'id');
+  } catch (e) {}
+})();`;
 
 const inter = Inter({
   subsets: ["latin"],
@@ -41,9 +56,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={inter.variable}>
-      <body className="min-h-screen bg-paper text-ink antialiased">
-        {children}
+    <html lang="id" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: PREFS_INIT_SCRIPT }}
+        />
+      </head>
+      <body className="min-h-screen bg-paper text-ink antialiased dark:bg-d-bg dark:text-d-text">
+        <PrefsProvider>{children}</PrefsProvider>
       </body>
     </html>
   );

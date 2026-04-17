@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { UserRole } from "@/lib/roles";
 import { canInvite, canWriteMenu, canWriteStock } from "@/lib/roles";
 import { type Lang, type LangKey, t } from "@/lib/i18n";
+import { usePrefs } from "@/lib/prefs-context";
 
 interface MenuToday {
   id: number | null;
@@ -129,19 +130,15 @@ function computeStatus(
   const day = w.getDay();
   const hour = w.getHours();
 
-  // Weekend → muted
   if (day === 0 || day === 6) {
     return { tone: "muted", text: t("statusWeekend", lang), dot: "bg-slate-400" };
   }
-  // Outside operational window → amber
   if (hour < 4 || hour >= 14) {
     return { tone: "warn", text: t("statusOutOfHours", lang), dot: "bg-warn" };
   }
-  // No menu assigned → libur
   if (!menu || (menu.id == null && !menu.name)) {
     return { tone: "muted", text: t("statusHoliday", lang), dot: "bg-slate-400" };
   }
-  // Operasional + menu cycle visible
   const label = menu.id != null ? `M${menu.id}` : menu.name ?? "";
   const text = `${t("statusOperasional", lang)} · ${t("statusMenuPrefix", lang)} ${label}`;
   return { tone: "ok", text, dot: "bg-ok" };
@@ -162,90 +159,87 @@ function isActive(href: string, current: string): boolean {
   return current === href || current.startsWith(href + "/");
 }
 
-const THEME_KEY = "mbg-theme";
-const LANG_KEY = "mbg-lang";
-
-function applyTheme(theme: "light" | "dark") {
-  if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  root.classList.toggle("dark", theme === "dark");
-}
-
 export function Nav({ email, role, fullName, menuToday }: NavProps) {
   const pathname = usePathname() ?? "";
+  const { theme, setTheme, lang, setLang } = usePrefs();
   const [hash, setHash] = useState("");
   const [now, setNow] = useState<Date | null>(null);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [lang, setLang] = useState<Lang>("ID");
+  const [scrolled, setScrolled] = useState(false);
+  const tabsRef = useRef<HTMLDivElement | null>(null);
 
-  // Initial mount: load persisted prefs + start clock + hash listener
   useEffect(() => {
     setNow(new Date());
     setHash(window.location.hash);
 
-    const storedTheme =
-      (window.localStorage.getItem(THEME_KEY) as "light" | "dark" | null) ?? null;
-    const storedLang = (window.localStorage.getItem(LANG_KEY) as Lang | null) ?? null;
-    if (storedTheme === "dark" || storedTheme === "light") {
-      setTheme(storedTheme);
-      applyTheme(storedTheme);
-    }
-    if (storedLang === "ID" || storedLang === "EN") setLang(storedLang);
-
     const tick = setInterval(() => setNow(new Date()), 1000);
     const onHash = () => setHash(window.location.hash);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener("hashchange", onHash);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     return () => {
       clearInterval(tick);
       window.removeEventListener("hashchange", onHash);
+      window.removeEventListener("scroll", onScroll);
     };
   }, []);
 
-  // Persist on change
+  // Auto-scroll active mobile pill into view
   useEffect(() => {
-    applyTheme(theme);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(THEME_KEY, theme);
+    if (!tabsRef.current) return;
+    const active = tabsRef.current.querySelector<HTMLElement>("[data-active='true']");
+    if (active && "scrollIntoView" in active) {
+      active.scrollIntoView({ block: "nearest", inline: "center" });
     }
-  }, [theme]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(LANG_KEY, lang);
-    }
-  }, [lang]);
+  }, [pathname, hash]);
 
   const current = pathname + hash;
   const status = now
     ? computeStatus(now, menuToday ?? null, lang)
     : { tone: "muted" as StatusTone, text: "—", dot: "bg-slate-400" };
-  const visible = TABS.filter((t) => t.show(role));
+  const visible = TABS.filter((tab) => tab.show(role));
+  const displayName = fullName || email.split("@")[0];
 
   return (
-    <header className="border-b border-primary/10 bg-gradient-to-b from-paper to-white dark:border-d-border/30 dark:from-d-bg dark:to-d-surface">
-      <div className="mx-auto max-w-7xl px-6 pb-3 pt-6">
+    <header
+      className={`sticky top-0 z-40 border-b transition ${
+        scrolled
+          ? "border-primary/10 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:border-gold/15 dark:bg-d-bg/90 dark:supports-[backdrop-filter]:bg-d-bg/75"
+          : "border-transparent bg-paper/0 dark:border-d-border/20 dark:bg-d-bg/60 dark:supports-[backdrop-filter]:bg-d-bg/50 dark:backdrop-blur"
+      }`}
+    >
+      <div className="mx-auto max-w-7xl px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-6">
         {/* === Top row: brand + utility chips === */}
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-primary dark:text-d-text">
-              {t("appTitle", lang)}
-            </h1>
-            <p className="mt-1 text-sm font-semibold text-primary-2 dark:text-d-text-2">
-              {t("brandSub", lang)}
-            </p>
-            <p className="text-xs font-medium text-primary-2/70 dark:text-d-text-2/70">
-              {t("brandRegion", lang)}
-            </p>
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-gradient text-white shadow-cardlg ring-1 ring-white/10 dark:bg-primary-gradient-dark dark:shadow-cardlg-dark dark:ring-gold/30">
+              <span className="text-lg" aria-hidden>🍱</span>
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-black tracking-tight text-primary dark:text-white sm:text-2xl">
+                {t("appTitle", lang)}
+              </h1>
+              <p className="truncate text-[12px] font-semibold text-primary-2 dark:text-d-text">
+                {t("brandSub", lang)}
+              </p>
+              <p className="hidden truncate text-[11px] font-medium text-primary-2/70 dark:text-d-text-2 sm:block">
+                {t("brandRegion", lang)}
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Chip icon="📆" text={now ? formatDate(now, lang) : "—"} />
+            <Chip icon="📆" text={now ? formatDate(now, lang) : "—"} hideOnMobile />
             <Chip icon="🕐" text={now ? formatTimeWITA(now) : "—"} mono />
 
-            {/* Status chip — per-date semantics */}
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold shadow-card dark:bg-d-surface-2 dark:shadow-card-dark">
+            <div
+              className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold shadow-card dark:bg-d-surface-2 dark:shadow-card-dark"
+              title={status.text}
+            >
               <span className={`inline-block h-2 w-2 rounded-full ${status.dot}`} />
-              <span className="text-primary dark:text-d-text">{status.text}</span>
+              <span className="hidden text-primary dark:text-d-text sm:inline">
+                {status.text}
+              </span>
             </div>
 
             {/* Theme toggle */}
@@ -254,6 +248,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
                 type="button"
                 onClick={() => setTheme("light")}
                 aria-label={t("themeLight", lang)}
+                aria-pressed={theme === "light"}
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-sm transition ${
                   theme === "light"
                     ? "bg-amber-50 text-amber-500"
@@ -266,6 +261,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
                 type="button"
                 onClick={() => setTheme("dark")}
                 aria-label={t("themeDark", lang)}
+                aria-pressed={theme === "dark"}
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-sm transition ${
                   theme === "dark"
                     ? "bg-primary text-white dark:bg-accent-strong"
@@ -281,6 +277,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
               <button
                 type="button"
                 onClick={() => setLang("ID")}
+                aria-pressed={lang === "ID"}
                 className={`rounded-full px-3 py-1 transition ${
                   lang === "ID"
                     ? "bg-primary text-white dark:bg-accent-strong"
@@ -292,6 +289,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
               <button
                 type="button"
                 onClick={() => setLang("EN")}
+                aria-pressed={lang === "EN"}
                 className={`rounded-full px-3 py-1 transition ${
                   lang === "EN"
                     ? "bg-primary text-white dark:bg-accent-strong"
@@ -302,21 +300,53 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
               </button>
             </div>
 
-            <form action="/auth/signout" method="post">
+            <form action="/auth/signout" method="post" className="inline-flex">
               <button
                 type="submit"
-                title={fullName || email}
-                className="rounded-full bg-white px-3 py-2 text-xs font-bold text-primary-2 shadow-card transition hover:bg-primary hover:text-white dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark dark:hover:bg-accent-strong"
+                title={`${displayName} · ${email} — Keluar`}
+                className="group inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-primary-2 shadow-card transition hover:bg-primary hover:text-white dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark dark:hover:bg-accent-strong"
               >
-                ⎋ {t("signOut", lang)}
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black text-white group-hover:bg-white group-hover:text-primary dark:bg-accent-strong dark:group-hover:bg-white dark:group-hover:text-primary">
+                  {displayName.charAt(0).toUpperCase()}
+                </span>
+                <span className="hidden max-w-[120px] truncate sm:inline">
+                  {displayName}
+                </span>
+                <span aria-hidden>⎋</span>
               </button>
             </form>
           </div>
         </div>
 
-        {/* === Tab grid === */}
-        <div className="rounded-3xl bg-white/70 p-3 shadow-cardlg ring-1 ring-primary/5 backdrop-blur dark:bg-d-surface/70 dark:shadow-cardlg-dark dark:ring-d-border/30">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        {/* === Tabs === */}
+        <nav
+          aria-label="Modul utama"
+          ref={tabsRef}
+          className="rounded-3xl bg-white/70 p-2 shadow-cardlg ring-1 ring-primary/5 backdrop-blur dark:bg-d-surface/70 dark:shadow-cardlg-dark dark:ring-d-border/30 sm:p-3"
+        >
+          {/* Mobile horizontal scroller */}
+          <div className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1 sm:hidden">
+            {visible.map((tab) => (
+              <TabPillMobile
+                key={tab.href + tab.labelKey}
+                href={tab.href}
+                label={t(tab.labelKey, lang)}
+                icon={tab.icon}
+                active={isActive(tab.href, current)}
+              />
+            ))}
+            {canInvite(role) && (
+              <TabPillMobile
+                href="/admin/invite"
+                label={t("tabAdmin", lang)}
+                icon="🛡️"
+                active={current.startsWith("/admin")}
+              />
+            )}
+          </div>
+
+          {/* Desktop grid */}
+          <div className="hidden grid-cols-3 gap-2 sm:grid sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 lg:gap-3">
             {visible.map((tab) => (
               <TabButton
                 key={tab.href + tab.labelKey}
@@ -335,7 +365,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
               />
             )}
           </div>
-        </div>
+        </nav>
       </div>
     </header>
   );
@@ -344,15 +374,21 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
 function Chip({
   icon,
   text,
-  mono = false
+  mono = false,
+  hideOnMobile = false
 }: {
   icon: string;
   text: string;
   mono?: boolean;
+  hideOnMobile?: boolean;
 }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-primary shadow-card dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark">
-      <span>{icon}</span>
+    <div
+      className={`inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-primary shadow-card dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark ${
+        hideOnMobile ? "hidden md:inline-flex" : ""
+      }`}
+    >
+      <span aria-hidden>{icon}</span>
       <span className={mono ? "font-mono" : ""}>{text}</span>
     </div>
   );
@@ -372,14 +408,16 @@ function TabButton({
   return (
     <Link
       href={href}
-      className={`group relative flex flex-col items-center justify-center gap-3 rounded-2xl px-3 py-5 text-center transition ${
+      data-active={active}
+      aria-current={active ? "page" : undefined}
+      className={`group relative flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3 text-center transition lg:gap-3 lg:py-4 ${
         active
           ? "bg-primary-gradient text-white shadow-cardlg dark:bg-primary-gradient-dark dark:shadow-cardlg-dark"
           : "bg-white text-primary ring-1 ring-primary/5 hover:-translate-y-0.5 hover:shadow-card dark:bg-d-surface-2 dark:text-d-text dark:ring-d-border/30 dark:hover:shadow-card-dark"
       }`}
     >
       <span
-        className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl shadow-card transition ${
+        className={`flex h-10 w-10 items-center justify-center rounded-xl text-2xl shadow-card transition lg:h-12 lg:w-12 lg:text-3xl ${
           active
             ? "bg-white/15 backdrop-blur-sm"
             : "bg-paper group-hover:bg-white dark:bg-d-bg dark:group-hover:bg-d-surface"
@@ -388,15 +426,43 @@ function TabButton({
         {icon}
       </span>
       <span
-        className={`text-sm font-black leading-tight ${
+        className={`text-[12px] font-black leading-tight lg:text-[13px] ${
           active ? "text-white" : "text-primary dark:text-d-text"
         }`}
       >
         {label}
       </span>
       {active && (
-        <span className="absolute bottom-2 h-1 w-12 rounded-full bg-gold" />
+        <span className="absolute bottom-1.5 h-1 w-10 rounded-full bg-gold" />
       )}
+    </Link>
+  );
+}
+
+function TabPillMobile({
+  href,
+  label,
+  icon,
+  active
+}: {
+  href: string;
+  label: string;
+  icon: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      data-active={active}
+      aria-current={active ? "page" : undefined}
+      className={`flex min-w-[88px] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-2xl px-3 py-2.5 text-center transition ${
+        active
+          ? "bg-primary-gradient text-white shadow-card dark:bg-primary-gradient-dark"
+          : "bg-white text-primary ring-1 ring-primary/5 dark:bg-d-surface-2 dark:text-d-text dark:ring-d-border/30"
+      }`}
+    >
+      <span className="text-xl leading-none">{icon}</span>
+      <span className="text-[11px] font-black leading-tight">{label}</span>
     </Link>
   );
 }

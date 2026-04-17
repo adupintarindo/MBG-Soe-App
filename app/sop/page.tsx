@@ -82,75 +82,87 @@ export default async function SopPage() {
           </div>
         </section>
 
-        {/* SOP cards */}
-        <section className="space-y-4">
+        {/* SOP cards — collapsed by default, click to expand */}
+        <section className="space-y-3">
           {SOPS.map((s) => (
-            <article
+            <details
               key={s.id}
               id={s.id}
-              className="scroll-mt-20 rounded-2xl bg-white p-6 shadow-card"
+              className="group scroll-mt-20 rounded-2xl bg-white shadow-card open:shadow-cardlg"
             >
-              <header className="mb-3 flex flex-wrap items-start justify-between gap-3 border-b border-ink/5 pb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] font-bold text-ink2/60">
-                      {s.id}
-                    </span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_COLOR[s.category]}`}
-                    >
-                      {s.category}
-                    </span>
-                  </div>
-                  <h3 className="mt-1 text-base font-black text-ink">
+              <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 rounded-2xl px-6 py-4 hover:bg-paper/60">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink/5 text-xs font-black text-ink2 transition group-open:rotate-90">
+                    ›
+                  </span>
+                  <span className="font-mono text-[11px] font-bold text-ink2/60">
+                    {s.id}
+                  </span>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_COLOR[s.category]}`}
+                  >
+                    {s.category}
+                  </span>
+                  <h3 className="truncate text-base font-black text-ink">
                     {s.title}
                   </h3>
                 </div>
-                <div className="text-right text-[10px] font-semibold text-ink2/70">
-                  Ref: {s.ref}
+                <div className="flex shrink-0 items-center gap-3 text-[10px] font-semibold text-ink2/70">
+                  <span className="rounded-full bg-ink/5 px-2 py-0.5">
+                    {s.steps.length} langkah
+                  </span>
+                  <span className="hidden md:inline">Ref: {s.ref}</span>
                 </div>
-              </header>
+              </summary>
 
-              <div className="mb-3">
-                <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-                  Scope
+              <div className="border-t border-ink/5 px-6 py-5">
+                <div className="mb-3 md:hidden">
+                  <div className="text-[10px] font-semibold text-ink2/70">
+                    Ref: {s.ref}
+                  </div>
                 </div>
-                <p className="mt-1 text-sm text-ink2">{s.scope}</p>
-              </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-[2fr_1fr]">
-                <div>
+                <div className="mb-4">
                   <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-                    Langkah ({s.steps.length})
+                    Scope
                   </div>
-                  <ol className="mt-2 space-y-1.5 text-sm">
-                    {s.steps.map((step, i) => (
-                      <li key={i} className="flex gap-2">
-                        <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[10px] font-black text-white">
-                          {i + 1}
-                        </span>
-                        <span>{step}</span>
-                      </li>
-                    ))}
-                  </ol>
+                  <p className="mt-1 text-sm text-ink2">{s.scope}</p>
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-                    Risiko Utama
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-[2fr_1fr]">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
+                      Langkah ({s.steps.length})
+                    </div>
+                    <ol className="mt-2 space-y-1.5 text-sm">
+                      {s.steps.map((step, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[10px] font-black text-white">
+                            {i + 1}
+                          </span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ol>
                   </div>
-                  <ul className="mt-2 space-y-1 text-xs">
-                    {s.risks.map((r, i) => (
-                      <li
-                        key={i}
-                        className="rounded-lg bg-red-50 px-3 py-1.5 text-red-900 ring-1 ring-red-200"
-                      >
-                        ⚠ {r}
-                      </li>
-                    ))}
-                  </ul>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
+                      Risiko Utama
+                    </div>
+                    <ul className="mt-2 space-y-1 text-xs">
+                      {s.risks.map((r, i) => (
+                        <li
+                          key={i}
+                          className="rounded-lg bg-red-50 px-3 py-1.5 text-red-900 ring-1 ring-red-200"
+                        >
+                          ⚠ {r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </article>
+            </details>
           ))}
         </section>
 

@@ -2,6 +2,17 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/nav";
 import { formatIDR } from "@/lib/engine";
+import {
+  EmptyState,
+  KpiGrid,
+  KpiTile,
+  LinkButton,
+  PageContainer,
+  PageHeader,
+  Section,
+  TableWrap,
+  THead
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -86,14 +97,19 @@ export default async function MenuMasterPage() {
     return { menu: m, rows: list, totalGrams, costPerPorsi };
   });
 
-  // Items grouped by category for matrix
   const categories = Array.from(new Set(items.map((i) => i.category))).sort();
-  const itemsByCat = new Map<string, typeof items>();
-  for (const c of categories) itemsByCat.set(c, []);
-  for (const it of items) itemsByCat.get(it.category)?.push(it);
-
   const totalItems = items.length;
   const totalBOM = bom.length;
+  const avgGrams =
+    menuStats.length > 0
+      ? Math.round(
+          menuStats.reduce((s, x) => s + x.totalGrams, 0) / menuStats.length
+        )
+      : 0;
+  const avgCost =
+    menuStats.length > 0
+      ? menuStats.reduce((s, x) => s + x.costPerPorsi, 0) / menuStats.length
+      : 0;
 
   return (
     <div>
@@ -103,83 +119,68 @@ export default async function MenuMasterPage() {
         fullName={profile.full_name}
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        {/* Header */}
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-black text-ink">🍽️ Master Menu · BOM</h1>
-            <p className="text-sm text-ink2/80">
+      <PageContainer>
+        <PageHeader
+          icon="🍽️"
+          title="Master Menu · BOM"
+          subtitle={
+            <>
               Siklus {menus.length} hari · {totalItems} komoditas · {totalBOM}{" "}
               entri BOM · porsi weight kecil 0.7 · besar 1.0
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <a
-              href="/calendar"
-              className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-ink shadow-card hover:bg-paper"
-            >
-              📅 Kalender Menu →
-            </a>
-            <a
-              href="/planning"
-              className="rounded-xl bg-ink px-4 py-2 text-xs font-bold text-white shadow-card hover:bg-ink2"
-            >
-              📊 Rencana Kebutuhan →
-            </a>
-          </div>
-        </div>
+            </>
+          }
+          actions={
+            <>
+              <LinkButton href="/calendar" variant="secondary" size="sm">
+                📅 Kalender Menu
+              </LinkButton>
+              <LinkButton href="/planning" variant="primary" size="sm">
+                📊 Rencana Kebutuhan →
+              </LinkButton>
+            </>
+          }
+        />
 
-        {/* Summary tiles */}
-        <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <SummaryTile
+        <KpiGrid>
+          <KpiTile
             label="Menu Aktif"
             value={menus.filter((m) => m.active).length.toString()}
             sub={`dari ${menus.length} siklus`}
           />
-          <SummaryTile
+          <KpiTile
             label="Rata-rata Gram/Porsi"
-            value={
-              menuStats.length > 0
-                ? Math.round(
-                    menuStats.reduce((s, x) => s + x.totalGrams, 0) /
-                      menuStats.length
-                  ).toString()
-                : "0"
-            }
+            value={avgGrams.toString()}
             sub="gram bahan basah"
           />
-          <SummaryTile
+          <KpiTile
             label="Rata-rata Cost/Porsi"
-            value={formatIDR(
-              menuStats.length > 0
-                ? menuStats.reduce((s, x) => s + x.costPerPorsi, 0) /
-                    menuStats.length
-                : 0
-            )}
+            value={formatIDR(avgCost)}
+            size="md"
+            tone="ok"
             sub="harga bahan saja"
           />
-          <SummaryTile
+          <KpiTile
             label="Komoditas"
             value={totalItems.toString()}
             sub={`${categories.length} kategori`}
           />
-        </section>
+        </KpiGrid>
 
-        {/* Menu cards — 14 siklus */}
-        <section className="mb-8">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink2">
-            14 Siklus Menu · BOM per Porsi
-          </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <Section
+          title={`${menus.length} Siklus Menu · BOM per Porsi`}
+          hint="Tiap kartu menampilkan Bill of Materials per porsi (gram bahan basah)."
+          noPad
+        >
+          <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
             {menuStats.map(({ menu, rows, totalGrams, costPerPorsi }) => (
               <article
                 key={menu.id}
-                className="rounded-2xl bg-white p-5 shadow-card"
+                className="rounded-2xl bg-paper p-4 ring-1 ring-ink/5 transition hover:shadow-card"
               >
                 <header className="mb-3 flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-ink text-[11px] font-black text-white">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-gradient text-[11px] font-black text-white shadow-card">
                         H{menu.cycle_day}
                       </span>
                       <h3 className="text-sm font-black text-ink">
@@ -206,18 +207,15 @@ export default async function MenuMasterPage() {
                 </header>
 
                 {rows.length === 0 ? (
-                  <div className="rounded-xl bg-paper p-3 text-xs text-ink2/70">
-                    Belum ada BOM untuk menu ini.
-                  </div>
+                  <EmptyState message="Belum ada BOM untuk menu ini." />
                 ) : (
-                  <div className="overflow-hidden rounded-xl ring-1 ring-ink/5">
+                  <div className="overflow-hidden rounded-xl bg-white ring-1 ring-ink/5">
                     <table className="w-full text-xs">
                       <thead className="bg-paper text-[10px] font-bold uppercase tracking-wide text-ink2">
                         <tr>
                           <th className="px-3 py-2 text-left">Item</th>
                           <th className="px-3 py-2 text-left">Kategori</th>
                           <th className="px-3 py-2 text-right">g/Porsi</th>
-                          <th className="px-3 py-2 text-right">kg/1000</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -239,11 +237,8 @@ export default async function MenuMasterPage() {
                                   {cat}
                                 </span>
                               </td>
-                              <td className="px-3 py-1.5 text-right font-mono text-ink2">
-                                {r.grams.toFixed(1)}
-                              </td>
                               <td className="px-3 py-1.5 text-right font-mono font-black text-ink">
-                                {(r.grams).toFixed(1)}
+                                {r.grams.toFixed(1)}
                               </td>
                             </tr>
                           );
@@ -255,94 +250,64 @@ export default async function MenuMasterPage() {
               </article>
             ))}
           </div>
-        </section>
+        </Section>
 
-        {/* Items master table */}
-        <section className="mb-6 rounded-2xl bg-white p-5 shadow-card">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-black uppercase tracking-wide text-ink">
-              📦 Master Komoditas · {totalItems} item
-            </h2>
-            <div className="text-[11px] text-ink2/70">
-              Harga referensi · Volume mingguan · Sumber supplier
-            </div>
-          </div>
-          <div className="overflow-x-auto">
+        <Section
+          title={`📦 Master Komoditas · ${totalItems} item`}
+          hint="Harga referensi · Volume mingguan · Sumber supplier"
+        >
+          <TableWrap>
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
-                  <th className="py-2">#</th>
-                  <th className="py-2">Item</th>
-                  <th className="py-2">EN</th>
-                  <th className="py-2">Kategori</th>
-                  <th className="py-2">Unit</th>
-                  <th className="py-2 text-right">Harga (IDR)</th>
-                  <th className="py-2 text-right">Vol Mingguan</th>
-                  <th className="py-2 text-right">Supplier</th>
-                </tr>
-              </thead>
+              <THead>
+                <th className="py-2 pr-3">#</th>
+                <th className="py-2 pr-3">Item</th>
+                <th className="py-2 pr-3">EN</th>
+                <th className="py-2 pr-3">Kategori</th>
+                <th className="py-2 pr-3">Unit</th>
+                <th className="py-2 pr-3 text-right">Harga (IDR)</th>
+                <th className="py-2 pr-3 text-right">Vol Mingguan</th>
+                <th className="py-2 pr-3 text-right">Supplier</th>
+              </THead>
               <tbody>
                 {items.map((it, i) => (
                   <tr
                     key={it.code}
-                    className={`border-b border-ink/5 ${!it.active ? "opacity-50" : ""}`}
+                    className={`row-hover border-b border-ink/5 ${!it.active ? "opacity-50" : ""}`}
                   >
-                    <td className="py-2 text-ink2">{i + 1}</td>
-                    <td className="py-2 font-semibold">{it.code}</td>
-                    <td className="py-2 text-xs italic text-ink2/70">
+                    <td className="py-2 pr-3 text-ink2">{i + 1}</td>
+                    <td className="py-2 pr-3 font-semibold">{it.code}</td>
+                    <td className="py-2 pr-3 text-xs italic text-ink2/70">
                       {it.name_en || "—"}
                     </td>
-                    <td className="py-2">
+                    <td className="py-2 pr-3">
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_COLOR[it.category] ?? CAT_COLOR.LAIN}`}
                       >
                         {it.category}
                       </span>
                     </td>
-                    <td className="py-2 font-mono text-xs">{it.unit}</td>
-                    <td className="py-2 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 font-mono text-xs">{it.unit}</td>
+                    <td className="py-2 pr-3 text-right font-mono text-xs">
                       {formatIDR(Number(it.price_idr))}
                     </td>
-                    <td className="py-2 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 text-right font-mono text-xs">
                       {Number(it.vol_weekly).toFixed(1)}
                     </td>
-                    <td className="py-2 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 text-right font-mono text-xs">
                       {supCountByItem.get(it.code) ?? 0}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </section>
+          </TableWrap>
+        </Section>
 
         <p className="mt-8 text-center text-[11px] text-ink2/60">
           Master Menu · Bill of Materials · Data siklus {menus.length} hari —
           revisi per Go-Live 4 Mei 2026
         </p>
-      </main>
-    </div>
-  );
-}
-
-function SummaryTile({
-  label,
-  value,
-  sub
-}: {
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white p-4 shadow-card">
-      <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/80">
-        {label}
-      </div>
-      <div className="mt-1 text-xl font-black leading-tight text-ink">
-        {value}
-      </div>
-      <div className="mt-1 text-[11px] font-semibold text-ink2/70">{sub}</div>
+      </PageContainer>
     </div>
   );
 }

@@ -2,18 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   MBG Soe Supply Chain — Design tokens (light)
+   Institutional WFP × IFSR × FFI palette.
+   Legacy aliases (--ink, --ink2, --paper) kept so existing
+   utility classes (bg-paper, text-ink, ring-ink/5) work.
+   ============================================================ */
 :root {
-  --ink: #0b2e4f;
-  --ink2: #133a63;
-  --accent: #f2a413;
-  --paper: #f8fafc;
-  --card-shadow: 0 2px 14px rgba(11, 46, 79, 0.08);
+  --ink: #0b2545;
+  --ink2: #13315c;
+  --accent: #1d4e89;
+  --accent-strong: #0072bc;
+  --gold: #c9a227;
+  --paper: #f5f7fb;
+  --surface: #ffffff;
+  --surface-2: #f5f7fb;
+  --border: rgba(11, 37, 69, 0.08);
+  --border-strong: rgba(11, 37, 69, 0.14);
+  --text: #0b2545;
+  --text-2: #13315c;
+  --muted: rgba(19, 49, 92, 0.65);
+  --card-shadow: 0 2px 14px rgba(11, 37, 69, 0.08);
+  --card-shadow-lg: 0 8px 28px rgba(11, 37, 69, 0.14);
+}
+
+/* Dark token overrides — activated by `.dark` on <html> */
+html.dark {
+  --ink: #e6edf7;
+  --ink2: #a8b8d0;
+  --accent: #4f8fd1;
+  --accent-strong: #6ea9e6;
+  --paper: #0a1628;
+  --surface: #0f2240;
+  --surface-2: #13315c;
+  --border: rgba(168, 184, 208, 0.10);
+  --border-strong: rgba(168, 184, 208, 0.18);
+  --text: #e6edf7;
+  --text-2: #a8b8d0;
+  --muted: rgba(168, 184, 208, 0.65);
+  --card-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  --card-shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 
 html,
 body {
   background: var(--paper);
-  color: var(--ink);
+  color: var(--text);
   font-family:
     var(--font-inter),
     "Inter",
@@ -26,9 +60,27 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "cv11", "ss01", "ss03";
+  text-rendering: optimizeLegibility;
 }
 
-/* Tipografi angka tetap tabular agar rata di tabel stok / BOM */
+/* Subtle gradient backdrop on light, keeps WFP institutional feel */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1100px 700px at 12% -8%, rgba(29, 78, 137, 0.08), transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, rgba(201, 162, 39, 0.06), transparent 55%);
+  pointer-events: none;
+}
+html.dark body::before {
+  background:
+    radial-gradient(1100px 700px at 12% -8%, rgba(29, 78, 137, 0.09), transparent 65%),
+    radial-gradient(900px 600px at 100% 0%, rgba(201, 162, 39, 0.04), transparent 60%);
+}
+
+/* Tabular numerics for tables / BOM / IDR columns */
 table,
 .num,
 .font-mono {
@@ -42,7 +94,92 @@ table,
   letter-spacing: 0;
 }
 
-/* Pill level sekolah — dipakai di dashboard sekolah */
+/* ============================================================
+   DARK MODE COMPATIBILITY OVERRIDES
+   Most pages use legacy classes (bg-white, text-ink, bg-paper,
+   border-ink/X). Override them in dark so we don't have to
+   touch every page.
+   ============================================================ */
+html.dark .bg-white { background-color: var(--surface) !important; }
+html.dark .bg-paper { background-color: var(--paper) !important; }
+html.dark .text-ink { color: var(--text) !important; }
+html.dark .text-ink2 { color: var(--text-2) !important; }
+
+html.dark .text-ink\/80,
+html.dark .text-ink\/70,
+html.dark .text-ink2\/80,
+html.dark .text-ink2\/70,
+html.dark .text-ink2\/60,
+html.dark .text-ink2\/50,
+html.dark .text-ink2\/40 { color: var(--muted) !important; }
+
+html.dark .border-ink\/5 { border-color: rgba(168, 184, 208, 0.06) !important; }
+html.dark .border-ink\/10 { border-color: rgba(168, 184, 208, 0.10) !important; }
+html.dark .border-ink\/20 { border-color: rgba(168, 184, 208, 0.18) !important; }
+
+html.dark .ring-ink\/5 { --tw-ring-color: rgba(168, 184, 208, 0.06) !important; }
+html.dark .ring-ink\/10 { --tw-ring-color: rgba(168, 184, 208, 0.10) !important; }
+
+html.dark .bg-ink\/5 { background-color: rgba(168, 184, 208, 0.04) !important; }
+html.dark .bg-ink\/10 { background-color: rgba(168, 184, 208, 0.08) !important; }
+html.dark .hover\:bg-ink\/5:hover { background-color: rgba(168, 184, 208, 0.06) !important; }
+html.dark .hover\:bg-ink\/\[0\.02\]:hover { background-color: rgba(168, 184, 208, 0.04) !important; }
+
+html.dark .bg-ink { background-color: var(--accent-strong) !important; }
+html.dark .hover\:bg-ink:hover { background-color: var(--accent-strong) !important; }
+html.dark .hover\:bg-ink2:hover { background-color: #2a5fb5 !important; }
+html.dark .border-ink { border-color: rgba(168, 184, 208, 0.35) !important; }
+
+/* Soften the bright tinted backgrounds that look harsh on dark */
+html.dark .bg-green-50 { background-color: rgba(34, 197, 94, 0.10) !important; color: #b9f0c8 !important; }
+html.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.10) !important; color: #b9f0c8 !important; }
+html.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.10) !important; color: #ffe9b3 !important; }
+html.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.10) !important; color: #ffc4c4 !important; }
+html.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.10) !important; color: #ffc4d2 !important; }
+html.dark .bg-sky-50 { background-color: rgba(14, 165, 233, 0.10) !important; color: #c0e7ff !important; }
+html.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.10) !important; color: #bfd5ff !important; }
+html.dark .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.10) !important; color: #c5c8ff !important; }
+html.dark .bg-violet-50 { background-color: rgba(139, 92, 246, 0.10) !important; color: #d6c5ff !important; }
+html.dark .bg-pink-50 { background-color: rgba(236, 72, 153, 0.10) !important; color: #ffc4dd !important; }
+html.dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.10) !important; color: #ffd0a8 !important; }
+html.dark .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.10) !important; color: #ffe9a8 !important; }
+html.dark .bg-lime-50 { background-color: rgba(132, 204, 22, 0.10) !important; color: #ddf3a8 !important; }
+html.dark .bg-teal-50 { background-color: rgba(20, 184, 166, 0.10) !important; color: #b3e8df !important; }
+html.dark .bg-fuchsia-50 { background-color: rgba(217, 70, 239, 0.10) !important; color: #ecbaff !important; }
+html.dark .bg-cyan-50 { background-color: rgba(6, 182, 212, 0.10) !important; color: #b3e7f3 !important; }
+html.dark .bg-slate-50 { background-color: rgba(148, 163, 184, 0.10) !important; color: #d3dce8 !important; }
+html.dark .bg-gray-50 { background-color: rgba(156, 163, 175, 0.10) !important; color: #d3d6de !important; }
+
+/* Calendar swatches a touch deeper in dark */
+html.dark .bg-sky-100,
+html.dark .bg-emerald-100,
+html.dark .bg-amber-100,
+html.dark .bg-rose-100,
+html.dark .bg-indigo-100,
+html.dark .bg-teal-100,
+html.dark .bg-orange-100,
+html.dark .bg-violet-100,
+html.dark .bg-lime-100,
+html.dark .bg-pink-100,
+html.dark .bg-cyan-100,
+html.dark .bg-fuchsia-100,
+html.dark .bg-yellow-100,
+html.dark .bg-green-100,
+html.dark .bg-slate-100,
+html.dark .bg-blue-100,
+html.dark .bg-purple-100,
+html.dark .bg-red-100,
+html.dark .bg-gray-100 { filter: brightness(0.85) saturate(1.1); }
+
+/* Status semantic dots/badges */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+/* Pill level sekolah */
 .pill-lv {
   display: inline-block;
   padding: 4px 10px;
@@ -56,16 +193,76 @@ table,
 .pill-lv-sma  { background: linear-gradient(135deg, #ffecc7, #ffd995); color: #8a5900; }
 .pill-lv-smk  { background: linear-gradient(135deg, #ffd7cc, #ffb59d); color: #8a2a00; }
 
-/* Card utility — dipakai di berbagai tempat */
+/* Card utilities */
 .card {
-  background: white;
+  background: var(--surface);
   border-radius: 14px;
   box-shadow: var(--card-shadow);
   padding: 16px;
 }
 .card-lg {
-  background: white;
+  background: var(--surface);
   border-radius: 14px;
-  box-shadow: 0 8px 28px rgba(11, 46, 79, 0.12);
+  box-shadow: var(--card-shadow-lg);
   padding: 20px;
+}
+
+/* Focus ring — accessible for keyboard users only */
+:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-offset: 3px;
+}
+
+/* Custom scrollbar — restrained, matches palette */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(19, 49, 92, 0.20);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background-color: rgba(19, 49, 92, 0.35); background-clip: content-box; }
+html.dark *::-webkit-scrollbar-thumb { background-color: rgba(168, 184, 208, 0.20); background-clip: content-box; }
+html.dark *::-webkit-scrollbar-thumb:hover { background-color: rgba(168, 184, 208, 0.35); background-clip: content-box; }
+
+/* Reusable subtle entrance animation */
+@keyframes mbg-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: mbg-fade-in 0.35s ease-out both; }
+
+/* Tabular hover row — subtle */
+tbody tr.row-hover:hover { background-color: rgba(11, 37, 69, 0.025); }
+html.dark tbody tr.row-hover:hover { background-color: rgba(168, 184, 208, 0.04); }
+
+/* Shrink horizontal table padding feels denser without losing tap target */
+table th, table td { vertical-align: top; }
+
+/* Print: clean white page, hide chrome */
+@media print {
+  body { background: white !important; }
+  body::before { display: none !important; }
+  .no-print { display: none !important; }
+  .card, .card-lg, [class*="shadow-card"] {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

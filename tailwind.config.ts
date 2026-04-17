@@ -10,7 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // === Institutional palette WFP × IFSR × FFI (reference HTML) ===
+        // === Institutional palette WFP × IFSR × FFI ===
         primary: "#0b2545",
         "primary-strong": "#061832",
         "primary-soft": "#e6edf7",
@@ -41,7 +41,9 @@ const config: Config = {
         "primary-gradient":
           "linear-gradient(135deg, #0b2545 0%, #1d4e89 100%)",
         "primary-gradient-dark":
-          "linear-gradient(135deg, #1d4e89 0%, #0072bc 100%)"
+          "linear-gradient(135deg, #13315c 0%, #1d4e89 100%)",
+        "gold-gradient":
+          "linear-gradient(135deg, #c9a227 0%, #e0bd4c 100%)"
       },
       fontFamily: {
         sans: [
@@ -66,10 +68,25 @@ const config: Config = {
         card: "0 2px 14px rgba(11,37,69,.08)",
         cardlg: "0 8px 28px rgba(11,37,69,.14)",
         "card-dark": "0 2px 14px rgba(0,0,0,.35)",
-        "cardlg-dark": "0 8px 28px rgba(0,0,0,.45)"
+        "cardlg-dark": "0 8px 28px rgba(0,0,0,.45)",
+        "ring-accent": "0 0 0 4px rgba(0,114,188,.18)"
       },
       borderRadius: {
         xl2: "14px"
+      },
+      keyframes: {
+        "slide-up": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" }
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" }
+        }
+      },
+      animation: {
+        "slide-up": "slide-up 0.35s ease-out both",
+        shimmer: "shimmer 1.6s linear infinite"
       }
     }
   },

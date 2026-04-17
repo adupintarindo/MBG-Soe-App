@@ -3,6 +3,18 @@ import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/nav";
 import { TransactionLog, type TxRow } from "@/components/transaction-log";
 import {
+  Badge,
+  EmptyState,
+  KpiGrid,
+  KpiTile,
+  NoticeCard,
+  PageContainer,
+  PageHeader,
+  Section,
+  TableWrap,
+  THead
+} from "@/components/ui";
+import {
   formatIDR,
   formatKg,
   formatDateID,
@@ -19,15 +31,6 @@ import {
 } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
-
-const TYPE_LABELS: Record<string, string> = {
-  po: "Purchase Order",
-  grn: "Goods Receipt",
-  invoice: "Invoice",
-  payment: "Payment",
-  adjustment: "Adjustment",
-  receipt: "Receipt"
-};
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -46,14 +49,13 @@ export default async function DashboardPage() {
   if (!profile || !profile.active) {
     return (
       <main className="mx-auto max-w-xl px-6 py-16">
-        <div className="rounded-2xl bg-white p-8 shadow-cardlg">
-          <h1 className="mb-3 text-lg font-black text-ink">Akun belum aktif</h1>
-          <p className="text-sm text-ink2">
-            Email <span className="font-mono">{user.email}</span> sudah masuk ke
-            sistem, tapi admin belum meng-aktifkan profil Anda. Hubungi admin
-            untuk diverifikasi.
+        <NoticeCard title="Akun belum aktif" tone="warn">
+          <p>
+            Email <span className="font-mono font-bold">{user.email}</span>{" "}
+            sudah masuk ke sistem, tapi admin belum meng-aktifkan profil Anda.
+            Hubungi admin untuk diverifikasi.
           </p>
-        </div>
+        </NoticeCard>
       </main>
     );
   }
@@ -109,7 +111,8 @@ export default async function DashboardPage() {
   ]);
 
   // ---- derived ----
-  const totalGap = shortages.reduce((s, x) => s + Number(x.gap || 0), 0);
+  const shortItems = shortages.filter((s) => Number(s.gap) > 0);
+  const totalGap = shortItems.reduce((s, x) => s + Number(x.gap || 0), 0);
 
   // Transaction log with supplier names
   const supplierMap = new Map(suppliers.map((s) => [s.id, s.name]));
@@ -171,102 +174,108 @@ export default async function DashboardPage() {
         }}
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        {/* Header */}
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-black text-primary dark:text-d-text">
-              Selamat datang, {profile.full_name || profile.email.split("@")[0]}
-            </h1>
-            <p className="text-sm text-primary-2/80 dark:text-d-text-2">
-              {formatDateID(now)}
-            </p>
-          </div>
-        </div>
+      <PageContainer>
+        <PageHeader
+          title={`Selamat datang, ${profile.full_name || profile.email.split("@")[0]}`}
+          subtitle={
+            <span className="flex items-center gap-2">
+              <span>{formatDateID(now)}</span>
+              {shortItems.length > 0 && (
+                <Badge tone="bad">{shortItems.length} shortage hari ini</Badge>
+              )}
+            </span>
+          }
+        />
 
-        {/* KPI tiles (matching mockup: Siswa, Sekolah, Menu Hari Ini, Supplier) */}
-        <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <KpiCard
+        <KpiGrid>
+          <KpiTile
             icon="👥"
             label="Siswa (Total)"
             value={kpis.students_total.toLocaleString("id-ID")}
             sub={`${kpis.schools_active} sekolah aktif`}
           />
-          <KpiCard
+          <KpiTile
             icon="🏫"
             label="Sekolah Aktif"
             value={kpis.schools_active.toString()}
             sub="SPPG Nunumeu"
           />
-          <KpiCard
+          <KpiTile
             icon="🍽️"
             label="Menu Hari Ini"
             value={kpis.menu_today_name || "—"}
+            size="md"
+            tone={kpis.menu_today_name ? "info" : "default"}
             sub={
               todayPlan
                 ? `${todayPlan.porsi_total.toLocaleString("id-ID")} porsi · ${formatKg(todayPlan.total_kg)}`
                 : "Belum ditetapkan"
             }
-            valueSize="small"
           />
-          <KpiCard
+          <KpiTile
             icon="🤝"
             label="Supplier Aktif"
             value={kpis.suppliers_active.toString()}
             sub="BUMN + UMKM + Poktan"
           />
-        </section>
+        </KpiGrid>
 
         {/* 50 Transaksi Terakhir with filter */}
         <TransactionLog rows={txRows} />
 
         {/* 4-month requirements matrix */}
-        <section className="mb-6 rounded-2xl border-l-4 border-emerald-500 bg-white p-5 shadow-card">
-          <h2 className="text-sm font-black uppercase tracking-wide text-ink">
-            🌾 Volume Kebutuhan Bahan · {months.length > 0 ? `${monthLabel(months[0])}–${monthLabel(months[months.length - 1])}` : "4 Bulan"} · {formatKg(grandTotal, 0)}
-          </h2>
-          <p className="mt-1 text-[11px] text-ink2/70">
-            Top 12 komoditas berdasarkan agregat porsi × menu BOM per hari
-            operasional (Senin–Jumat, skip non-op).
-          </p>
+        <Section
+          title={
+            <>
+              🌾 Volume Kebutuhan Bahan ·{" "}
+              {months.length > 0
+                ? `${monthLabel(months[0])}–${monthLabel(months[months.length - 1])}`
+                : "4 Bulan"}{" "}
+              · {formatKg(grandTotal, 0)}
+            </>
+          }
+          hint="Top 12 komoditas berdasarkan agregat porsi × menu BOM per hari operasional (Senin–Jumat, skip non-op)."
+          accent="ok"
+        >
           {topItems.length === 0 ? (
-            <div className="mt-3 rounded-xl bg-ink/5 p-4 text-sm text-ink2">
-              Belum ada data kebutuhan — pastikan menu sudah di-assign ke
-              tanggal di horizon ini.
-            </div>
+            <EmptyState
+              title="Belum ada data kebutuhan"
+              message="Pastikan menu sudah di-assign ke tanggal di horizon ini."
+            />
           ) : (
-            <div className="mt-3 overflow-x-auto">
+            <TableWrap>
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
-                    <th className="py-2">#</th>
-                    <th className="py-2">Komoditas</th>
-                    {months.map((m) => (
-                      <th key={m} className="py-2 text-right">
-                        {monthLabel(m)}
-                      </th>
-                    ))}
-                    <th className="py-2 text-right">Total (kg)</th>
-                  </tr>
-                </thead>
+                <THead>
+                  <th className="py-2 pr-3">#</th>
+                  <th className="py-2 pr-3">Komoditas</th>
+                  {months.map((m) => (
+                    <th key={m} className="py-2 pr-3 text-right">
+                      {monthLabel(m)}
+                    </th>
+                  ))}
+                  <th className="py-2 pr-3 text-right">Total (kg)</th>
+                </THead>
                 <tbody>
                   {topItems.map((code, i) => {
                     const total = itemTotals.get(code) ?? 0;
                     return (
-                      <tr key={code} className="border-b border-ink/5">
-                        <td className="py-2 text-ink2">{i + 1}</td>
-                        <td className="py-2 font-semibold">{code}</td>
+                      <tr
+                        key={code}
+                        className="row-hover border-b border-ink/5"
+                      >
+                        <td className="py-2 pr-3 text-ink2">{i + 1}</td>
+                        <td className="py-2 pr-3 font-semibold">{code}</td>
                         {months.map((m) => (
                           <td
                             key={m}
-                            className="py-2 text-right font-mono text-xs"
+                            className="py-2 pr-3 text-right font-mono text-xs"
                           >
                             {(matrix[code][m] ?? 0).toLocaleString("id-ID", {
                               maximumFractionDigits: 1
                             })}
                           </td>
                         ))}
-                        <td className="py-2 text-right font-mono text-xs font-black">
+                        <td className="py-2 pr-3 text-right font-mono text-xs font-black">
                           {total.toLocaleString("id-ID", {
                             maximumFractionDigits: 0
                           })}
@@ -276,58 +285,57 @@ export default async function DashboardPage() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </TableWrap>
           )}
-        </section>
+        </Section>
 
         <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* 10-day planning */}
-          <section className="rounded-2xl bg-white p-5 shadow-card">
-            <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-              🔔 10 Hari Ke Depan · Planning
-            </h2>
+          <Section
+            title="🔔 10 Hari Ke Depan · Planning"
+            hint="Prakiraan porsi × menu, tanpa hari non-operasional."
+            className="mb-0"
+          >
             {planning.length === 0 ? (
-              <div className="rounded-xl bg-ink/5 p-4 text-sm text-ink2">
-                Belum ada planning.
-              </div>
+              <EmptyState message="Belum ada planning." />
             ) : (
-              <div className="overflow-x-auto">
+              <TableWrap>
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
-                      <th className="py-2">Tanggal</th>
-                      <th className="py-2">Menu</th>
-                      <th className="py-2 text-right">Porsi</th>
-                      <th className="py-2 text-right">Kebutuhan</th>
-                      <th className="py-2 text-right">Short</th>
-                    </tr>
-                  </thead>
+                  <THead>
+                    <th className="py-2 pr-3">Tanggal</th>
+                    <th className="py-2 pr-3">Menu</th>
+                    <th className="py-2 pr-3 text-right">Porsi</th>
+                    <th className="py-2 pr-3 text-right">Kebutuhan</th>
+                    <th className="py-2 pr-3 text-right">Short</th>
+                  </THead>
                   <tbody>
                     {planning.map((p) => (
-                      <tr key={p.op_date} className="border-b border-ink/5">
-                        <td className="py-2">
+                      <tr
+                        key={p.op_date}
+                        className="row-hover border-b border-ink/5"
+                      >
+                        <td className="py-2 pr-3">
                           <div className="font-mono text-[11px]">
                             {p.op_date}
                           </div>
                           {!p.operasional && (
-                            <span className="text-[10px] font-bold text-amber-700">
+                            <Badge tone="warn" className="mt-1">
                               NON-OP
-                            </span>
+                            </Badge>
                           )}
                         </td>
-                        <td className="py-2 text-xs">
+                        <td className="py-2 pr-3 text-xs">
                           {p.menu_name ?? (
                             <span className="text-ink2/60">—</span>
                           )}
                         </td>
-                        <td className="py-2 text-right font-mono text-xs">
+                        <td className="py-2 pr-3 text-right font-mono text-xs">
                           {p.porsi_total.toLocaleString("id-ID")}
                         </td>
-                        <td className="py-2 text-right font-mono text-xs">
+                        <td className="py-2 pr-3 text-right font-mono text-xs">
                           {formatKg(Number(p.total_kg), 1)}
                         </td>
                         <td
-                          className={`py-2 text-right font-mono text-xs font-black ${p.short_items > 0 ? "text-red-700" : "text-emerald-700"}`}
+                          className={`py-2 pr-3 text-right font-mono text-xs font-black ${p.short_items > 0 ? "text-red-700" : "text-emerald-700"}`}
                         >
                           {p.short_items}
                         </td>
@@ -335,120 +343,119 @@ export default async function DashboardPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableWrap>
             )}
-          </section>
+          </Section>
 
-          {/* Alert Stok (Shortages Today) */}
-          <section className="rounded-2xl bg-white p-5 shadow-card">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-black uppercase tracking-wide text-ink">
-                ⚠️ Alert Stok · Hari Ini
-              </h2>
-              <span className="text-[11px] text-ink2/70">
-                {shortages.filter((s) => Number(s.gap) > 0).length} item · gap{" "}
-                {formatKg(totalGap)}
-              </span>
-            </div>
-            {shortages.filter((s) => Number(s.gap) > 0).length === 0 ? (
-              <div className="rounded-xl bg-green-50 p-4 text-sm text-green-900 ring-1 ring-green-200">
-                ✅ Tidak ada kekurangan untuk hari ini.
-              </div>
+          <Section
+            title="⚠️ Alert Stok · Hari Ini"
+            hint={
+              shortItems.length > 0
+                ? `${shortItems.length} item · gap ${formatKg(totalGap)}`
+                : "Semua kebutuhan tercover."
+            }
+            accent={shortItems.length > 0 ? "bad" : "ok"}
+            className="mb-0"
+          >
+            {shortItems.length === 0 ? (
+              <EmptyState
+                icon="✅"
+                tone="ok"
+                message="Tidak ada kekurangan untuk hari ini."
+              />
             ) : (
-              <div className="overflow-x-auto">
+              <TableWrap>
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
-                      <th className="py-2">Item</th>
-                      <th className="py-2 text-right">Butuh</th>
-                      <th className="py-2 text-right">Ada</th>
-                      <th className="py-2 text-right">Kurang</th>
-                    </tr>
-                  </thead>
+                  <THead>
+                    <th className="py-2 pr-3">Item</th>
+                    <th className="py-2 pr-3 text-right">Butuh</th>
+                    <th className="py-2 pr-3 text-right">Ada</th>
+                    <th className="py-2 pr-3 text-right">Kurang</th>
+                  </THead>
                   <tbody>
-                    {shortages
-                      .filter((s) => Number(s.gap) > 0)
-                      .slice(0, 10)
-                      .map((s) => (
-                        <tr key={s.item_code} className="border-b border-ink/5">
-                          <td className="py-2 font-semibold">{s.item_code}</td>
-                          <td className="py-2 text-right font-mono text-xs">
-                            {Number(s.required).toFixed(2)}
-                          </td>
-                          <td className="py-2 text-right font-mono text-xs">
-                            {Number(s.on_hand).toFixed(2)}
-                          </td>
-                          <td className="py-2 text-right font-mono text-xs font-black text-red-700">
-                            {Number(s.gap).toFixed(2)} {s.unit}
-                          </td>
-                        </tr>
-                      ))}
+                    {shortItems.slice(0, 10).map((s) => (
+                      <tr
+                        key={s.item_code}
+                        className="row-hover border-b border-ink/5"
+                      >
+                        <td className="py-2 pr-3 font-semibold">
+                          {s.item_code}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono text-xs">
+                          {Number(s.required).toFixed(2)}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono text-xs">
+                          {Number(s.on_hand).toFixed(2)}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono text-xs font-black text-red-700">
+                          {Number(s.gap).toFixed(2)} {s.unit}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
-              </div>
+              </TableWrap>
             )}
-          </section>
+          </Section>
         </div>
 
         {/* Top Supplier */}
-        <section className="mb-6 rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            🏪 Top Supplier · Nilai Belanja Bulan Ini
-          </h2>
+        <Section
+          title="🏪 Top Supplier · Nilai Belanja Bulan Ini"
+          hint={`Periode ${monthStart} s.d. ${today}`}
+        >
           {topSup.length === 0 ? (
-            <div className="rounded-xl bg-ink/5 p-4 text-sm text-ink2">
-              Belum ada invoice bulan ini.
-            </div>
+            <EmptyState message="Belum ada invoice bulan ini." />
           ) : (
-            <div className="overflow-x-auto">
+            <TableWrap>
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
-                    <th className="py-2">#</th>
-                    <th className="py-2">Supplier</th>
-                    <th className="py-2">Tipe</th>
-                    <th className="py-2 text-right">Invoice</th>
-                    <th className="py-2 text-right">Total Belanja</th>
-                  </tr>
-                </thead>
+                <THead>
+                  <th className="py-2 pr-3">#</th>
+                  <th className="py-2 pr-3">Supplier</th>
+                  <th className="py-2 pr-3">Tipe</th>
+                  <th className="py-2 pr-3 text-right">Invoice</th>
+                  <th className="py-2 pr-3 text-right">Total Belanja</th>
+                </THead>
                 <tbody>
                   {topSup.map((s, i) => (
                     <tr
                       key={s.supplier_id}
-                      className="border-b border-ink/5"
+                      className="row-hover border-b border-ink/5"
                     >
-                      <td className="py-2 text-ink2">{i + 1}</td>
-                      <td className="py-2 font-semibold">{s.supplier_name}</td>
-                      <td className="py-2">
-                        <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[10px] font-bold text-ink2">
-                          {s.supplier_type}
-                        </span>
+                      <td className="py-2 pr-3 text-ink2">{i + 1}</td>
+                      <td className="py-2 pr-3 font-semibold">
+                        {s.supplier_name}
                       </td>
-                      <td className="py-2 text-right font-mono text-xs">
+                      <td className="py-2 pr-3">
+                        <Badge tone="neutral">{s.supplier_type}</Badge>
+                      </td>
+                      <td className="py-2 pr-3 text-right font-mono text-xs">
                         {s.invoice_count}
                       </td>
-                      <td className="py-2 text-right font-mono text-xs font-black">
+                      <td className="py-2 pr-3 text-right font-mono text-xs font-black">
                         {formatIDR(Number(s.total_spend))}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableWrap>
           )}
-        </section>
+        </Section>
 
         {/* 14-day upcoming shortages */}
-        <section className="rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            🔭 Peramalan Shortage · 14 Hari Ke Depan
-          </h2>
+        <Section
+          title="🔭 Peramalan Shortage · 14 Hari Ke Depan"
+          accent={upcoming.length > 0 ? "warn" : "ok"}
+        >
           {upcoming.length === 0 ? (
-            <div className="rounded-xl bg-green-50 p-4 text-sm text-green-900 ring-1 ring-green-200">
-              ✅ Tidak ada shortage terdeteksi di horizon 14 hari.
-            </div>
+            <EmptyState
+              icon="✅"
+              tone="ok"
+              message="Tidak ada shortage terdeteksi di horizon 14 hari."
+            />
           ) : (
-            <ul className="space-y-2 text-sm">
+            <ul className="grid gap-2 sm:grid-cols-2">
               {upcoming.map((u) => (
                 <li
                   key={u.op_date}
@@ -471,43 +478,12 @@ export default async function DashboardPage() {
               ))}
             </ul>
           )}
-        </section>
+        </Section>
 
         <p className="mt-8 text-center text-[11px] text-ink2/60">
           Round 6 · Phase 1 · Next.js + Supabase · Go-live SPPG Nunumeu 4 Mei 2026
         </p>
-      </main>
-    </div>
-  );
-}
-
-function KpiCard({
-  icon,
-  label,
-  value,
-  sub,
-  valueSize = "large"
-}: {
-  icon: string;
-  label: string;
-  value: string;
-  sub: string;
-  valueSize?: "large" | "small";
-}) {
-  return (
-    <div className="rounded-2xl bg-white p-4 shadow-card">
-      <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-ink2/80">
-        <span>{icon}</span>
-        <span>{label}</span>
-      </div>
-      <div
-        className={`font-black text-ink ${
-          valueSize === "large" ? "text-2xl" : "text-base leading-tight"
-        }`}
-      >
-        {value}
-      </div>
-      <div className="mt-1 text-[11px] font-semibold text-ink2/70">{sub}</div>
+      </PageContainer>
     </div>
   );
 }

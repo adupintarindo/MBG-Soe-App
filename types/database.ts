@@ -39,6 +39,7 @@ export interface Database {
           invited_by?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Relationships: [];
       };
       invites: {
         Row: {
@@ -60,6 +61,7 @@ export interface Database {
           created_by?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["invites"]["Insert"]>;
+        Relationships: [];
       };
       items: {
         Row: {
@@ -85,6 +87,7 @@ export interface Database {
           active?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["items"]["Insert"]>;
+        Relationships: [];
       };
       menus: {
         Row: {
@@ -105,11 +108,13 @@ export interface Database {
           notes?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["menus"]["Insert"]>;
+        Relationships: [];
       };
       menu_bom: {
         Row: { menu_id: number; item_code: string; grams_per_porsi: number };
         Insert: { menu_id: number; item_code: string; grams_per_porsi: number };
         Update: Partial<Database["public"]["Tables"]["menu_bom"]["Insert"]>;
+        Relationships: [];
       };
       schools: {
         Row: {
@@ -141,6 +146,7 @@ export interface Database {
           active?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["schools"]["Insert"]>;
+        Relationships: [];
       };
       suppliers: {
         Row: {
@@ -173,6 +179,7 @@ export interface Database {
           active?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;
+        Relationships: [];
       };
       supplier_items: {
         Row: {
@@ -192,6 +199,7 @@ export interface Database {
         Update: Partial<
           Database["public"]["Tables"]["supplier_items"]["Insert"]
         >;
+        Relationships: [];
       };
       menu_assign: {
         Row: {
@@ -209,6 +217,7 @@ export interface Database {
         Update: Partial<
           Database["public"]["Tables"]["menu_assign"]["Insert"]
         >;
+        Relationships: [];
       };
       custom_menus: {
         Row: {
@@ -230,11 +239,13 @@ export interface Database {
         Update: Partial<
           Database["public"]["Tables"]["custom_menus"]["Insert"]
         >;
+        Relationships: [];
       };
       non_op_days: {
         Row: { op_date: string; reason: string; created_by: string | null; created_at: string };
         Insert: { op_date: string; reason: string };
         Update: Partial<Database["public"]["Tables"]["non_op_days"]["Insert"]>;
+        Relationships: [];
       };
       stock: {
         Row: {
@@ -245,6 +256,7 @@ export interface Database {
         };
         Insert: { item_code: string; qty?: number };
         Update: Partial<Database["public"]["Tables"]["stock"]["Insert"]>;
+        Relationships: [];
       };
       stock_moves: {
         Row: {
@@ -269,6 +281,7 @@ export interface Database {
         Update: Partial<
           Database["public"]["Tables"]["stock_moves"]["Insert"]
         >;
+        Relationships: [];
       };
       purchase_orders: {
         Row: {
@@ -296,6 +309,7 @@ export interface Database {
         Update: Partial<
           Database["public"]["Tables"]["purchase_orders"]["Insert"]
         >;
+        Relationships: [];
       };
       po_rows: {
         Row: {
@@ -316,6 +330,7 @@ export interface Database {
           price: number;
         };
         Update: Partial<Database["public"]["Tables"]["po_rows"]["Insert"]>;
+        Relationships: [];
       };
       grns: {
         Row: {
@@ -335,6 +350,7 @@ export interface Database {
           qc_note?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["grns"]["Insert"]>;
+        Relationships: [];
       };
       invoices: {
         Row: {
@@ -357,6 +373,7 @@ export interface Database {
           status?: Database["public"]["Enums"]["invoice_status"];
         };
         Update: Partial<Database["public"]["Tables"]["invoices"]["Insert"]>;
+        Relationships: [];
       };
       receipts: {
         Row: {
@@ -369,6 +386,7 @@ export interface Database {
         };
         Insert: { ref: string; note?: string | null; photo_url?: string | null };
         Update: Partial<Database["public"]["Tables"]["receipts"]["Insert"]>;
+        Relationships: [];
       };
       transactions: {
         Row: {
@@ -393,6 +411,7 @@ export interface Database {
         Update: Partial<
           Database["public"]["Tables"]["transactions"]["Insert"]
         >;
+        Relationships: [];
       };
       settings: {
         Row: {
@@ -403,6 +422,7 @@ export interface Database {
         };
         Insert: { key: string; value: Json };
         Update: Partial<Database["public"]["Tables"]["settings"]["Insert"]>;
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

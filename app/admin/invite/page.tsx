@@ -2,6 +2,15 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/nav";
 import { InviteForm } from "./invite-form";
+import {
+  Badge,
+  EmptyState,
+  PageContainer,
+  PageHeader,
+  Section,
+  TableWrap,
+  THead
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +45,18 @@ export default async function InvitePage() {
       .order("id")
   ]);
 
+  const invites = invitesRes.data || [];
+  const now = Date.now();
+  const counts = invites.reduce(
+    (acc, inv) => {
+      if (inv.used_at) acc.used += 1;
+      else if (new Date(inv.expires_at).getTime() < now) acc.expired += 1;
+      else acc.active += 1;
+      return acc;
+    },
+    { active: 0, used: 0, expired: 0 }
+  );
+
   return (
     <div>
       <Nav
@@ -44,69 +65,87 @@ export default async function InvitePage() {
         fullName={profile.full_name}
       />
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        <header className="mb-6">
-          <h1 className="text-xl font-black text-ink">
-            🛡️ Admin · Undang Pengguna
-          </h1>
-          <p className="text-sm text-ink2/80">
-            Hanya admin yang boleh membuat undangan. Undangan berlaku 7 hari;
-            user mengklaim dengan magic-link pada email yang sama.
-          </p>
-        </header>
+      <PageContainer>
+        <PageHeader
+          icon="🛡️"
+          title="Admin · Undang Pengguna"
+          subtitle="Buat undangan peran (Admin/Operator/Ahli Gizi/Supplier/Observer). Undangan berlaku 7 hari dan diklaim lewat magic-link pada email yang sama."
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="info">{counts.active} aktif</Badge>
+              <Badge tone="ok">{counts.used} digunakan</Badge>
+              <Badge tone="muted">{counts.expired} kadaluarsa</Badge>
+            </div>
+          }
+        />
 
         <InviteForm suppliers={suppliersRes.data || []} />
 
-        <section className="mt-8 rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            Undangan Terkini
-          </h2>
-          {(invitesRes.data || []).length === 0 ? (
-            <p className="text-sm text-ink2/70">Belum ada undangan.</p>
+        <Section
+          title="Undangan Terkini"
+          hint="20 undangan terbaru · urut dari paling baru"
+        >
+          {invites.length === 0 ? (
+            <EmptyState
+              icon="📨"
+              title="Belum ada undangan"
+              message="Buat undangan pertama Anda lewat form di atas."
+            />
           ) : (
-            <div className="overflow-x-auto">
+            <TableWrap>
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
-                    <th className="py-2">Email</th>
-                    <th className="py-2">Peran</th>
-                    <th className="py-2">Supplier</th>
-                    <th className="py-2">Status</th>
-                    <th className="py-2">Kadaluarsa</th>
-                  </tr>
-                </thead>
+                <THead>
+                  <th className="py-2 pr-3">Email</th>
+                  <th className="py-2 pr-3">Peran</th>
+                  <th className="py-2 pr-3">Supplier</th>
+                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">Kadaluarsa</th>
+                </THead>
                 <tbody>
-                  {(invitesRes.data || []).map((inv) => (
-                    <tr key={inv.id} className="border-b border-ink/5">
-                      <td className="py-2 font-mono text-[12px]">{inv.email}</td>
-                      <td className="py-2">{inv.role}</td>
-                      <td className="py-2 text-ink2/80">{inv.supplier_id || "—"}</td>
-                      <td className="py-2">
-                        {inv.used_at ? (
-                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-black text-green-800">
-                            DIGUNAKAN
-                          </span>
-                        ) : new Date(inv.expires_at) < new Date() ? (
-                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-black text-gray-700">
-                            KADALUARSA
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black text-blue-800">
-                            AKTIF
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 text-xs text-ink2/70">
-                        {new Date(inv.expires_at).toLocaleDateString("id-ID")}
-                      </td>
-                    </tr>
-                  ))}
+                  {invites.map((inv) => {
+                    const expired = new Date(inv.expires_at).getTime() < now;
+                    return (
+                      <tr
+                        key={inv.id}
+                        className="row-hover border-b border-ink/5"
+                      >
+                        <td className="py-2 pr-3 font-mono text-[12px] text-ink">
+                          {inv.email}
+                        </td>
+                        <td className="py-2 pr-3">
+                          <Badge tone="accent">{inv.role}</Badge>
+                        </td>
+                        <td className="py-2 pr-3 text-[12px] text-ink2/80">
+                          {inv.supplier_id || "—"}
+                        </td>
+                        <td className="py-2 pr-3">
+                          {inv.used_at ? (
+                            <Badge tone="ok">DIGUNAKAN</Badge>
+                          ) : expired ? (
+                            <Badge tone="muted">KADALUARSA</Badge>
+                          ) : (
+                            <Badge tone="info">AKTIF</Badge>
+                          )}
+                        </td>
+                        <td className="py-2 pr-3 text-[12px] text-ink2/70">
+                          {new Date(inv.expires_at).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric"
+                            }
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-            </div>
+            </TableWrap>
           )}
-        </section>
-      </main>
+        </Section>
+      </PageContainer>
     </div>
   );
 }

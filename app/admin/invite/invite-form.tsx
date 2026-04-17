@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/roles";
+import { Badge, Button, FieldLabel, Input, Section, Select } from "@/components/ui";
 
 interface SupplierOpt {
   id: string;
@@ -54,89 +55,94 @@ export function InviteForm({ suppliers }: { suppliers: SupplierOpt[] }) {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="grid gap-4 rounded-2xl bg-white p-5 shadow-card md:grid-cols-2"
+    <Section
+      title="Buat Undangan Baru"
+      hint="Email yang diundang akan otomatis terhubung ke profil saat login magic link pertama."
+      accent="info"
     >
-      <label className="block md:col-span-2">
-        <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-ink2">
-          Email pengguna
-        </span>
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="nama@instansi.go.id"
-          className="w-full rounded-xl border border-ink/20 bg-white px-4 py-3 text-sm outline-none ring-accent/30 focus:ring-4"
-        />
-      </label>
+      <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
+        <label className="block md:col-span-2">
+          <FieldLabel>Email pengguna</FieldLabel>
+          <Input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="nama@instansi.go.id"
+            autoComplete="off"
+          />
+        </label>
 
-      <label className="block">
-        <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-ink2">
-          Peran
-        </span>
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as UserRole)}
-          className="w-full rounded-xl border border-ink/20 bg-white px-4 py-3 text-sm"
-        >
-          {ROLE_OPTIONS.map((r) => (
-            <option key={r.value} value={r.value}>
-              {r.label} — {r.desc}
-            </option>
-          ))}
-        </select>
-      </label>
+        <label className="block">
+          <FieldLabel>Peran</FieldLabel>
+          <Select
+            value={role}
+            onChange={(e) => setRole(e.target.value as UserRole)}
+          >
+            {ROLE_OPTIONS.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label} — {r.desc}
+              </option>
+            ))}
+          </Select>
+        </label>
 
-      <label className="block">
-        <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-ink2">
-          Supplier {role === "supplier" ? "(wajib)" : "(abaikan)"}
-        </span>
-        <select
-          value={supplierId}
-          onChange={(e) => setSupplierId(e.target.value)}
-          disabled={role !== "supplier"}
-          className="w-full rounded-xl border border-ink/20 bg-white px-4 py-3 text-sm disabled:bg-paper disabled:text-ink2/50"
-        >
-          <option value="">— pilih supplier —</option>
-          {suppliers.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.id} · {s.name}
-            </option>
-          ))}
-        </select>
-      </label>
+        <label className="block">
+          <FieldLabel hint={role === "supplier" ? "wajib" : "abaikan"}>
+            Supplier
+          </FieldLabel>
+          <Select
+            value={supplierId}
+            onChange={(e) => setSupplierId(e.target.value)}
+            disabled={role !== "supplier"}
+          >
+            <option value="">— pilih supplier —</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.id} · {s.name}
+              </option>
+            ))}
+          </Select>
+        </label>
 
-      <div className="md:col-span-2">
-        <button
-          type="submit"
-          disabled={status === "sending"}
-          className="rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white shadow-card hover:bg-ink2 disabled:opacity-60"
-        >
-          {status === "sending" ? "Mengirim…" : "Buat Undangan →"}
-        </button>
-      </div>
-
-      {status === "ok" && message && (
-        <div className="md:col-span-2 rounded-xl bg-green-50 p-4 text-sm text-green-900 ring-1 ring-green-200">
-          {message}
-          {token && (
-            <div className="mt-2">
-              <span className="text-xs font-bold">Token: </span>
-              <code className="rounded bg-white px-2 py-1 font-mono text-xs">
-                {token}
-              </code>
-            </div>
-          )}
+        <div className="flex flex-wrap items-center gap-3 md:col-span-2">
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={status === "sending"}
+          >
+            {status === "sending" ? "Mengirim…" : "Buat Undangan →"}
+          </Button>
+          <Badge tone="muted">
+            Berlaku 7 hari · sekali klaim
+          </Badge>
         </div>
-      )}
 
-      {status === "error" && message && (
-        <div className="md:col-span-2 rounded-xl bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-200">
-          {message}
-        </div>
-      )}
-    </form>
+        {status === "ok" && message && (
+          <div className="rounded-xl bg-green-50 p-4 text-sm text-green-900 ring-1 ring-green-200 md:col-span-2">
+            <div className="mb-1 font-black">✓ Undangan dibuat</div>
+            <p className="leading-relaxed">{message}</p>
+            {token && (
+              <div className="mt-3">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-green-900/70">
+                  Token
+                </span>
+                <code className="mt-1 block break-all rounded-lg bg-white px-3 py-2 font-mono text-[11px] text-ink shadow-sm">
+                  {token}
+                </code>
+              </div>
+            )}
+          </div>
+        )}
+
+        {status === "error" && message && (
+          <div className="rounded-xl bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-200 md:col-span-2">
+            <div className="mb-1 font-black">✗ Gagal buat undangan</div>
+            <p className="leading-relaxed">{message}</p>
+          </div>
+        )}
+      </form>
+    </Section>
   );
 }
