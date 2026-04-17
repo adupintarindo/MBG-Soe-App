@@ -71,11 +71,11 @@ on conflict (code) do nothing;
 
 -- Buah
 insert into public.items(code,name_en,unit,category,price_idr,vol_weekly) values
- ('Buah - Pisang','Banana','kg','BUAH',12000,80),
- ('Buah - Pepaya','Papaya','kg','BUAH',10000,60),
- ('Buah - Melon','Melon','kg','BUAH',18000,40),
- ('Buah - Semangka','Watermelon','kg','BUAH',9000,70),
- ('Buah - Jeruk','Orange','kg','BUAH',22000,50)
+ ('Pisang','Banana','kg','BUAH',12000,80),
+ ('Pepaya','Papaya','kg','BUAH',10000,60),
+ ('Melon','Melon','kg','BUAH',18000,40),
+ ('Semangka','Watermelon','kg','BUAH',9000,70),
+ ('Jeruk','Orange','kg','BUAH',22000,50)
 on conflict (code) do nothing;
 
 -- ---- MENUS + BOM ------------------------------------------------------------
@@ -91,7 +91,7 @@ insert into public.suppliers(id,name,type,commodity,pic,phone,address,email,note
  ('SUP-02','CV Lintas Cakrawala','CV','Ayam segar, Telur ayam, Ikan Tuna, Ikan Tongkol, Ikan Kembung','Direktur CV Lintas Cakrawala','+62 812-3888-1100','Kupang · NTT','info@lintascakrawala.co.id','Protein hewani utama',82.3,'signed'),
  ('SUP-03','UD Kurnia Jaya','UD','Kentang, Wortel, Buncis, Kacang Panjang, Bawang Merah, Bawang Putih','Pemilik UD Kurnia Jaya','+62 813-3801-2202','Soe · TTS','kurniajaya.soe@gmail.com','Sayur & bumbu segar',78.1,'signed'),
  ('SUP-04','Koperasi Fetomone','KOPERASI','Sayur hijau, Bayam, Sawi, Kangkung','Ketua Koperasi Fetomone','+62 852-3700-4401','Soe · TTS','koperasi.fetomone@gmail.com','Produk lokal petani',74.5,'signed'),
- ('SUP-05','UD Buah Sehat','UD','Buah - Pisang, Buah - Pepaya, Buah - Melon, Buah - Semangka, Buah - Jeruk','Pemilik UD Buah Sehat','+62 813-3801-5503','Kupang · NTT','buahsehat.nt@gmail.com','Buah segar harian',79.2,'signed'),
+ ('SUP-05','UD Buah Sehat','UD','Pisang, Pepaya, Melon, Semangka, Jeruk','Pemilik UD Buah Sehat','+62 813-3801-5503','Kupang · NTT','buahsehat.nt@gmail.com','Buah segar harian',79.2,'signed'),
  ('SUP-06','CV Rajawali Pangan','CV','Tahu, Tempe, Minyak goreng, Gula, Garam','Direktur CV Rajawali','+62 812-3888-6601','Kupang · NTT','rajawali@gmail.com','Sembako & nabati',76.0,'signed'),
  ('SUP-07','Poktan Tunas Harapan','POKTAN','Jagung manis, Labu siam, Ubi jalar','Ketua Poktan Tunas Harapan','+62 852-3700-7703','Oeklani · TTS','poktan.tunas@gmail.com','Petani lokal',71.2,'signed'),
  ('SUP-08','Toko Sumber Rejeki','TOKO','Cabai, Jahe, Kunyit, Lengkuas, Sereh, Ketumbar','Pemilik Toko Sumber Rejeki','+62 813-3801-8804','Soe · TTS','sumberejeki.soe@gmail.com','Bumbu & rempah',72.8,'signed'),
@@ -118,11 +118,11 @@ insert into public.supplier_items(supplier_id,item_code,is_main,price_idr) value
  ('SUP-04','Bayam',true,12000),
  ('SUP-04','Sawi Hijau',true,13000),
  ('SUP-04','Kangkung',true,10000),
- ('SUP-05','Buah - Pisang',true,12000),
- ('SUP-05','Buah - Pepaya',true,10000),
- ('SUP-05','Buah - Melon',true,18000),
- ('SUP-05','Buah - Semangka',true,9000),
- ('SUP-05','Buah - Jeruk',true,22000),
+ ('SUP-05','Pisang',true,12000),
+ ('SUP-05','Pepaya',true,10000),
+ ('SUP-05','Melon',true,18000),
+ ('SUP-05','Semangka',true,9000),
+ ('SUP-05','Jeruk',true,22000),
  ('SUP-06','Tahu',true,12000),
  ('SUP-06','Tempe',true,14000),
  ('SUP-06','Minyak Goreng',true,18000),

@@ -2737,7 +2737,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (1, 'Kecap Manis',         5,  5,  5,  5,   5),
   (1, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (1, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (1, 'Buah - Pisang',     150,100,100,150, 150),
+  (1, 'Pisang',     150,100,100,150, 150),
 
   (2, 'Beras Putih',        70, 30, 50, 70, 110),
   (2, 'Telur Ayam',         60, 60, 60, 60,  60),
@@ -2753,7 +2753,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (2, 'Sereh',               2,  2,  2,  2,   2),
   (2, 'Tomat',              30, 30, 30, 30,  30),
   (2, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (2, 'Buah - Pepaya',     150,100,100,150, 150),
+  (2, 'Pepaya',     150,100,100,150, 150),
 
   (3, 'Beras Putih',        70, 30, 50, 70, 110),
   (3, 'Ikan Tuna',         100, 25, 25,100, 100),
@@ -2770,7 +2770,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (3, 'Sereh',               2,  2,  2,  2,   2),
   (3, 'Tomat',              30, 30, 30, 30,  30),
   (3, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (3, 'Buah - Melon',      150,100,100,150, 150),
+  (3, 'Melon',      150,100,100,150, 150),
 
   (4, 'Beras Putih',        70, 30, 50, 70, 110),
   (4, 'Ayam Tanpa Tulang', 100, 25, 25,100, 100),
@@ -2784,7 +2784,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (4, 'Ketumbar',         0.25, 0.25,0.25,0.25,0.25),
   (4, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (4, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (4, 'Buah - Pisang',     150,100,100,150, 150),
+  (4, 'Pisang',     150,100,100,150, 150),
 
   (5, 'Beras Putih',        70, 30, 50, 70, 110),
   (5, 'Telur Ayam',         60, 60, 60, 60,  60),
@@ -2796,7 +2796,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (5, 'Garam',               1,  1,  1,  1,   1),
   (5, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (5, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (5, 'Buah - Pepaya',     150,100,100,150, 150),
+  (5, 'Pepaya',     150,100,100,150, 150),
 
   (6, 'Beras Putih',        70, 30, 50, 70, 110),
   (6, 'Ikan Tuna',         100, 25, 25,100, 100),
@@ -2812,7 +2812,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (6, 'Sereh',               2,  2,  2,  2,   2),
   (6, 'Tomat',              35, 35, 35, 35,  35),
   (6, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (6, 'Buah - Pisang',     150,100,100,150, 150),
+  (6, 'Pisang',     150,100,100,150, 150),
 
   (7, 'Beras Putih',        70, 30, 50, 70, 110),
   (7, 'Ayam Tanpa Tulang', 100, 25, 25,100, 100),
@@ -2831,7 +2831,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (7, 'Sereh',               2,  2,  2,  2,   2),
   (7, 'Tomat',               2,  2,  2,  2,   2),
   (7, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (7, 'Buah - Pepaya',     150,100,100,150, 150),
+  (7, 'Pepaya',     150,100,100,150, 150),
 
   (8, 'Beras Putih',        70, 30, 50, 70, 110),
   (8, 'Telur Ayam',         60, 60, 60, 60,  60),
@@ -2846,7 +2846,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (8, 'Sereh',               2,  2,  2,  2,   2),
   (8, 'Tomat',              30, 30, 30, 30,  30),
   (8, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (8, 'Buah - Semangka',   150,100,100,150, 150),
+  (8, 'Semangka',   150,100,100,150, 150),
 
   (9, 'Beras Putih',        70, 30, 50, 70, 110),
   (9, 'Tahu',              100, 25, 25,100, 100),
@@ -2862,7 +2862,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (9, 'Kecap Manis',         5,  5,  5,  5,   5),
   (9, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (9, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (9, 'Buah - Pisang',     150,100,100,150, 150),
+  (9, 'Pisang',     150,100,100,150, 150),
 
   (10, 'Beras Putih',        70, 30, 50, 70, 110),
   (10, 'Ikan Tuna',         100, 25, 25,100, 100),
@@ -2880,7 +2880,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (10, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (10, 'Sereh',               2,  2,  2,  2,   2),
   (10, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (10, 'Buah - Pepaya',     150,100,100,150, 150)
+  (10, 'Pepaya',     150,100,100,150, 150)
 on conflict (menu_id, item_code) do update set
   grams_per_porsi = excluded.grams_per_porsi,
   grams_paud      = excluded.grams_paud,
@@ -3883,6 +3883,1035 @@ as $$
 $$;
 
 grant execute on function public.sop_compliance_summary(date, date) to authenticated;
+
+
+-- >>> 0016_rls_helpers_security_definer.sql =================================
+-- =============================================================================
+-- 0016 · Fix RLS recursion → "stack depth limit exceeded"
+-- -----------------------------------------------------------------------------
+-- Problem: helper RLS (current_role, current_supplier_id, is_admin) query
+-- public.profiles tanpa SECURITY DEFINER. Policy "profiles: admin all read"
+-- memanggil is_admin() → current_role() → SELECT profiles → kembali evaluasi
+-- policy → rekursi sampai max_stack_depth.
+--
+-- Fix: ubah 3 helper ke SECURITY DEFINER + lock search_path. Helper jadi
+-- bypass RLS saat query profiles, memutus loop tanpa mengubah semantik
+-- (function cuma baca role/supplier_id user aktif, bukan enforcement point).
+--
+-- Tambahan: trg_qt_rows_recalc diberi guard pg_trigger_depth() supaya UPDATE
+-- quotations dari trigger tidak pernah fire chain trigger lain (defense in
+-- depth, tidak strictly needed tapi murah).
+-- =============================================================================
+
+create or replace function public.current_role()
+returns public.user_role
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select role from public.profiles where id = auth.uid() limit 1;
+$$;
+
+create or replace function public.current_supplier_id()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select supplier_id from public.profiles where id = auth.uid() limit 1;
+$$;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(public.current_role() = 'admin', false);
+$$;
+
+-- Re-grant (SECURITY DEFINER tidak pengaruh EXECUTE grant, tapi memastikan).
+grant execute on function public.current_role()        to authenticated, anon;
+grant execute on function public.current_supplier_id() to authenticated, anon;
+grant execute on function public.is_admin()            to authenticated, anon;
+
+-- -----------------------------------------------------------------------------
+-- Defense in depth: quotation total recalc trigger tidak perlu rekursif.
+-- -----------------------------------------------------------------------------
+create or replace function public.recalc_quotation_total()
+returns trigger language plpgsql as $$
+declare
+  v_qt text;
+  v_sum numeric(14,2);
+begin
+  if pg_trigger_depth() > 1 then
+    return null;
+  end if;
+  v_qt := coalesce(new.qt_no, old.qt_no);
+  select coalesce(sum(subtotal), 0) into v_sum
+  from public.quotation_rows
+  where qt_no = v_qt;
+  update public.quotations set total = v_sum where no = v_qt;
+  return null;
+end; $$;
+
+
+-- >>> 0017_purchase_requisitions.sql ========================================
+-- =============================================================================
+-- 0017 · Purchase Requisitions (PR) + Split-Allocation per Supplier
+-- -----------------------------------------------------------------------------
+-- Konsep: satu kebutuhan tanggal X bisa dipecah ke N supplier dengan qty
+-- absolut (bukan %). PR jadi parent, alokasi per (item × supplier) jadi anak.
+-- Generate N quotations (1 per supplier) sekali klik; operator manual
+-- re-alokasi gap kalau supplier balasan-nya qty < planned.
+--
+-- Alur:
+--   draft → (add allocations) → allocated → (generate_quotations)
+--        → quotations_issued → (all quotations accepted/converted) → completed
+-- =============================================================================
+
+do $$ begin
+  create type public.pr_status as enum (
+  'draft',
+  'allocated',
+  'quotations_issued',
+  'completed',
+  'cancelled'
+  );
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.purchase_requisitions (
+  no text primary key,
+  need_date date not null,
+  status public.pr_status not null default 'draft',
+  notes text,
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id)
+);
+create index if not exists idx_pr_need_date on public.purchase_requisitions(need_date);
+create index if not exists idx_pr_status on public.purchase_requisitions(status);
+
+create table if not exists public.pr_rows (
+  pr_no text not null references public.purchase_requisitions(no) on delete cascade,
+  line_no smallint not null,
+  item_code text not null references public.items(code),
+  qty_total numeric(12,3) not null,
+  unit text not null,
+  note text,
+  primary key (pr_no, line_no)
+);
+create index if not exists idx_pr_rows_item on public.pr_rows(item_code);
+
+create table if not exists public.pr_allocations (
+  id bigserial primary key,
+  pr_no text not null,
+  line_no smallint not null,
+  supplier_id text not null references public.suppliers(id),
+  qty_planned numeric(12,3) not null check (qty_planned > 0),
+  quotation_no text references public.quotations(no) on delete set null,
+  note text,
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id),
+  foreign key (pr_no, line_no)
+    references public.pr_rows(pr_no, line_no) on delete cascade,
+  unique (pr_no, line_no, supplier_id)
+);
+create index if not exists idx_pr_alloc_pr on public.pr_allocations(pr_no);
+create index if not exists idx_pr_alloc_sup on public.pr_allocations(supplier_id);
+create index if not exists idx_pr_alloc_qt on public.pr_allocations(quotation_no);
+
+-- Link quotation ↔ PR (nullable: manual quotation tetap bisa ada)
+alter table public.quotations
+  add column if not exists pr_no text references public.purchase_requisitions(no);
+create index if not exists idx_qt_pr on public.quotations(pr_no);
+
+-- Auto-assign PR number (PR-YYYY-NNN)
+create or replace function public.assign_pr_no()
+returns trigger language plpgsql as $$
+declare
+  v_year text;
+  v_seq int;
+begin
+  if new.no is null or new.no = '' then
+    v_year := to_char(coalesce(new.created_at, now()), 'YYYY');
+    select coalesce(max(
+      nullif(regexp_replace(no, 'PR-' || v_year || '-', ''), '')::int
+    ), 0) + 1
+    into v_seq
+    from public.purchase_requisitions
+    where no like 'PR-' || v_year || '-%';
+    new.no := 'PR-' || v_year || '-' || lpad(v_seq::text, 3, '0');
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists trg_pr_assign on public.purchase_requisitions;
+drop trigger if exists trg_pr_assign on public.purchase_requisitions;
+create trigger trg_pr_assign before insert on public.purchase_requisitions
+  for each row execute function public.assign_pr_no();
+
+-- =============================================================================
+-- RLS
+-- =============================================================================
+alter table public.purchase_requisitions enable row level security;
+alter table public.pr_rows               enable row level security;
+alter table public.pr_allocations        enable row level security;
+
+-- PR + rows: staff read, op/admin write. Supplier TIDAK baca PR langsung —
+-- mereka baca lewat quotation yang sudah dispawn (RLS quotations sudah handle).
+drop policy if exists "pr: staff read" on public.purchase_requisitions;
+drop policy if exists "pr: staff read" on public.purchase_requisitions;
+create policy "pr: staff read" on public.purchase_requisitions
+  for select using (
+    auth.uid() is not null
+    and public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "pr: op/admin write" on public.purchase_requisitions;
+drop policy if exists "pr: op/admin write" on public.purchase_requisitions;
+create policy "pr: op/admin write" on public.purchase_requisitions
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+drop policy if exists "pr_rows: staff read" on public.pr_rows;
+drop policy if exists "pr_rows: staff read" on public.pr_rows;
+create policy "pr_rows: staff read" on public.pr_rows
+  for select using (
+    auth.uid() is not null
+    and public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "pr_rows: op/admin write" on public.pr_rows;
+drop policy if exists "pr_rows: op/admin write" on public.pr_rows;
+create policy "pr_rows: op/admin write" on public.pr_rows
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+drop policy if exists "pr_alloc: staff read" on public.pr_allocations;
+drop policy if exists "pr_alloc: staff read" on public.pr_allocations;
+create policy "pr_alloc: staff read" on public.pr_allocations
+  for select using (
+    auth.uid() is not null
+    and (
+      public.current_role() in ('admin','operator','ahli_gizi','viewer')
+      or (public.current_role() = 'supplier'
+          and supplier_id = public.current_supplier_id())
+    )
+  );
+
+drop policy if exists "pr_alloc: op/admin write" on public.pr_allocations;
+drop policy if exists "pr_alloc: op/admin write" on public.pr_allocations;
+create policy "pr_alloc: op/admin write" on public.pr_allocations
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- =============================================================================
+-- RPC 1 · Seed PR dari requirement_for_date
+-- =============================================================================
+create or replace function public.pr_seed_from_date(
+  p_need_date date,
+  p_notes text default null
+)
+returns text
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_pr_no text;
+  v_line smallint := 1;
+  r record;
+begin
+  if public.current_role() not in ('admin','operator') then
+    raise exception 'forbidden';
+  end if;
+
+  insert into public.purchase_requisitions(need_date, notes, status, created_by)
+  values (p_need_date, p_notes, 'draft', auth.uid())
+  returning no into v_pr_no;
+
+  for r in
+    select item_code, round(qty::numeric, 3) as qty, unit
+    from public.requirement_for_date(p_need_date)
+    where qty > 0
+    order by item_code
+  loop
+    insert into public.pr_rows(pr_no, line_no, item_code, qty_total, unit)
+    values (v_pr_no, v_line, r.item_code, r.qty, r.unit);
+    v_line := v_line + 1;
+  end loop;
+
+  return v_pr_no;
+end; $$;
+
+grant execute on function public.pr_seed_from_date(date, text) to authenticated;
+
+-- =============================================================================
+-- RPC 2 · Generate quotations dari PR
+-- Group allocations by supplier → 1 quotation per supplier (multi-line).
+-- Harga saran: last PO price supplier+item → last PO any supplier → katalog.
+-- Idempotent: hanya alokasi dengan quotation_no IS NULL yang dispawn.
+-- =============================================================================
+create or replace function public.pr_generate_quotations(p_pr_no text)
+returns text[]
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_pr record;
+  v_qt_no text;
+  v_line smallint;
+  v_created text[] := '{}';
+  v_sug numeric;
+  r_sup record;
+  r_alloc record;
+begin
+  if public.current_role() not in ('admin','operator') then
+    raise exception 'forbidden';
+  end if;
+
+  select * into v_pr from public.purchase_requisitions where no = p_pr_no;
+  if not found then raise exception 'PR % not found', p_pr_no; end if;
+
+  for r_sup in
+    select distinct supplier_id
+    from public.pr_allocations
+    where pr_no = p_pr_no and quotation_no is null
+  loop
+    insert into public.quotations(
+      supplier_id, quote_date, valid_until, need_date, notes, status, pr_no, created_by
+    )
+    values (
+      r_sup.supplier_id, current_date, current_date + 7, v_pr.need_date,
+      'Dari ' || p_pr_no, 'draft', p_pr_no, auth.uid()
+    )
+    returning no into v_qt_no;
+
+    v_line := 1;
+
+    for r_alloc in
+      select a.id, a.line_no, a.qty_planned, pr.item_code, pr.unit
+      from public.pr_allocations a
+      join public.pr_rows pr
+        on pr.pr_no = a.pr_no and pr.line_no = a.line_no
+      where a.pr_no = p_pr_no
+        and a.supplier_id = r_sup.supplier_id
+        and a.quotation_no is null
+      order by a.line_no
+    loop
+      -- Price suggestion cascade
+      select price into v_sug
+      from public.po_rows prow
+      join public.purchase_orders po on po.no = prow.po_no
+      where prow.item_code = r_alloc.item_code
+        and po.supplier_id = r_sup.supplier_id
+      order by po.po_date desc
+      limit 1;
+
+      if v_sug is null then
+        select price into v_sug
+        from public.po_rows prow
+        join public.purchase_orders po on po.no = prow.po_no
+        where prow.item_code = r_alloc.item_code
+        order by po.po_date desc
+        limit 1;
+      end if;
+
+      if v_sug is null then
+        select price_idr into v_sug from public.items where code = r_alloc.item_code;
+      end if;
+
+      insert into public.quotation_rows(
+        qt_no, line_no, item_code, qty, unit, price_suggested
+      )
+      values (
+        v_qt_no, v_line, r_alloc.item_code, r_alloc.qty_planned, r_alloc.unit, v_sug
+      );
+
+      update public.pr_allocations
+        set quotation_no = v_qt_no
+        where id = r_alloc.id;
+
+      v_line := v_line + 1;
+    end loop;
+
+    v_created := v_created || v_qt_no;
+  end loop;
+
+  if array_length(v_created, 1) is not null then
+    update public.purchase_requisitions
+      set status = 'quotations_issued'
+      where no = p_pr_no;
+  end if;
+
+  return v_created;
+end; $$;
+
+grant execute on function public.pr_generate_quotations(text) to authenticated;
+
+-- =============================================================================
+-- RPC 3 · Allocation summary per PR-line
+-- qty_planned_sum = total alokasi operator
+-- qty_quoted_sum  = total qty_quoted dari quotation aktif (responded/accepted/converted)
+-- qty_po_sum      = total qty di PO hasil convert
+-- gap             = qty_total − qty_planned_sum (tersisa untuk di-alokasi)
+-- =============================================================================
+create or replace function public.pr_allocation_summary(p_pr_no text)
+returns table(
+  line_no smallint,
+  item_code text,
+  unit text,
+  qty_total numeric,
+  qty_planned_sum numeric,
+  qty_quoted_sum numeric,
+  qty_po_sum numeric,
+  gap numeric
+)
+language sql stable as $$
+  with alloc_plan as (
+    select line_no, sum(qty_planned) as s
+    from public.pr_allocations
+    where pr_no = p_pr_no
+    group by line_no
+  ),
+  alloc_quoted as (
+    select a.line_no, sum(coalesce(qr.qty_quoted, qr.qty)) as s
+    from public.pr_allocations a
+    join public.quotations q on q.no = a.quotation_no
+    join public.pr_rows pr on pr.pr_no = a.pr_no and pr.line_no = a.line_no
+    join public.quotation_rows qr
+      on qr.qt_no = a.quotation_no and qr.item_code = pr.item_code
+    where a.pr_no = p_pr_no
+      and q.status in ('responded','accepted','converted')
+    group by a.line_no
+  ),
+  alloc_po as (
+    select a.line_no, sum(por.qty) as s
+    from public.pr_allocations a
+    join public.quotations q on q.no = a.quotation_no
+    join public.purchase_orders po on po.no = q.converted_po_no
+    join public.pr_rows pr on pr.pr_no = a.pr_no and pr.line_no = a.line_no
+    join public.po_rows por on por.po_no = po.no and por.item_code = pr.item_code
+    where a.pr_no = p_pr_no
+    group by a.line_no
+  )
+  select
+    pr.line_no,
+    pr.item_code,
+    pr.unit,
+    pr.qty_total,
+    coalesce(ap.s, 0) as qty_planned_sum,
+    coalesce(aq.s, 0) as qty_quoted_sum,
+    coalesce(apo.s, 0) as qty_po_sum,
+    (pr.qty_total - coalesce(ap.s, 0)) as gap
+  from public.pr_rows pr
+  left join alloc_plan ap  on ap.line_no = pr.line_no
+  left join alloc_quoted aq on aq.line_no = pr.line_no
+  left join alloc_po apo   on apo.line_no = pr.line_no
+  where pr.pr_no = p_pr_no
+  order by pr.line_no;
+$$;
+
+grant execute on function public.pr_allocation_summary(text) to authenticated;
+
+-- =============================================================================
+-- Trigger: auto-update PR.status ke 'allocated' saat allocation pertama masuk
+-- =============================================================================
+create or replace function public.pr_touch_status()
+returns trigger language plpgsql as $$
+begin
+  if pg_trigger_depth() > 1 then return null; end if;
+  update public.purchase_requisitions
+    set status = 'allocated'
+    where no = new.pr_no
+      and status = 'draft';
+  return null;
+end; $$;
+
+drop trigger if exists trg_pr_alloc_touch on public.pr_allocations;
+drop trigger if exists trg_pr_alloc_touch on public.pr_allocations;
+create trigger trg_pr_alloc_touch after insert on public.pr_allocations
+  for each row execute function public.pr_touch_status();
+
+
+-- >>> 0017_weekly_price_list.sql ============================================
+-- =============================================================================
+-- 0017 · Weekly Price List (benchmarking multi-supplier per komoditas)
+-- -----------------------------------------------------------------------------
+-- Port dari Weekly_Price_List_Template.xlsx:
+--   - 1 period (April–Juni 2026) berisi 12 minggu
+--   - 6 kategori komoditas (BERAS, SAYURAN, BUAH, PROTEIN_HEWANI,
+--     PROTEIN_NABATI, BUMBU_KERING) × banyak supplier × 12 minggu
+--   - Dual price: per-item (mis. Rp/ekor, Rp/butir) + per-kg (setelah konversi)
+--   - Tujuan: Kepala SPPG & Ahli Gizi bisa bandingin harga minggu-ke-minggu
+--     antar supplier untuk negosiasi PO & update items.price_idr
+--
+-- Idempoten: semua drop/create pakai `if exists` / `if not exists`.
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. ENUM kategori komoditas (subset item_category, eksplisit untuk UI grid)
+-- -----------------------------------------------------------------------------
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'price_commodity') then
+    create type public.price_commodity as enum (
+      'BERAS',
+      'SAYURAN',
+      'BUAH',
+      'PROTEIN_HEWANI',
+      'PROTEIN_NABATI',
+      'BUMBU_KERING'
+    );
+  end if;
+end$$;
+
+-- -----------------------------------------------------------------------------
+-- 2. TABLES
+-- -----------------------------------------------------------------------------
+
+-- Period: rentang penelusuran harga (mis. April–Juni 2026, Juli–Sep 2026, dst)
+create table if not exists public.price_periods (
+  id           smallserial primary key,
+  name         text not null,                  -- "April–Juni 2026"
+  start_date   date not null,
+  end_date     date not null,
+  active       boolean not null default true,
+  notes        text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  constraint price_periods_range_chk check (end_date >= start_date)
+);
+create unique index if not exists ux_price_periods_name on public.price_periods(lower(name));
+
+-- Weeks: pecahan 7-harian dalam satu period (template = 12 weeks)
+create table if not exists public.price_weeks (
+  id           bigserial primary key,
+  period_id    smallint not null references public.price_periods(id) on delete cascade,
+  week_no      smallint not null,              -- 1..12 (atau lebih)
+  start_date   date not null,
+  end_date     date not null,
+  label        text not null,                  -- "Wk 1: 06-12 Apr"
+  created_at   timestamptz not null default now(),
+  constraint price_weeks_range_chk check (end_date >= start_date),
+  constraint price_weeks_unique_no unique (period_id, week_no)
+);
+create index if not exists idx_price_weeks_period on public.price_weeks(period_id);
+
+-- Supplier price observations per minggu
+create table if not exists public.supplier_prices (
+  id                bigserial primary key,
+  week_id           bigint not null references public.price_weeks(id) on delete cascade,
+  supplier_id       text not null references public.suppliers(id) on delete cascade,
+  commodity         public.price_commodity not null,
+  ingredient_name   text not null,             -- "Beras Premium", "Ayam Broiler", "Pisang Ambon"
+  item_code         text references public.items(code) on delete set null, -- optional FK ke master
+  price_per_item    numeric(14,2),             -- Rp/ekor, Rp/butir, Rp/ikat, dll
+  price_per_kg      numeric(14,2),             -- Rp/kg (baseline untuk banding)
+  unit              text,                      -- "kg", "butir", "ekor", "ikat"
+  notes             text,
+  created_by        uuid references auth.users(id),
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  constraint supplier_prices_has_price_chk
+    check (price_per_item is not null or price_per_kg is not null),
+  constraint supplier_prices_unique_observation
+    unique (week_id, supplier_id, commodity, ingredient_name)
+);
+create index if not exists idx_supplier_prices_supplier on public.supplier_prices(supplier_id);
+create index if not exists idx_supplier_prices_week     on public.supplier_prices(week_id);
+create index if not exists idx_supplier_prices_commodity on public.supplier_prices(commodity);
+create index if not exists idx_supplier_prices_item     on public.supplier_prices(item_code) where item_code is not null;
+
+-- -----------------------------------------------------------------------------
+-- 3. updated_at triggers (ikut pola yang dipakai 0001)
+-- -----------------------------------------------------------------------------
+create or replace function public.tg_touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end; $$;
+
+drop trigger if exists trg_price_periods_touch  on public.price_periods;
+drop trigger if exists trg_price_periods_touch on public.price_periods;
+create trigger trg_price_periods_touch before update on public.price_periods
+  for each row execute function public.tg_touch_updated_at();
+
+drop trigger if exists trg_supplier_prices_touch on public.supplier_prices;
+drop trigger if exists trg_supplier_prices_touch on public.supplier_prices;
+create trigger trg_supplier_prices_touch before update on public.supplier_prices
+  for each row execute function public.tg_touch_updated_at();
+
+-- -----------------------------------------------------------------------------
+-- 4. VIEW: pivot harga per-kg ke kolom mingguan (mirror layout Excel)
+-- -----------------------------------------------------------------------------
+-- v_price_list_matrix: 1 row per (supplier × commodity × ingredient × period),
+-- 12 kolom w1..w12 = price_per_kg minggu ke-n, plus avg_per_kg & latest_per_kg.
+drop view if exists public.v_price_list_matrix;
+create view public.v_price_list_matrix as
+with base as (
+  select
+    sp.supplier_id,
+    s.name            as supplier_name,
+    sp.commodity,
+    sp.ingredient_name,
+    sp.item_code,
+    pw.period_id,
+    pp.name           as period_name,
+    pw.week_no,
+    sp.price_per_kg,
+    sp.price_per_item,
+    sp.unit,
+    sp.notes
+  from public.supplier_prices sp
+  join public.price_weeks     pw on pw.id = sp.week_id
+  join public.price_periods   pp on pp.id = pw.period_id
+  join public.suppliers       s  on s.id  = sp.supplier_id
+)
+select
+  supplier_id,
+  supplier_name,
+  commodity,
+  ingredient_name,
+  item_code,
+  period_id,
+  period_name,
+  max(case when week_no = 1  then price_per_kg end) as w1,
+  max(case when week_no = 2  then price_per_kg end) as w2,
+  max(case when week_no = 3  then price_per_kg end) as w3,
+  max(case when week_no = 4  then price_per_kg end) as w4,
+  max(case when week_no = 5  then price_per_kg end) as w5,
+  max(case when week_no = 6  then price_per_kg end) as w6,
+  max(case when week_no = 7  then price_per_kg end) as w7,
+  max(case when week_no = 8  then price_per_kg end) as w8,
+  max(case when week_no = 9  then price_per_kg end) as w9,
+  max(case when week_no = 10 then price_per_kg end) as w10,
+  max(case when week_no = 11 then price_per_kg end) as w11,
+  max(case when week_no = 12 then price_per_kg end) as w12,
+  round(avg(price_per_kg)::numeric, 2)              as avg_per_kg,
+  max(price_per_kg) filter (where week_no is not null) as max_per_kg,
+  min(price_per_kg) filter (where week_no is not null) as min_per_kg
+from base
+group by
+  supplier_id, supplier_name, commodity, ingredient_name,
+  item_code, period_id, period_name;
+
+comment on view public.v_price_list_matrix is
+  'Pivot Weekly Price List: 12 kolom mingguan (Rp/kg) per supplier × commodity × ingredient';
+
+-- -----------------------------------------------------------------------------
+-- 5. RLS
+-- -----------------------------------------------------------------------------
+alter table public.price_periods    enable row level security;
+alter table public.price_weeks      enable row level security;
+alter table public.supplier_prices  enable row level security;
+
+-- READ: semua authenticated (operator, ahli_gizi, admin, viewer, supplier)
+drop policy if exists "price_periods: auth read"   on public.price_periods;
+drop policy if exists "price_periods: auth read" on public.price_periods;
+create policy "price_periods: auth read" on public.price_periods
+  for select using (auth.uid() is not null);
+
+drop policy if exists "price_weeks: auth read"     on public.price_weeks;
+drop policy if exists "price_weeks: auth read" on public.price_weeks;
+create policy "price_weeks: auth read" on public.price_weeks
+  for select using (auth.uid() is not null);
+
+drop policy if exists "supplier_prices: auth read" on public.supplier_prices;
+drop policy if exists "supplier_prices: auth read" on public.supplier_prices;
+create policy "supplier_prices: auth read" on public.supplier_prices
+  for select using (auth.uid() is not null);
+
+-- WRITE periods & weeks: admin + ahli_gizi
+drop policy if exists "price_periods: admin/gz write" on public.price_periods;
+drop policy if exists "price_periods: admin/gz write" on public.price_periods;
+create policy "price_periods: admin/gz write" on public.price_periods
+  for all using (public.current_role() in ('admin','ahli_gizi'))
+  with check (public.current_role() in ('admin','ahli_gizi'));
+
+drop policy if exists "price_weeks: admin/gz write" on public.price_weeks;
+drop policy if exists "price_weeks: admin/gz write" on public.price_weeks;
+create policy "price_weeks: admin/gz write" on public.price_weeks
+  for all using (public.current_role() in ('admin','ahli_gizi'))
+  with check (public.current_role() in ('admin','ahli_gizi'));
+
+-- WRITE observations: admin/operator/ahli_gizi full; supplier hanya baris sendiri
+drop policy if exists "supplier_prices: ops write" on public.supplier_prices;
+drop policy if exists "supplier_prices: ops write" on public.supplier_prices;
+create policy "supplier_prices: ops write" on public.supplier_prices
+  for all using (public.current_role() in ('admin','operator','ahli_gizi'))
+  with check (public.current_role() in ('admin','operator','ahli_gizi'));
+
+drop policy if exists "supplier_prices: supplier self write" on public.supplier_prices;
+drop policy if exists "supplier_prices: supplier self write" on public.supplier_prices;
+create policy "supplier_prices: supplier self write" on public.supplier_prices
+  for all using (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  ) with check (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  );
+
+-- Grant view ke authenticated
+grant select on public.v_price_list_matrix to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 6. SEED: Period "April–Juni 2026" + 12 minggu auto-generated
+--    Base Monday = 2026-04-06 → Week 12 = 2026-06-22..2026-06-28
+-- -----------------------------------------------------------------------------
+insert into public.price_periods (name, start_date, end_date, active, notes)
+values (
+  'April–Juni 2026',
+  date '2026-04-06',
+  date '2026-06-28',
+  true,
+  'Seed awal Weekly Price List (port dari Weekly_Price_List_Template.xlsx)'
+)
+on conflict (lower(name)) do nothing;
+
+do $$
+declare
+  v_period_id smallint;
+  v_week_start date;
+  v_month_label text;
+  i int;
+begin
+  select id into v_period_id
+  from public.price_periods
+  where lower(name) = lower('April–Juni 2026');
+
+  if v_period_id is null then
+    return;
+  end if;
+
+  for i in 1..12 loop
+    v_week_start := date '2026-04-06' + ((i - 1) * 7);
+    v_month_label := to_char(v_week_start, 'FMDD Mon') || '–' ||
+                     to_char(v_week_start + 6, 'FMDD Mon');
+    insert into public.price_weeks (period_id, week_no, start_date, end_date, label)
+    values (
+      v_period_id,
+      i,
+      v_week_start,
+      v_week_start + 6,
+      'Wk ' || i || ': ' || v_month_label
+    )
+    on conflict (period_id, week_no) do nothing;
+  end loop;
+end$$;
+
+-- -----------------------------------------------------------------------------
+-- 7. Notifikasi: log ke public.events (kalau ada) biar dashboard tahu
+-- -----------------------------------------------------------------------------
+-- (opsional, skip kalau events table belum ada di migrasi lain)
+
+-- =============================================================================
+-- END 0017
+-- =============================================================================
+
+
+-- >>> 0018_supplier_forecast.sql ============================================
+-- =============================================================================
+-- 0018 · Supplier 90-day Forecast (limited-access portal)
+-- -----------------------------------------------------------------------------
+-- Kebutuhan: supplier boleh lihat forecast kebutuhan per komoditas sampai 3
+-- bulan ke depan, tapi HANYA untuk item yang dia jual (supplier_items),
+-- dan tanpa bocor harga/supplier lain.
+--
+-- Sumber data tanggal:
+--   1. custom_menus(menu_date)    → flatten (source='custom')
+--   2. menu_assign(assign_date)   → BOM menu (source='assigned')
+--   3. fallback → cycle rotation dari settings.go_live_date + active_cycle_days
+--      (source='cycle')
+--
+-- Weekend & non_op_days → skip.
+-- =============================================================================
+
+-- Projected requirement untuk tanggal apapun (pakai cycle fallback)
+create or replace function public.requirement_for_date_projected(p_date date)
+returns table(
+  item_code text,
+  qty numeric,
+  unit text,
+  category public.item_category,
+  source text  -- 'assigned' | 'cycle' | 'custom'
+)
+language plpgsql stable as $$
+declare
+  v_menu smallint;
+  v_source text := 'assigned';
+  v_tier record;
+  v_cycle_days int;
+  v_go_live date;
+  v_cycle_day int;
+  v_offset int;
+begin
+  -- Weekend skip
+  if extract(dow from p_date) in (0,6) then return; end if;
+  -- Non-op skip
+  if exists (select 1 from public.non_op_days where op_date = p_date) then return; end if;
+
+  -- Custom menu (flat 100g/porsi per item)
+  if exists (select 1 from public.custom_menus where menu_date = p_date) then
+    declare v_eff numeric := public.porsi_effective(p_date);
+    begin
+      if v_eff <= 0 then return; end if;
+      return query
+        select
+          it.code as item_code,
+          (100.0 * v_eff / 1000.0)::numeric as qty,
+          it.unit,
+          it.category,
+          'custom'::text as source
+        from public.custom_menus cm,
+             jsonb_array_elements_text(cm.karbo || cm.protein || cm.sayur || cm.buah) as elem(val)
+             join public.items it on it.code = elem.val
+        where cm.menu_date = p_date;
+      return;
+    end;
+  end if;
+
+  -- Assigned?
+  select menu_id into v_menu from public.menu_assign where assign_date = p_date;
+
+  if v_menu is null then
+    -- Cycle fallback
+    select nullif(trim(both '"' from value::text), '')::int
+      into v_cycle_days
+      from public.settings where key = 'active_cycle_days';
+    select nullif(trim(both '"' from value::text), '')::date
+      into v_go_live
+      from public.settings where key = 'go_live_date';
+
+    v_cycle_days := coalesce(v_cycle_days, 14);
+    v_go_live    := coalesce(v_go_live, date '2026-05-04');
+
+    v_offset := (p_date - v_go_live)::int;
+    -- Python-style positive modulo untuk handle date < go_live
+    v_cycle_day := ((v_offset % v_cycle_days) + v_cycle_days) % v_cycle_days + 1;
+
+    select id into v_menu
+      from public.menus
+      where cycle_day = v_cycle_day and active = true
+      order by id
+      limit 1;
+
+    if v_menu is null then return; end if;
+    v_source := 'cycle';
+  end if;
+
+  -- Porsi tiered
+  select paud, sd13, sd46, smp_plus, operasional
+    into v_tier from public.porsi_counts_tiered(p_date);
+  if not coalesce(v_tier.operasional, false) then return; end if;
+
+  return query
+    select
+      b.item_code,
+      (
+        case
+          when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+              + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+            (coalesce(b.grams_paud,0) * v_tier.paud
+           + coalesce(b.grams_sd13,0) * v_tier.sd13
+           + coalesce(b.grams_sd46,0) * v_tier.sd46
+           + coalesce(b.grams_smp,0)  * v_tier.smp_plus) / 1000.0
+          else
+            b.grams_per_porsi * public.porsi_effective(p_date) / 1000.0
+        end
+      )::numeric as qty,
+      it.unit,
+      it.category,
+      v_source as source
+    from public.menu_bom b
+    join public.items it on it.code = b.item_code
+    where b.menu_id = v_menu;
+end; $$;
+
+grant execute on function public.requirement_for_date_projected(date) to authenticated;
+
+-- =============================================================================
+-- RPC · supplier_forecast_90d
+-- Return daily forecast per item yang ada di supplier_items(supplier_id).
+-- Supplier-role: force ke own supplier_id. Staff: bebas (atau fallback ke
+-- parameter supplier_id).
+-- =============================================================================
+create or replace function public.supplier_forecast_90d(
+  p_supplier_id text default null,
+  p_horizon_days int default 90
+)
+returns table(
+  op_date date,
+  item_code text,
+  item_name text,
+  unit text,
+  category public.item_category,
+  qty numeric,
+  source text
+)
+language plpgsql stable
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_sup text;
+  v_role public.user_role;
+  v_horizon int;
+begin
+  v_role := public.current_role();
+  v_horizon := greatest(1, least(coalesce(p_horizon_days, 90), 180));
+
+  if v_role = 'supplier' then
+    v_sup := public.current_supplier_id();
+    if v_sup is null then raise exception 'supplier profile incomplete'; end if;
+  elsif v_role in ('admin','operator','ahli_gizi','viewer') then
+    v_sup := coalesce(p_supplier_id, public.current_supplier_id());
+    if v_sup is null then
+      raise exception 'supplier_id required';
+    end if;
+  else
+    raise exception 'forbidden';
+  end if;
+
+  return query
+    select
+      (d::date) as op_date,
+      r.item_code,
+      coalesce(it.name_en, r.item_code) as item_name,
+      r.unit,
+      r.category,
+      round(r.qty, 3) as qty,
+      r.source
+    from generate_series(
+      current_date, current_date + (v_horizon - 1), interval '1 day'
+    ) as d
+    cross join lateral public.requirement_for_date_projected(d::date) r
+    join public.items it on it.code = r.item_code
+    where exists (
+      select 1 from public.supplier_items si
+      where si.supplier_id = v_sup and si.item_code = r.item_code
+    )
+      and r.qty > 0
+    order by d, r.item_code;
+end; $$;
+
+grant execute on function public.supplier_forecast_90d(text, int) to authenticated;
+
+-- =============================================================================
+-- RPC · supplier_forecast_monthly (agregasi 3 bulan per item)
+-- Return: bulan × item → total_qty, dipakai di tab "Monthly"
+-- =============================================================================
+create or replace function public.supplier_forecast_monthly(
+  p_supplier_id text default null,
+  p_months int default 3
+)
+returns table(
+  month date,
+  item_code text,
+  item_name text,
+  unit text,
+  category public.item_category,
+  qty_total numeric,
+  days_count int
+)
+language plpgsql stable
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_sup text;
+  v_role public.user_role;
+  v_months int;
+  v_horizon int;
+begin
+  v_role := public.current_role();
+  v_months := greatest(1, least(coalesce(p_months, 3), 6));
+  v_horizon := v_months * 31;
+
+  if v_role = 'supplier' then
+    v_sup := public.current_supplier_id();
+    if v_sup is null then raise exception 'supplier profile incomplete'; end if;
+  elsif v_role in ('admin','operator','ahli_gizi','viewer') then
+    v_sup := coalesce(p_supplier_id, public.current_supplier_id());
+    if v_sup is null then raise exception 'supplier_id required'; end if;
+  else
+    raise exception 'forbidden';
+  end if;
+
+  return query
+    select
+      date_trunc('month', d::date)::date as month,
+      r.item_code,
+      coalesce(it.name_en, r.item_code) as item_name,
+      r.unit,
+      r.category,
+      round(sum(r.qty), 3) as qty_total,
+      count(*)::int as days_count
+    from generate_series(
+      current_date, current_date + (v_horizon - 1), interval '1 day'
+    ) as d
+    cross join lateral public.requirement_for_date_projected(d::date) r
+    join public.items it on it.code = r.item_code
+    where exists (
+      select 1 from public.supplier_items si
+      where si.supplier_id = v_sup and si.item_code = r.item_code
+    )
+      and r.qty > 0
+      and (date_trunc('month', d::date) < date_trunc('month', current_date)
+           + (v_months || ' months')::interval)
+    group by date_trunc('month', d::date), r.item_code, it.name_en, r.unit, r.category
+    order by date_trunc('month', d::date), r.item_code;
+end; $$;
+
+grant execute on function public.supplier_forecast_monthly(text, int) to authenticated;
+
+
+-- >>> 0019_rls_align_calendar_writers.sql ===================================
+-- =============================================================================
+-- 0019 · Align RLS write policies with calendar UI role matrix
+-- -----------------------------------------------------------------------------
+-- Problem: app/calendar/page.tsx menganggap ahli_gizi boleh menulis ke tabel
+-- planning (`non_op_days`, `school_attendance` via CalendarGrid), tapi RLS
+-- policy hanya allow admin/operator. Hasilnya tombol "Tandai Non-Op" /
+-- upsert kehadiran siswa terlihat di UI lalu ditolak DB:
+--   "new row violates row-level security policy for table non_op_days"
+--
+-- Fix: rewrite write policy untuk 2 tabel supaya include ahli_gizi.
+-- Read policy tidak berubah. Idempoten (drop-create). Tidak mengubah semantik
+-- tabel operasional lain (stock, PO, GRN, invoice, receipt, tx) — mereka
+-- tetap admin/operator only karena bukan ranah ahli_gizi.
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- non_op_days · shared planning surface (kalender menu)
+-- -----------------------------------------------------------------------------
+drop policy if exists "nonop: op/admin write" on public.non_op_days;
+drop policy if exists "nonop: op/gz/admin write" on public.non_op_days;
+drop policy if exists "nonop: op/gz/admin write" on public.non_op_days;
+create policy "nonop: op/gz/admin write" on public.non_op_days
+  for all using (public.current_role() in ('admin','operator','ahli_gizi'))
+  with check (public.current_role() in ('admin','operator','ahli_gizi'));
+
+-- -----------------------------------------------------------------------------
+-- school_attendance · diisi dari calendar-grid (forecast harian)
+-- -----------------------------------------------------------------------------
+drop policy if exists "sch_att: operator write" on public.school_attendance;
+drop policy if exists "sch_att: op/gz/admin write" on public.school_attendance;
+drop policy if exists "sch_att: op/gz/admin write" on public.school_attendance;
+create policy "sch_att: op/gz/admin write" on public.school_attendance
+  for all using (public.current_role() in ('admin','operator','ahli_gizi'))
+  with check (public.current_role() in ('admin','operator','ahli_gizi'));
+
+-- =============================================================================
+-- END 0019
+-- =============================================================================
 
 
 commit;

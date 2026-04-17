@@ -50,6 +50,7 @@ const TABS: TabCard[] = [
     show: () => true
   },
   { href: "/suppliers", labelKey: "tabSuppliers", icon: "🤝", group: "buy", show: () => true },
+  { href: "/price-list", labelKey: "tabPriceList", icon: "💹", group: "buy", show: () => true },
   {
     href: "/stock",
     labelKey: "tabStock",

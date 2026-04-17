@@ -30,6 +30,7 @@ export const LANG_KEYS = {
   tabStock: { ID: "Kartu Stok", EN: "Stock Card" },
   tabProcurement: { ID: "Pengadaan", EN: "Procurement" },
   tabSuppliers: { ID: "Supplier", EN: "Suppliers" },
+  tabPriceList: { ID: "Price List", EN: "Price List" },
   tabDocgen: { ID: "Dokumen", EN: "Documents" },
   tabSOP: { ID: "SOP", EN: "SOP" },
   tabData: { ID: "Data Master", EN: "Master Data" },

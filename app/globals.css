@@ -102,8 +102,7 @@ html.dark body::before {
     radial-gradient(900px 600px at 100% 0%, rgba(201, 162, 39, 0.04), transparent 60%);
 }
 
-/* Mono font for codes, IDs, phone numbers, and tabular numerics */
-.font-mono,
+/* True monospace — only for actual code / pre blocks */
 code,
 kbd,
 samp,
@@ -122,24 +121,28 @@ pre {
   font-feature-settings: "calt", "ss01";
 }
 
-/* Tabular numerics across tables (numbers, IDR, kg) */
-table,
+/* .font-mono + .num: keep Inter, just turn on tabular numerics.
+   This makes IDs, phone numbers, IDR amounts, and table numerics
+   align in columns WITHOUT looking boxy/monospace. */
+.font-mono,
 .num,
-.tabular {
+.tabular,
+table {
+  font-family:
+    var(--font-inter),
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
+  font-feature-settings: "tnum", "cv11";
 }
 table td, table th {
   font-feature-settings: "tnum", "cv11";
-}
-
-/* Numeric-feel for any element marked .num */
-.num {
-  font-family:
-    var(--font-mono),
-    "JetBrains Mono",
-    ui-monospace,
-    monospace;
 }
 
 /* ============================================================
@@ -295,6 +298,38 @@ html.dark tbody tr.row-hover:hover { background-color: rgba(168, 184, 208, 0.04)
 
 /* Shrink horizontal table padding feels denser without losing tap target */
 table th, table td { vertical-align: top; }
+
+/* ============================================================
+   GLOBAL TABLE HEADER — black bg, white text, centered.
+   Overrides any per-page Tailwind utilities on <thead>/<th>.
+   ============================================================ */
+table thead,
+table thead tr,
+table thead th {
+  background-color: #000 !important;
+  color: #fff !important;
+  text-align: center !important;
+  border-color: #000 !important;
+}
+table thead th {
+  vertical-align: middle !important;
+}
+html.dark table thead,
+html.dark table thead tr,
+html.dark table thead th {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+@media print {
+  table thead,
+  table thead tr,
+  table thead th {
+    background-color: #000 !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
 
 /* Print: clean white page, hide chrome */
 @media print {

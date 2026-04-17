@@ -109,14 +109,13 @@ export default async function ProcurementPage() {
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
 
+  // Stage 1: fetch parent tables in parallel (pos, grns, invoices, quotations, suppliers, receipts, ncr)
   const [
     posRes,
-    poRowsRes,
     grnsRes,
     invoicesRes,
     receiptsRes,
     suppliersRes,
-    qcAggRes,
     qtsRes,
     ncrs,
     ncrStats
@@ -128,9 +127,6 @@ export default async function ProcurementPage() {
       )
       .order("po_date", { ascending: false })
       .limit(50),
-    supabase
-      .from("po_rows")
-      .select("po_no, line_no, item_code, qty, unit, price"),
     supabase
       .from("grns")
       .select("no, po_no, grn_date, status, qc_note")
@@ -147,10 +143,6 @@ export default async function ProcurementPage() {
       .order("created_at", { ascending: false })
       .limit(20),
     supabase.from("suppliers").select("id, name"),
-    supabase
-      .from("grn_qc_checks")
-      .select("grn_no, result")
-      .limit(5000),
     supabase
       .from("quotations")
       .select(
@@ -170,16 +162,36 @@ export default async function ProcurementPage() {
   ]);
 
   const pos = (posRes.data ?? []) as PoRow[];
-  const poRows = (poRowsRes.data ?? []) as PoLineRow[];
   const grns = (grnsRes.data ?? []) as GrnRow[];
   const invoices = (invoicesRes.data ?? []) as InvoiceRow[];
   const receipts = (receiptsRes.data ?? []) as ReceiptRow[];
   const suppliers = (suppliersRes.data ?? []) as SupplierLite[];
+  const quotations = (qtsRes.data ?? []) as QtRow[];
+
+  // Stage 2: fetch child tables scoped only to the 50 displayed POs/GRNs
+  const poNos = pos.map((p) => p.no);
+  const grnNos = grns.map((g) => g.no);
+
+  const [poRowsRes, qcAggRes] = await Promise.all([
+    poNos.length
+      ? supabase
+          .from("po_rows")
+          .select("po_no, line_no, item_code, qty, unit, price")
+          .in("po_no", poNos)
+      : Promise.resolve({ data: [] as PoLineRow[] }),
+    grnNos.length
+      ? supabase
+          .from("grn_qc_checks")
+          .select("grn_no, result")
+          .in("grn_no", grnNos)
+      : Promise.resolve({ data: [] as Array<{ grn_no: string; result: string }> })
+  ]);
+
+  const poRows = (poRowsRes.data ?? []) as PoLineRow[];
   const qcRows = (qcAggRes.data ?? []) as Array<{
     grn_no: string;
     result: string;
   }>;
-  const quotations = (qtsRes.data ?? []) as QtRow[];
 
   // Aggregate QC per GRN
   const qcMap = new Map<

@@ -408,25 +408,6 @@ export default async function CalendarPage({
             </div>
           </Section>
         )}
-
-        <Section
-          title={`${menus.length} Menu Siklus`}
-          hint="Daftar menu yang siap di-assign ke kalender."
-        >
-          <div className="flex flex-wrap gap-2">
-            {menus.map((m) => (
-              <span
-                key={m.id}
-                className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ink ring-1 ring-ink/10"
-              >
-                <span className="rounded bg-gradient-to-b from-blue-800 to-blue-700 px-1.5 py-0.5 font-mono text-[10px] font-black text-white">
-                  M{m.id}
-                </span>
-                {m.name}
-              </span>
-            ))}
-          </div>
-        </Section>
       </PageContainer>
     </div>
   );

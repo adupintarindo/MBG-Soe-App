@@ -10,7 +10,6 @@ import {
   KpiTile,
   NoticeCard,
   PageContainer,
-  PageHeader,
   Section,
   TableWrap,
   THead
@@ -146,10 +145,32 @@ export default async function DashboardPage() {
       (matrix[r.item_code][m] ?? 0) + Number(r.qty_kg);
   }
   const grandTotal = monthly.reduce((s, r) => s + Number(r.qty_kg), 0);
+  const maxItemTotal = topItems.length
+    ? (itemTotals.get(topItems[0]) ?? 0)
+    : 0;
   const monthLabel = (m: string) => {
     const [y, mo] = m.split("-");
     const date = new Date(Number(y), Number(mo) - 1, 1);
     return date.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
+  };
+  const commodityCategory = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.startsWith("beras") || n.includes("nasi"))
+      return { dot: "bg-amber-500", label: "Karbo" };
+    if (n.startsWith("buah") || n.includes("pisang") || n.includes("pepaya"))
+      return { dot: "bg-fuchsia-500", label: "Buah" };
+    if (
+      n.includes("ayam") ||
+      n.includes("ikan") ||
+      n.includes("telur") ||
+      n.includes("daging") ||
+      n.includes("tempe") ||
+      n.includes("tahu")
+    )
+      return { dot: "bg-sky-500", label: "Protein" };
+    if (n.includes("minyak") || n.includes("gula") || n.includes("garam"))
+      return { dot: "bg-violet-500", label: "Bumbu" };
+    return { dot: "bg-emerald-500", label: "Sayur" };
   };
 
   // status today (used by KPI tile below; status chip lives in <Nav>)
@@ -168,17 +189,11 @@ export default async function DashboardPage() {
       />
 
       <PageContainer>
-        <PageHeader
-          title={`Selamat datang, ${profile.full_name || profile.email.split("@")[0]}`}
-          subtitle={
-            <span className="flex items-center gap-2">
-              <span>{formatDateID(now)}</span>
-              {shortItems.length > 0 && (
-                <Badge tone="bad">{shortItems.length} shortage hari ini</Badge>
-              )}
-            </span>
-          }
-        />
+        {shortItems.length > 0 && (
+          <div className="mb-4">
+            <Badge tone="bad">{shortItems.length} shortage hari ini</Badge>
+          </div>
+        )}
 
         <KpiGrid>
           <KpiTile
@@ -237,41 +252,97 @@ export default async function DashboardPage() {
             />
           ) : (
             <TableWrap>
-              <table className="w-full text-sm">
+              <table className="w-full text-sm tabular-nums">
                 <THead>
-                  <th className="py-2 pr-3">#</th>
+                  <th className="w-10 py-2 pl-2 pr-3 text-center">#</th>
                   <th className="py-2 pr-3">Komoditas</th>
                   {months.map((m) => (
                     <th key={m} className="py-2 pr-3 text-right">
                       {monthLabel(m)}
                     </th>
                   ))}
-                  <th className="py-2 pr-3 text-right">Total (kg)</th>
+                  <th className="py-2 pl-4 pr-3 text-right">Total (kg)</th>
                 </THead>
                 <tbody>
                   {topItems.map((code, i) => {
                     const total = itemTotals.get(code) ?? 0;
+                    const rowMax = Math.max(
+                      1,
+                      ...months.map((m) => matrix[code][m] ?? 0)
+                    );
+                    const share =
+                      maxItemTotal > 0 ? total / maxItemTotal : 0;
+                    const cat = commodityCategory(code);
+                    const rankTone =
+                      i === 0
+                        ? "bg-emerald-600 text-white"
+                        : i === 1
+                          ? "bg-emerald-200 text-emerald-900"
+                          : i === 2
+                            ? "bg-emerald-100 text-emerald-900"
+                            : "bg-slate-100 text-ink2";
                     return (
                       <tr
                         key={code}
-                        className="row-hover border-b border-ink/5"
+                        className="row-hover border-b border-ink/5 odd:bg-slate-50/50"
                       >
-                        <td className="py-2 pr-3 text-ink2">{i + 1}</td>
-                        <td className="py-2 pr-3 font-semibold">{code}</td>
-                        {months.map((m) => (
-                          <td
-                            key={m}
-                            className="py-2 pr-3 text-right font-mono text-xs"
+                        <td className="py-2 pl-2 pr-3">
+                          <span
+                            className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-display text-[11px] font-bold ${rankTone}`}
                           >
-                            {(matrix[code][m] ?? 0).toLocaleString("id-ID", {
-                              maximumFractionDigits: 1
-                            })}
-                          </td>
-                        ))}
-                        <td className="py-2 pr-3 text-right font-mono text-xs font-black">
-                          {total.toLocaleString("id-ID", {
-                            maximumFractionDigits: 0
-                          })}
+                            {i + 1}
+                          </span>
+                        </td>
+                        <td className="py-2 pr-3">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`h-2 w-2 shrink-0 rounded-full ${cat.dot}`}
+                              aria-hidden
+                            />
+                            <span className="font-semibold">{code}</span>
+                            <span className="hidden text-[10px] font-medium uppercase tracking-wider text-ink2/60 md:inline">
+                              {cat.label}
+                            </span>
+                          </div>
+                        </td>
+                        {months.map((m) => {
+                          const v = matrix[code][m] ?? 0;
+                          const intensity = v / rowMax;
+                          const bg =
+                            intensity >= 0.95
+                              ? "bg-emerald-100/80"
+                              : intensity >= 0.7
+                                ? "bg-emerald-50"
+                                : intensity >= 0.4
+                                  ? "bg-emerald-50/50"
+                                  : "";
+                          return (
+                            <td
+                              key={m}
+                              className={`py-2 pr-3 text-right font-mono text-xs ${bg}`}
+                            >
+                              {v.toLocaleString("id-ID", {
+                                maximumFractionDigits: 1
+                              })}
+                            </td>
+                          );
+                        })}
+                        <td className="py-2 pl-4 pr-3">
+                          <div className="flex items-center justify-end gap-3">
+                            <div className="relative hidden h-1.5 w-20 overflow-hidden rounded-full bg-slate-200/70 md:block">
+                              <div
+                                className="absolute inset-y-0 left-0 rounded-full bg-emerald-500"
+                                style={{
+                                  width: `${Math.max(4, share * 100)}%`
+                                }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs font-black">
+                              {total.toLocaleString("id-ID", {
+                                maximumFractionDigits: 0
+                              })}
+                            </span>
+                          </div>
                         </td>
                       </tr>
                     );

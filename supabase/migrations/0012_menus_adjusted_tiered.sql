@@ -86,7 +86,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (1, 'Kecap Manis',         5,  5,  5,  5,   5),
   (1, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (1, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (1, 'Buah - Pisang',     150,100,100,150, 150),
+  (1, 'Pisang',     150,100,100,150, 150),
 
   (2, 'Beras Putih',        70, 30, 50, 70, 110),
   (2, 'Telur Ayam',         60, 60, 60, 60,  60),
@@ -102,7 +102,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (2, 'Sereh',               2,  2,  2,  2,   2),
   (2, 'Tomat',              30, 30, 30, 30,  30),
   (2, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (2, 'Buah - Pepaya',     150,100,100,150, 150),
+  (2, 'Pepaya',     150,100,100,150, 150),
 
   (3, 'Beras Putih',        70, 30, 50, 70, 110),
   (3, 'Ikan Tuna',         100, 25, 25,100, 100),
@@ -119,7 +119,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (3, 'Sereh',               2,  2,  2,  2,   2),
   (3, 'Tomat',              30, 30, 30, 30,  30),
   (3, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (3, 'Buah - Melon',      150,100,100,150, 150),
+  (3, 'Melon',      150,100,100,150, 150),
 
   (4, 'Beras Putih',        70, 30, 50, 70, 110),
   (4, 'Ayam Tanpa Tulang', 100, 25, 25,100, 100),
@@ -133,7 +133,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (4, 'Ketumbar',         0.25, 0.25,0.25,0.25,0.25),
   (4, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (4, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (4, 'Buah - Pisang',     150,100,100,150, 150),
+  (4, 'Pisang',     150,100,100,150, 150),
 
   (5, 'Beras Putih',        70, 30, 50, 70, 110),
   (5, 'Telur Ayam',         60, 60, 60, 60,  60),
@@ -145,7 +145,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (5, 'Garam',               1,  1,  1,  1,   1),
   (5, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (5, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (5, 'Buah - Pepaya',     150,100,100,150, 150),
+  (5, 'Pepaya',     150,100,100,150, 150),
 
   (6, 'Beras Putih',        70, 30, 50, 70, 110),
   (6, 'Ikan Tuna',         100, 25, 25,100, 100),
@@ -161,7 +161,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (6, 'Sereh',               2,  2,  2,  2,   2),
   (6, 'Tomat',              35, 35, 35, 35,  35),
   (6, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (6, 'Buah - Pisang',     150,100,100,150, 150),
+  (6, 'Pisang',     150,100,100,150, 150),
 
   (7, 'Beras Putih',        70, 30, 50, 70, 110),
   (7, 'Ayam Tanpa Tulang', 100, 25, 25,100, 100),
@@ -180,7 +180,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (7, 'Sereh',               2,  2,  2,  2,   2),
   (7, 'Tomat',               2,  2,  2,  2,   2),
   (7, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (7, 'Buah - Pepaya',     150,100,100,150, 150),
+  (7, 'Pepaya',     150,100,100,150, 150),
 
   (8, 'Beras Putih',        70, 30, 50, 70, 110),
   (8, 'Telur Ayam',         60, 60, 60, 60,  60),
@@ -195,7 +195,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (8, 'Sereh',               2,  2,  2,  2,   2),
   (8, 'Tomat',              30, 30, 30, 30,  30),
   (8, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (8, 'Buah - Semangka',   150,100,100,150, 150),
+  (8, 'Semangka',   150,100,100,150, 150),
 
   (9, 'Beras Putih',        70, 30, 50, 70, 110),
   (9, 'Tahu',              100, 25, 25,100, 100),
@@ -211,7 +211,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (9, 'Kecap Manis',         5,  5,  5,  5,   5),
   (9, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (9, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (9, 'Buah - Pisang',     150,100,100,150, 150),
+  (9, 'Pisang',     150,100,100,150, 150),
 
   (10, 'Beras Putih',        70, 30, 50, 70, 110),
   (10, 'Ikan Tuna',         100, 25, 25,100, 100),
@@ -229,7 +229,7 @@ insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, gra
   (10, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
   (10, 'Sereh',               2,  2,  2,  2,   2),
   (10, 'Minyak Goreng',      10, 10, 10, 10,  10),
-  (10, 'Buah - Pepaya',     150,100,100,150, 150)
+  (10, 'Pepaya',     150,100,100,150, 150)
 on conflict (menu_id, item_code) do update set
   grams_per_porsi = excluded.grams_per_porsi,
   grams_paud      = excluded.grams_paud,
