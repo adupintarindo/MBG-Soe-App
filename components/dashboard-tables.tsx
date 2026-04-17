@@ -1,7 +1,11 @@
 "use client";
 
 import { Badge, CategoryBadge } from "@/components/ui";
-import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  SortableTable,
+  type SortableColumn,
+  type SortableTableFilter
+} from "@/components/sortable-table";
 import { formatIDR, formatKg } from "@/lib/engine";
 import { t, formatNumber, type Lang } from "@/lib/i18n";
 
