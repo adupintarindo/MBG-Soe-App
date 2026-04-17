@@ -31,6 +31,9 @@ const DEV_ADMIN_PROFILE: SessionProfile = {
 };
 
 function isDevAdmin(): boolean {
+  // Hard-disable in production — ignore any stale cookie so prod users always
+  // hit real Supabase auth, even if they previously logged in via dev shortcut.
+  if (process.env.NODE_ENV === "production") return false;
   try {
     return cookies().get(DEV_ADMIN_COOKIE)?.value === DEV_ADMIN_VALUE;
   } catch {

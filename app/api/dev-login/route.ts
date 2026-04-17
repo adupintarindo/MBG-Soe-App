@@ -4,6 +4,11 @@ import { DEV_ADMIN_COOKIE, DEV_ADMIN_VALUE } from "@/lib/supabase/auth";
 // Dev shortcut: POST {username:"admin", password:"admin"} → set cookie → instant admin session.
 // No real auth roundtrip. Intended for local/demo use only.
 export async function POST(request: Request) {
+  // Hard-disable in production — never expose admin/admin bypass on Vercel prod.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+  }
+
   let body: { username?: string; password?: string; next?: string } = {};
   try {
     body = await request.json();
