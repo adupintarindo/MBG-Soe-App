@@ -66,13 +66,14 @@ const config: Config = {
           "sans-serif"
         ],
         mono: [
-          "var(--font-mono)",
-          "JetBrains Mono",
-          "ui-monospace",
-          "SFMono-Regular",
-          "Menlo",
-          "Consolas",
-          "monospace"
+          "var(--font-inter)",
+          "Inter",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "Segoe UI",
+          "Roboto",
+          "sans-serif"
         ]
       },
       letterSpacing: {

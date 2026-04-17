@@ -125,7 +125,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   :root { --ink:#0f172a; --ink2:#475569; --border:#cbd5e1; --accent:#0369a1; }
   * { box-sizing: border-box; }
   body {
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     color: var(--ink);
     max-width: 800px;
     margin: 0 auto;

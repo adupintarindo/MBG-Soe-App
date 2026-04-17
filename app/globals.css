@@ -102,23 +102,23 @@ html.dark body::before {
     radial-gradient(900px 600px at 100% 0%, rgba(201, 162, 39, 0.04), transparent 60%);
 }
 
-/* True monospace — only for actual code / pre blocks */
+/* Force sans-serif everywhere — code/kbd/samp/pre use Inter with tabular-nums */
 code,
 kbd,
 samp,
 pre {
   font-family:
-    var(--font-mono),
-    "JetBrains Mono",
-    ui-monospace,
-    SFMono-Regular,
-    "SF Mono",
-    Menlo,
-    Consolas,
-    monospace;
+    var(--font-inter),
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-  font-feature-settings: "calt", "ss01";
+  letter-spacing: 0;
+  font-feature-settings: "tnum", "cv11";
 }
 
 /* .font-mono + .num: keep Inter, just turn on tabular numerics.
