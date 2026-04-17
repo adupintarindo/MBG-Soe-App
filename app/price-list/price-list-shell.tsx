@@ -13,12 +13,15 @@ import { useMemo, useState, useTransition } from "react";
 import {
   COMMODITY_COLORS,
   COMMODITY_LABELS,
+  commodityLabel,
   type PriceCommodity,
   type PriceListMatrixRow,
   type PricePeriod,
   type PriceWeek
 } from "./types";
 import { upsertSupplierPrice } from "./actions";
+import { t, ti, formatNumber, numberLocale } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 interface Props {
   periods: PricePeriod[];
@@ -35,9 +38,10 @@ const WEEK_FIELDS = [
 
 type WeekField = (typeof WEEK_FIELDS)[number];
 
-function fmtRp(n: number | null | undefined): string {
+function fmtRp(n: number | null | undefined, lang: "ID" | "EN"): string {
   if (n == null || Number.isNaN(Number(n))) return "";
-  return "Rp" + Number(n).toLocaleString("id-ID", { maximumFractionDigits: 0 });
+  const prefix = lang === "EN" ? "IDR " : "Rp";
+  return prefix + Number(n).toLocaleString(numberLocale(lang), { maximumFractionDigits: 0 });
 }
 
 function computeRowStats(row: PriceListMatrixRow) {
@@ -57,6 +61,7 @@ function csvEscape(v: unknown): string {
 }
 
 export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId, canEdit }: Props) {
+  const { lang } = useLang();
   const [commodity, setCommodity] = useState<PriceCommodity | "">("");
   const [periodId, setPeriodId] = useState<number | null>(currentPeriodId);
   const [rows, setRows] = useState<PriceListMatrixRow[]>(rowsProp);
@@ -89,19 +94,19 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
 
   function onExportCSV() {
     const headers = [
-      "Komoditas",
-      "Ingredient",
-      "Supplier",
+      t("priceList.colCommodity", lang),
+      t("priceList.colIngredient", lang),
+      t("priceList.colSupplier", lang),
       ...activeWeeks.map((w) => w.label),
-      "Avg Rp/kg",
-      "Min",
-      "Max"
+      t("priceList.colAvg", lang),
+      t("priceList.colMin", lang),
+      t("priceList.colMax", lang)
     ];
     const lines = [headers.map(csvEscape).join(",")];
     filteredRows.forEach((r) => {
       const stats = computeRowStats(r);
       const row = [
-        COMMODITY_LABELS[r.commodity],
+        commodityLabel(r.commodity, lang),
         r.ingredient_name.replace(/^Buah\s*-\s*/i, ""),
         r.supplier_name,
         ...WEEK_FIELDS.map((k) => r[k] ?? ""),
@@ -138,7 +143,7 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
     const raw = newValue.trim().replace(/\./g, "").replace(/,/g, ".");
     const parsed = raw === "" ? null : Number(raw);
     if (parsed != null && Number.isNaN(parsed)) {
-      setErrorMsg(`Nilai "${newValue}" bukan angka valid`);
+      setErrorMsg(ti("priceList.errInvalidNumber", lang, { v: newValue }));
       return;
     }
 
@@ -163,7 +168,7 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
         itemCode: row.item_code
       });
       if (!res.ok) {
-        setErrorMsg(res.error ?? "Gagal menyimpan");
+        setErrorMsg(res.error ?? t("priceList.errSave", lang));
         // Rollback on error
         setRows((prev) =>
           prev.map((r) =>
@@ -185,7 +190,7 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
           <span>💹</span>
-          <span>Weekly Price List · Benchmarking Supplier</span>
+          <span>{t("priceList.shellTitle", lang)}</span>
         </h2>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <select
@@ -204,10 +209,10 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
             onChange={(e) => setCommodity(e.target.value as PriceCommodity | "")}
             className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs"
           >
-            <option value="">Semua komoditas</option>
+            <option value="">{t("priceList.allCommodities", lang)}</option>
             {(Object.keys(COMMODITY_LABELS) as PriceCommodity[]).map((k) => (
               <option key={k} value={k}>
-                {COMMODITY_LABELS[k]}
+                {commodityLabel(k, lang)}
               </option>
             ))}
           </select>
@@ -222,9 +227,9 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
       </div>
 
       <p className="mt-2 text-xs text-slate-500">
-        Benchmark harga mingguan Rp/kg antar supplier. Hijau = termurah, merah =
-        termahal per baris. Period: <strong>{periods.find((p) => p.id === periodId)?.name}</strong>.
-        {pending && <span className="ml-2 text-blue-600">💾 menyimpan...</span>}
+        {t("priceList.hint", lang)}{" "}
+        <strong>{periods.find((p) => p.id === periodId)?.name}</strong>.
+        {pending && <span className="ml-2 text-blue-600">{t("priceList.saving", lang)}</span>}
       </p>
       {errorMsg && (
         <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
@@ -236,12 +241,14 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
         <table className="min-w-[1400px] border-collapse text-xs">
           <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700">
             <tr>
-              <th className="sticky left-0 z-20 bg-slate-100 px-2 py-1.5 text-left">Komoditas</th>
+              <th className="sticky left-0 z-20 bg-slate-100 px-2 py-1.5 text-left">
+                {t("priceList.colCommodity", lang)}
+              </th>
               <th className="sticky left-[120px] z-20 bg-slate-100 px-2 py-1.5 text-left">
-                Ingredient
+                {t("priceList.colIngredient", lang)}
               </th>
               <th className="sticky left-[260px] z-20 bg-slate-100 px-2 py-1.5 text-left">
-                Supplier
+                {t("priceList.colSupplier", lang)}
               </th>
               {activeWeeks.map((w) => (
                 <th
@@ -252,9 +259,9 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                   {w.label.replace(/^Wk \d+: /, "")}
                 </th>
               ))}
-              <th className="px-2 py-1.5 text-right">Avg Rp/kg</th>
-              <th className="px-2 py-1.5 text-right">Min</th>
-              <th className="px-2 py-1.5 text-right">Max</th>
+              <th className="px-2 py-1.5 text-right">{t("priceList.colAvg", lang)}</th>
+              <th className="px-2 py-1.5 text-right">{t("priceList.colMin", lang)}</th>
+              <th className="px-2 py-1.5 text-right">{t("priceList.colMax", lang)}</th>
             </tr>
           </thead>
           <tbody>
@@ -264,8 +271,7 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                   colSpan={activeWeeks.length + 6}
                   className="px-4 py-8 text-center text-slate-400"
                 >
-                  Belum ada data. Tambah entry lewat form atau import dari
-                  Weekly_Price_List_Template.xlsx.
+                  {t("priceList.empty", lang)}
                 </td>
               </tr>
             )}
@@ -276,7 +282,7 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                   <td
                     className={`sticky left-0 z-10 px-2 py-1.5 font-semibold ring-1 ${COMMODITY_COLORS[r.commodity]}`}
                   >
-                    {COMMODITY_LABELS[r.commodity]}
+                    {commodityLabel(r.commodity, lang)}
                   </td>
                   <td className="sticky left-[120px] z-10 bg-white px-2 py-1.5 font-medium text-slate-800">
                     {r.ingredient_name.replace(/^Buah\s*-\s*/i, "")}
@@ -301,13 +307,13 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                         }
                         className={`${bg} min-w-[72px] px-1 py-1.5 text-right tabular-nums`}
                       >
-                        {v != null ? v.toLocaleString("id-ID") : ""}
+                        {v != null ? formatNumber(v, lang) : ""}
                       </td>
                     );
                   })}
-                  <td className="px-2 py-1.5 text-right font-semibold text-slate-800">{fmtRp(stats.avg)}</td>
-                  <td className="px-2 py-1.5 text-right text-emerald-700">{fmtRp(stats.min)}</td>
-                  <td className="px-2 py-1.5 text-right text-rose-700">{fmtRp(stats.max)}</td>
+                  <td className="px-2 py-1.5 text-right font-semibold text-slate-800">{fmtRp(stats.avg, lang)}</td>
+                  <td className="px-2 py-1.5 text-right text-emerald-700">{fmtRp(stats.min, lang)}</td>
+                  <td className="px-2 py-1.5 text-right text-rose-700">{fmtRp(stats.max, lang)}</td>
                 </tr>
               );
             })}
@@ -317,16 +323,16 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
 
       <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
         <span>
-          <strong>{summary.rows}</strong> baris ·{" "}
+          <strong>{summary.rows}</strong> {t("priceList.summaryRows", lang)} ·{" "}
           <strong>
             {summary.filled}/{summary.totalCells}
           </strong>{" "}
-          sel terisi (<strong>{summary.pct}%</strong>)
+          {t("priceList.summaryFilled", lang)} (<strong>{summary.pct}%</strong>)
         </span>
-        <span>📅 {activeWeeks.length} minggu × 6 komoditas</span>
-        <span>🟢 termurah · 🔴 termahal per baris</span>
+        <span>{ti("priceList.weeksCount", lang, { n: activeWeeks.length })}</span>
+        <span>{t("priceList.legend", lang)}</span>
         {!canEdit && (
-          <span className="text-slate-400">Read-only — peran Anda tidak punya akses edit.</span>
+          <span className="text-slate-400">{t("priceList.readOnly", lang)}</span>
         )}
       </div>
     </div>

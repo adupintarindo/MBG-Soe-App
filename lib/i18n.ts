@@ -1002,6 +1002,64 @@ export const LANG_KEYS = {
   "calGrid.defaultNonOpReason": { ID: "Tidak Operasional", EN: "Non-Operational" },
   "calGrid.titleNonOp": { ID: "Non-Op: {reason}", EN: "Non-Op: {reason}" },
   "calGrid.noneUsed": { ID: "— Tidak dipakai —", EN: "— Not used —" },
+  "autoAssign.title": {
+    ID: "Isi {n} hari kosong bulan ini pakai rolling M1..Mn",
+    EN: "Fill {n} empty days this month with rolling M1..Mn"
+  },
+  "autoAssign.running": { ID: "Menjalankan…", EN: "Running…" },
+  "autoAssign.btn": { ID: "⚡ Auto-assign {n} hari", EN: "⚡ Auto-assign {n} days" },
+  "autoAssign.alreadyComplete": { ID: "Sudah lengkap.", EN: "Already complete." },
+  "autoAssign.assigned": { ID: "{n} hari di-assign.", EN: "{n} days assigned." },
+
+  // ---------------- Price List (/price-list) ----------------
+  "priceList.title": { ID: "Weekly Price List", EN: "Weekly Price List" },
+  "priceList.subtitleWithPeriod": {
+    ID: "Benchmarking harga mingguan Rp/kg · {period}",
+    EN: "Weekly price benchmarking IDR/kg · {period}"
+  },
+  "priceList.subtitle": {
+    ID: "Benchmarking harga mingguan Rp/kg",
+    EN: "Weekly price benchmarking IDR/kg"
+  },
+  "priceList.migrationWarn": {
+    ID: "Migrasi 0017 belum terpasang.",
+    EN: "Migration 0017 is not installed."
+  },
+  "priceList.migrationBody": {
+    ID: "di Supabase SQL Editor, lalu refresh halaman ini. Detail error:",
+    EN: "in the Supabase SQL Editor, then refresh this page. Error detail:"
+  },
+  "priceList.migrationRun": { ID: "Jalankan", EN: "Run" },
+  "priceList.shellTitle": {
+    ID: "Weekly Price List · Benchmarking Supplier",
+    EN: "Weekly Price List · Supplier Benchmarking"
+  },
+  "priceList.allCommodities": { ID: "Semua komoditas", EN: "All commodities" },
+  "priceList.hint": {
+    ID: "Benchmark harga mingguan Rp/kg antar supplier. Hijau = termurah, merah = termahal per baris. Period:",
+    EN: "Weekly IDR/kg benchmark across suppliers. Green = cheapest, red = most expensive per row. Period:"
+  },
+  "priceList.saving": { ID: "💾 menyimpan...", EN: "💾 saving..." },
+  "priceList.errInvalidNumber": { ID: "Nilai \"{v}\" bukan angka valid", EN: "Value \"{v}\" is not a valid number" },
+  "priceList.errSave": { ID: "Gagal menyimpan", EN: "Failed to save" },
+  "priceList.colCommodity": { ID: "Komoditas", EN: "Commodity" },
+  "priceList.colIngredient": { ID: "Ingredient", EN: "Ingredient" },
+  "priceList.colSupplier": { ID: "Supplier", EN: "Supplier" },
+  "priceList.colAvg": { ID: "Avg Rp/kg", EN: "Avg IDR/kg" },
+  "priceList.colMin": { ID: "Min", EN: "Min" },
+  "priceList.colMax": { ID: "Max", EN: "Max" },
+  "priceList.empty": {
+    ID: "Belum ada data. Tambah entry lewat form atau import dari Weekly_Price_List_Template.xlsx.",
+    EN: "No data yet. Add an entry via the form or import from Weekly_Price_List_Template.xlsx."
+  },
+  "priceList.summaryRows": { ID: "baris", EN: "rows" },
+  "priceList.summaryFilled": { ID: "sel terisi", EN: "cells filled" },
+  "priceList.weeksCount": { ID: "📅 {n} minggu × 6 komoditas", EN: "📅 {n} weeks × 6 commodities" },
+  "priceList.legend": { ID: "🟢 termurah · 🔴 termahal per baris", EN: "🟢 cheapest · 🔴 most expensive per row" },
+  "priceList.readOnly": {
+    ID: "Read-only — peran Anda tidak punya akses edit.",
+    EN: "Read-only — your role does not have edit access."
+  },
 
   // ---------------- BOM Variance (/menu/variance) ----------------
   "variance.title": { ID: "BOM Variance · Plan vs Actual", EN: "BOM Variance · Plan vs Actual" },

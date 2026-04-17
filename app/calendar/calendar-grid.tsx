@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getHoliday } from "@/lib/holidays";
 import { t, ti, MONTHS, DAYS, formatNumber } from "@/lib/i18n";
@@ -555,7 +555,7 @@ function EditModal({
                 1
               </span>
               <h3 className="text-sm font-black text-ink">
-                Operasional Hari Ini?
+                {t("calGrid.step1Title", lang)}
               </h3>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -569,7 +569,7 @@ function EditModal({
                     : "border border-ink/15 bg-white text-ink2 hover:bg-paper"
                 }`}
               >
-                ✅ Ya, Operasional
+                {t("calGrid.btnYesOp", lang)}
               </button>
               <button
                 type="button"
@@ -581,7 +581,7 @@ function EditModal({
                     : "border border-ink/15 bg-white text-ink2 hover:bg-paper"
                 }`}
               >
-                ⛔ Tidak Operasional
+                {t("calGrid.btnNoOp", lang)}
               </button>
             </div>
           </section>
@@ -617,19 +617,23 @@ function EditModal({
               {/* Status banner */}
               {currentMenu ? (
                 <div className="rounded-xl bg-green-50 px-4 py-3 text-sm ring-1 ring-green-200">
-                  <span className="font-black text-green-700">✓ Terjadwal</span>
+                  <span className="font-black text-green-700">
+                    {t("calGrid.scheduled", lang)}
+                  </span>
                   <span className="mx-2 text-green-700/60">·</span>
                   <span className="font-black text-green-800">
                     M{currentMenu.id}
                   </span>
                   <span className="mx-2 text-green-700/60">·</span>
                   <span className="font-bold text-green-900">
-                    {currentMenu.name}
+                    {lang === "EN" && currentMenu.name_en
+                      ? currentMenu.name_en
+                      : currentMenu.name}
                   </span>
                 </div>
               ) : (
                 <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 ring-1 ring-amber-200">
-                  ⚠ Belum di-assign · pilih menu di bawah
+                  {t("calGrid.notAssignedWarn", lang)}
                 </div>
               )}
 
@@ -640,7 +644,7 @@ function EditModal({
                     2
                   </span>
                   <h3 className="text-sm font-black text-ink">
-                    📋 Pilih Menu ID
+                    {t("calGrid.step2Title", lang)}
                   </h3>
                 </div>
                 <div className="flex flex-wrap items-stretch gap-2">
@@ -651,7 +655,7 @@ function EditModal({
                   >
                     {menus.map((mm) => (
                       <option key={mm.id} value={mm.id}>
-                        M{mm.id} · {mm.name}
+                        M{mm.id} · {lang === "EN" && mm.name_en ? mm.name_en : mm.name}
                       </option>
                     ))}
                   </select>
@@ -660,11 +664,11 @@ function EditModal({
                     disabled={busy || !selectedMenuId}
                     className="rounded-xl bg-ink px-5 py-3 text-sm font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
                   >
-                    {busy ? "…" : "Set Menu"}
+                    {busy ? "…" : t("calGrid.btnSetMenu", lang)}
                   </button>
                 </div>
                 <p className="mt-2 text-[11px] text-ink2/60">
-                  💡 Memilih Menu ID akan otomatis mengisi kombinasi di bawah.
+                  {t("calGrid.autoFillHint", lang)}
                 </p>
               </section>
 
@@ -675,50 +679,54 @@ function EditModal({
                     3
                   </span>
                   <h3 className="text-sm font-black text-ink">
-                    Kombinasi Menu
+                    {t("calGrid.step3Title", lang)}
                   </h3>
                 </div>
 
                 {!refReady ? (
-                  <SkeletonGrid label="Memuat bahan…" />
+                  <SkeletonGrid label={t("calGrid.loadingIngredients", lang)} />
                 ) : (
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <KombinasiSelect
-                      label="🍚 Karbohidrat"
+                      label={t("calGrid.labelKarbo", lang)}
                       value={karbo}
                       onChange={setKarbo}
                       options={itemsByBucket.karbo}
+                      placeholder={t("calGrid.noneUsed", lang)}
                     />
                     <KombinasiSelect
-                      label="🍗 Protein"
+                      label={t("calGrid.labelProtein", lang)}
                       value={protein}
                       onChange={setProtein}
                       options={itemsByBucket.protein}
+                      placeholder={t("calGrid.noneUsed", lang)}
                     />
                     <KombinasiSelect
-                      label="🥬 Sayur"
+                      label={t("calGrid.labelSayur", lang)}
                       value={sayur}
                       onChange={setSayur}
                       options={itemsByBucket.sayur}
+                      placeholder={t("calGrid.noneUsed", lang)}
                     />
                     <KombinasiSelect
-                      label="🍌 Buah"
+                      label={t("calGrid.labelBuah", lang)}
                       value={buah}
                       onChange={setBuah}
                       options={itemsByBucket.buah}
+                      placeholder={t("calGrid.noneUsed", lang)}
                     />
                   </div>
                 )}
 
                 <div className="mt-4">
                   <span className="mb-1 block text-[11px] font-black uppercase tracking-wide text-ink2/70">
-                    Catatan (opsional)
+                    {t("calGrid.labelNote", lang)}
                   </span>
                   <input
                     type="text"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="cth: menu tamu, acara khusus, uji coba menu baru"
+                    placeholder={t("calGrid.notePlaceholder", lang)}
                     className="w-full rounded-xl border border-ink/20 bg-white px-4 py-3 text-sm"
                   />
                 </div>
@@ -735,7 +743,7 @@ function EditModal({
                     disabled={busy || !selectedMenuId}
                     className="rounded-xl bg-ink px-5 py-3 text-sm font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
                   >
-                    💾 {busy ? "Menyimpan…" : "Simpan Kombinasi"}
+                    💾 {busy ? t("calGrid.btnSaving", lang) : t("calGrid.btnSaveCombination", lang)}
                   </button>
                   {assign && (
                     <button
@@ -743,7 +751,7 @@ function EditModal({
                       disabled={busy}
                       className="rounded-xl bg-white px-4 py-3 text-sm font-bold text-red-700 ring-1 ring-red-200 hover:bg-red-50 disabled:opacity-50"
                     >
-                      Hapus Assignment
+                      {t("calGrid.btnDeleteAssign", lang)}
                     </button>
                   )}
                 </div>
@@ -754,18 +762,17 @@ function EditModal({
             <section className="rounded-2xl bg-amber-50/60 p-4 ring-1 ring-amber-200">
               <label className="block">
                 <span className="mb-1 block text-[11px] font-black uppercase tracking-wide text-amber-900">
-                  Alasan Non-Operasional
+                  {t("calGrid.reasonLabel", lang)}
                 </span>
                 <input
                   type="text"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="mis. Libur Nasional, UAS, Rapat Guru"
+                  placeholder={t("calGrid.reasonPlaceholder", lang)}
                   className="w-full rounded-xl border border-amber-300 bg-white px-4 py-3 text-sm"
                 />
                 <span className="mt-1 block text-[11px] text-amber-900/70">
-                  Menandai hari ini sebagai non-op akan menghapus assignment
-                  menu jika ada.
+                  {t("calGrid.reasonHint", lang)}
                 </span>
               </label>
 
@@ -777,15 +784,15 @@ function EditModal({
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
-                  onClick={() => onMarkNonOp(iso, reason || "Tidak Operasional")}
+                  onClick={() => onMarkNonOp(iso, reason || t("calGrid.defaultNonOpReason", lang))}
                   disabled={busy}
                   className="rounded-xl bg-amber-600 px-4 py-3 text-sm font-black text-white shadow-card hover:bg-amber-700 disabled:opacity-50"
                 >
                   {busy
-                    ? "Menyimpan…"
+                    ? t("calGrid.btnSaving", lang)
                     : nonOp
-                      ? "Update Alasan"
-                      : "Tandai Non-Op"}
+                      ? t("calGrid.btnUpdateReason", lang)
+                      : t("calGrid.btnMarkNonOp", lang)}
                 </button>
                 {nonOp && (
                   <button
@@ -793,7 +800,7 @@ function EditModal({
                     disabled={busy}
                     className="rounded-xl bg-white px-4 py-3 text-sm font-bold text-ink ring-1 ring-ink/20 hover:bg-paper disabled:opacity-50"
                   >
-                    Jadikan Operasional Lagi
+                    {t("calGrid.btnMakeOperational", lang)}
                   </button>
                 )}
               </div>
@@ -809,12 +816,14 @@ function KombinasiSelect({
   label,
   value,
   onChange,
-  options
+  options,
+  placeholder
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: ItemRow[];
+  placeholder: string;
 }) {
   return (
     <label className="block">
@@ -824,7 +833,7 @@ function KombinasiSelect({
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-xl border border-ink/20 bg-white px-4 py-3 text-sm"
       >
-        <option value="">— Tidak dipakai —</option>
+        <option value="">{placeholder}</option>
         {options.map((it) => (
           <option key={it.code} value={it.code}>
             {it.name_en ?? it.code}

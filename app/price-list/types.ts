@@ -77,6 +77,23 @@ export const COMMODITY_LABELS: Record<PriceCommodity, string> = {
   MINYAK: "Minyak"
 };
 
+export const COMMODITY_LABELS_EN: Record<PriceCommodity, string> = {
+  BERAS: "Rice",
+  SAYURAN: "Vegetables",
+  BUAH: "Fruit",
+  PROTEIN_HEWANI: "Animal Protein",
+  PROTEIN_NABATI: "Plant Protein",
+  BUMBU_KERING: "Dry Spices",
+  MINYAK: "Oil"
+};
+
+export function commodityLabel(
+  c: PriceCommodity,
+  lang: "ID" | "EN"
+): string {
+  return lang === "EN" ? COMMODITY_LABELS_EN[c] : COMMODITY_LABELS[c];
+}
+
 export const COMMODITY_COLORS: Record<PriceCommodity, string> = {
   BERAS: "bg-amber-50 text-amber-900 ring-amber-200",
   SAYURAN: "bg-emerald-50 text-emerald-900 ring-emerald-200",
