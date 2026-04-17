@@ -185,10 +185,8 @@ export default async function CalendarPage({
   const nextMonth = month === 12 ? 1 : month + 1;
   const prevHref = `/calendar?month=${fmtMonthKey(prevYear, prevMonth)}`;
   const nextHref = `/calendar?month=${fmtMonthKey(nextYear, nextMonth)}`;
-  const todayHref = `/calendar?month=${currentMonthKey}`;
 
   const monthLabel = `${MONTH_LONG_ID[month - 1]} ${year}`;
-  const isCurrentMonth = fmtMonthKey(year, month) === currentMonthKey;
   const canWrite = WRITE_ROLES.has(profile.role);
 
   return (
@@ -254,18 +252,6 @@ export default async function CalendarPage({
               >
                 ▶
               </LinkButton>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
-              <LinkButton
-                href={todayHref}
-                variant={isCurrentMonth ? "ghost" : "primary"}
-                size="sm"
-              >
-                Hari Ini
-              </LinkButton>
-              <span className="text-[11px] font-semibold text-ink2/70">
-                👥 {recipientCount.toLocaleString("id-ID")} penerima/hari
-              </span>
             </div>
           </div>
 

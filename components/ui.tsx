@@ -403,13 +403,17 @@ export function Select(
 /* ---------- Table primitives (compose with native <table>) ---------- */
 
 export function TableWrap({ children }: { children: ReactNode }) {
-  return <div className="-mx-1 overflow-x-auto px-1">{children}</div>;
+  return (
+    <div className="-mx-1 overflow-x-auto px-1 [&_table]:text-center">
+      {children}
+    </div>
+  );
 }
 
 export function THead({ children }: { children: ReactNode }) {
   return (
     <thead className="bg-primary-gradient dark:bg-primary-gradient-dark">
-      <tr className="border-b-2 border-gold/70 text-left font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-white/95 [&>th:first-child]:rounded-tl-lg [&>th:first-child]:pl-3 [&>th:last-child]:rounded-tr-lg [&>th:last-child]:pr-3">
+      <tr className="border-b-2 border-gold/70 text-center font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-white/95 [&>th:first-child]:rounded-tl-lg [&>th:first-child]:pl-3 [&>th:last-child]:rounded-tr-lg [&>th:last-child]:pr-3">
         {children}
       </tr>
     </thead>
