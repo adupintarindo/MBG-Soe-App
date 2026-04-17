@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, EmptyState, TableWrap, THead } from "@/components/ui";
+import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import type {
   GrnQcCheck,
   NcrEntry,
@@ -58,6 +59,115 @@ interface Props {
   supplierNames: Record<string, string>; // supplier_id → name
 }
 
+function grnColumns({
+  lang,
+  aggMap,
+  ncrByGrn,
+  supplierIds,
+  supplierNames
+}: {
+  lang: "ID" | "EN";
+  aggMap: Map<string, GrnQcAggregate>;
+  ncrByGrn: Map<string, NcrEntry[]>;
+  supplierIds: Record<string, string>;
+  supplierNames: Record<string, string>;
+}): SortableColumn<GrnRow>[] {
+  const supName = (poNo: string | null): string => {
+    if (!poNo) return "—";
+    const sid = supplierIds[poNo];
+    if (!sid) return "—";
+    return supplierNames[sid] ?? sid;
+  };
+  return [
+    {
+      key: "no",
+      label: t("grnQc.colGrn", lang),
+      align: "left",
+      sortValue: (r) => r.no,
+      render: (r) => (
+        <span className="font-mono text-xs font-black">{r.no}</span>
+      )
+    },
+    {
+      key: "date",
+      label: t("grnQc.colDate", lang),
+      sortValue: (r) => r.grn_date,
+      render: (r) => <span className="text-xs">{r.grn_date}</span>
+    },
+    {
+      key: "po",
+      label: t("grnQc.colPo", lang),
+      sortValue: (r) => r.po_no ?? "",
+      render: (r) => (
+        <span className="font-mono text-xs">{r.po_no ?? "—"}</span>
+      )
+    },
+    {
+      key: "supplier",
+      label: t("grnQc.colSupplier", lang),
+      align: "left",
+      sortValue: (r) => supName(r.po_no),
+      render: (r) => <span className="text-xs">{supName(r.po_no)}</span>
+    },
+    {
+      key: "qc",
+      label: t("grnQc.colQc", lang),
+      align: "right",
+      sortValue: (r) => {
+        const a = aggMap.get(r.no);
+        return a ? a.total : -1;
+      },
+      render: (r) => {
+        const a = aggMap.get(r.no);
+        if (!a) return <span className="text-[11px] text-ink2/60">—</span>;
+        return (
+          <span className="font-mono text-xs">
+            {formatNumber(a.total - a.fail, lang)}/{formatNumber(a.total, lang)}
+          </span>
+        );
+      }
+    },
+    {
+      key: "ncr",
+      label: t("grnQc.colNcr", lang),
+      align: "right",
+      sortValue: (r) => ncrByGrn.get(r.no)?.length ?? 0,
+      render: (r) => {
+        const list = ncrByGrn.get(r.no) ?? [];
+        if (list.length === 0)
+          return <span className="text-[11px] text-ink2/60">—</span>;
+        const hasCrit = list.some((n) => n.severity === "critical");
+        return (
+          <Badge tone={hasCrit ? "bad" : "warn"}>
+            {formatNumber(list.length, lang)}
+          </Badge>
+        );
+      }
+    },
+    {
+      key: "status",
+      label: t("grnQc.colStatus", lang),
+      sortValue: (r) => r.status,
+      render: (r) => (
+        <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[10px] font-bold text-ink2">
+          {r.status}
+        </span>
+      )
+    },
+    {
+      key: "linkQc",
+      label: "",
+      align: "right",
+      sortable: false,
+      render: () => (
+        <span className="text-[11px] font-bold text-accent-strong">
+          {t("grnQc.linkQc", lang)}
+        </span>
+      )
+    }
+  ];
+}
+
 export function GrnQcPanel({
   grns,
   qcAgg,
@@ -108,100 +218,28 @@ export function GrnQcPanel({
         )}
       </div>
 
-      <TableWrap>
-        <table className="w-full text-sm">
-          <THead>
-            <th className="py-2 pr-3">{t("grnQc.colGrn", lang)}</th>
-            <th className="py-2 pr-3">{t("grnQc.colDate", lang)}</th>
-            <th className="py-2 pr-3">{t("grnQc.colPo", lang)}</th>
-            <th className="py-2 pr-3">{t("grnQc.colSupplier", lang)}</th>
-            <th className="py-2 pr-3 text-center">{t("grnQc.colQc", lang)}</th>
-            <th className="py-2 pr-3 text-center">{t("grnQc.colNcr", lang)}</th>
-            <th className="py-2 pr-3">{t("grnQc.colStatus", lang)}</th>
-            <th className="py-2 pr-3 text-right"></th>
-          </THead>
-          <tbody>
-            {grns.length === 0 && (
-              <tr>
-                <td colSpan={8} className="py-3">
-                  <EmptyState message={t("grnQc.emptyGrn", lang)} />
-                </td>
-              </tr>
-            )}
-            {grns.map((g) => {
-              const agg = aggMap.get(g.no);
-              const supId = g.po_no ? supplierIds[g.po_no] : undefined;
-              const supName = supId ? supplierNames[supId] : null;
-              const grnNcrs = ncrByGrn.get(g.no) ?? [];
-              const activeGrnNcr = grnNcrs.filter((n) =>
-                ["open", "in_progress"].includes(n.status)
-              ).length;
-              return (
-                <tr
-                  key={g.no}
-                  className="row-hover cursor-pointer border-b border-ink/5"
-                  onClick={() => setOpenGrn(g.no)}
-                >
-                  <td className="py-2 pr-3 font-mono text-xs font-black">
-                    {g.no}
-                  </td>
-                  <td className="py-2 pr-3 text-xs">{g.grn_date}</td>
-                  <td className="py-2 pr-3 font-mono text-[11px]">
-                    {g.po_no ?? "—"}
-                  </td>
-                  <td className="py-2 pr-3 text-xs">{supName ?? "—"}</td>
-                  <td className="py-2 pr-3 text-center">
-                    {agg ? (
-                      <span
-                        className={`font-mono text-[11px] font-black ${
-                          agg.has_critical
-                            ? "text-red-700"
-                            : agg.fail > 0
-                              ? "text-amber-700"
-                              : "text-emerald-700"
-                        }`}
-                      >
-                        {agg.total - agg.fail}/{agg.total}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-ink2/50">—</span>
-                    )}
-                  </td>
-                  <td className="py-2 pr-3 text-center">
-                    {activeGrnNcr > 0 ? (
-                      <Badge tone="bad">{activeGrnNcr}</Badge>
-                    ) : grnNcrs.length > 0 ? (
-                      <Badge tone="neutral">{grnNcrs.length}</Badge>
-                    ) : (
-                      <span className="text-[11px] text-ink2/50">—</span>
-                    )}
-                  </td>
-                  <td className="py-2 pr-3">
-                    <Badge
-                      tone={
-                        g.status === "ok"
-                          ? "ok"
-                          : g.status === "rejected"
-                            ? "bad"
-                            : g.status === "partial"
-                              ? "warn"
-                              : "neutral"
-                      }
-                    >
-                      {g.status}
-                    </Badge>
-                  </td>
-                  <td className="py-2 pr-3 text-right">
-                    <span className="text-[11px] font-bold text-accent-strong">
-                      {t("grnQc.linkQc", lang)}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </TableWrap>
+      {grns.length === 0 ? (
+        <EmptyState message={t("grnQc.emptyGrn", lang)} />
+      ) : (
+        <SortableTable<GrnRow>
+          columns={grnColumns({
+            lang,
+            aggMap,
+            ncrByGrn,
+            supplierIds,
+            supplierNames
+          })}
+          rows={grns}
+          rowKey={(g) => g.no}
+          onRowClick={(g) => setOpenGrn(g.no)}
+          variant="dark"
+          searchable
+          exportable
+          exportFileName="grns"
+          exportSheetName="GRNs"
+          initialSort={{ key: "date", dir: "desc" }}
+        />
+      )}
 
       {ncrs.length > 0 && (
         <div>

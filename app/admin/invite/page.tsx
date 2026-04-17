@@ -8,11 +8,10 @@ import {
   EmptyState,
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
-import { t, ti, numberLocale } from "@/lib/i18n";
+import { InvitesTable, type InviteRow } from "./invites-table";
+import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -87,57 +86,21 @@ export default async function InvitePage() {
               message={t("adminInvite.emptyBody", lang)}
             />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">{t("adminInvite.colEmail", lang)}</th>
-                  <th className="py-2 pr-3">{t("adminInvite.colRole", lang)}</th>
-                  <th className="py-2 pr-3">{t("adminInvite.colSupplier", lang)}</th>
-                  <th className="py-2 pr-3">{t("adminInvite.colStatus", lang)}</th>
-                  <th className="py-2 pr-3">{t("adminInvite.colExpires", lang)}</th>
-                </THead>
-                <tbody>
-                  {invites.map((inv) => {
-                    const expired = new Date(inv.expires_at).getTime() < now;
-                    return (
-                      <tr
-                        key={inv.id}
-                        className="row-hover border-b border-ink/5"
-                      >
-                        <td className="py-2 pr-3 font-mono text-[12px] text-ink">
-                          {inv.email}
-                        </td>
-                        <td className="py-2 pr-3">
-                          <Badge tone="accent">{inv.role}</Badge>
-                        </td>
-                        <td className="py-2 pr-3 text-[12px] text-ink2/80">
-                          {inv.supplier_id || "—"}
-                        </td>
-                        <td className="py-2 pr-3">
-                          {inv.used_at ? (
-                            <Badge tone="ok">{t("adminInvite.badgeUsed", lang)}</Badge>
-                          ) : expired ? (
-                            <Badge tone="muted">{t("adminInvite.badgeExpired", lang)}</Badge>
-                          ) : (
-                            <Badge tone="info">{t("adminInvite.badgeActive", lang)}</Badge>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3 text-[12px] text-ink2/70">
-                          {new Date(inv.expires_at).toLocaleDateString(
-                            numberLocale(lang),
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric"
-                            }
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
+            <InvitesTable
+              rows={invites.map<InviteRow>((inv) => ({
+                id: inv.id,
+                email: inv.email,
+                role: inv.role,
+                supplier_id: inv.supplier_id,
+                expires_at: inv.expires_at,
+                used_at: inv.used_at,
+                status: inv.used_at
+                  ? "used"
+                  : new Date(inv.expires_at).getTime() < now
+                    ? "expired"
+                    : "active"
+              }))}
+            />
           )}
         </Section>
       </PageContainer>

@@ -272,18 +272,9 @@ textarea:focus-visible {
   outline-offset: 3px;
 }
 
-/* Custom scrollbar — restrained, matches palette */
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb {
-  background: rgba(19, 49, 92, 0.20);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-*::-webkit-scrollbar-thumb:hover { background-color: rgba(19, 49, 92, 0.35); background-clip: content-box; }
-html.dark *::-webkit-scrollbar-thumb { background-color: rgba(168, 184, 208, 0.20); background-clip: content-box; }
-html.dark *::-webkit-scrollbar-thumb:hover { background-color: rgba(168, 184, 208, 0.35); background-clip: content-box; }
+/* Hide scrollbar globally — keep scroll functionality */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 /* Reusable subtle entrance animation */
 @keyframes mbg-fade-in {

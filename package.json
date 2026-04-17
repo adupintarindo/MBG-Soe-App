@@ -10,6 +10,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "db:types": "supabase gen types typescript --local > types/database.ts",
+    "db:types:remote": "supabase gen types typescript --project-id ubqxxsmrntdrdamlclus > types/database.ts",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset"
   },

@@ -30,12 +30,43 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Auth gate disabled — dashboard terbuka langsung tanpa login
-  void supabase;
+  // Refresh session cookie (no-op kalau tidak login)
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const { pathname, search } = request.nextUrl;
+
+  // Public paths: landing, auth flow, login itself, static + api
+  const isPublic =
+    pathname === "/" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/public/") ||
+    pathname.startsWith("/api/dev-login");
+
+  if (!user && !isPublic) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("next", pathname + (search || ""));
+    return NextResponse.redirect(url);
+  }
+
+  // Sudah login, kembali ke dashboard kalau buka /login
+  if (user && pathname.startsWith("/login")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   return response;
 }
 
 export const config = {
-  // Skip static assets & API routes that manage their own auth
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/public).*)"]
+  // Skip static assets, next internals, favicon, images, and API routes that handle their own auth
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"
+  ]
 };

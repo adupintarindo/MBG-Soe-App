@@ -1027,6 +1027,7 @@ export const LANG_KEYS = {
   "suppliers.cardCommodity": { ID: "Komoditas · {n} item", EN: "Commodities · {n} items" },
   "suppliers.cardInvoices": { ID: "{n} invoice", EN: "{n} invoices" },
   "suppliers.cardDetail": { ID: "Rincian", EN: "Details" },
+  "suppliers.cardQuickView": { ID: "Quick view", EN: "Quick view" },
   "suppliers.rejectedTitle": { ID: "❌ Supplier Rejected", EN: "❌ Rejected Suppliers" },
   "suppliers.tableTitle": { ID: "Tabel Lengkap · {n} Supplier", EN: "Full Table · {n} Suppliers" },
   "suppliers.colId": { ID: "ID", EN: "ID" },

@@ -1,5 +1,4 @@
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
@@ -12,7 +11,8 @@ import {
 } from "@/components/ui";
 import { PrAllocationPanel } from "./allocation-panel";
 import { PrActions } from "./pr-actions";
-import { t, ti, formatNumber } from "@/lib/i18n";
+import { PrQuotationsTable } from "../../procurement-tables";
+import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -134,7 +134,9 @@ export default async function PrDetailPage({
 
   const canWrite = profile.role === "admin" || profile.role === "operator";
   const itemByCode = new Map(items.map((i) => [i.code, i]));
-  const supByCode = new Map(suppliers.map((s) => [s.id, s.name]));
+  const supplierNameMap: Record<string, string> = Object.fromEntries(
+    suppliers.map((s) => [s.id, s.name])
+  );
 
   // Count allocations that still need generation
   const pendingAllocCount = allocations.filter((a) => !a.quotation_no).length;
@@ -220,51 +222,17 @@ export default async function PrDetailPage({
               }
             />
           ) : (
-            <div className="overflow-x-auto rounded-xl ring-1 ring-ink/10">
-              <table className="w-full min-w-[700px] text-sm">
-                <thead className="bg-paper text-left text-[10.5px] font-bold uppercase tracking-wide text-ink2">
-                  <tr>
-                    <th className="px-3 py-2">{t("prDetail.colNo", lang)}</th>
-                    <th className="px-3 py-2">{t("prDetail.colSupplier", lang)}</th>
-                    <th className="px-3 py-2">{t("prDetail.colStatus", lang)}</th>
-                    <th className="px-3 py-2 text-center">{t("prDetail.colValue", lang)}</th>
-                    <th className="px-3 py-2">{t("prDetail.colPo", lang)}</th>
-                    <th className="px-3 py-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quotations.map((q) => (
-                    <tr key={q.no} className="border-t border-ink/5">
-                      <td className="px-3 py-2 font-mono text-xs font-bold">
-                        {q.no}
-                      </td>
-                      <td className="px-3 py-2 text-xs">
-                        {supByCode.get(q.supplier_id) ?? q.supplier_id}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[10px] font-bold text-ink2">
-                          {q.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-left font-mono text-xs">
-                        {formatNumber(Number(q.total), lang)}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-[11px]">
-                        {q.converted_po_no ?? "—"}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <Link
-                          href={`/procurement/quotation/${encodeURIComponent(q.no)}`}
-                          className="text-[11px] font-bold text-accent-strong hover:underline"
-                        >
-                          {t("prDetail.linkDetail", lang)}
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <PrQuotationsTable
+              rows={quotations.map((q) => ({
+                no: q.no,
+                supplier_id: q.supplier_id,
+                status: q.status,
+                total: Number(q.total),
+                need_date: q.need_date,
+                converted_po_no: q.converted_po_no
+              }))}
+              supplierNames={supplierNameMap}
+            />
           )}
         </Section>
       </PageContainer>

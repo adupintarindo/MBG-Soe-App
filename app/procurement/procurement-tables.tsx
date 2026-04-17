@@ -464,3 +464,233 @@ export function InvoiceTable({
     />
   );
 }
+
+export interface PrQuotationRow {
+  no: string;
+  supplier_id: string;
+  status: string;
+  total: number | string;
+  need_date: string | null;
+  converted_po_no: string | null;
+}
+
+export function PrQuotationsTable({
+  rows,
+  supplierNames
+}: {
+  rows: PrQuotationRow[];
+  supplierNames: Record<string, string>;
+}) {
+  const { lang } = useLang();
+  const supName = (id: string) => supplierNames[id] ?? id;
+  const columns: SortableColumn<PrQuotationRow>[] = [
+    {
+      key: "no",
+      label: t("prDetail.colNo", lang),
+      align: "left",
+      sortValue: (r) => r.no,
+      render: (r) => <span className="font-mono text-xs font-black">{r.no}</span>
+    },
+    {
+      key: "supplier",
+      label: t("prDetail.colSupplier", lang),
+      align: "left",
+      sortValue: (r) => supName(r.supplier_id),
+      render: (r) => <span className="text-xs">{supName(r.supplier_id)}</span>
+    },
+    {
+      key: "status",
+      label: t("prDetail.colStatus", lang),
+      sortValue: (r) => r.status,
+      render: (r) => (
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+            QT_STATUS_COLOR[r.status] ?? QT_STATUS_COLOR.draft
+          }`}
+        >
+          {r.status}
+        </span>
+      )
+    },
+    {
+      key: "total",
+      label: t("prDetail.colValue", lang),
+      align: "right",
+      sortValue: (r) => Number(r.total),
+      exportValue: (r) => Number(r.total),
+      render: (r) => (
+        <span className="font-mono text-xs font-black">
+          {formatNumber(Number(r.total), lang)}
+        </span>
+      )
+    },
+    {
+      key: "po",
+      label: t("prDetail.colPo", lang),
+      sortValue: (r) => r.converted_po_no ?? "",
+      render: (r) => (
+        <span className="font-mono text-[11px]">{r.converted_po_no ?? "—"}</span>
+      )
+    },
+    {
+      key: "detail",
+      label: "",
+      align: "right",
+      sortable: false,
+      render: (r) => (
+        <Link
+          href={`/procurement/quotation/${encodeURIComponent(r.no)}`}
+          className="text-[11px] font-bold text-accent-strong hover:underline"
+        >
+          {t("prDetail.linkDetail", lang)}
+        </Link>
+      )
+    }
+  ];
+  return (
+    <SortableTable<PrQuotationRow>
+      columns={columns}
+      rows={rows}
+      rowKey={(r) => r.no}
+      variant="dark"
+      initialSort={{ key: "no", dir: "asc" }}
+    />
+  );
+}
+
+export interface QuotationRow {
+  line_no: number;
+  item_code: string;
+  item_name: string;
+  qty: number;
+  unit: string;
+  price_suggested: number | null;
+  qty_quoted: number | null;
+  price_quoted: number | null;
+  subtotal: number;
+  note: string | null;
+}
+
+export function QuotationRowsTable({
+  rows,
+  totalLabel,
+  total
+}: {
+  rows: QuotationRow[];
+  totalLabel: string;
+  total: number;
+}) {
+  const { lang } = useLang();
+  const columns: SortableColumn<QuotationRow>[] = [
+    {
+      key: "line",
+      label: t("qtDetail.colNo", lang),
+      sortValue: (r) => r.line_no,
+      render: (r) => <span className="font-mono text-xs">{r.line_no}</span>
+    },
+    {
+      key: "item",
+      label: t("qtDetail.colItem", lang),
+      align: "left",
+      sortValue: (r) => r.item_name,
+      render: (r) => (
+        <div>
+          <div className="text-xs font-bold">{r.item_name}</div>
+          <div className="font-mono text-[10px] text-ink2/60">{r.item_code}</div>
+        </div>
+      )
+    },
+    {
+      key: "qty",
+      label: t("qtDetail.colQty", lang),
+      align: "right",
+      sortValue: (r) => r.qty,
+      render: (r) => (
+        <span className="font-mono text-xs">
+          {formatNumber(r.qty, lang, { maximumFractionDigits: 3 })}
+        </span>
+      )
+    },
+    {
+      key: "unit",
+      label: t("qtDetail.colUnit", lang),
+      sortValue: (r) => r.unit,
+      render: (r) => <span className="text-xs">{r.unit}</span>
+    },
+    {
+      key: "suggest",
+      label: t("qtDetail.colSuggest", lang),
+      align: "left",
+      sortValue: (r) => r.price_suggested ?? 0,
+      render: (r) => (
+        <span className="font-mono text-xs text-ink2">
+          {r.price_suggested != null ? formatIDR(r.price_suggested) : "—"}
+        </span>
+      )
+    },
+    {
+      key: "qtyFinal",
+      label: t("qtDetail.colFinalQty", lang),
+      align: "right",
+      sortValue: (r) => r.qty_quoted ?? 0,
+      render: (r) => (
+        <span className="font-mono text-xs">
+          {r.qty_quoted != null
+            ? formatNumber(r.qty_quoted, lang, { maximumFractionDigits: 3 })
+            : "—"}
+        </span>
+      )
+    },
+    {
+      key: "priceFinal",
+      label: t("qtDetail.colFinalPrice", lang),
+      align: "left",
+      sortValue: (r) => r.price_quoted ?? 0,
+      render: (r) => (
+        <span className="font-mono text-xs font-black text-emerald-800">
+          {r.price_quoted != null ? formatIDR(r.price_quoted) : "—"}
+        </span>
+      )
+    },
+    {
+      key: "subtotal",
+      label: t("qtDetail.colSubtotal", lang),
+      align: "left",
+      sortValue: (r) => r.subtotal,
+      exportValue: (r) => r.subtotal,
+      render: (r) => (
+        <span className="font-mono text-xs font-black">
+          {formatIDR(r.subtotal)}
+        </span>
+      )
+    },
+    {
+      key: "note",
+      label: t("qtDetail.colNote", lang),
+      align: "left",
+      sortable: false,
+      render: (r) => (
+        <span className="text-[11px] text-ink2">{r.note ?? "—"}</span>
+      )
+    }
+  ];
+  return (
+    <SortableTable<QuotationRow>
+      columns={columns}
+      rows={rows}
+      rowKey={(r) => r.line_no}
+      initialSort={{ key: "line", dir: "asc" }}
+      footer={
+        <tr>
+          <td colSpan={7} className="py-2 pr-3 text-right font-black">
+            {totalLabel}
+          </td>
+          <td className="py-2 pr-3 text-left font-mono font-black text-ink">
+            {formatIDR(total)}
+          </td>
+          <td></td>
+        </tr>
+      }
+    />
+  );
+}

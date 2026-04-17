@@ -5,12 +5,14 @@ import { Nav } from "@/components/nav";
 import {
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
 import { SchoolAttendancePanel } from "./attendance-panel";
 import { CalendarParserPanel } from "./calendar-parser-panel";
+import {
+  SchoolsRosterTable,
+  type SchoolRosterRow
+} from "./schools-roster-table";
 import { t, ti, formatNumber } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
@@ -213,95 +215,27 @@ export default async function SchoolsPage() {
           title={t("schools.rosterTitle", lang)}
           hint={t("schools.rosterHint", lang)}
         >
-          <TableWrap>
-            <table className="w-full text-sm">
-              <THead>
-                <th className="py-2 pr-3">{t("schools.colId", lang)}</th>
-                <th className="py-2 pr-3">{t("schools.colName", lang)}</th>
-                <th className="py-2 pr-3">{t("schools.colLevel", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("schools.colStudents", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("schools.colSmall", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("schools.colLarge", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("schools.colTeachers", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("schools.colEff", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("schools.colDistance", lang)}</th>
-                <th className="py-2 pr-3">{t("schools.colContact", lang)}</th>
-              </THead>
-              <tbody>
-                {schools.map((s) => {
-                  const p = porsiEff(s);
-                  return (
-                    <tr
-                      key={s.id}
-                      className={`row-hover border-b border-ink/5 ${!s.active ? "opacity-50" : ""}`}
-                    >
-                      <td className="py-2 pr-3 font-mono text-xs">{s.id}</td>
-                      <td className="py-2 pr-3">
-                        <div className="font-semibold text-ink">{s.name}</div>
-                        <div className="text-[10px] text-ink2/60">
-                          {s.address}
-                        </div>
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${LEVEL_COLOR[s.level] ?? LEVEL_COLOR["SD"]}`}
-                        >
-                          {s.level}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {formatNumber(s.students, lang)}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs text-amber-700">
-                        {formatNumber(p.kecil, lang)}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs text-emerald-700">
-                        {formatNumber(p.besar, lang)}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {p.guru}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs font-black text-ink">
-                        {formatNumber(p.eff, lang)}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {Number(s.distance_km ?? 0).toFixed(1)}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <div className="text-[11px]">{s.pic}</div>
-                        <div className="font-mono text-[10px] text-ink2/60">
-                          {s.phone}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-ink/20 bg-paper">
-                  <td colSpan={3} className="py-2 pr-3 font-black text-ink">
-                    {ti("schools.totalLabel", lang, { n: totals.schools })}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-xs font-black">
-                    {formatNumber(totals.students, lang)}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-xs font-black text-amber-700">
-                    {formatNumber(totals.kecil, lang)}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-xs font-black text-emerald-700">
-                    {formatNumber(totals.besar, lang)}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-xs font-black">
-                    {formatNumber(totals.guru, lang)}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-sm font-black text-ink">
-                    {formatNumber(totals.eff, lang)}
-                  </td>
-                  <td colSpan={2}></td>
-                </tr>
-              </tfoot>
-            </table>
-          </TableWrap>
+          <SchoolsRosterTable
+            rows={schools.map<SchoolRosterRow>((s) => {
+              const p = porsiEff(s);
+              return {
+                id: s.id,
+                name: s.name,
+                address: s.address,
+                level: s.level,
+                students: Number(s.students),
+                kecil: p.kecil,
+                besar: p.besar,
+                guru: p.guru,
+                eff: p.eff,
+                distance_km: Number(s.distance_km ?? 0),
+                pic: s.pic,
+                phone: s.phone,
+                active: !!s.active
+              };
+            })}
+            totals={totals}
+          />
           <p className="mt-4 text-[11px] text-ink2/70">
             {t("schools.footnote", lang)}
           </p>

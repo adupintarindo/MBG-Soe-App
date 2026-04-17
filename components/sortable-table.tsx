@@ -23,6 +23,14 @@ export interface SortableColumn<T> {
   colSpan?: number;
 }
 
+export interface SortableTableFilter<T> {
+  key: string;
+  label: string;
+  getValue: (row: T) => string | null | undefined;
+  options?: { value: string; label: string }[]; // optional manual list; otherwise derived
+  width?: string;
+}
+
 export interface SortableTableProps<T> {
   columns: SortableColumn<T>[];
   rows: T[];
@@ -46,6 +54,7 @@ export interface SortableTableProps<T> {
   exportFileName?: string;
   exportSheetName?: string;
   toolbarExtra?: ReactNode;
+  filters?: SortableTableFilter<T>[];
 }
 
 const ALIGN_CLS: Record<NonNullable<SortableColumn<unknown>["align"]>, string> = {
@@ -187,7 +196,8 @@ export function SortableTable<T>({
   exportable = false,
   exportFileName = "export",
   exportSheetName = "Sheet1",
-  toolbarExtra
+  toolbarExtra,
+  filters
 }: SortableTableProps<T>) {
   const { lang } = useLang();
   const [sortKey, setSortKey] = useState<string | null>(
@@ -195,27 +205,66 @@ export function SortableTable<T>({
   );
   const [sortDir, setSortDir] = useState<SortDir>(initialSort?.dir ?? "asc");
   const [query, setQuery] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [isExporting, setIsExporting] = useState(false);
 
+  // Options derived from row data when filter.options is not explicitly provided.
+  const filterOptionsByKey = useMemo(() => {
+    const m = new Map<string, { value: string; label: string }[]>();
+    if (!filters) return m;
+    for (const f of filters) {
+      if (f.options) {
+        m.set(f.key, f.options);
+        continue;
+      }
+      const seen = new Set<string>();
+      const list: { value: string; label: string }[] = [];
+      for (const row of rows) {
+        const v = f.getValue(row);
+        if (v == null || v === "") continue;
+        const s = String(v);
+        if (seen.has(s)) continue;
+        seen.add(s);
+        list.push({ value: s, label: s });
+      }
+      list.sort((a, b) => a.label.localeCompare(b.label, "id"));
+      m.set(f.key, list);
+    }
+    return m;
+  }, [filters, rows]);
+
   const filteredRows = useMemo(() => {
-    if (!searchable || !query.trim()) return rows;
-    const q = query.trim().toLowerCase();
-    return rows.filter((row) =>
-      columns.some((c) => {
-        if (c.searchValue) {
-          const v = c.searchValue(row);
-          return v != null && String(v).toLowerCase().includes(q);
-        }
-        if (c.sortValue) {
-          const v = c.sortValue(row);
-          return v != null && String(v).toLowerCase().includes(q);
-        }
-        return stripReactNodeToText(c.render(row, 0))
-          .toLowerCase()
-          .includes(q);
-      })
-    );
-  }, [rows, columns, query, searchable]);
+    let out = rows;
+    if (filters && filters.length > 0) {
+      out = out.filter((row) =>
+        filters.every((f) => {
+          const sel = filterValues[f.key];
+          if (!sel) return true;
+          const v = f.getValue(row);
+          return v != null && String(v) === sel;
+        })
+      );
+    }
+    if (searchable && query.trim()) {
+      const q = query.trim().toLowerCase();
+      out = out.filter((row) =>
+        columns.some((c) => {
+          if (c.searchValue) {
+            const v = c.searchValue(row);
+            return v != null && String(v).toLowerCase().includes(q);
+          }
+          if (c.sortValue) {
+            const v = c.sortValue(row);
+            return v != null && String(v).toLowerCase().includes(q);
+          }
+          return stripReactNodeToText(c.render(row, 0))
+            .toLowerCase()
+            .includes(q);
+        })
+      );
+    }
+    return out;
+  }, [rows, columns, query, searchable, filters, filterValues]);
 
   const sortedRows = useMemo(() => {
     if (!sortKey) return filteredRows;
@@ -255,14 +304,18 @@ export function SortableTable<T>({
 
   const theadCls = `${stickyHeader ? "sticky top-0 z-10 " : ""}${THEAD_VARIANTS[variant]}`;
   const rowPad = dense ? "py-1.5" : "py-2";
-  const showToolbar = searchable || exportable || toolbarExtra;
+  const hasFilters = !!filters && filters.length > 0;
+  const showToolbar = searchable || exportable || hasFilters || toolbarExtra;
+  const queryActive = searchable && query.trim().length > 0;
+  const filterActive =
+    hasFilters && Object.values(filterValues).some((v) => v && v.length > 0);
 
   return (
     <div className={className}>
       {showToolbar && (
         <div className="mb-2 flex flex-wrap items-center gap-2">
           {searchable && (
-            <label className="relative flex min-w-[200px] flex-1 items-center">
+            <div className="relative flex min-w-[220px] flex-1 items-center">
               <span className="pointer-events-none absolute left-2.5 text-ink2/60">
                 <SearchIcon />
               </span>
@@ -276,12 +329,50 @@ export function SortableTable<T>({
                 }
                 className="w-full rounded-md border border-ink/10 bg-paper py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
               />
-              {query && (
-                <span className="ml-2 text-[10.5px] font-mono text-ink2/70">
-                  {sortedRows.length}/{rows.length}
-                </span>
-              )}
-            </label>
+            </div>
+          )}
+          {hasFilters &&
+            filters!.map((f) => {
+              const opts = filterOptionsByKey.get(f.key) ?? [];
+              const val = filterValues[f.key] ?? "";
+              return (
+                <select
+                  key={f.key}
+                  value={val}
+                  onChange={(e) =>
+                    setFilterValues((prev) => ({
+                      ...prev,
+                      [f.key]: e.target.value
+                    }))
+                  }
+                  className="rounded-md border border-ink/10 bg-paper py-1.5 pl-2.5 pr-7 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+                  style={f.width ? { minWidth: f.width } : undefined}
+                >
+                  <option value="">{f.label}</option>
+                  {opts.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              );
+            })}
+          {(queryActive || filterActive) && (
+            <span className="text-[10.5px] font-mono text-ink2/70">
+              {sortedRows.length}/{rows.length}
+            </span>
+          )}
+          {(queryActive || filterActive) && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setFilterValues({});
+              }}
+              className="rounded-md border border-ink/10 bg-paper px-2 py-1 text-[11px] font-semibold text-ink2 transition hover:bg-ink/[0.04]"
+            >
+              {t("common.reset", lang)}
+            </button>
           )}
           {toolbarExtra}
           {exportable && (
@@ -289,7 +380,7 @@ export function SortableTable<T>({
               type="button"
               onClick={handleExport}
               disabled={isExporting || sortedRows.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-md border border-ink/10 bg-paper px-2.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/[0.04] disabled:cursor-not-allowed disabled:opacity-50"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-ink/10 bg-paper px-2.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/[0.04] disabled:cursor-not-allowed disabled:opacity-50"
               title={t("common.exportExcel", lang)}
             >
               <DownloadIcon />

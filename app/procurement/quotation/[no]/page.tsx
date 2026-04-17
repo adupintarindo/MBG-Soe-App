@@ -8,12 +8,11 @@ import {
   LinkButton,
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
 import { QuotationActions } from "./quotation-actions";
-import { t, ti, numberLocale } from "@/lib/i18n";
+import { QuotationRowsTable } from "../../procurement-tables";
+import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -99,7 +98,22 @@ export default async function QuotationDetailPage({
     profile.supplier_id === qt.supplier_id &&
     (qt.status === "sent" || qt.status === "responded");
 
-  const locale = numberLocale(lang);
+  const qtRows = rows.map((r) => {
+    const it = itemByCode.get(r.item_code);
+    return {
+      line_no: r.line_no,
+      item_code: r.item_code,
+      item_name: it?.name_en ?? r.item_code,
+      qty: Number(r.qty),
+      unit: r.unit,
+      price_suggested:
+        r.price_suggested != null ? Number(r.price_suggested) : null,
+      qty_quoted: r.qty_quoted != null ? Number(r.qty_quoted) : null,
+      price_quoted: r.price_quoted != null ? Number(r.price_quoted) : null,
+      subtotal: Number(r.subtotal),
+      note: r.note
+    };
+  });
 
   return (
     <div>
@@ -181,81 +195,11 @@ export default async function QuotationDetailPage({
           {rows.length === 0 ? (
             <div className="text-sm text-ink2/70">{t("qtDetail.itemsEmpty", lang)}</div>
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">{t("qtDetail.colNo", lang)}</th>
-                  <th className="py-2 pr-3">{t("qtDetail.colItem", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("qtDetail.colQty", lang)}</th>
-                  <th className="py-2 pr-3">{t("qtDetail.colUnit", lang)}</th>
-                  <th className="py-2 pr-3">{t("qtDetail.colSuggest", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("qtDetail.colFinalQty", lang)}</th>
-                  <th className="py-2 pr-3">{t("qtDetail.colFinalPrice", lang)}</th>
-                  <th className="py-2 pr-3">{t("qtDetail.colSubtotal", lang)}</th>
-                  <th className="py-2 pr-3">{t("qtDetail.colNote", lang)}</th>
-                </THead>
-                <tbody>
-                  {rows.map((r) => {
-                    const it = itemByCode.get(r.item_code);
-                    return (
-                      <tr key={r.line_no} className="border-b border-ink/5">
-                        <td className="py-2 pr-3 font-mono text-xs">
-                          {r.line_no}
-                        </td>
-                        <td className="py-2 pr-3 text-xs">
-                          <div className="font-bold">
-                            {it?.name_en ?? r.item_code}
-                          </div>
-                          <div className="font-mono text-[10px] text-ink2/60">
-                            {r.item_code}
-                          </div>
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {Number(r.qty).toLocaleString(locale, {
-                            maximumFractionDigits: 3
-                          })}
-                        </td>
-                        <td className="py-2 pr-3 text-xs">{r.unit}</td>
-                        <td className="py-2 pr-3 text-left font-mono text-xs text-ink2">
-                          {r.price_suggested != null
-                            ? formatIDR(Number(r.price_suggested))
-                            : "—"}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {r.qty_quoted != null
-                            ? Number(r.qty_quoted).toLocaleString(locale, {
-                                maximumFractionDigits: 3
-                              })
-                            : "—"}
-                        </td>
-                        <td className="py-2 pr-3 text-left font-mono text-xs font-black text-emerald-800">
-                          {r.price_quoted != null
-                            ? formatIDR(Number(r.price_quoted))
-                            : "—"}
-                        </td>
-                        <td className="py-2 pr-3 text-left font-mono text-xs font-black">
-                          {formatIDR(Number(r.subtotal))}
-                        </td>
-                        <td className="py-2 pr-3 text-[11px] text-ink2">
-                          {r.note ?? "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={7} className="py-2 pr-3 text-right font-black">
-                      {t("qtDetail.total", lang)}
-                    </td>
-                    <td className="py-2 pr-3 text-left font-mono font-black text-ink">
-                      {formatIDR(Number(qt.total))}
-                    </td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </TableWrap>
+            <QuotationRowsTable
+              rows={qtRows}
+              totalLabel={t("qtDetail.total", lang)}
+              total={Number(qt.total)}
+            />
           )}
         </Section>
 

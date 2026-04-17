@@ -12,10 +12,12 @@ import {
   FieldLabel,
   Input,
   Section,
-  Select,
-  TableWrap,
-  THead
+  Select
 } from "@/components/ui";
+import {
+  SortableTable,
+  type SortableColumn
+} from "@/components/sortable-table";
 import { t, ti, formatNumber } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 

@@ -30,7 +30,7 @@ export function PlanningMatrixTable({
   const monthColumns: SortableColumn<PlanningMatrixRow>[] = months.map((m) => ({
     key: `m-${m}`,
     label: monthLabels[m] ?? m,
-    align: "right",
+    align: "center",
     sortValue: (r) => r.monthly[m] ?? 0,
     render: (r) => (
       <span className="font-mono text-xs">
@@ -50,7 +50,7 @@ export function PlanningMatrixTable({
     {
       key: "code",
       label: t("common.commodity", lang),
-      align: "left",
+      align: "center",
       sortValue: (r) => r.code,
       render: (r) => <span className="font-semibold">{r.code}</span>
     },
@@ -68,7 +68,7 @@ export function PlanningMatrixTable({
     {
       key: "total",
       label: t("planning.colTotalKg", lang),
-      align: "right",
+      align: "center",
       sortValue: (r) => r.total,
       render: (r) => (
         <span className="font-mono text-xs font-black">
@@ -79,7 +79,7 @@ export function PlanningMatrixTable({
     {
       key: "cost",
       label: t("planning.colEstCost", lang),
-      align: "left",
+      align: "center",
       sortValue: (r) => r.cost,
       render: (r) => (
         <span className="font-mono text-xs text-emerald-800">
@@ -104,15 +104,15 @@ export function PlanningMatrixTable({
       {months.map((m) => (
         <td
           key={m}
-          className="py-2 px-3 text-right font-mono text-xs font-black"
+          className="py-2 px-3 text-center font-mono text-xs font-black"
         >
           {formatNumber(colMonth[m], lang, { maximumFractionDigits: 0 })}
         </td>
       ))}
-      <td className="py-2 px-3 text-right font-mono text-xs font-black">
+      <td className="py-2 px-3 text-center font-mono text-xs font-black">
         {formatNumber(totalKg, lang, { maximumFractionDigits: 0 })}
       </td>
-      <td className="py-2 px-3 text-left font-mono text-xs font-black text-emerald-800">
+      <td className="py-2 px-3 text-center font-mono text-xs font-black text-emerald-800">
         {formatIDR(totalCost)}
       </td>
     </tr>
