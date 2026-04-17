@@ -263,7 +263,7 @@ export default async function DashboardPage() {
             <TableWrap>
               <table className="w-full text-sm tabular-nums">
                 <THead>
-                  <th className="w-10 py-2 pl-2 pr-3 text-center">#</th>
+                  <th className="w-10 py-2 pl-2 pr-3 text-center">No.</th>
                   <th className="py-2 pr-3">Komoditas</th>
                   {months.map((m) => (
                     <th key={m} className="py-2 pr-3 text-right">
@@ -483,7 +483,7 @@ export default async function DashboardPage() {
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">#</th>
+                  <th className="py-2 pr-3">No.</th>
                   <th className="py-2 pr-3">Supplier</th>
                   <th className="py-2 pr-3">Tipe</th>
                   <th className="py-2 pr-3 text-right">Invoice</th>

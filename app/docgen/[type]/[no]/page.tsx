@@ -201,7 +201,7 @@ export default async function DocDetailPage({ params }: PageProps) {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-ink bg-ink/5">
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">#</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">No.</th>
                 <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Item</th>
                 <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Kategori</th>
                 <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">Qty</th>
@@ -319,7 +319,7 @@ export default async function DocDetailPage({ params }: PageProps) {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-ink bg-ink/5">
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">#</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">No.</th>
                 <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Item</th>
                 <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">Qty PO</th>
                 <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Unit</th>

@@ -174,7 +174,7 @@ export default async function QuotationDetailPage({
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">#</th>
+                  <th className="py-2 pr-3">No.</th>
                   <th className="py-2 pr-3">Item</th>
                   <th className="py-2 pr-3 text-right">Qty</th>
                   <th className="py-2 pr-3">Unit</th>

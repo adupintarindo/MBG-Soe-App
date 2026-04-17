@@ -102,7 +102,7 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
       const stats = computeRowStats(r);
       const row = [
         COMMODITY_LABELS[r.commodity],
-        r.ingredient_name,
+        r.ingredient_name.replace(/^Buah\s*-\s*/i, ""),
         r.supplier_name,
         ...WEEK_FIELDS.map((k) => r[k] ?? ""),
         stats.avg ?? "",
@@ -279,7 +279,7 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                     {COMMODITY_LABELS[r.commodity]}
                   </td>
                   <td className="sticky left-[120px] z-10 bg-white px-2 py-1.5 font-medium text-slate-800">
-                    {r.ingredient_name}
+                    {r.ingredient_name.replace(/^Buah\s*-\s*/i, "")}
                   </td>
                   <td className="sticky left-[260px] z-10 bg-white px-2 py-1.5 text-slate-700">
                     {r.supplier_name}

@@ -300,7 +300,7 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">#</th>
+                  <th className="py-2 pr-3">ID</th>
                   <th className="py-2 pr-3">Menu</th>
                   <th className="py-2 pr-3 text-right">Hari</th>
                   <th className="py-2 pr-3 text-right">Porsi</th>

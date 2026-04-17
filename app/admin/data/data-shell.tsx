@@ -10,7 +10,7 @@ import { SchoolsPanel } from "./schools-panel";
 
 type ItemRow = Pick<
   Database["public"]["Tables"]["items"]["Row"],
-  "code" | "name_en" | "unit" | "category" | "price_idr" | "vol_weekly" | "active"
+  "code" | "unit" | "category" | "price_idr" | "vol_weekly" | "active"
 >;
 type MenuRow = Pick<
   Database["public"]["Tables"]["menus"]["Row"],

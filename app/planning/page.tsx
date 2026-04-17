@@ -201,7 +201,7 @@ export default async function PlanningPage() {
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3 text-center">#</th>
+                  <th className="py-2 pr-3 text-center">No.</th>
                   <th className="py-2 pr-3 text-center">Komoditas</th>
                   <th className="py-2 pr-3 text-center">Kategori</th>
                   {months.map((m) => (

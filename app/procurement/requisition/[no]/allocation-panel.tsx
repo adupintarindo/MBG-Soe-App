@@ -167,7 +167,7 @@ export function PrAllocationPanel({
       <table className="w-full min-w-[960px] text-xs">
         <thead className="bg-paper text-left text-[10px] font-black uppercase tracking-wide text-ink2">
           <tr>
-            <th className="px-3 py-2">#</th>
+            <th className="px-3 py-2">No.</th>
             <th className="px-3 py-2">Item</th>
             <th className="px-3 py-2 text-right">Qty Total</th>
             <th className="px-3 py-2 text-right">Planned</th>

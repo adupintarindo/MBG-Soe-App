@@ -323,7 +323,7 @@ export function QuotationForm({
           <table className="w-full min-w-[800px] text-xs">
             <thead className="bg-paper">
               <tr className="text-left text-[10px] font-black uppercase tracking-wide text-ink2">
-                <th className="px-3 py-2">#</th>
+                <th className="px-3 py-2">No.</th>
                 <th className="px-3 py-2">Item</th>
                 <th className="px-3 py-2 text-right">Qty</th>
                 <th className="px-3 py-2">Unit</th>

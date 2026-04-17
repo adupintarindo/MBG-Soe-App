@@ -20,7 +20,7 @@ export default async function AdminDataPage() {
     await Promise.all([
       supabase
         .from("items")
-        .select("code, name_en, unit, category, price_idr, vol_weekly, active")
+        .select("code, unit, category, price_idr, vol_weekly, active")
         .order("category")
         .order("code"),
       supabase
