@@ -565,6 +565,130 @@ export async function ncrSnapshot(supabase: Client): Promise<NcrSnapshot> {
   );
 }
 
+// ---------- Supplier Re-Evaluation + QC Gallery ----------
+
+export type RevalPeriod = Database["public"]["Enums"]["reval_period"];
+
+export interface SupplierScorecardAuto {
+  quality_score: number;
+  delivery_score: number;
+  price_score: number;
+  compliance_score: number;
+  responsiveness_score: number;
+  total_score: number;
+  grn_count: number;
+  qc_pass: number;
+  qc_fail: number;
+  ncr_critical_open: number;
+  actions_overdue: number;
+  actions_total: number;
+}
+
+export interface SupplierRevalRow {
+  id: number;
+  supplier_id: string;
+  period: RevalPeriod;
+  period_start: string;
+  period_end: string;
+  quality_score: number;
+  delivery_score: number;
+  price_score: number;
+  compliance_score: number;
+  responsiveness_score: number;
+  total_score: number;
+  recommendation: string | null;
+  notes: string | null;
+  evaluated_at: string;
+}
+
+export interface QcGalleryItem {
+  source: string;
+  ref_id: string;
+  item_code: string | null;
+  result: string;
+  note: string | null;
+  photo_url: string;
+  captured_at: string;
+}
+
+export async function supplierScorecardAuto(
+  supabase: Client,
+  supplierId: string,
+  start: string,
+  end: string
+): Promise<SupplierScorecardAuto> {
+  const { data, error } = await supabase.rpc("supplier_scorecard_auto", {
+    p_supplier_id: supplierId,
+    p_start: start,
+    p_end: end
+  });
+  if (error) throw error;
+  const row = (data ?? [])[0] as SupplierScorecardAuto | undefined;
+  return (
+    row ?? {
+      quality_score: 0,
+      delivery_score: 0,
+      price_score: 0,
+      compliance_score: 0,
+      responsiveness_score: 0,
+      total_score: 0,
+      grn_count: 0,
+      qc_pass: 0,
+      qc_fail: 0,
+      ncr_critical_open: 0,
+      actions_overdue: 0,
+      actions_total: 0
+    }
+  );
+}
+
+export async function saveSupplierReval(
+  supabase: Client,
+  args: {
+    supplierId: string;
+    period: RevalPeriod;
+    start: string;
+    end: string;
+    recommendation?: string | null;
+    notes?: string | null;
+  }
+): Promise<number> {
+  const { data, error } = await supabase.rpc("save_supplier_reval", {
+    p_supplier_id: args.supplierId,
+    p_period: args.period,
+    p_start: args.start,
+    p_end: args.end,
+    p_recommendation: args.recommendation ?? null,
+    p_notes: args.notes ?? null
+  });
+  if (error) throw error;
+  return Number(data);
+}
+
+export async function listSupplierReval(
+  supabase: Client,
+  supplierId: string
+): Promise<SupplierRevalRow[]> {
+  const { data, error } = await supabase.rpc("list_supplier_reval", {
+    p_supplier_id: supplierId
+  });
+  if (error) throw error;
+  return (data ?? []) as SupplierRevalRow[];
+}
+
+export async function supplierQcGallery(
+  supabase: Client,
+  supplierId: string,
+  limit = 50
+): Promise<QcGalleryItem[]> {
+  const { data, error } = await supabase.rpc("supplier_qc_gallery", {
+    p_supplier_id: supplierId,
+    p_limit: limit
+  });
+  if (error) throw error;
+  return (data ?? []) as QcGalleryItem[];
+}
+
 // ---------- Client-side pure helpers (tidak perlu RPC) ----------
 
 export function formatIDR(n: number | null | undefined): string {

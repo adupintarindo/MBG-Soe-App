@@ -255,6 +255,54 @@ export interface Database {
         >;
         Relationships: [];
       };
+      supplier_reval: {
+        Row: {
+          id: number;
+          supplier_id: string;
+          period: Database["public"]["Enums"]["reval_period"];
+          period_start: string;
+          period_end: string;
+          quality_score: number;
+          delivery_score: number;
+          price_score: number;
+          compliance_score: number;
+          responsiveness_score: number;
+          w_quality: number;
+          w_delivery: number;
+          w_price: number;
+          w_compliance: number;
+          w_responsiveness: number;
+          total_score: number;
+          recommendation: string | null;
+          notes: string | null;
+          evaluator: string | null;
+          evaluated_at: string;
+        };
+        Insert: {
+          id?: number;
+          supplier_id: string;
+          period?: Database["public"]["Enums"]["reval_period"];
+          period_start: string;
+          period_end: string;
+          quality_score?: number;
+          delivery_score?: number;
+          price_score?: number;
+          compliance_score?: number;
+          responsiveness_score?: number;
+          w_quality?: number;
+          w_delivery?: number;
+          w_price?: number;
+          w_compliance?: number;
+          w_responsiveness?: number;
+          recommendation?: string | null;
+          notes?: string | null;
+          evaluator?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["supplier_reval"]["Insert"]
+        >;
+        Relationships: [];
+      };
       qc_checklist_templates: {
         Row: {
           id: number;
@@ -974,6 +1022,54 @@ export interface Database {
         Args: { p_qt_no: string };
         Returns: string;
       };
+      supplier_scorecard_auto: {
+        Args: {
+          p_supplier_id: string;
+          p_start: string;
+          p_end: string;
+        };
+        Returns: {
+          quality_score: number;
+          delivery_score: number;
+          price_score: number;
+          compliance_score: number;
+          responsiveness_score: number;
+          total_score: number;
+          grn_count: number;
+          qc_pass: number;
+          qc_fail: number;
+          ncr_critical_open: number;
+          actions_overdue: number;
+          actions_total: number;
+        }[];
+      };
+      save_supplier_reval: {
+        Args: {
+          p_supplier_id: string;
+          p_period: Database["public"]["Enums"]["reval_period"];
+          p_start: string;
+          p_end: string;
+          p_recommendation?: string | null;
+          p_notes?: string | null;
+        };
+        Returns: number;
+      };
+      list_supplier_reval: {
+        Args: { p_supplier_id: string };
+        Returns: Database["public"]["Tables"]["supplier_reval"]["Row"][];
+      };
+      supplier_qc_gallery: {
+        Args: { p_supplier_id: string; p_limit?: number };
+        Returns: {
+          source: string;
+          ref_id: string;
+          item_code: string | null;
+          result: string;
+          note: string | null;
+          photo_url: string;
+          captured_at: string;
+        }[];
+      };
     };
     Enums: {
       user_role: "admin" | "operator" | "ahli_gizi" | "supplier" | "viewer";
@@ -1044,6 +1140,7 @@ export interface Database {
         | "converted"
         | "rejected"
         | "expired";
+      reval_period: "quarterly" | "semester" | "annual" | "ad_hoc";
     };
     CompositeTypes: Record<string, never>;
   };
