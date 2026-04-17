@@ -16,6 +16,8 @@ import {
   THead
 } from "@/components/ui";
 import { GrnQcPanel } from "./grn-qc-panel";
+import { t, ti, formatNumber } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -120,6 +122,7 @@ interface SupplierLite {
 
 export default async function ProcurementPage() {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -275,11 +278,16 @@ export default async function ProcurementPage() {
       <PageContainer>
         <PageHeader
           icon="🧾"
-          title="Pengadaan · PR · Quotation · PO · GRN · Invoice"
+          title={t("procurement.title", lang)}
           subtitle={
             <>
-              {prs.length} PR · {quotations.length} Quotation · {poCount} PO ·{" "}
-              {grnCount} GRN · {invCount} Invoice · outstanding{" "}
+              {ti("procurement.subtitle", lang, {
+                prs: prs.length,
+                qts: quotations.length,
+                pos: poCount,
+                grns: grnCount,
+                invs: invCount
+              })}{" "}
               <b className="text-red-700">{formatIDR(invOutstanding)}</b>
             </>
           }
@@ -291,14 +299,14 @@ export default async function ProcurementPage() {
                   variant="gold"
                   size="sm"
                 >
-                  + Buat PR (split supplier)
+                  {t("procurement.btnNewPR", lang)}
                 </LinkButton>
                 <LinkButton
                   href="/procurement/quotation/new"
                   variant="primary"
                   size="sm"
                 >
-                  + Buat Quotation
+                  {t("procurement.btnNewQuotation", lang)}
                 </LinkButton>
               </div>
             ) : null
@@ -308,36 +316,38 @@ export default async function ProcurementPage() {
         <KpiGrid>
           <KpiTile
             icon="📝"
-            label="Nilai PO"
+            label={t("procurement.kpiPOValue", lang)}
             value={formatIDR(poTotal)}
             size="md"
-            sub={`${poCount} dokumen`}
+            sub={ti("procurement.kpiDocuments", lang, { n: poCount })}
           />
           <KpiTile
             icon="📦"
-            label="GRN"
+            label={t("procurement.kpiGRN", lang)}
             value={grnCount.toString()}
-            sub={`${grns.filter((g) => g.status === "ok").length} OK`}
+            sub={ti("procurement.kpiOK", lang, {
+              n: grns.filter((g) => g.status === "ok").length
+            })}
           />
           <KpiTile
             icon="💰"
-            label="Invoice Dibayar"
+            label={t("procurement.kpiInvoicePaid", lang)}
             value={formatIDR(invPaid)}
             size="md"
             tone="ok"
-            sub={`dari ${formatIDR(invTotal)}`}
+            sub={ti("procurement.kpiInvoicePaidSub", lang, { total: formatIDR(invTotal) })}
           />
           <KpiTile
             icon="⚠️"
-            label="Outstanding"
+            label={t("procurement.kpiOutstanding", lang)}
             value={formatIDR(invOutstanding)}
             size="md"
             tone={overdueCount > 0 ? "bad" : "warn"}
-            sub={`${overdueCount} overdue`}
+            sub={ti("procurement.kpiOverdue", lang, { n: overdueCount })}
           />
           <KpiTile
             icon="🧪"
-            label="NCR Aktif"
+            label={t("procurement.kpiNCR", lang)}
             value={(ncrStats.open_cnt + ncrStats.in_progress_cnt).toString()}
             tone={
               ncrStats.critical_open > 0
@@ -346,35 +356,38 @@ export default async function ProcurementPage() {
                   ? "warn"
                   : "ok"
             }
-            sub={`${ncrStats.critical_open} critical · avg resolve ${ncrStats.avg_resolve_days ?? "—"} hari`}
+            sub={ti("procurement.kpiNCRSub", lang, {
+              crit: ncrStats.critical_open,
+              days: ncrStats.avg_resolve_days ?? "—"
+            })}
           />
         </KpiGrid>
 
         <Section
-          title="📋 Purchase Requisitions · Split-Supplier"
-          hint="Agregasi kebutuhan tanggal tertentu → alokasi qty absolut ke multiple supplier → auto-generate quotation per supplier."
+          title={t("procurement.secPRtitle", lang)}
+          hint={t("procurement.secPRhint", lang)}
           actions={
             canWrite ? (
               <Link
                 href="/procurement/requisition/new"
                 className="rounded-lg bg-gold-gradient px-3 py-1.5 text-[11px] font-black text-primary-strong shadow-card hover:brightness-105"
               >
-                + Buat PR
+                {t("procurement.btnNewPRshort", lang)}
               </Link>
             ) : null
           }
         >
           {prs.length === 0 ? (
-            <EmptyState message="Belum ada PR. Klik 'Buat PR' untuk mulai split kebutuhan ke multiple supplier." />
+            <EmptyState message={t("procurement.prEmpty", lang)} />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">No PR</th>
-                  <th className="py-2 pr-3">Dibuat</th>
-                  <th className="py-2 pr-3">Butuh</th>
-                  <th className="py-2 pr-3">Status</th>
-                  <th className="py-2 pr-3">Catatan</th>
+                  <th className="py-2 pr-3">{t("procurement.colPRNo", lang)}</th>
+                  <th className="py-2 pr-3">{t("procurement.colCreated", lang)}</th>
+                  <th className="py-2 pr-3">{t("procurement.colNeeded", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.status", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.note", lang)}</th>
                   <th className="py-2 pr-3"></th>
                 </THead>
                 <tbody>

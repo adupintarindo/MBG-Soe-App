@@ -35,6 +35,7 @@ const TYPE_BADGE: Record<TxRow["tx_type"], string> = {
 };
 
 export function TransactionLog({ rows }: { rows: TxRow[] }) {
+  const { lang } = useLang();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("");
@@ -63,10 +64,10 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
     <section className="mb-6 rounded-2xl border-l-4 border-accent bg-white p-5 shadow-card">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-black uppercase tracking-wide text-ink">
-          📦 Transaksi Rantai Pasok · 50 Terakhir
+          {t("tx.title", lang)}
         </h2>
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="font-semibold text-ink2/70">Filter tanggal:</span>
+          <span className="font-semibold text-ink2/70">{t("tx.filterDate", lang)}</span>
           <input
             type="date"
             value={dateFrom}
@@ -85,42 +86,42 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
             onChange={(e) => setTypeFilter(e.target.value)}
             className="rounded-lg border border-ink/20 bg-white px-2 py-1 text-xs"
           >
-            <option value="">Semua tipe</option>
-            <option value="po">Purchase Order</option>
-            <option value="grn">Goods Receipt</option>
-            <option value="invoice">Invoice</option>
-            <option value="payment">Payment</option>
-            <option value="adjustment">Adjustment</option>
-            <option value="receipt">Receipt</option>
+            <option value="">{t("tx.allTypes", lang)}</option>
+            <option value="po">{t("tx.typePO", lang)}</option>
+            <option value="grn">{t("tx.typeGRN", lang)}</option>
+            <option value="invoice">{t("tx.typeInvoice", lang)}</option>
+            <option value="payment">{t("tx.typePayment", lang)}</option>
+            <option value="adjustment">{t("tx.typeAdjustment", lang)}</option>
+            <option value="receipt">{t("tx.typeReceipt", lang)}</option>
           </select>
           <button
             onClick={reset}
             className="rounded-lg border border-ink/20 bg-white px-3 py-1 text-[11px] font-bold text-ink2 hover:bg-ink/5"
           >
-            Reset
+            {t("common.reset", lang)}
           </button>
         </div>
       </div>
 
       <p className="mb-2 text-[11px] text-ink2/70">
-        {filtered.length} transaksi · total nilai {formatIDR(totalAmount)}
+        {ti("tx.nRows", lang, { n: filtered.length })} · {t("tx.totalShown", lang)} {formatIDR(totalAmount)}
       </p>
 
       {filtered.length === 0 ? (
         <div className="rounded-xl bg-ink/5 p-4 text-center text-sm text-ink2">
-          Tidak ada transaksi pada filter ini.
+          {t("tx.empty", lang)}
         </div>
       ) : (
         <div className="max-h-[440px] overflow-auto rounded-xl ring-1 ring-ink/10">
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-ink/5">
               <tr className="text-left text-[10px] font-bold uppercase tracking-wide text-ink2">
-                <th className="px-3 py-2">Tanggal</th>
-                <th className="px-3 py-2">Tipe</th>
-                <th className="px-3 py-2">Ref</th>
-                <th className="px-3 py-2">Supplier</th>
-                <th className="px-3 py-2">Keterangan</th>
-                <th className="px-3 py-2 text-right">Nilai</th>
+                <th className="px-3 py-2">{t("tx.colDate", lang)}</th>
+                <th className="px-3 py-2">{t("tx.colType", lang)}</th>
+                <th className="px-3 py-2">{t("tx.colRef", lang)}</th>
+                <th className="px-3 py-2">{t("tx.colSupplier", lang)}</th>
+                <th className="px-3 py-2">{t("tx.colDescription", lang)}</th>
+                <th className="px-3 py-2 text-right">{t("tx.colAmount", lang)}</th>
               </tr>
             </thead>
             <tbody>

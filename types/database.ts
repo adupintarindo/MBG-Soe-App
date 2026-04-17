@@ -1141,6 +1141,23 @@ export interface Database {
           total_risks: number;
         }[];
       };
+      pr_seed_from_date: {
+        Args: { p_need_date: string; p_notes?: string | null };
+        Returns: string;
+      };
+      pr_allocation_summary: {
+        Args: { p_pr_no: string };
+        Returns: {
+          line_no: number;
+          item_code: string;
+          unit: string;
+          qty_total: number;
+          qty_planned_sum: number;
+          qty_quoted_sum: number;
+          qty_po_sum: number;
+          gap: number;
+        }[];
+      };
       supplier_forecast_90d: {
         Args: {
           p_supplier_id?: string | null;
