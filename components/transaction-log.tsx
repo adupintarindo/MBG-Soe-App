@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { formatIDR } from "@/lib/engine";
+import { t, ti } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 export type TxRow = {
   id: number;
