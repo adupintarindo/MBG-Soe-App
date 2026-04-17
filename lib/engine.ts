@@ -689,6 +689,89 @@ export async function supplierQcGallery(
   return (data ?? []) as QcGalleryItem[];
 }
 
+// ============================================================================
+// SOP Runs (Module 5 · SOP form embeds)
+// ============================================================================
+
+export interface SopRunInput {
+  sopId: string;
+  sopTitle: string;
+  sopCategory: string;
+  stepsChecked: number;
+  stepsTotal: number;
+  risksFlagged: string[];
+  notes?: string | null;
+  runDate?: string | null;
+}
+
+export interface SopRunRow {
+  id: number;
+  sop_id: string;
+  sop_title: string;
+  sop_category: string;
+  run_date: string;
+  steps_checked: number;
+  steps_total: number;
+  risks_flagged: string[];
+  notes: string | null;
+  evaluator: string | null;
+  created_at: string;
+}
+
+export interface SopComplianceRow {
+  sop_id: string;
+  sop_title: string;
+  sop_category: string;
+  run_count: number;
+  last_run: string | null;
+  avg_completion: number;
+  total_risks: number;
+}
+
+export async function logSopRun(
+  supabase: Client,
+  input: SopRunInput
+): Promise<number> {
+  const { data, error } = await supabase.rpc("log_sop_run", {
+    p_sop_id: input.sopId,
+    p_sop_title: input.sopTitle,
+    p_sop_category: input.sopCategory,
+    p_steps_checked: input.stepsChecked,
+    p_steps_total: input.stepsTotal,
+    p_risks_flagged: input.risksFlagged,
+    p_notes: input.notes ?? null,
+    p_run_date: input.runDate ?? null
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function listSopRuns(
+  supabase: Client,
+  sopId: string | null,
+  limit = 25
+): Promise<SopRunRow[]> {
+  const { data, error } = await supabase.rpc("list_sop_runs", {
+    p_sop_id: sopId,
+    p_limit: limit
+  });
+  if (error) throw error;
+  return (data ?? []) as SopRunRow[];
+}
+
+export async function sopComplianceSummary(
+  supabase: Client,
+  start?: string | null,
+  end?: string | null
+): Promise<SopComplianceRow[]> {
+  const { data, error } = await supabase.rpc("sop_compliance_summary", {
+    p_start: start ?? null,
+    p_end: end ?? null
+  });
+  if (error) throw error;
+  return (data ?? []) as SopComplianceRow[];
+}
+
 // ---------- Client-side pure helpers (tidak perlu RPC) ----------
 
 export function formatIDR(n: number | null | undefined): string {

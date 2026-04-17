@@ -114,10 +114,8 @@ export default async function MenuMasterPage() {
   type BomEntry = {
     item_code: string;
     grams: number;
-    paud: number;
-    sd13: number;
-    sd46: number;
-    smp: number;
+    kecil: number;
+    besar: number;
     tiered: boolean;
   };
   const bomByMenu = new Map<number, BomEntry[]>();
@@ -127,14 +125,13 @@ export default async function MenuMasterPage() {
     const sd13 = Number(row.grams_sd13 ?? 0);
     const sd46 = Number(row.grams_sd46 ?? 0);
     const smp = Number(row.grams_smp ?? 0);
+    const tiered = paud + sd13 + sd46 + smp > 0;
     list.push({
       item_code: row.item_code,
       grams: Number(row.grams_per_porsi),
-      paud,
-      sd13,
-      sd46,
-      smp,
-      tiered: paud + sd13 + sd46 + smp > 0
+      kecil: Math.max(paud, sd13),
+      besar: Math.max(sd46, smp),
+      tiered
     });
     bomByMenu.set(row.menu_id, list);
   }
@@ -187,7 +184,7 @@ export default async function MenuMasterPage() {
           subtitle={
             <>
               Siklus {menus.length} hari · {totalItems} komoditas · {totalBOM}{" "}
-              entri BOM · 4-tier gramasi (PAUD 3-5 / SD 6-9 / SD 10-12 / SMP+)
+              entri BOM · 2 porsi (Kecil 3-9 th / Besar 10 th+)
             </>
           }
           actions={
@@ -279,10 +276,8 @@ export default async function MenuMasterPage() {
                         <tr>
                           <th className="px-2 py-2 text-left">Item</th>
                           <th className="px-2 py-2 text-left">Kat</th>
-                          <th className="px-1.5 py-2 text-right" title="PAUD 3-5 th">P</th>
-                          <th className="px-1.5 py-2 text-right" title="SD 1-3 (6-9 th)">SD₁₃</th>
-                          <th className="px-1.5 py-2 text-right" title="SD 4-6 (10-12 th)">SD₄₆</th>
-                          <th className="px-1.5 py-2 text-right" title="SMP+ & Guru">S+</th>
+                          <th className="px-2 py-2 text-right" title="PAUD + SD 1-3 (3-9 th)">Kecil</th>
+                          <th className="px-2 py-2 text-right" title="SD 4-6 + SMP/SMA + Guru (10 th+)">Besar</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -306,17 +301,11 @@ export default async function MenuMasterPage() {
                                   </span>
                                 </span>
                               </td>
-                              <td className="px-1.5 py-1.5 text-right font-mono text-ink">
-                                {r.tiered ? r.paud.toFixed(1) : "—"}
+                              <td className="px-2 py-1.5 text-right font-mono text-ink">
+                                {r.tiered ? r.kecil.toFixed(1) : r.grams.toFixed(1)}
                               </td>
-                              <td className="px-1.5 py-1.5 text-right font-mono text-ink">
-                                {r.tiered ? r.sd13.toFixed(1) : "—"}
-                              </td>
-                              <td className="px-1.5 py-1.5 text-right font-mono font-black text-ink">
-                                {r.tiered ? r.sd46.toFixed(1) : r.grams.toFixed(1)}
-                              </td>
-                              <td className="px-1.5 py-1.5 text-right font-mono text-ink">
-                                {r.tiered ? r.smp.toFixed(1) : "—"}
+                              <td className="px-2 py-1.5 text-right font-mono font-black text-ink">
+                                {r.tiered ? r.besar.toFixed(1) : r.grams.toFixed(1)}
                               </td>
                             </tr>
                           );
@@ -324,7 +313,7 @@ export default async function MenuMasterPage() {
                       </tbody>
                     </table>
                     <div className="border-t border-ink/5 bg-paper px-2 py-1 text-[9px] text-ink2/70">
-                      Gramasi: P=PAUD 3-5 · SD₁₃=SD 6-9 · <b>SD₄₆=SD 10-12 (baseline besar)</b> · S+=SMP/SMA/SMK+Guru
+                      Gramasi: <b>Kecil</b> = PAUD + SD 1-3 (3-9 th) · <b>Besar</b> = SD 4-6 + SMP/SMA + Guru (10 th+)
                     </div>
                   </div>
                 )}

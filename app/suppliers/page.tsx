@@ -28,6 +28,18 @@ export default async function SuppliersPage() {
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
 
+  const emptyReadiness = {
+    total: 0,
+    open_cnt: 0,
+    in_progress_cnt: 0,
+    blocked_cnt: 0,
+    done_cnt: 0,
+    cancelled_cnt: 0,
+    overdue_cnt: 0,
+    high_priority_open: 0,
+    readiness_pct: 0
+  };
+
   const [
     supRes,
     supItemsRes,
@@ -60,8 +72,14 @@ export default async function SuppliersPage() {
       .from("supplier_certs")
       .select("id, supplier_id, name, valid_until, created_at")
       .order("created_at", { ascending: false }),
-    listSupplierActions(supabase),
-    actionReadinessSnapshot(supabase)
+    listSupplierActions(supabase).catch((e) => {
+      console.error("[suppliers] listSupplierActions failed:", e);
+      return [] as Awaited<ReturnType<typeof listSupplierActions>>;
+    }),
+    actionReadinessSnapshot(supabase).catch((e) => {
+      console.error("[suppliers] actionReadinessSnapshot failed:", e);
+      return emptyReadiness;
+    })
   ]);
 
   const suppliers = (supRes.data ?? []) as SupplierRow[];

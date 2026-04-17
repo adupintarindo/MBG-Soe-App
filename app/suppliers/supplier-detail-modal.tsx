@@ -145,14 +145,23 @@ export function SupplierDetailModal({
               </h2>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Tutup"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-ink2 ring-1 ring-ink/10 transition hover:bg-ink/5"
-          >
-            ×
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <a
+              href={`/suppliers/${supplier.id}`}
+              className="hidden rounded-xl bg-accent-strong px-3 py-2 text-[11px] font-black text-white ring-1 ring-accent-strong transition hover:bg-ink sm:inline-block"
+              title="Panel lengkap: Re-evaluasi, QC gallery, LTA"
+            >
+              Panel Lengkap →
+            </a>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Tutup"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-ink2 ring-1 ring-ink/10 transition hover:bg-ink/5"
+            >
+              ×
+            </button>
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto overscroll-contain">

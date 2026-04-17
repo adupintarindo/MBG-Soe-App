@@ -36,7 +36,7 @@ RE_CREATE_INDEX = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 RE_CREATE_TRIGGER = re.compile(
-    r"^(create\s+trigger\s+)([a-z_][a-z0-9_]*)\s+((?:before|after|instead\s+of)[\s\S]*?on\s+(public\.[a-z_][a-z0-9_]*))",
+    r"^(create\s+trigger\s+)([a-z_][a-z0-9_]*)\s+((?:before|after|instead\s+of)\s+(?:[a-z_, ]|or\s+)+on\s+([a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*))",
     re.IGNORECASE | re.MULTILINE,
 )
 RE_ALTER_TYPE_ADD = re.compile(
@@ -58,10 +58,14 @@ RE_INSERT_BLOCK = re.compile(
 def guard_create_type(m: re.Match) -> str:
     schema = m.group(1) or ""
     name = m.group(2)
-    body = m.group(3).strip()
+    # Preserve the enum body verbatim (it may contain -- comments that extend
+    # to end of line; the closing `);` MUST go on its own line so it is not
+    # swallowed into a trailing comment).
+    body = m.group(3).rstrip()
     return (
         f"do $$ begin\n"
-        f"  create type {schema}{name} as enum ({body});\n"
+        f"  create type {schema}{name} as enum ({body}\n"
+        f"  );\n"
         f"exception when duplicate_object then null;\n"
         f"end $$;"
     )

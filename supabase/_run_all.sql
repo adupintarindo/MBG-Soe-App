@@ -22,11 +22,13 @@ create extension if not exists "pgcrypto";
 -- 0. ROLES & PROFILES
 -- ============================================================================
 do $$ begin
-  create type public.user_role as enum ('admin',       -- Full akses (Alfatehan + Kepala SPPG)
+  create type public.user_role as enum (
+  'admin',       -- Full akses (Alfatehan + Kepala SPPG)
   'operator',    -- Harian: stok, PO, GRN, invoice, receipt foto
   'ahli_gizi',   -- Menu master, BOM, kalender, custom menu
   'supplier',    -- Read PO/GRN/Invoice milik sendiri, update status GRN
-  'viewer'       -- Read-only: WFP PIC, auditor);
+  'viewer'       -- Read-only: WFP PIC, auditor
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -67,8 +69,10 @@ create index if not exists idx_invites_token on public.invites(token);
 
 -- Kategori bahan (BERAS, HEWANI, NABATI, SAYUR_HIJAU, SAYUR, UMBI, BUMBU, REMPAH, BUAH, SEMBAKO)
 do $$ begin
-  create type public.item_category as enum ('BERAS','HEWANI','NABATI','SAYUR_HIJAU','SAYUR','UMBI',
-  'BUMBU','REMPAH','BUAH','SEMBAKO','LAIN');
+  create type public.item_category as enum (
+  'BERAS','HEWANI','NABATI','SAYUR_HIJAU','SAYUR','UMBI',
+  'BUMBU','REMPAH','BUAH','SEMBAKO','LAIN'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -106,7 +110,8 @@ create table if not exists public.menu_bom (
 create index if not exists idx_bom_item on public.menu_bom(item_code);
 
 do $$ begin
-  create type public.school_level as enum ('PAUD/TK','SD','SMP','SMA','SMK');
+  create type public.school_level as enum ('PAUD/TK','SD','SMP','SMA','SMK'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -126,11 +131,14 @@ create table if not exists public.schools (
 );
 
 do $$ begin
-  create type public.supplier_type as enum ('BUMN','PT','CV','UD','KOPERASI','POKTAN','TOKO','KIOS','INFORMAL');
+  create type public.supplier_type as enum (
+  'BUMN','PT','CV','UD','KOPERASI','POKTAN','TOKO','KIOS','INFORMAL'
+  );
 exception when duplicate_object then null;
 end $$;
 do $$ begin
-  create type public.supplier_status as enum ('signed','awaiting','rejected','draft');
+  create type public.supplier_status as enum ('signed','awaiting','rejected','draft'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -162,15 +170,20 @@ create table if not exists public.supplier_items (
 
 -- Supplier onboarding action tracker (dari Onboarding MBG Suppliers docx + MoM)
 do $$ begin
-  create type public.action_status as enum ('open','in_progress','blocked','done','cancelled');
+  create type public.action_status as enum (
+  'open','in_progress','blocked','done','cancelled'
+  );
 exception when duplicate_object then null;
 end $$;
 do $$ begin
-  create type public.action_priority as enum ('low','medium','high','critical');
+  create type public.action_priority as enum ('low','medium','high','critical'
+  );
 exception when duplicate_object then null;
 end $$;
 do $$ begin
-  create type public.action_source as enum ('onboarding','mom','field','audit','ad_hoc');
+  create type public.action_source as enum (
+  'onboarding','mom','field','audit','ad_hoc'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -242,7 +255,9 @@ create table if not exists public.stock (
 );
 
 do $$ begin
-  create type public.move_reason as enum ('receipt','consumption','adjustment','waste','transfer_in','transfer_out','opening');
+  create type public.move_reason as enum (
+  'receipt','consumption','adjustment','waste','transfer_in','transfer_out','opening'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -264,7 +279,8 @@ create index if not exists idx_moves_ref on public.stock_moves(ref_doc, ref_no);
 -- 4. PROCUREMENT: PO → GRN → INVOICE → RECEIPT
 -- ============================================================================
 do $$ begin
-  create type public.po_status as enum ('draft','sent','confirmed','delivered','closed','cancelled');
+  create type public.po_status as enum ('draft','sent','confirmed','delivered','closed','cancelled'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -296,7 +312,8 @@ create table if not exists public.po_rows (
 );
 
 do $$ begin
-  create type public.grn_status as enum ('pending','ok','partial','rejected');
+  create type public.grn_status as enum ('pending','ok','partial','rejected'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -311,7 +328,8 @@ create table if not exists public.grns (
 );
 
 do $$ begin
-  create type public.invoice_status as enum ('issued','paid','overdue','cancelled');
+  create type public.invoice_status as enum ('issued','paid','overdue','cancelled'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -341,7 +359,9 @@ create index if not exists idx_receipts_ref on public.receipts(ref);
 -- 5. TRANSACTIONS LEDGER (laporan rantai pasok 50 terakhir)
 -- ============================================================================
 do $$ begin
-  create type public.tx_type as enum ('po','grn','invoice','payment','adjustment','receipt');
+  create type public.tx_type as enum (
+  'po','grn','invoice','payment','adjustment','receipt'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -936,7 +956,7 @@ begin
 end; $$;
 
 drop trigger if exists trg_auth_user_created on auth.users;
-drop trigger if exists trg_auth_user_created on public.handle_new_user;
+drop trigger if exists trg_auth_user_created on auth.users;
 create trigger trg_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
 
@@ -1964,7 +1984,8 @@ create index if not exists idx_qc_tmpl_item on public.qc_checklist_templates(ite
 -- GRN QC check: hasil pengecekan per GRN + checkpoint
 -- ----------------------------------------------------------------------------
 do $$ begin
-  create type public.qc_result as enum ('pass','minor','major','critical','na');
+  create type public.qc_result as enum ('pass','minor','major','critical','na'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -1987,11 +2008,13 @@ create index if not exists idx_grn_qc_result on public.grn_qc_checks(result) whe
 -- Non-Conformance Log: masalah kualitas yg perlu follow-up (NCR)
 -- ----------------------------------------------------------------------------
 do $$ begin
-  create type public.ncr_severity as enum ('minor','major','critical');
+  create type public.ncr_severity as enum ('minor','major','critical'
+  );
 exception when duplicate_object then null;
 end $$;
 do $$ begin
-  create type public.ncr_status as enum ('open','in_progress','resolved','waived');
+  create type public.ncr_status as enum ('open','in_progress','resolved','waived'
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -2252,13 +2275,15 @@ on conflict do nothing;
 -- ============================================================================
 
 do $$ begin
-  create type public.quotation_status as enum ('draft',        -- baru dibuat operator, belum dikirim
+  create type public.quotation_status as enum (
+  'draft',        -- baru dibuat operator, belum dikirim
   'sent',         -- sudah dikirim ke supplier
   'responded',    -- supplier sudah balas (harga/qty disesuaikan)
   'accepted',     -- operator terima, siap convert ke PO
   'converted',    -- sudah jadi PO
   'rejected',     -- ditolak salah satu pihak
-  'expired'       -- lewat valid_until);
+  'expired'       -- lewat valid_until
+  );
 exception when duplicate_object then null;
 end $$;
 
@@ -2527,6 +2552,1337 @@ language sql stable as $$
 $$;
 
 grant execute on function public.quotation_seed_from_date(date) to authenticated;
+
+
+-- >>> 0011_grn_autostock.sql ================================================
+-- ============================================================================
+-- 0011 · GRN → Stock auto-sync
+-- Saat GRN di-mark status='ok', otomatis iterasi po_rows untuk generate
+-- stock_moves (reason='receipt'). trg_moves_apply existing akan update stock.
+-- Idempotent: cek dulu kalau sudah ada stock_moves dengan ref_doc='grn' dan
+-- ref_no=GRN.no — kalau ada, skip (jangan double-insert).
+-- Untuk status='partial', qty tetap dipakai full dari po_rows (approximation);
+-- operator bisa manual adjustment lewat stock_moves kalau ada selisih real.
+-- Untuk status='rejected' → tidak insert apapun.
+-- ============================================================================
+
+create or replace function public.grn_sync_stock()
+returns trigger language plpgsql as $$
+declare
+  v_exists int;
+  v_po text;
+  r record;
+begin
+  -- Hanya kalau transisi ke 'ok' atau 'partial'
+  if new.status not in ('ok','partial') then
+    return new;
+  end if;
+  -- Skip kalau status lama sudah ok/partial (tidak re-sync)
+  if tg_op = 'UPDATE' and old.status in ('ok','partial') then
+    return new;
+  end if;
+
+  v_po := new.po_no;
+  if v_po is null then
+    return new;
+  end if;
+
+  -- Idempotency guard: sudah pernah insert stock_moves untuk GRN ini?
+  select count(*) into v_exists
+    from public.stock_moves
+    where ref_doc = 'grn' and ref_no = new.no;
+  if v_exists > 0 then
+    return new;
+  end if;
+
+  for r in
+    select item_code, qty, unit
+      from public.po_rows
+      where po_no = v_po
+      order by line_no
+  loop
+    insert into public.stock_moves(
+      item_code, delta, reason, ref_doc, ref_no, note, created_by
+    ) values (
+      r.item_code,
+      r.qty,          -- qty positif = masuk stock
+      'receipt',
+      'grn',
+      new.no,
+      'Auto-sync dari GRN ' || new.no || ' (PO ' || v_po || ')',
+      auth.uid()
+    );
+  end loop;
+
+  return new;
+end; $$;
+
+drop trigger if exists trg_grn_sync_stock_ins on public.grns;
+drop trigger if exists trg_grn_sync_stock_ins on public.grns;
+create trigger trg_grn_sync_stock_ins after insert on public.grns
+  for each row execute function public.grn_sync_stock();
+
+drop trigger if exists trg_grn_sync_stock_upd on public.grns;
+drop trigger if exists trg_grn_sync_stock_upd on public.grns;
+create trigger trg_grn_sync_stock_upd after update of status on public.grns
+  for each row execute function public.grn_sync_stock();
+
+-- ----------------------------------------------------------------------------
+-- Optional: saat PO di-deliver, auto-set status.
+-- ----------------------------------------------------------------------------
+create or replace function public.po_mark_delivered_on_grn()
+returns trigger language plpgsql as $$
+begin
+  if new.status in ('ok','partial') and new.po_no is not null then
+    update public.purchase_orders
+      set status = 'delivered'
+      where no = new.po_no
+        and status in ('draft','sent','confirmed');
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists trg_po_delivered_from_grn on public.grns;
+drop trigger if exists trg_po_delivered_from_grn on public.grns;
+create trigger trg_po_delivered_from_grn after insert or update of status on public.grns
+  for each row execute function public.po_mark_delivered_on_grn();
+
+
+-- >>> 0012_menus_adjusted_tiered.sql ========================================
+-- ============================================================================
+-- 0011 · Replace 14 placeholder menus with 10 ADJUSTED menus from
+-- "ADJUSTED Costing Sheet Dish 06042026.xlsx" (WFP × IFSR × FFI, SPPG Nunumeu).
+--
+-- Changes:
+--   1. Tambah tiered gramasi column di menu_bom
+--      (grams_paud, grams_sd13, grams_sd46, grams_smp) · 4 age-band SPPG.
+--   2. Insert item baru yang belum ada di master (bumbu, rempah, sawi putih, dst).
+--   3. Rewrite 14 menu placeholder → 10 menu riil ADJUSTED (M1..M10).
+--   4. Rewrite menu_bom lengkap dengan tiered gramasi.
+--   5. Regenerate menu_assign go-live 2026-05-04 rotasi 10-hari.
+--   6. New function `porsi_counts_tiered(p_date)` return 4-tier count.
+--   7. Patch `requirement_for_date` pakai tiered multiplication jika tier ≠ 0.
+--   8. Patch `monthly_requirements` pakai tiered.
+-- ============================================================================
+
+-- ---------- 1. Tier columns ----------------------------------------------
+alter table public.menu_bom
+  add column if not exists grams_paud numeric(10,3) not null default 0,
+  add column if not exists grams_sd13 numeric(10,3) not null default 0,
+  add column if not exists grams_sd46 numeric(10,3) not null default 0,
+  add column if not exists grams_smp  numeric(10,3) not null default 0;
+
+comment on column public.menu_bom.grams_paud is 'Gramasi per porsi PAUD/TK (3-5 th). Sumber: ADJUSTED Costing Sheet.';
+comment on column public.menu_bom.grams_sd13 is 'Gramasi per porsi SD kelas 1-3 (6-9 th).';
+comment on column public.menu_bom.grams_sd46 is 'Gramasi per porsi SD kelas 4-6 (10-12 th) — baseline besar.';
+comment on column public.menu_bom.grams_smp  is 'Gramasi per porsi SMP/SMA/SMK + Guru (13-18 th +).';
+
+-- ---------- 2. Items baru ------------------------------------------------
+insert into public.items(code, name_en, unit, category, price_idr, vol_weekly) values
+  ('Ayam Tanpa Tulang', 'Boneless Chicken', 'kg', 'HEWANI', 58000, 0),
+  ('Bawang Bombay',     'Onion',            'kg', 'BUMBU',  30000, 0),
+  ('Daun Bawang',       'Spring Onion',     'kg', 'BUMBU',  27500, 0),
+  ('Daun Jeruk',        'Kaffir Lime Leaf', 'kg', 'REMPAH', 25000, 0),
+  ('Daun Kemangi',      'Basil',            'kg', 'BUMBU',  50000, 0),
+  ('Kemiri',            'Candlenut',        'kg', 'REMPAH', 35000, 0),
+  ('Ketumbar',          'Coriander',        'kg', 'REMPAH',  7000, 0),
+  ('Labu Parang',       'Pumpkin',          'kg', 'SAYUR',  17500, 0),
+  ('Lengkuas',          'Galangal',         'kg', 'REMPAH',  7000, 0),
+  ('Merica',            'Pepper',           'kg', 'REMPAH',100000, 0),
+  ('Pakcoi',            'Pak Choi',         'kg', 'SAYUR_HIJAU', 12000, 0),
+  ('Sawi Putih',        'Chinese Cabbage',  'kg', 'SAYUR_HIJAU', 12000, 0),
+  ('Sereh',             'Lemongrass',       'kg', 'REMPAH', 15000, 0),
+  ('Tomat',             'Tomato',           'kg', 'SAYUR',  15000, 0)
+on conflict (code) do nothing;
+
+-- ---------- 3. Menu cycle: 14 → 10 ADJUSTED -----------------------------
+-- Kosongkan dulu menu_bom 11-14 dan menu 11-14 yg obsolete.
+delete from public.menu_bom  where menu_id not between 1 and 10;
+delete from public.menu_assign where menu_id not between 1 and 10;
+delete from public.menus      where id      not between 1 and 10;
+
+-- Upsert 10 menu riil
+insert into public.menus(id, name, name_en, cycle_day, active) values
+  (1,  'Tumis Jagung Sawi Putih & Semur Ayam',      'Stir-Fried Corn-Cabbage + Braised Chicken',    1,  true),
+  (2,  'Tumis Buncis & Telur Balado',               'Stir-Fried Green Bean + Balado Egg',           2,  true),
+  (3,  'Tumis Labu Pakcoi & Ikan Balado',           'Stir-Fried Squash-Pakcoi + Balado Fish',       3,  true),
+  (4,  'Tumis Kacang Panjang & Ayam Opor Bening',   'Stir-Fried Long Bean + Clear Opor Chicken',    4,  true),
+  (5,  'Tumis Sawi Hijau & Telur Dadar',            'Stir-Fried Mustard Greens + Omelette',         5,  true),
+  (6,  'Tumis Buncis Jagung & Ikan Saus Merah',     'Stir-Fried Bean-Corn + Red Sauce Fish',        6,  true),
+  (7,  'Tumis Sawi Putih & Ayam Woku',              'Stir-Fried Cabbage + Woku Chicken',            7,  true),
+  (8,  'Tumis Pakcoi & Telur Balado',               'Stir-Fried Pakcoi + Balado Egg',               8,  true),
+  (9,  'Tumis Buncis & Semur Tahu Kentang',         'Stir-Fried Bean + Braised Tofu-Potato',        9,  true),
+  (10, 'Capcai & Ikan Tuna Pepes',                  'Capcai + Pepes Tuna',                          10, true)
+on conflict (id) do update set
+  name       = excluded.name,
+  name_en    = excluded.name_en,
+  cycle_day  = excluded.cycle_day,
+  active     = excluded.active;
+
+-- ---------- 4. Menu BOM tiered ------------------------------------------
+-- grams_per_porsi dipakai fallback (= grams_sd46 sebagai baseline besar)
+delete from public.menu_bom;
+insert into public.menu_bom(menu_id, item_code, grams_per_porsi, grams_paud, grams_sd13, grams_sd46, grams_smp) values
+  (1, 'Beras Putih',        70, 30, 50, 70, 110),
+  (1, 'Ayam Tanpa Tulang', 100, 25, 25,100, 100),
+  (1, 'Jagung Manis',        5,  5,  5,  5,   5),
+  (1, 'Sawi Putih',         25, 25, 25, 25,  25),
+  (1, 'Wortel',             20, 20, 20, 20,  20),
+  (1, 'Bawang Bombay',       5,  5,  5,  5,   5),
+  (1, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (1, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (1, 'Daun Jeruk',       0.25, 0.25,0.25,0.25,0.25),
+  (1, 'Garam',               1,  1,  1,  1,   1),
+  (1, 'Jahe',                1,  1,  1,  1,   1),
+  (1, 'Kecap Manis',         5,  5,  5,  5,   5),
+  (1, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (1, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (1, 'Buah - Pisang',     150,100,100,150, 150),
+
+  (2, 'Beras Putih',        70, 30, 50, 70, 110),
+  (2, 'Telur Ayam',         60, 60, 60, 60,  60),
+  (2, 'Buncis',             25, 25, 25, 25,  25),
+  (2, 'Wortel',             20, 20, 20, 20,  20),
+  (2, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (2, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (2, 'Cabai Merah',         2,  2,  2,  2,   2),
+  (2, 'Daun Jeruk',       0.25, 0.25,0.25,0.25,0.25),
+  (2, 'Garam',               1,  1,  1,  1,   1),
+  (2, 'Lengkuas',            1,  1,  1,  1,   1),
+  (2, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (2, 'Sereh',               2,  2,  2,  2,   2),
+  (2, 'Tomat',              30, 30, 30, 30,  30),
+  (2, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (2, 'Buah - Pepaya',     150,100,100,150, 150),
+
+  (3, 'Beras Putih',        70, 30, 50, 70, 110),
+  (3, 'Ikan Tuna',         100, 25, 25,100, 100),
+  (3, 'Jagung Manis',        5,  5,  5,  5,   5),
+  (3, 'Labu Parang',        40, 40, 40, 40,  40),
+  (3, 'Pakcoi',             25, 25, 25, 25,  25),
+  (3, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (3, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (3, 'Cabai Merah',         2,  2,  2,  2,   2),
+  (3, 'Daun Jeruk',       0.25, 0.25,0.25,0.25,0.25),
+  (3, 'Garam',               1,  1,  1,  1,   1),
+  (3, 'Lengkuas',            1,  1,  1,  1,   1),
+  (3, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (3, 'Sereh',               2,  2,  2,  2,   2),
+  (3, 'Tomat',              30, 30, 30, 30,  30),
+  (3, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (3, 'Buah - Melon',      150,100,100,150, 150),
+
+  (4, 'Beras Putih',        70, 30, 50, 70, 110),
+  (4, 'Ayam Tanpa Tulang', 100, 25, 25,100, 100),
+  (4, 'Kacang Panjang',     25, 25, 25, 25,  25),
+  (4, 'Wortel',             20, 20, 20, 20,  20),
+  (4, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (4, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (4, 'Daun Jeruk',       0.25, 0.25,0.25,0.25,0.25),
+  (4, 'Garam',               1,  1,  1,  1,   1),
+  (4, 'Kemiri',              2,  2,  2,  2,   2),
+  (4, 'Ketumbar',         0.25, 0.25,0.25,0.25,0.25),
+  (4, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (4, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (4, 'Buah - Pisang',     150,100,100,150, 150),
+
+  (5, 'Beras Putih',        70, 30, 50, 70, 110),
+  (5, 'Telur Ayam',         60, 60, 60, 60,  60),
+  (5, 'Sawi Hijau',         25, 25, 25, 25,  25),
+  (5, 'Wortel',             20, 20, 20, 20,  20),
+  (5, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (5, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (5, 'Daun Bawang',         1,  1,  1,  1,   1),
+  (5, 'Garam',               1,  1,  1,  1,   1),
+  (5, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (5, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (5, 'Buah - Pepaya',     150,100,100,150, 150),
+
+  (6, 'Beras Putih',        70, 30, 50, 70, 110),
+  (6, 'Ikan Tuna',         100, 25, 25,100, 100),
+  (6, 'Buncis',             25, 25, 25, 25,  25),
+  (6, 'Jagung Manis',        5,  5,  5,  5,   5),
+  (6, 'Wortel',             20, 20, 20, 20,  20),
+  (6, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (6, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (6, 'Cabai Merah',         1,  1,  1,  1,   1),
+  (6, 'Garam',               1,  1,  1,  1,   1),
+  (6, 'Ketumbar',         0.25, 0.25,0.25,0.25,0.25),
+  (6, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (6, 'Sereh',               2,  2,  2,  2,   2),
+  (6, 'Tomat',              35, 35, 35, 35,  35),
+  (6, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (6, 'Buah - Pisang',     150,100,100,150, 150),
+
+  (7, 'Beras Putih',        70, 30, 50, 70, 110),
+  (7, 'Ayam Tanpa Tulang', 100, 25, 25,100, 100),
+  (7, 'Sawi Putih',         25, 25, 25, 25,  25),
+  (7, 'Wortel',             20, 20, 20, 20,  20),
+  (7, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (7, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (7, 'Cabai Merah',         1,  1,  1,  1,   1),
+  (7, 'Daun Jeruk',       0.25, 0.25,0.25,0.25,0.25),
+  (7, 'Daun Kemangi',        2,  2,  2,  2,   2),
+  (7, 'Garam',               1,  1,  1,  1,   1),
+  (7, 'Jahe',              0.5, 0.5, 0.5, 0.5, 0.5),
+  (7, 'Kemiri',              1,  1,  1,  1,   1),
+  (7, 'Kunyit',            0.5, 0.5, 0.5, 0.5, 0.5),
+  (7, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (7, 'Sereh',               2,  2,  2,  2,   2),
+  (7, 'Tomat',               2,  2,  2,  2,   2),
+  (7, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (7, 'Buah - Pepaya',     150,100,100,150, 150),
+
+  (8, 'Beras Putih',        70, 30, 50, 70, 110),
+  (8, 'Telur Ayam',         60, 60, 60, 60,  60),
+  (8, 'Pakcoi',             25, 25, 25, 25,  25),
+  (8, 'Wortel',             20, 20, 20, 20,  20),
+  (8, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (8, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (8, 'Cabai Merah',         2,  2,  2,  2,   2),
+  (8, 'Daun Jeruk',       0.25, 0.25,0.25,0.25,0.25),
+  (8, 'Garam',               1,  1,  1,  1,   1),
+  (8, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (8, 'Sereh',               2,  2,  2,  2,   2),
+  (8, 'Tomat',              30, 30, 30, 30,  30),
+  (8, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (8, 'Buah - Semangka',   150,100,100,150, 150),
+
+  (9, 'Beras Putih',        70, 30, 50, 70, 110),
+  (9, 'Tahu',              100, 25, 25,100, 100),
+  (9, 'Kentang',            20, 20, 20, 20,  20),
+  (9, 'Buncis',             25, 25, 25, 25,  25),
+  (9, 'Wortel',             20, 20, 20, 20,  20),
+  (9, 'Bawang Bombay',       5,  5,  5,  5,   5),
+  (9, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (9, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (9, 'Daun Jeruk',       0.25, 0.25,0.25,0.25,0.25),
+  (9, 'Garam',               1,  1,  1,  1,   1),
+  (9, 'Jahe',                1,  1,  1,  1,   1),
+  (9, 'Kecap Manis',         5,  5,  5,  5,   5),
+  (9, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (9, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (9, 'Buah - Pisang',     150,100,100,150, 150),
+
+  (10, 'Beras Putih',        70, 30, 50, 70, 110),
+  (10, 'Ikan Tuna',         100, 25, 25,100, 100),
+  (10, 'Sawi Hijau',         25, 25, 25, 25,  25),
+  (10, 'Wortel',             20, 20, 20, 20,  20),
+  (10, 'Bawang Merah',        7,  7,  7,  7,   7),
+  (10, 'Bawang Putih',        3,  3,  3,  3,   3),
+  (10, 'Cabai Merah',         2,  2,  2,  2,   2),
+  (10, 'Daun Jeruk',       0.25, 0.25,0.25,0.25,0.25),
+  (10, 'Daun Kemangi',        2,  2,  2,  2,   2),
+  (10, 'Garam',               1,  1,  1,  1,   1),
+  (10, 'Kemiri',              2,  2,  2,  2,   2),
+  (10, 'Ketumbar',         0.25, 0.25,0.25,0.25,0.25),
+  (10, 'Kunyit',            0.5, 0.5, 0.5, 0.5, 0.5),
+  (10, 'Merica',            0.2, 0.2, 0.2, 0.2, 0.2),
+  (10, 'Sereh',               2,  2,  2,  2,   2),
+  (10, 'Minyak Goreng',      10, 10, 10, 10,  10),
+  (10, 'Buah - Pepaya',     150,100,100,150, 150)
+on conflict (menu_id, item_code) do update set
+  grams_per_porsi = excluded.grams_per_porsi,
+  grams_paud      = excluded.grams_paud,
+  grams_sd13      = excluded.grams_sd13,
+  grams_sd46      = excluded.grams_sd46,
+  grams_smp       = excluded.grams_smp;
+
+-- ---------- 5. Regenerate menu_assign 2026-05-04..2026-07-31 rotasi 10 -----
+-- Hapus assign di rentang go-live yang diregenerasi (jaga custom override).
+delete from public.menu_assign
+ where assign_date between date '2026-05-04' and date '2026-07-31';
+
+do $$
+declare
+  d date;
+  m smallint := 1;
+begin
+  d := date '2026-05-04';
+  while d < date '2026-07-31' loop
+    if extract(dow from d) not in (0,6) then
+      insert into public.menu_assign(assign_date, menu_id) values (d, m)
+        on conflict (assign_date) do update set menu_id = excluded.menu_id;
+      m := m + 1;
+      if m > 10 then m := 1; end if;
+    end if;
+    d := d + 1;
+  end loop;
+end $$;
+
+-- ---------- 6. porsi_counts_tiered --------------------------------------
+-- 4 tier sesuai ADJUSTED Costing:
+--   paud     : PAUD/TK students (3-5 th)
+--   sd13     : SD kelas 1-3 (6-9 th)
+--   sd46     : SD kelas 4-6 (10-12 th)
+--   smp_plus : SMP + SMA + SMK students + seluruh guru (13-18 th +)
+-- Attendance forecast tetap dipakai (ratio per-sekolah).
+create or replace function public.porsi_counts_tiered(p_date date)
+returns table(paud int, sd13 int, sd46 int, smp_plus int, total int, operasional boolean)
+language plpgsql stable as $$
+declare
+  v_paud     int := 0;
+  v_sd13     int := 0;
+  v_sd46     int := 0;
+  v_smp_plus int := 0;
+  v_nonop    boolean := false;
+begin
+  select true into v_nonop from public.non_op_days where op_date = p_date;
+  if coalesce(v_nonop, false) then
+    return query select 0,0,0,0,0,false;
+    return;
+  end if;
+
+  if extract(dow from p_date) in (0,6) then
+    return query select 0,0,0,0,0,false;
+    return;
+  end if;
+
+  with roster as (
+    select
+      s.id,
+      s.level,
+      s.students,
+      s.kelas13,
+      s.kelas46,
+      s.guru,
+      case
+        when a.qty is null then 1.0
+        when s.students <= 0 then 0.0
+        else least(a.qty::numeric / nullif(s.students,0)::numeric, 1.0)
+      end as ratio
+    from public.schools s
+    left join public.school_attendance a
+      on a.school_id = s.id and a.att_date = p_date
+    where s.active = true
+  )
+  select
+    coalesce(sum(case when level = 'PAUD/TK' then round(students * ratio) else 0 end), 0)::int,
+    coalesce(sum(case when level = 'SD' then round(kelas13 * ratio) else 0 end), 0)::int,
+    coalesce(sum(case when level = 'SD' then round(kelas46 * ratio) else 0 end), 0)::int,
+    coalesce(sum(case when level in ('SMP','SMA','SMK') then round(students * ratio) else 0 end), 0)::int
+      + coalesce(sum(round(guru * ratio)), 0)::int
+  into v_paud, v_sd13, v_sd46, v_smp_plus
+  from roster;
+
+  return query select
+    v_paud, v_sd13, v_sd46, v_smp_plus,
+    (v_paud + v_sd13 + v_sd46 + v_smp_plus),
+    true;
+end; $$;
+
+grant execute on function public.porsi_counts_tiered(date) to authenticated;
+
+-- ---------- 7. Patch requirement_for_date untuk tiered -------------------
+-- Pakai tier kalau ada gramasi tier > 0, fallback grams_per_porsi * porsi_effective.
+create or replace function public.requirement_for_date(p_date date)
+returns table(item_code text, qty numeric, unit text, category public.item_category, price_idr numeric)
+language plpgsql stable as $$
+declare
+  v_menu smallint;
+  v_tier record;
+begin
+  -- Custom menu: tetap pakai fallback 100g/porsi (tidak tiered)
+  if exists (select 1 from public.custom_menus where menu_date = p_date) then
+    declare v_eff numeric := public.porsi_effective(p_date);
+    begin
+      if v_eff <= 0 then return; end if;
+      return query
+        select
+          it.code as item_code,
+          (100.0 * v_eff / 1000.0)::numeric as qty,
+          it.unit,
+          it.category,
+          it.price_idr
+        from public.custom_menus cm,
+             jsonb_array_elements_text(cm.karbo || cm.protein || cm.sayur || cm.buah) as elem(val)
+             join public.items it on it.code = elem.val
+        where cm.menu_date = p_date;
+      return;
+    end;
+  end if;
+
+  select menu_id into v_menu from public.menu_assign where assign_date = p_date;
+  if v_menu is null then return; end if;
+
+  select paud, sd13, sd46, smp_plus, operasional
+    into v_tier from public.porsi_counts_tiered(p_date);
+  if not coalesce(v_tier.operasional, false) then return; end if;
+
+  return query
+    select
+      b.item_code,
+      (
+        case
+          when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+              + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+            (coalesce(b.grams_paud,0) * v_tier.paud
+           + coalesce(b.grams_sd13,0) * v_tier.sd13
+           + coalesce(b.grams_sd46,0) * v_tier.sd46
+           + coalesce(b.grams_smp,0)  * v_tier.smp_plus) / 1000.0
+          else
+            b.grams_per_porsi * public.porsi_effective(p_date) / 1000.0
+        end
+      )::numeric as qty,
+      it.unit,
+      it.category,
+      it.price_idr
+    from public.menu_bom b
+    join public.items it on it.code = b.item_code
+    where b.menu_id = v_menu;
+end; $$;
+
+-- ---------- 8. Patch monthly_requirements tiered -------------------------
+create or replace function public.monthly_requirements(
+  p_start date,
+  p_months int default 4
+)
+returns table(
+  item_code text,
+  month date,
+  qty_kg numeric
+)
+language plpgsql stable as $$
+declare
+  v_end date;
+begin
+  v_end := (p_start + (p_months || ' months')::interval - interval '1 day')::date;
+
+  return query
+  with days as (
+    select generate_series(p_start, v_end, interval '1 day')::date as op_date
+  ),
+  ops as (
+    select
+      d.op_date,
+      date_trunc('month', d.op_date)::date as month
+    from days d
+    where extract(isodow from d.op_date) between 1 and 5
+      and not exists (
+        select 1 from public.non_op_days n where n.op_date = d.op_date
+      )
+  ),
+  daily as (
+    select
+      o.op_date,
+      o.month,
+      ma.menu_id,
+      pct.paud     as p_paud,
+      pct.sd13     as p_sd13,
+      pct.sd46     as p_sd46,
+      pct.smp_plus as p_smp,
+      public.porsi_effective(o.op_date) as p_eff
+    from ops o
+    join public.menu_assign ma on ma.assign_date = o.op_date
+    cross join lateral public.porsi_counts_tiered(o.op_date) pct
+    where pct.operasional = true
+  )
+  select
+    b.item_code,
+    d.month,
+    round(
+      sum(
+        case
+          when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+              + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+            (coalesce(b.grams_paud,0) * d.p_paud
+           + coalesce(b.grams_sd13,0) * d.p_sd13
+           + coalesce(b.grams_sd46,0) * d.p_sd46
+           + coalesce(b.grams_smp,0)  * d.p_smp) / 1000.0
+          else
+            b.grams_per_porsi * d.p_eff / 1000.0
+        end
+      ), 3
+    ) as qty_kg
+  from daily d
+  join public.menu_bom b on b.menu_id = d.menu_id
+  group by b.item_code, d.month
+  order by d.month, qty_kg desc;
+end; $$;
+
+grant execute on function public.monthly_requirements(date, int) to authenticated;
+grant execute on function public.requirement_for_date(date) to authenticated;
+
+
+-- >>> 0013_bom_variance.sql =================================================
+-- ============================================================================
+-- 0013 · BOM Variance (plan vs actual)
+-- Bandingkan kebutuhan bahan baku RENCANA (dari BOM × porsi tiered) vs
+-- REALISASI (dari GRN receipts via stock_moves) dalam periode tertentu.
+-- Threshold default ±10% → flag OVER/UNDER/OK.
+-- ============================================================================
+
+-- ---------- bom_variance(p_start, p_end) --------------------------------------
+-- Per item: plan (kg), actual (kg), variance, % , flag.
+create or replace function public.bom_variance(
+  p_start date,
+  p_end   date,
+  p_threshold_pct numeric default 10.0
+)
+returns table(
+  item_code text,
+  name_en text,
+  unit text,
+  category public.item_category,
+  plan_kg numeric,
+  actual_kg numeric,
+  variance_kg numeric,
+  variance_pct numeric,
+  flag text
+) language plpgsql stable as $$
+begin
+  return query
+  with
+  -- Plan: iterate setiap hari dalam periode, hitung kebutuhan tiered.
+  dates as (
+    select d::date as op_date
+    from generate_series(p_start, p_end, interval '1 day') as d
+  ),
+  day_counts as (
+    select d.op_date,
+           (public.porsi_counts_tiered(d.op_date)).*
+    from dates d
+  ),
+  day_menu as (
+    select dc.op_date, dc.paud, dc.sd13, dc.sd46, dc.smp_plus, dc.operasional,
+           ma.menu_id
+    from day_counts dc
+    left join public.menu_assign ma on ma.op_date = dc.op_date
+    where dc.operasional = true
+  ),
+  plan_per_item as (
+    select
+      b.item_code,
+      sum(
+        case
+          when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+              + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+            ( coalesce(b.grams_paud,0)*dm.paud
+            + coalesce(b.grams_sd13,0)*dm.sd13
+            + coalesce(b.grams_sd46,0)*dm.sd46
+            + coalesce(b.grams_smp,0)*dm.smp_plus
+            ) / 1000.0
+          else
+            coalesce(b.grams_per_porsi,0)
+              * (dm.paud + dm.sd13 + dm.sd46 + dm.smp_plus) / 1000.0
+        end
+      ) as plan_kg
+    from day_menu dm
+    join public.menu_bom b on b.menu_id = dm.menu_id
+    group by b.item_code
+  ),
+  -- Actual: GRN yg status ok/partial dalam periode, via po_rows → item.
+  actual_per_item as (
+    select pr.item_code,
+           sum(pr.qty) as actual_kg
+    from public.grns g
+    join public.po_rows pr on pr.po_no = g.po_no
+    where g.grn_date between p_start and p_end
+      and g.status in ('ok','partial')
+    group by pr.item_code
+  )
+  select
+    i.code as item_code,
+    i.name_en,
+    i.unit,
+    i.category,
+    coalesce(p.plan_kg,   0)::numeric(14,3) as plan_kg,
+    coalesce(a.actual_kg, 0)::numeric(14,3) as actual_kg,
+    (coalesce(a.actual_kg,0) - coalesce(p.plan_kg,0))::numeric(14,3) as variance_kg,
+    case
+      when coalesce(p.plan_kg,0) <= 0 then null
+      else ((coalesce(a.actual_kg,0) - p.plan_kg) / p.plan_kg * 100.0)::numeric(7,2)
+    end as variance_pct,
+    case
+      when coalesce(p.plan_kg,0) <= 0 and coalesce(a.actual_kg,0) > 0 then 'OVER'
+      when coalesce(p.plan_kg,0) <= 0 and coalesce(a.actual_kg,0) = 0 then 'OK'
+      when abs((coalesce(a.actual_kg,0) - p.plan_kg) / nullif(p.plan_kg,0) * 100.0)
+           <= p_threshold_pct then 'OK'
+      when (coalesce(a.actual_kg,0) - p.plan_kg) > 0 then 'OVER'
+      else 'UNDER'
+    end as flag
+  from public.items i
+  left join plan_per_item   p on p.item_code = i.code
+  left join actual_per_item a on a.item_code = i.code
+  where coalesce(p.plan_kg,0) > 0 or coalesce(a.actual_kg,0) > 0
+  order by
+    case
+      when coalesce(p.plan_kg,0) <= 0 then 3
+      when abs((coalesce(a.actual_kg,0) - p.plan_kg) / nullif(p.plan_kg,0) * 100.0)
+           > p_threshold_pct then 1
+      else 2
+    end,
+    i.code;
+end; $$;
+
+-- ---------- bom_variance_summary(p_start, p_end) ------------------------------
+-- KPI kompak utk header card.
+create or replace function public.bom_variance_summary(
+  p_start date,
+  p_end   date,
+  p_threshold_pct numeric default 10.0
+)
+returns table(
+  total_items int,
+  over_cnt int,
+  under_cnt int,
+  ok_cnt int,
+  total_plan_kg numeric,
+  total_actual_kg numeric,
+  total_variance_kg numeric,
+  total_variance_pct numeric
+) language plpgsql stable as $$
+begin
+  return query
+  with v as (
+    select * from public.bom_variance(p_start, p_end, p_threshold_pct)
+  )
+  select
+    count(*)::int,
+    count(*) filter (where flag = 'OVER')::int,
+    count(*) filter (where flag = 'UNDER')::int,
+    count(*) filter (where flag = 'OK')::int,
+    sum(plan_kg)::numeric(14,3),
+    sum(actual_kg)::numeric(14,3),
+    (sum(actual_kg) - sum(plan_kg))::numeric(14,3),
+    case
+      when sum(plan_kg) <= 0 then null
+      else ((sum(actual_kg) - sum(plan_kg)) / sum(plan_kg) * 100.0)::numeric(7,2)
+    end
+  from v;
+end; $$;
+
+-- ---------- bom_variance_by_menu(p_start, p_end) -----------------------------
+-- Per menu: total plan kg & breakdown cost (pakai items.price_idr fallback).
+create or replace function public.bom_variance_by_menu(
+  p_start date,
+  p_end   date
+)
+returns table(
+  menu_id int,
+  menu_name text,
+  days_served int,
+  plan_porsi int,
+  plan_kg_total numeric,
+  plan_cost_idr numeric
+) language plpgsql stable as $$
+begin
+  return query
+  with
+  dates as (
+    select d::date as op_date
+    from generate_series(p_start, p_end, interval '1 day') as d
+  ),
+  day_counts as (
+    select d.op_date,
+           (public.porsi_counts_tiered(d.op_date)).*
+    from dates d
+  ),
+  day_menu as (
+    select dc.op_date, dc.paud, dc.sd13, dc.sd46, dc.smp_plus,
+           dc.total as porsi_total, dc.operasional,
+           ma.menu_id
+    from day_counts dc
+    left join public.menu_assign ma on ma.op_date = dc.op_date
+    where dc.operasional = true
+      and ma.menu_id is not null
+  ),
+  per_menu_day as (
+    select dm.menu_id, dm.op_date, dm.porsi_total,
+      sum(
+        case
+          when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+              + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+            ( coalesce(b.grams_paud,0)*dm.paud
+            + coalesce(b.grams_sd13,0)*dm.sd13
+            + coalesce(b.grams_sd46,0)*dm.sd46
+            + coalesce(b.grams_smp,0)*dm.smp_plus
+            ) / 1000.0
+          else
+            coalesce(b.grams_per_porsi,0)
+              * (dm.paud + dm.sd13 + dm.sd46 + dm.smp_plus) / 1000.0
+        end
+      ) as kg_total,
+      sum(
+        case
+          when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+              + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+            ( coalesce(b.grams_paud,0)*dm.paud
+            + coalesce(b.grams_sd13,0)*dm.sd13
+            + coalesce(b.grams_sd46,0)*dm.sd46
+            + coalesce(b.grams_smp,0)*dm.smp_plus
+            ) / 1000.0 * coalesce(i.price_idr,0)
+          else
+            coalesce(b.grams_per_porsi,0)
+              * (dm.paud + dm.sd13 + dm.sd46 + dm.smp_plus) / 1000.0
+              * coalesce(i.price_idr,0)
+        end
+      ) as cost_idr
+    from day_menu dm
+    join public.menu_bom b on b.menu_id = dm.menu_id
+    join public.items   i on i.code = b.item_code
+    group by dm.menu_id, dm.op_date, dm.porsi_total
+  )
+  select
+    m.id as menu_id,
+    m.name as menu_name,
+    count(pmd.op_date)::int as days_served,
+    coalesce(sum(pmd.porsi_total),0)::int as plan_porsi,
+    coalesce(sum(pmd.kg_total),0)::numeric(14,3) as plan_kg_total,
+    coalesce(sum(pmd.cost_idr),0)::numeric(16,2) as plan_cost_idr
+  from public.menus m
+  left join per_menu_day pmd on pmd.menu_id = m.id
+  where m.active = true
+  group by m.id, m.name
+  order by m.id;
+end; $$;
+
+-- ---------- Grants -----------------------------------------------------------
+grant execute on function public.bom_variance(date, date, numeric) to anon, authenticated;
+grant execute on function public.bom_variance_summary(date, date, numeric) to anon, authenticated;
+grant execute on function public.bom_variance_by_menu(date, date) to anon, authenticated;
+
+
+-- >>> 0014_supplier_reval.sql ===============================================
+-- ============================================================================
+-- 0014 · Supplier Re-Evaluasi (periodic scorecard)
+-- Re-evaluation berkala (quarterly/semester) berbasis 5 dimensi:
+--   1. Quality      (QC pass rate dari grn_qc_checks)
+--   2. Delivery     (on-time GRN: grn_date vs PO created_at + target)
+--   3. Price        (variance vs reference items.price_idr)
+--   4. Compliance   (certs masih berlaku, NCR open critical)
+--   5. Responsiveness (action tracker: overdue vs on-time)
+-- Skor 0-100 per dimensi, bobot default 30/25/20/15/10.
+-- ============================================================================
+
+do $$ begin
+  create type public.reval_period as enum (
+  'quarterly','semester','annual','ad_hoc'
+  );
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.supplier_reval (
+  id bigserial primary key,
+  supplier_id text not null references public.suppliers(id) on delete cascade,
+  period public.reval_period not null default 'quarterly',
+  period_start date not null,
+  period_end date not null,
+  quality_score numeric(5,2) not null default 0 check (quality_score between 0 and 100),
+  delivery_score numeric(5,2) not null default 0 check (delivery_score between 0 and 100),
+  price_score numeric(5,2) not null default 0 check (price_score between 0 and 100),
+  compliance_score numeric(5,2) not null default 0 check (compliance_score between 0 and 100),
+  responsiveness_score numeric(5,2) not null default 0 check (responsiveness_score between 0 and 100),
+  w_quality numeric(4,3) not null default 0.30,
+  w_delivery numeric(4,3) not null default 0.25,
+  w_price numeric(4,3) not null default 0.20,
+  w_compliance numeric(4,3) not null default 0.15,
+  w_responsiveness numeric(4,3) not null default 0.10,
+  total_score numeric(5,2) generated always as (
+    quality_score      * w_quality
+    + delivery_score   * w_delivery
+    + price_score      * w_price
+    + compliance_score * w_compliance
+    + responsiveness_score * w_responsiveness
+  ) stored,
+  recommendation text,              -- 'RETAIN' | 'IMPROVE' | 'REPLACE' | 'EXIT'
+  notes text,
+  evaluator uuid references auth.users(id),
+  evaluated_at timestamptz not null default now(),
+  unique (supplier_id, period_start, period_end)
+);
+
+create index if not exists idx_reval_supplier on public.supplier_reval(supplier_id, period_end desc);
+
+alter table public.supplier_reval enable row level security;
+
+drop policy if exists "reval: auth read" on public.supplier_reval;
+drop policy if exists "reval: auth read" on public.supplier_reval;
+create policy "reval: auth read" on public.supplier_reval
+  for select using (auth.uid() is not null);
+
+drop policy if exists "reval: admin write" on public.supplier_reval;
+drop policy if exists "reval: admin write" on public.supplier_reval;
+create policy "reval: admin write" on public.supplier_reval
+  for all
+  using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- ----------------------------------------------------------------------------
+-- scorecard_auto(p_supplier_id, p_start, p_end)
+-- Hitung 5 skor otomatis dari data operasional dalam periode.
+-- ----------------------------------------------------------------------------
+create or replace function public.supplier_scorecard_auto(
+  p_supplier_id text,
+  p_start date,
+  p_end date
+)
+returns table(
+  quality_score numeric,
+  delivery_score numeric,
+  price_score numeric,
+  compliance_score numeric,
+  responsiveness_score numeric,
+  total_score numeric,
+  grn_count int,
+  qc_pass int,
+  qc_fail int,
+  ncr_critical_open int,
+  actions_overdue int,
+  actions_total int
+) language plpgsql stable as $$
+declare
+  v_quality numeric := 0;
+  v_delivery numeric := 0;
+  v_price numeric := 0;
+  v_compliance numeric := 0;
+  v_responsiveness numeric := 0;
+
+  v_grn_cnt int := 0;
+  v_qc_pass int := 0;
+  v_qc_fail int := 0;
+  v_ncr_crit int := 0;
+  v_act_overdue int := 0;
+  v_act_total int := 0;
+
+  v_expired_certs int := 0;
+  v_on_time_cnt int := 0;
+  v_late_cnt int := 0;
+  v_price_dev numeric := 0;
+  v_price_items int := 0;
+begin
+  -- === 1. Quality: QC pass rate ===
+  with grn_ids as (
+    select g.no, g.status
+    from public.grns g
+    join public.purchase_orders po on po.no = g.po_no
+    where po.supplier_id = p_supplier_id
+      and g.grn_date between p_start and p_end
+  ),
+  qc_rollup as (
+    select
+      coalesce(sum(case when qc.result = 'pass' then 1 else 0 end), 0) as pass_cnt,
+      coalesce(sum(case when qc.result in ('minor','major','critical') then 1 else 0 end), 0) as fail_cnt
+    from grn_ids g
+    left join public.grn_qc_checks qc on qc.grn_no = g.no
+  )
+  select pass_cnt, fail_cnt, (select count(*) from grn_ids)
+    into v_qc_pass, v_qc_fail, v_grn_cnt
+    from qc_rollup;
+
+  if (v_qc_pass + v_qc_fail) = 0 then
+    v_quality := 80;  -- neutral default (no data yet)
+  else
+    v_quality := round(100.0 * v_qc_pass / (v_qc_pass + v_qc_fail), 2);
+  end if;
+
+  -- === 2. Delivery: on-time GRN (grn_date within 3 days of PO + lead_time_days) ===
+  -- Approximation: GRN status='ok' count as on-time, 'partial' 70%, 'rejected' 0.
+  select
+    count(*) filter (where g.status = 'ok'),
+    count(*) filter (where g.status in ('partial','rejected'))
+    into v_on_time_cnt, v_late_cnt
+    from public.grns g
+    join public.purchase_orders po on po.no = g.po_no
+    where po.supplier_id = p_supplier_id
+      and g.grn_date between p_start and p_end;
+
+  if (v_on_time_cnt + v_late_cnt) = 0 then
+    v_delivery := 80;
+  else
+    v_delivery := round(
+      100.0 * (v_on_time_cnt + 0.5 * v_late_cnt)
+      / (v_on_time_cnt + v_late_cnt),
+      2
+    );
+  end if;
+
+  -- === 3. Price: variance vs reference items.price_idr ===
+  -- 100% = persis sama dgn reference; setiap ±1% deviasi -2 poin.
+  with prices as (
+    select pr.item_code,
+           avg(pr.price) as avg_price,
+           i.price_idr as ref_price
+    from public.po_rows pr
+    join public.purchase_orders po on po.no = pr.po_no
+    join public.items i on i.code = pr.item_code
+    where po.supplier_id = p_supplier_id
+      and po.created_at::date between p_start and p_end
+      and i.price_idr is not null and i.price_idr > 0
+    group by pr.item_code, i.price_idr
+  )
+  select
+    coalesce(avg(abs(avg_price - ref_price) / ref_price * 100), 0),
+    count(*)
+    into v_price_dev, v_price_items
+    from prices;
+
+  if v_price_items = 0 then
+    v_price := 80;
+  else
+    v_price := greatest(0, round(100 - v_price_dev * 2, 2));
+  end if;
+
+  -- === 4. Compliance: certs valid & NCR critical open ===
+  select count(*) into v_expired_certs
+    from public.supplier_certs
+    where supplier_id = p_supplier_id
+      and (valid_until is null or valid_until < p_end);
+
+  select count(*) into v_ncr_crit
+    from public.non_conformance_log
+    where supplier_id = p_supplier_id
+      and severity = 'critical'
+      and status in ('open','in_progress')
+      and reported_at::date between p_start and p_end;
+
+  v_compliance := greatest(
+    0,
+    100 - (v_expired_certs * 15) - (v_ncr_crit * 25)
+  );
+
+  -- === 5. Responsiveness: action tracker overdue ratio ===
+  select
+    count(*) filter (where status = 'done' and target_date is not null and done_at::date <= target_date),
+    count(*) filter (where status in ('open','in_progress') and target_date < current_date),
+    count(*)
+    into v_on_time_cnt, v_act_overdue, v_act_total
+    from public.supplier_actions
+    where supplier_id = p_supplier_id;
+
+  if v_act_total = 0 then
+    v_responsiveness := 80;
+  else
+    v_responsiveness := greatest(
+      0,
+      round(100.0 - (v_act_overdue::numeric / v_act_total * 100), 2)
+    );
+  end if;
+
+  return query
+  select
+    v_quality::numeric(5,2),
+    v_delivery::numeric(5,2),
+    v_price::numeric(5,2),
+    v_compliance::numeric(5,2),
+    v_responsiveness::numeric(5,2),
+    (v_quality * 0.30 + v_delivery * 0.25 + v_price * 0.20
+      + v_compliance * 0.15 + v_responsiveness * 0.10)::numeric(5,2),
+    v_grn_cnt,
+    v_qc_pass,
+    v_qc_fail,
+    v_ncr_crit,
+    v_act_overdue,
+    v_act_total;
+end; $$;
+
+-- ----------------------------------------------------------------------------
+-- save_supplier_reval: wrapper untuk compute + insert 1 row
+-- ----------------------------------------------------------------------------
+create or replace function public.save_supplier_reval(
+  p_supplier_id text,
+  p_period public.reval_period,
+  p_start date,
+  p_end date,
+  p_recommendation text default null,
+  p_notes text default null
+)
+returns bigint language plpgsql as $$
+declare
+  v_row record;
+  v_id bigint;
+begin
+  select * into v_row
+    from public.supplier_scorecard_auto(p_supplier_id, p_start, p_end);
+
+  insert into public.supplier_reval(
+    supplier_id, period, period_start, period_end,
+    quality_score, delivery_score, price_score,
+    compliance_score, responsiveness_score,
+    recommendation, notes, evaluator
+  ) values (
+    p_supplier_id, p_period, p_start, p_end,
+    v_row.quality_score, v_row.delivery_score, v_row.price_score,
+    v_row.compliance_score, v_row.responsiveness_score,
+    p_recommendation, p_notes, auth.uid()
+  )
+  on conflict (supplier_id, period_start, period_end)
+    do update set
+      quality_score = excluded.quality_score,
+      delivery_score = excluded.delivery_score,
+      price_score = excluded.price_score,
+      compliance_score = excluded.compliance_score,
+      responsiveness_score = excluded.responsiveness_score,
+      recommendation = excluded.recommendation,
+      notes = excluded.notes,
+      evaluator = auth.uid(),
+      evaluated_at = now()
+  returning id into v_id;
+
+  -- Sync score on main suppliers row
+  update public.suppliers
+    set score = v_row.total_score
+    where id = p_supplier_id;
+
+  return v_id;
+end; $$;
+
+-- ----------------------------------------------------------------------------
+-- list_supplier_reval: list historis per supplier
+-- ----------------------------------------------------------------------------
+create or replace function public.list_supplier_reval(p_supplier_id text)
+returns setof public.supplier_reval
+language sql stable as $$
+  select * from public.supplier_reval
+   where supplier_id = p_supplier_id
+   order by period_end desc;
+$$;
+
+grant execute on function public.supplier_scorecard_auto(text, date, date) to anon, authenticated;
+grant execute on function public.save_supplier_reval(text, public.reval_period, date, date, text, text) to authenticated;
+grant execute on function public.list_supplier_reval(text) to anon, authenticated;
+
+-- ----------------------------------------------------------------------------
+-- Visual QC Gallery RPC: aggregate photo_url dari grn_qc_checks + NCR
+-- ----------------------------------------------------------------------------
+create or replace function public.supplier_qc_gallery(
+  p_supplier_id text,
+  p_limit int default 50
+)
+returns table(
+  source text,          -- 'qc' | 'ncr'
+  ref_id text,          -- grn_no atau ncr_no
+  item_code text,
+  result text,          -- pass/minor/major/critical OR severity
+  note text,
+  photo_url text,
+  captured_at timestamptz
+) language sql stable as $$
+  (
+    select
+      'qc'::text as source,
+      qc.grn_no::text as ref_id,
+      qc.item_code,
+      qc.result::text as result,
+      qc.note,
+      qc.photo_url,
+      qc.checked_at as captured_at
+    from public.grn_qc_checks qc
+    join public.grns g on g.no = qc.grn_no
+    join public.purchase_orders po on po.no = g.po_no
+    where po.supplier_id = p_supplier_id
+      and qc.photo_url is not null
+  )
+  union all
+  (
+    select
+      'ncr'::text as source,
+      ncr.ncr_no::text as ref_id,
+      ncr.item_code,
+      ncr.severity::text as result,
+      ncr.issue as note,
+      ncr.photo_url,
+      ncr.reported_at as captured_at
+    from public.non_conformance_log ncr
+    where ncr.supplier_id = p_supplier_id
+      and ncr.photo_url is not null
+  )
+  order by captured_at desc
+  limit p_limit;
+$$;
+
+grant execute on function public.supplier_qc_gallery(text, int) to anon, authenticated;
+
+
+-- >>> 0015_sop_runs.sql =====================================================
+-- =============================================================================
+-- 0015_sop_runs.sql · SOP execution / compliance log
+-- -----------------------------------------------------------------------------
+-- Setiap kali operator / ahli gizi menjalankan sebuah SOP di lapangan, sistem
+-- mencatat eksekusi tersebut ke `sop_runs`: checklist yang dicentang, risiko
+-- yang diamati, catatan evaluator. Ini menjadi audit trail compliance kerja.
+--
+-- Tabel ini bersifat append-only (tidak ada UPDATE / DELETE via RLS) agar
+-- histori eksekusi tidak bisa direvisi setelah fakta.
+-- =============================================================================
+
+create table if not exists public.sop_runs (
+  id            bigint generated always as identity primary key,
+  sop_id        text   not null,        -- e.g. "SOP-OP-01"
+  sop_title     text   not null,        -- denormalised untuk resilience saat
+                                        -- master sops.ts berubah
+  sop_category  text   not null,        -- "OPERASIONAL" | "HIGIENE"
+  run_date      date   not null default current_date,
+  steps_checked int    not null default 0
+                check (steps_checked >= 0),
+  steps_total   int    not null default 0
+                check (steps_total >= 0),
+  risks_flagged text[] not null default '{}',
+  notes         text,
+  evaluator     text,                    -- nama lengkap operator (cache)
+  created_by    uuid   references auth.users(id),
+  created_at    timestamptz not null default now()
+);
+
+create index if not exists sop_runs_sop_idx  on public.sop_runs (sop_id);
+create index if not exists sop_runs_date_idx on public.sop_runs (run_date desc);
+
+alter table public.sop_runs enable row level security;
+
+drop policy if exists "sop_runs: auth read"   on public.sop_runs;
+drop policy if exists "sop_runs: role insert" on public.sop_runs;
+
+drop policy if exists "sop_runs: auth read" on public.sop_runs;
+create policy "sop_runs: auth read" on public.sop_runs
+  for select using (auth.uid() is not null);
+
+drop policy if exists "sop_runs: role insert" on public.sop_runs;
+create policy "sop_runs: role insert" on public.sop_runs
+  for insert
+  with check (public.current_role() in ('admin', 'operator', 'ahli_gizi'));
+
+-- =============================================================================
+-- RPC: log_sop_run — catat eksekusi SOP dari client dengan validasi ringan.
+-- Mengembalikan id baris yang baru dibuat.
+-- =============================================================================
+create or replace function public.log_sop_run(
+  p_sop_id        text,
+  p_sop_title     text,
+  p_sop_category  text,
+  p_steps_checked int,
+  p_steps_total   int,
+  p_risks_flagged text[],
+  p_notes         text default null,
+  p_run_date      date default null
+)
+returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role text := public.current_role();
+  v_id bigint;
+  v_eval text;
+begin
+  if v_role not in ('admin', 'operator', 'ahli_gizi') then
+    raise exception 'Hanya admin/operator/ahli_gizi yang boleh mencatat eksekusi SOP.';
+  end if;
+  if p_sop_id is null or length(trim(p_sop_id)) = 0 then
+    raise exception 'sop_id wajib diisi.';
+  end if;
+  if p_steps_checked > p_steps_total then
+    raise exception 'steps_checked (%) tidak boleh melebihi steps_total (%).',
+      p_steps_checked, p_steps_total;
+  end if;
+
+  select full_name into v_eval
+    from public.profiles
+    where user_id = auth.uid();
+
+  insert into public.sop_runs(
+    sop_id, sop_title, sop_category,
+    run_date, steps_checked, steps_total, risks_flagged, notes,
+    evaluator, created_by
+  ) values (
+    p_sop_id, p_sop_title, p_sop_category,
+    coalesce(p_run_date, current_date),
+    coalesce(p_steps_checked, 0),
+    coalesce(p_steps_total, 0),
+    coalesce(p_risks_flagged, '{}'::text[]),
+    nullif(trim(coalesce(p_notes, '')), ''),
+    v_eval, auth.uid()
+  ) returning id into v_id;
+
+  return v_id;
+end;
+$$;
+
+grant execute on function public.log_sop_run(
+  text, text, text, int, int, text[], text, date
+) to authenticated;
+
+-- =============================================================================
+-- RPC: list_sop_runs — ambil riwayat eksekusi (opsional filter sop_id).
+-- =============================================================================
+create or replace function public.list_sop_runs(
+  p_sop_id text default null,
+  p_limit  int  default 25
+)
+returns table (
+  id            bigint,
+  sop_id        text,
+  sop_title     text,
+  sop_category  text,
+  run_date      date,
+  steps_checked int,
+  steps_total   int,
+  risks_flagged text[],
+  notes         text,
+  evaluator     text,
+  created_at    timestamptz
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select r.id, r.sop_id, r.sop_title, r.sop_category,
+         r.run_date, r.steps_checked, r.steps_total,
+         r.risks_flagged, r.notes, r.evaluator, r.created_at
+  from public.sop_runs r
+  where p_sop_id is null or r.sop_id = p_sop_id
+  order by r.created_at desc
+  limit greatest(1, least(coalesce(p_limit, 25), 200));
+$$;
+
+grant execute on function public.list_sop_runs(text, int) to authenticated;
+
+-- =============================================================================
+-- RPC: sop_compliance_summary — agregasi per SOP dalam rentang tanggal.
+-- =============================================================================
+create or replace function public.sop_compliance_summary(
+  p_start date default null,
+  p_end   date default null
+)
+returns table (
+  sop_id           text,
+  sop_title        text,
+  sop_category     text,
+  run_count        int,
+  last_run         timestamptz,
+  avg_completion   numeric,        -- rata-rata persentase langkah dicentang
+  total_risks      int              -- total flag risiko
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  with scoped as (
+    select *
+    from public.sop_runs r
+    where (p_start is null or r.run_date >= p_start)
+      and (p_end   is null or r.run_date <= p_end)
+  )
+  select
+    sop_id,
+    max(sop_title)    as sop_title,
+    max(sop_category) as sop_category,
+    count(*)::int     as run_count,
+    max(created_at)   as last_run,
+    round(avg(
+      case when steps_total > 0
+           then (steps_checked::numeric / steps_total) * 100
+           else 0 end
+    ), 1) as avg_completion,
+    sum(coalesce(array_length(risks_flagged, 1), 0))::int as total_risks
+  from scoped
+  group by sop_id
+  order by max(created_at) desc nulls last;
+$$;
+
+grant execute on function public.sop_compliance_summary(date, date) to authenticated;
 
 
 commit;

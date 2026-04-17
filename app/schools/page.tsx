@@ -10,6 +10,7 @@ import {
   THead
 } from "@/components/ui";
 import { SchoolAttendancePanel } from "./attendance-panel";
+import { CalendarParserPanel } from "./calendar-parser-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,15 @@ export default async function SchoolsPage() {
 
   const days = nextSevenDateISO();
 
-  const [profile, schoolsResult, attendanceResult] = await Promise.all([
+  // Range untuk non_op_days: dari hari ini sampai 18 bulan ke depan.
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const farFuture = (() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 18);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  const [profile, schoolsResult, attendanceResult, nonOpResult] = await Promise.all([
     getSessionProfile(),
     supabase
       .from("schools")
@@ -78,7 +87,13 @@ export default async function SchoolsPage() {
       .from("school_attendance")
       .select("school_id, att_date, qty")
       .gte("att_date", days[0])
-      .lte("att_date", days[days.length - 1])
+      .lte("att_date", days[days.length - 1]),
+    supabase
+      .from("non_op_days")
+      .select("op_date, reason")
+      .gte("op_date", todayISO)
+      .lte("op_date", farFuture)
+      .order("op_date")
   ]);
 
   if (!profile) redirect("/login");
@@ -86,6 +101,7 @@ export default async function SchoolsPage() {
 
   const schools = schoolsResult.data ?? [];
   const attendance = attendanceResult.data ?? [];
+  const nonOpDays = nonOpResult.data ?? [];
   const canEdit = profile.role === "admin" || profile.role === "operator";
 
   const totals = schools.reduce(
@@ -174,6 +190,14 @@ export default async function SchoolsPage() {
             qty: Number(a.qty)
           }))}
           canEdit={canEdit}
+        />
+
+        <CalendarParserPanel
+          canWrite={canEdit}
+          existing={nonOpDays.map((r) => ({
+            op_date: r.op_date,
+            reason: r.reason
+          }))}
         />
 
         <Section

@@ -736,6 +736,36 @@ export interface Database {
         >;
         Relationships: [];
       };
+      sop_runs: {
+        Row: {
+          id: number;
+          sop_id: string;
+          sop_title: string;
+          sop_category: string;
+          run_date: string;
+          steps_checked: number;
+          steps_total: number;
+          risks_flagged: string[];
+          notes: string | null;
+          evaluator: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          sop_id: string;
+          sop_title: string;
+          sop_category: string;
+          run_date?: string;
+          steps_checked?: number;
+          steps_total?: number;
+          risks_flagged?: string[];
+          notes?: string | null;
+          evaluator?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["sop_runs"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1068,6 +1098,47 @@ export interface Database {
           note: string | null;
           photo_url: string;
           captured_at: string;
+        }[];
+      };
+      log_sop_run: {
+        Args: {
+          p_sop_id: string;
+          p_sop_title: string;
+          p_sop_category: string;
+          p_steps_checked: number;
+          p_steps_total: number;
+          p_risks_flagged: string[];
+          p_notes?: string | null;
+          p_run_date?: string | null;
+        };
+        Returns: number;
+      };
+      list_sop_runs: {
+        Args: { p_sop_id?: string | null; p_limit?: number };
+        Returns: {
+          id: number;
+          sop_id: string;
+          sop_title: string;
+          sop_category: string;
+          run_date: string;
+          steps_checked: number;
+          steps_total: number;
+          risks_flagged: string[];
+          notes: string | null;
+          evaluator: string | null;
+          created_at: string;
+        }[];
+      };
+      sop_compliance_summary: {
+        Args: { p_start?: string | null; p_end?: string | null };
+        Returns: {
+          sop_id: string;
+          sop_title: string;
+          sop_category: string;
+          run_count: number;
+          last_run: string | null;
+          avg_completion: number;
+          total_risks: number;
         }[];
       };
     };
