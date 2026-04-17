@@ -351,6 +351,69 @@ export default async function ProcurementPage() {
         </KpiGrid>
 
         <Section
+          title="📋 Purchase Requisitions · Split-Supplier"
+          hint="Agregasi kebutuhan tanggal tertentu → alokasi qty absolut ke multiple supplier → auto-generate quotation per supplier."
+          actions={
+            canWrite ? (
+              <Link
+                href="/procurement/requisition/new"
+                className="rounded-lg bg-gold-gradient px-3 py-1.5 text-[11px] font-black text-primary-strong shadow-card hover:brightness-105"
+              >
+                + Buat PR
+              </Link>
+            ) : null
+          }
+        >
+          {prs.length === 0 ? (
+            <EmptyState message="Belum ada PR. Klik 'Buat PR' untuk mulai split kebutuhan ke multiple supplier." />
+          ) : (
+            <TableWrap>
+              <table className="w-full text-sm">
+                <THead>
+                  <th className="py-2 pr-3">No PR</th>
+                  <th className="py-2 pr-3">Dibuat</th>
+                  <th className="py-2 pr-3">Butuh</th>
+                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">Catatan</th>
+                  <th className="py-2 pr-3"></th>
+                </THead>
+                <tbody>
+                  {prs.map((p) => (
+                    <tr key={p.no} className="row-hover border-b border-ink/5">
+                      <td className="py-2 pr-3 font-mono text-xs font-black">
+                        {p.no}
+                      </td>
+                      <td className="py-2 pr-3 text-xs text-ink2">
+                        {p.created_at.slice(0, 10)}
+                      </td>
+                      <td className="py-2 pr-3 text-xs">{p.need_date}</td>
+                      <td className="py-2 pr-3">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${PR_STATUS_COLOR[p.status] ?? PR_STATUS_COLOR.draft}`}
+                        >
+                          {p.status}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-3 text-[11px] italic text-ink2/70">
+                        {p.notes ?? "—"}
+                      </td>
+                      <td className="py-2 pr-3 text-right">
+                        <Link
+                          href={`/procurement/requisition/${encodeURIComponent(p.no)}`}
+                          className="text-[11px] font-bold text-accent-strong hover:underline"
+                        >
+                          Detail →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+          )}
+        </Section>
+
+        <Section
           title="📄 Quotations · RFQ"
           hint="Draft harga ke supplier sebelum PO · export .xlsx untuk supplier tanda tangan/edit, lalu convert ke PO."
           actions={
