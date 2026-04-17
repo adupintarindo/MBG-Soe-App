@@ -415,7 +415,7 @@ export default async function ProcurementPage() {
                           href={`/procurement/requisition/${encodeURIComponent(p.no)}`}
                           className="text-[11px] font-bold text-accent-strong hover:underline"
                         >
-                          Detail →
+                          {t("common.detail", lang)} →
                         </Link>
                       </td>
                     </tr>
@@ -427,33 +427,33 @@ export default async function ProcurementPage() {
         </Section>
 
         <Section
-          title="📄 Quotations · RFQ"
-          hint="Draft harga ke supplier sebelum PO · export .xlsx untuk supplier tanda tangan/edit, lalu convert ke PO."
+          title={t("procurement.secQTtitle", lang)}
+          hint={t("procurement.secQThint", lang)}
           actions={
             canWrite ? (
               <Link
                 href="/procurement/quotation/new"
                 className="rounded-lg bg-ink px-3 py-1.5 text-[11px] font-black text-white shadow-card hover:bg-ink2"
               >
-                + Buat Baru
+                {t("procurement.btnNewSimple", lang)}
               </Link>
             ) : null
           }
         >
           {quotations.length === 0 ? (
-            <EmptyState message="Belum ada quotation. Klik 'Buat Baru' untuk mulai." />
+            <EmptyState message={t("procurement.qtEmpty", lang)} />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">No</th>
-                  <th className="py-2 pr-3">Tanggal</th>
-                  <th className="py-2 pr-3">Supplier</th>
-                  <th className="py-2 pr-3">Butuh</th>
-                  <th className="py-2 pr-3">Berlaku s/d</th>
-                  <th className="py-2 pr-3 text-right">Nilai</th>
-                  <th className="py-2 pr-3">Status</th>
-                  <th className="py-2 pr-3">PO</th>
+                  <th className="py-2 pr-3">{t("procurement.colPRNo", lang).replace(" PR", "")}</th>
+                  <th className="py-2 pr-3">{t("common.date", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
+                  <th className="py-2 pr-3">{t("procurement.colNeeded", lang)}</th>
+                  <th className="py-2 pr-3">{t("procurement.colValidUntil", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("procurement.colAmount", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.status", lang)}</th>
+                  <th className="py-2 pr-3">{t("procurement.colPO", lang)}</th>
                   <th className="py-2 pr-3"></th>
                 </THead>
                 <tbody>
