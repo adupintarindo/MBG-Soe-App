@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import {
-  formatIDR,
   listSupplierReval,
   supplierQcGallery,
   supplierScorecardAuto
@@ -16,10 +15,14 @@ import {
   LinkButton,
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
+import {
+  SupplierItemsTable,
+  SupplierCertsTable,
+  type SupplierItemRow,
+  type SupplierCertRow
+} from "@/components/supplier-detail-tables";
 import { RevalPanel } from "./reval-panel";
 import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
@@ -308,45 +311,21 @@ export default async function SupplierDetailPage({
           {supItems.length === 0 ? (
             <EmptyState message={t("supplierDetail.itemsEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">{t("supplierDetail.colItem", lang)}</th>
-                  <th className="py-2 pr-3">{t("supplierDetail.colMain", lang)}</th>
-                  <th className="py-2 pr-3">{t("supplierDetail.colPrice", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("supplierDetail.colLead", lang)}</th>
-                </THead>
-                <tbody>
-                  {supItems.map((si) => (
-                    <tr
-                      key={si.item_code}
-                      className="row-hover border-b border-ink/5"
-                    >
-                      <td className="py-2 pr-3 font-semibold">
-                        {si.item_code}
-                      </td>
-                      <td className="py-2 pr-3">
-                        {si.is_main ? (
-                          <Badge tone="ok">{t("supplierDetail.badgeMain", lang)}</Badge>
-                        ) : (
-                          <Badge tone="muted">{t("supplierDetail.badgeAlt", lang)}</Badge>
-                        )}
-                      </td>
-                      <td className="py-2 pr-3 text-left font-mono text-xs">
-                        {si.price_idr != null
-                          ? formatIDR(Number(si.price_idr))
-                          : "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {si.lead_time_days != null
-                          ? ti("supplierDetail.leadDays", lang, { n: si.lead_time_days })
-                          : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <SupplierItemsTable
+              lang={lang}
+              rows={supItems.map(
+                (si): SupplierItemRow => ({
+                  item_code: si.item_code,
+                  is_main: si.is_main,
+                  price_idr:
+                    si.price_idr != null ? Number(si.price_idr) : null,
+                  lead_time_days:
+                    si.lead_time_days != null
+                      ? Number(si.lead_time_days)
+                      : null
+                })
+              )}
+            />
           )}
         </Section>
 
@@ -357,41 +336,18 @@ export default async function SupplierDetailPage({
           {certs.length === 0 ? (
             <EmptyState message={t("supplierDetail.certsEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">{t("supplierDetail.colCert", lang)}</th>
-                  <th className="py-2 pr-3">{t("supplierDetail.colValidUntil", lang)}</th>
-                  <th className="py-2 pr-3">{t("supplierDetail.colStatus", lang)}</th>
-                </THead>
-                <tbody>
-                  {certs.map((c) => {
-                    const vu = c.valid_until ? new Date(c.valid_until) : null;
-                    const expired = vu != null && vu < new Date();
-                    return (
-                      <tr
-                        key={c.id}
-                        className="row-hover border-b border-ink/5"
-                      >
-                        <td className="py-2 pr-3 font-semibold">{c.name}</td>
-                        <td className="py-2 pr-3 font-mono text-xs">
-                          {c.valid_until ?? "—"}
-                        </td>
-                        <td className="py-2 pr-3">
-                          {c.valid_until == null ? (
-                            <Badge tone="muted">{t("supplierDetail.certUnlimited", lang)}</Badge>
-                          ) : expired ? (
-                            <Badge tone="bad">{t("supplierDetail.certExpired", lang)}</Badge>
-                          ) : (
-                            <Badge tone="ok">{t("supplierDetail.certValid", lang)}</Badge>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
+            <SupplierCertsTable
+              lang={lang}
+              rows={certs.map((c): SupplierCertRow => {
+                const vu = c.valid_until ? new Date(c.valid_until) : null;
+                return {
+                  id: c.id,
+                  name: c.name,
+                  valid_until: c.valid_until,
+                  expired: vu != null && vu < new Date()
+                };
+              })}
+            />
           )}
         </Section>
       </PageContainer>

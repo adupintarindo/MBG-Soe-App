@@ -332,19 +332,25 @@ export function SchoolAttendancePanel({
             <th className="py-2 pr-3">{t("schools.attColSekolah", lang)}</th>
             <th className="py-2 pr-3">{t("schools.attColPorsi", lang)}</th>
             <th className="py-2 pr-3 text-center">{t("schools.attColKapasitas", lang)}</th>
-            {days.map((d) => {
-              const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            {days.map((d, di) => {
+              const info = dayInfo[di];
               return (
                 <th
                   key={toISO(d)}
                   className={`py-2 pr-3 text-center ${
-                    isWeekend ? "bg-amber-50 text-amber-900" : ""
+                    info.nonOp ? "bg-amber-50 text-amber-900" : ""
                   }`}
+                  title={info.reason ?? undefined}
                 >
                   <div>{DAY_NAME[d.getDay()]}</div>
                   <div className="font-mono text-[10px] text-ink2/70">
                     {d.getDate()} {MONTH[d.getMonth()]}
                   </div>
+                  {info.nonOp && (
+                    <div className="mt-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700">
+                      {t("calendar.holiday", lang)}
+                    </div>
+                  )}
                 </th>
               );
             })}
@@ -402,15 +408,25 @@ export function SchoolAttendancePanel({
                     {formatNumber(r.cap, lang)}
                   </td>
                   {dayKeys.map((k, di) => {
-                    const d = days[di];
-                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                    const info = dayInfo[di];
                     const v = grid[r.rowKey]?.[k] ?? r.cap;
+                    if (info.nonOp) {
+                      return (
+                        <td
+                          key={k}
+                          className="py-1.5 pr-1 text-center align-middle bg-amber-50/60"
+                          title={info.reason ?? undefined}
+                        >
+                          <span className="inline-flex h-7 w-16 items-center justify-center rounded-lg border border-dashed border-amber-300 bg-white/60 font-mono text-xs text-amber-700/70">
+                            —
+                          </span>
+                        </td>
+                      );
+                    }
                     return (
                       <td
                         key={k}
-                        className={`py-1.5 pr-1 text-center align-middle ${
-                          isWeekend ? "bg-amber-50/60" : ""
-                        }`}
+                        className="py-1.5 pr-1 text-center align-middle"
                       >
                         <input
                           type="number"
@@ -439,15 +455,25 @@ export function SchoolAttendancePanel({
                 {formatNumber(capTotal, lang)}
               </td>
               {colTotals.map((v, i) => {
-                const d = days[i];
-                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                const info = dayInfo[i];
                 const pct = capTotal > 0 ? Math.round((v / capTotal) * 100) : 0;
+                if (info.nonOp) {
+                  return (
+                    <td
+                      key={dayKeys[i]}
+                      className="py-2 pr-3 text-center font-mono text-xs font-black bg-amber-50 text-amber-900"
+                      title={info.reason ?? undefined}
+                    >
+                      <div className="text-[10px] font-bold uppercase tracking-wide">
+                        {t("calendar.holiday", lang)}
+                      </div>
+                    </td>
+                  );
+                }
                 return (
                   <td
                     key={dayKeys[i]}
-                    className={`py-2 pr-3 text-center font-mono text-xs font-black ${
-                      isWeekend ? "bg-amber-50 text-amber-900" : "text-ink"
-                    }`}
+                    className="py-2 pr-3 text-center font-mono text-xs font-black text-ink"
                   >
                     <div>{formatNumber(v, lang)}</div>
                     <div className="text-[9px] font-semibold text-ink2/60">

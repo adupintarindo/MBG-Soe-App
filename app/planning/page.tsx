@@ -14,17 +14,19 @@ import {
   type UpcomingShortage
 } from "@/lib/engine";
 import {
-  Badge,
-  CategoryBadge,
   EmptyState,
   KpiGrid,
   KpiTile,
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
+import {
+  PlanningMatrixTable,
+  PlanningDailyTable,
+  type PlanningMatrixRow,
+  type PlanningDailyRow
+} from "@/components/planning-tables";
 import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
@@ -121,6 +123,30 @@ export default async function PlanningPage() {
   const DAY_SHORT = DAYS.short[lang];
   const MONTH_SHORT = MONTHS.short[lang];
 
+  const matrixRows: PlanningMatrixRow[] = sortedItems.map(
+    ([code, total], i) => ({
+      rank: i + 1,
+      code,
+      category: itemByCode.get(code)?.category ?? "LAIN",
+      monthly: { ...(matrix[code] ?? {}) },
+      total,
+      cost: itemCost.get(code) ?? 0
+    })
+  );
+  const monthLabels: Record<string, string> = Object.fromEntries(
+    months.map((m) => [m, monthLabel(m)])
+  );
+
+  const dailyRows: PlanningDailyRow[] = daily.map((p) => ({
+    op_date: p.op_date,
+    menu_name: p.menu_name ?? null,
+    porsi_total: p.porsi_total,
+    porsi_eff: Number(p.porsi_eff),
+    total_kg: Number(p.total_kg),
+    short_items: p.short_items,
+    operasional: p.operasional
+  }));
+
   return (
     <div>
       <Nav
@@ -201,148 +227,17 @@ export default async function PlanningPage() {
           {sortedItems.length === 0 ? (
             <EmptyState message={t("planning.matrixEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3 text-center">{t("dashboard.tblNo", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.commodity", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.category", lang)}</th>
-                  {months.map((m) => (
-                    <th key={m} className="py-2 pr-3 text-center">
-                      {monthLabel(m)}
-                    </th>
-                  ))}
-                  <th className="py-2 pr-3 text-center">{t("planning.colTotalKg", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("planning.colEstCost", lang)}</th>
-                </THead>
-                <tbody>
-                  {sortedItems.slice(0, 30).map(([code, total], i) => {
-                    const it = itemByCode.get(code);
-                    return (
-                      <tr
-                        key={code}
-                        className="row-hover border-b border-ink/5"
-                      >
-                        <td className="py-2 pr-3 text-center text-ink2">{i + 1}</td>
-                        <td className="py-2 pr-3 text-left font-semibold">{code}</td>
-                        <td className="py-2 pr-3 text-center">
-                          <CategoryBadge category={it?.category} size="sm" />
-                        </td>
-                        {months.map((m) => (
-                          <td
-                            key={m}
-                            className="py-2 pr-3 text-center font-mono text-xs"
-                          >
-                            {formatNumber(matrix[code][m] ?? 0, lang, {
-                              maximumFractionDigits: 1
-                            })}
-                          </td>
-                        ))}
-                        <td className="py-2 pr-3 text-center font-mono text-xs font-black">
-                          {formatNumber(total, lang, {
-                            maximumFractionDigits: 0
-                          })}
-                        </td>
-                        <td className="py-2 pr-3 text-left font-mono text-xs text-emerald-800">
-                          {formatIDR(itemCost.get(code) ?? 0)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-ink/20 bg-paper">
-                    <td colSpan={3} className="py-2 pr-3 text-center font-black">
-                      {t("planning.totalTop30", lang)}
-                    </td>
-                    {months.map((m) => {
-                      const col = sortedItems
-                        .slice(0, 30)
-                        .reduce((s, [c]) => s + (matrix[c][m] ?? 0), 0);
-                      return (
-                        <td
-                          key={m}
-                          className="py-2 pr-3 text-center font-mono text-xs font-black"
-                        >
-                          {formatNumber(col, lang, {
-                            maximumFractionDigits: 0
-                          })}
-                        </td>
-                      );
-                    })}
-                    <td className="py-2 pr-3 text-center font-mono text-xs font-black">
-                      {formatNumber(
-                        sortedItems.slice(0, 30).reduce((s, [, q]) => s + q, 0),
-                        lang,
-                        { maximumFractionDigits: 0 }
-                      )}
-                    </td>
-                    <td className="py-2 pr-3 text-left font-mono text-xs font-black text-emerald-800">
-                      {formatIDR(
-                        sortedItems
-                          .slice(0, 30)
-                          .reduce((s, [c]) => s + (itemCost.get(c) ?? 0), 0)
-                      )}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </TableWrap>
+            <PlanningMatrixTable
+              lang={lang}
+              rows={matrixRows}
+              months={months}
+              monthLabels={monthLabels}
+            />
           )}
         </Section>
 
         <Section title={t("planning.dailyTitle", lang)}>
-          <TableWrap>
-            <table className="w-full text-sm">
-              <THead>
-                <th className="py-2 pr-3">{t("common.date", lang)}</th>
-                <th className="py-2 pr-3">{t("common.menu", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("common.porsi", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("planning.colPorsiEff", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("common.needed", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("common.short", lang)}</th>
-                <th className="py-2 pr-3">{t("common.status", lang)}</th>
-              </THead>
-              <tbody>
-                {daily.map((p) => (
-                  <tr
-                    key={p.op_date}
-                    className="row-hover border-b border-ink/5"
-                  >
-                    <td className="py-2 pr-3 font-mono text-xs">{p.op_date}</td>
-                    <td className="py-2 pr-3 text-xs">
-                      {p.menu_name ?? (
-                        <span className="text-ink2/60">—</span>
-                      )}
-                    </td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs">
-                      {formatNumber(p.porsi_total, lang)}
-                    </td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs">
-                      {formatNumber(Number(p.porsi_eff), lang, {
-                        maximumFractionDigits: 1
-                      })}
-                    </td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs">
-                      {formatKg(Number(p.total_kg), 1)}
-                    </td>
-                    <td
-                      className={`py-2 pr-3 text-right font-mono text-xs font-black ${p.short_items > 0 ? "text-red-700" : "text-emerald-700"}`}
-                    >
-                      {p.short_items}
-                    </td>
-                    <td className="py-2 pr-3">
-                      {p.operasional ? (
-                        <Badge tone="ok">{t("planning.badgeOP", lang)}</Badge>
-                      ) : (
-                        <Badge tone="warn">{t("dashboard.badgeNonOp", lang)}</Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </TableWrap>
+          <PlanningDailyTable lang={lang} rows={dailyRows} />
         </Section>
 
         <Section

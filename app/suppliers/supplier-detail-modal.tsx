@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatIDR } from "@/lib/engine";
 import type { SupplierAction } from "@/lib/engine";
 import { Badge, Button, Input, Select } from "@/components/ui";
+import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { ActionsPanel } from "./actions-panel";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
@@ -610,76 +611,106 @@ function CommodityPanel({
           {t("supModal.commodityEmpty", lang)}
         </p>
       ) : (
-        <div className="mb-3 overflow-x-auto rounded-xl bg-white ring-1 ring-ink/5">
-          <table className="w-full text-sm">
-            <thead className="bg-ink/[0.02] text-left text-[11px] font-bold uppercase tracking-wide text-ink2/70">
-              <tr>
-                <th className="py-2 pl-3 pr-3">{t("supModal.colCommodity", lang)}</th>
-                <th className="py-2 pr-3">{t("supModal.colUnit", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("supModal.colCurrentPrice", lang)}</th>
-                <th className="py-2 pr-3 text-center">{t("supModal.colHistory", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("supModal.colAksi", lang)}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {supItems.map((si) => {
-                const info = itemNameMap.get(si.item_code);
-                const name = info?.name_en ?? si.item_code;
-                const unit = info?.unit ?? "—";
-                const category = info?.category ?? "";
-                return (
-                  <tr key={si.item_code} className="border-t border-ink/5">
-                    <td className="py-2 pl-3 pr-3">
+        <div className="mb-3">
+          {(() => {
+            const commodityCols: SortableColumn<SupItemLink>[] = [
+              {
+                key: "commodity",
+                label: t("supModal.colCommodity", lang),
+                align: "left",
+                sortValue: (si) =>
+                  itemNameMap.get(si.item_code)?.name_en ?? si.item_code,
+                render: (si) => {
+                  const info = itemNameMap.get(si.item_code);
+                  const name = info?.name_en ?? si.item_code;
+                  const category = info?.category ?? "";
+                  return (
+                    <div>
                       <div className="font-bold text-ink">{name}</div>
                       <div className="text-[10px] uppercase text-ink2/60">
                         {category || si.item_code}
                       </div>
-                    </td>
-                    <td className="py-2 pr-3 text-[12px] text-ink2">{unit}</td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        value={prices[si.item_code] ?? ""}
-                        onChange={(e) =>
-                          setPrices({
-                            ...prices,
-                            [si.item_code]: e.target.value
-                          })
-                        }
-                        disabled={!isAdmin}
-                        type="number"
-                        className="ml-auto w-32 text-right font-mono"
-                      />
-                    </td>
-                    <td className="py-2 pr-3 text-center text-ink2/40">—</td>
-                    <td className="py-2 pr-3 text-right">
-                      {isAdmin && (
-                        <div className="flex justify-end gap-1">
-                          <button
-                            type="button"
-                            onClick={() => savePrice(si.item_code)}
-                            disabled={busy}
-                            aria-label={t("supModal.ariaSavePrice", lang)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-white hover:bg-accent-strong"
-                          >
-                            💾
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeItem(si.item_code)}
-                            disabled={busy}
-                            aria-label={t("supModal.ariaRemoveItem", lang)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 ring-1 ring-red-200 hover:bg-red-50"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+                  );
+                }
+              },
+              {
+                key: "unit",
+                label: t("supModal.colUnit", lang),
+                align: "left",
+                sortValue: (si) => itemNameMap.get(si.item_code)?.unit ?? "",
+                render: (si) => (
+                  <span className="text-[12px] text-ink2">
+                    {itemNameMap.get(si.item_code)?.unit ?? "—"}
+                  </span>
+                )
+              },
+              {
+                key: "price",
+                label: t("supModal.colCurrentPrice", lang),
+                align: "right",
+                sortValue: (si) => Number(prices[si.item_code] ?? 0),
+                render: (si) => (
+                  <Input
+                    value={prices[si.item_code] ?? ""}
+                    onChange={(e) =>
+                      setPrices({
+                        ...prices,
+                        [si.item_code]: e.target.value
+                      })
+                    }
+                    disabled={!isAdmin}
+                    type="number"
+                    className="ml-auto w-32 text-right font-mono"
+                  />
+                )
+              },
+              {
+                key: "history",
+                label: t("supModal.colHistory", lang),
+                sortable: false,
+                render: () => <span className="text-ink2/40">—</span>
+              },
+              {
+                key: "action",
+                label: t("supModal.colAksi", lang),
+                align: "right",
+                sortable: false,
+                render: (si) =>
+                  isAdmin ? (
+                    <div className="flex justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => savePrice(si.item_code)}
+                        disabled={busy}
+                        aria-label={t("supModal.ariaSavePrice", lang)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-white hover:bg-accent-strong"
+                      >
+                        💾
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(si.item_code)}
+                        disabled={busy}
+                        aria-label={t("supModal.ariaRemoveItem", lang)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 ring-1 ring-red-200 hover:bg-red-50"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : null
+              }
+            ];
+            return (
+              <SortableTable<SupItemLink>
+                tableClassName="text-sm"
+                rowKey={(si) => si.item_code}
+                initialSort={{ key: "commodity", dir: "asc" }}
+                columns={commodityCols}
+                rows={supItems}
+              />
+            );
+          })()}
         </div>
       )}
 
@@ -734,6 +765,51 @@ function CommodityPanel({
 
 function TransactionPanel({ rows }: { rows: TxRow[] }) {
   const { lang } = useLang();
+  const columns: SortableColumn<TxRow>[] = [
+    {
+      key: "date",
+      label: t("supModal.txColDate", lang),
+      align: "left",
+      sortValue: (r) => r.date,
+      render: (r) => (
+        <span className="font-mono text-[12px] text-ink2">{r.date}</span>
+      )
+    },
+    {
+      key: "kind",
+      label: t("supModal.txColType", lang),
+      align: "left",
+      sortValue: (r) => r.kind,
+      render: (r) => (
+        <Badge tone={r.kind === "PO" ? "info" : "accent"}>{r.kind}</Badge>
+      )
+    },
+    {
+      key: "no",
+      label: t("supModal.txColNumber", lang),
+      align: "left",
+      sortValue: (r) => r.no,
+      render: (r) => <span className="font-mono text-[12px]">{r.no}</span>
+    },
+    {
+      key: "total",
+      label: t("supModal.txColAmount", lang),
+      align: "right",
+      sortValue: (r) => r.total ?? 0,
+      render: (r) => (
+        <span className="font-mono text-[12px] font-black">
+          {r.total != null ? formatIDR(r.total) : "—"}
+        </span>
+      )
+    },
+    {
+      key: "status",
+      label: t("supModal.txColStatus", lang),
+      align: "left",
+      sortValue: (r) => r.status,
+      render: (r) => <Badge tone="muted">{r.status}</Badge>
+    }
+  ];
   return (
     <section className="rounded-2xl bg-paper p-5 ring-1 ring-ink/5">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-ink">
@@ -748,43 +824,13 @@ function TransactionPanel({ rows }: { rows: TxRow[] }) {
           {t("supModal.txEmpty", lang)}
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl bg-white ring-1 ring-ink/5">
-          <table className="w-full text-sm">
-            <thead className="bg-ink/[0.02] text-left text-[11px] font-bold uppercase tracking-wide text-ink2/70">
-              <tr>
-                <th className="py-2 pl-3 pr-3">{t("supModal.txColDate", lang)}</th>
-                <th className="py-2 pr-3">{t("supModal.txColType", lang)}</th>
-                <th className="py-2 pr-3">{t("supModal.txColNumber", lang)}</th>
-                <th className="py-2 pr-3 text-center">{t("supModal.txColAmount", lang)}</th>
-                <th className="py-2 pr-3">{t("supModal.txColStatus", lang)}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={`${r.kind}-${r.no}`}
-                  className="border-t border-ink/5"
-                >
-                  <td className="py-2 pl-3 pr-3 font-mono text-[12px] text-ink2">
-                    {r.date}
-                  </td>
-                  <td className="py-2 pr-3">
-                    <Badge tone={r.kind === "PO" ? "info" : "accent"}>
-                      {r.kind}
-                    </Badge>
-                  </td>
-                  <td className="py-2 pr-3 font-mono text-[12px]">{r.no}</td>
-                  <td className="py-2 pr-3 text-left font-mono text-[12px] font-black">
-                    {r.total != null ? formatIDR(r.total) : "—"}
-                  </td>
-                  <td className="py-2 pr-3">
-                    <Badge tone="muted">{r.status}</Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <SortableTable<TxRow>
+          tableClassName="text-sm"
+          rowKey={(r) => `${r.kind}-${r.no}`}
+          initialSort={{ key: "date", dir: "desc" }}
+          columns={columns}
+          rows={rows}
+        />
       )}
     </section>
   );

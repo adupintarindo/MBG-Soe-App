@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { formatIDR } from "@/lib/engine";
-import { Section, TableWrap, THead } from "@/components/ui";
+import { Section } from "@/components/ui";
+import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import type {
   SupplierRow,
   SupItemLink,
@@ -253,96 +254,142 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
       )}
 
       <Section title={ti("suppliers.tableTitle", lang, { n: suppliers.length })}>
-        <TableWrap>
-          <table className="w-full text-sm">
-            <THead>
-              <th className="w-20 py-2 pl-3 pr-2">{t("suppliers.colId", lang)}</th>
-              <th className="py-2 pr-3">{t("suppliers.colName", lang)}</th>
-              <th className="w-20 py-2 pr-3">{t("suppliers.colType", lang)}</th>
-              <th className="py-2 pr-3">{t("suppliers.colKomoditas", lang)}</th>
-              <th className="w-14 py-2 pr-3 text-right">{t("suppliers.colItems", lang)}</th>
-              <th className="w-16 py-2 pr-3 text-right">{t("suppliers.colScore", lang)}</th>
-              <th className="w-24 py-2 pr-3">{t("suppliers.colStatus", lang)}</th>
-              <th className="w-32 py-2 pl-3 pr-3">{t("suppliers.colSpend", lang)}</th>
-            </THead>
-            <tbody>
-              {suppliers.map((s) => {
-                const spend = spendBySup.get(s.id);
-                const linked = itemsBySup.get(s.id) ?? [];
+        {(() => {
+          const columns: SortableColumn<SupplierRow>[] = [
+            {
+              key: "id",
+              label: t("suppliers.colId", lang),
+              align: "left",
+              width: "88px",
+              sortValue: (s) => s.id,
+              render: (s) => (
+                <Link
+                  href={`/suppliers/${s.id}`}
+                  className="block font-mono text-[11px] text-ink2 hover:text-accent-strong hover:underline"
+                >
+                  {s.id}
+                </Link>
+              )
+            },
+            {
+              key: "name",
+              label: t("suppliers.colName", lang),
+              align: "left",
+              sortValue: (s) => s.name,
+              render: (s) => (
+                <Link
+                  href={`/suppliers/${s.id}`}
+                  className="block font-semibold hover:text-accent-strong hover:underline"
+                >
+                  {s.name}
+                </Link>
+              )
+            },
+            {
+              key: "type",
+              label: t("suppliers.colType", lang),
+              width: "88px",
+              sortValue: (s) => s.type,
+              render: (s) => (
+                <span
+                  className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${TYPE_COLOR[s.type] ?? TYPE_COLOR.INFORMAL}`}
+                >
+                  {s.type}
+                </span>
+              )
+            },
+            {
+              key: "commodity",
+              label: t("suppliers.colKomoditas", lang),
+              align: "left",
+              sortValue: (s) => s.commodity ?? "",
+              render: (s) => (
+                <Link
+                  href={`/suppliers/${s.id}`}
+                  className="block truncate text-[11px] text-ink2 hover:text-accent-strong"
+                  title={s.commodity ?? ""}
+                >
+                  {s.commodity || "—"}
+                </Link>
+              )
+            },
+            {
+              key: "items",
+              label: t("suppliers.colItems", lang),
+              align: "right",
+              width: "64px",
+              sortValue: (s) => (itemsBySup.get(s.id) ?? []).length,
+              render: (s) => (
+                <span className="font-mono text-xs tabular-nums">
+                  {(itemsBySup.get(s.id) ?? []).length}
+                </span>
+              )
+            },
+            {
+              key: "score",
+              label: t("suppliers.colScore", lang),
+              align: "right",
+              width: "72px",
+              sortValue: (s) => Number(s.score ?? 0),
+              render: (s) => {
                 const score = Number(s.score ?? 0);
                 return (
-                  <tr
-                    key={s.id}
-                    className="row-hover border-b border-ink/5 align-middle"
+                  <span
+                    className={`font-mono text-xs font-black tabular-nums ${
+                      score >= 80
+                        ? "text-emerald-700"
+                        : score >= 70
+                          ? "text-amber-700"
+                          : "text-red-700"
+                    }`}
                   >
-                    <td className="py-2 pl-3 pr-2 align-middle font-mono text-[11px] text-ink2">
-                      <Link
-                        href={`/suppliers/${s.id}`}
-                        className="block hover:text-accent-strong hover:underline"
-                      >
-                        {s.id}
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-3 align-middle font-semibold">
-                      <Link
-                        href={`/suppliers/${s.id}`}
-                        className="block hover:text-accent-strong hover:underline"
-                      >
-                        {s.name}
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-3 align-middle">
-                      <span
-                        className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${TYPE_COLOR[s.type] ?? TYPE_COLOR.INFORMAL}`}
-                      >
-                        {s.type}
-                      </span>
-                    </td>
-                    <td className="max-w-0 py-2 pr-3 align-middle">
-                      <Link
-                        href={`/suppliers/${s.id}`}
-                        className="block truncate text-[11px] text-ink2 hover:text-accent-strong"
-                        title={s.commodity ?? ""}
-                      >
-                        {s.commodity || "—"}
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-3 text-right align-middle font-mono text-xs tabular-nums">
-                      {linked.length}
-                    </td>
-                    <td
-                      className={`py-2 pr-3 text-right align-middle font-mono text-xs font-black tabular-nums ${
-                        score >= 80
-                          ? "text-emerald-700"
-                          : score >= 70
-                            ? "text-amber-700"
-                            : "text-red-700"
-                      }`}
-                    >
-                      {score.toFixed(1)}
-                    </td>
-                    <td className="py-2 pr-3 align-middle">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLOR[s.status] ?? STATUS_COLOR.draft}`}
-                      >
-                        {s.status}
-                      </span>
-                    </td>
-                    <td className="py-2 pl-3 pr-3 text-left align-middle font-mono text-xs tabular-nums">
-                      {spend ? (
-                        <span className="font-bold text-emerald-800">
-                          {formatIDR(spend.total)}
-                        </span>
-                      ) : (
-                        <span className="text-ink2/40">—</span>
-                      )}
-                    </td>
-                  </tr>
+                    {score.toFixed(1)}
+                  </span>
                 );
-              })}
-            </tbody>
-          </table>
-        </TableWrap>
+              }
+            },
+            {
+              key: "status",
+              label: t("suppliers.colStatus", lang),
+              width: "104px",
+              sortValue: (s) => s.status,
+              render: (s) => (
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLOR[s.status] ?? STATUS_COLOR.draft}`}
+                >
+                  {s.status}
+                </span>
+              )
+            },
+            {
+              key: "spend",
+              label: t("suppliers.colSpend", lang),
+              align: "left",
+              width: "140px",
+              sortValue: (s) => spendBySup.get(s.id)?.total ?? 0,
+              render: (s) => {
+                const sp = spendBySup.get(s.id);
+                return sp ? (
+                  <span className="font-mono text-xs font-bold tabular-nums text-emerald-800">
+                    {formatIDR(sp.total)}
+                  </span>
+                ) : (
+                  <span className="text-ink2/40">—</span>
+                );
+              }
+            }
+          ];
+          return (
+            <SortableTable<SupplierRow>
+              tableClassName="text-sm"
+              rowKey={(s) => s.id}
+              initialSort={{ key: "score", dir: "desc" }}
+              columns={columns}
+              rows={suppliers}
+              searchable
+            />
+          );
+        })()}
       </Section>
     </>
   );

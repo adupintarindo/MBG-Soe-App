@@ -11,49 +11,19 @@ import {
   LinkButton,
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
 import { GrnQcPanel } from "./grn-qc-panel";
-import { t, ti, formatNumber } from "@/lib/i18n";
+import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
+import {
+  InvoiceTable,
+  PoTable,
+  PrTable,
+  QtTable
+} from "./procurement-tables";
 
 export const dynamic = "force-dynamic";
-
-const PO_STATUS_COLOR: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-800",
-  sent: "bg-blue-100 text-blue-800",
-  confirmed: "bg-indigo-100 text-indigo-800",
-  delivered: "bg-emerald-100 text-emerald-800",
-  closed: "bg-green-100 text-green-900",
-  cancelled: "bg-red-100 text-red-800"
-};
-
-const INV_STATUS_COLOR: Record<string, string> = {
-  issued: "bg-blue-100 text-blue-800",
-  paid: "bg-emerald-100 text-emerald-800",
-  overdue: "bg-red-100 text-red-800",
-  cancelled: "bg-slate-100 text-slate-700"
-};
-
-const QT_STATUS_COLOR: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-800",
-  sent: "bg-blue-100 text-blue-800",
-  responded: "bg-amber-100 text-amber-900",
-  accepted: "bg-emerald-100 text-emerald-900",
-  converted: "bg-green-100 text-green-900",
-  rejected: "bg-red-100 text-red-800",
-  expired: "bg-slate-100 text-slate-500"
-};
-
-const PR_STATUS_COLOR: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-800",
-  allocated: "bg-amber-100 text-amber-900",
-  quotations_issued: "bg-blue-100 text-blue-800",
-  completed: "bg-emerald-100 text-emerald-900",
-  cancelled: "bg-red-100 text-red-800"
-};
 
 interface PrRow {
   no: string;
@@ -380,49 +350,7 @@ export default async function ProcurementPage() {
           {prs.length === 0 ? (
             <EmptyState message={t("procurement.prEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">{t("procurement.colPRNo", lang)}</th>
-                  <th className="py-2 pr-3">{t("procurement.colCreated", lang)}</th>
-                  <th className="py-2 pr-3">{t("procurement.colNeeded", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.status", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.note", lang)}</th>
-                  <th className="py-2 pr-3"></th>
-                </THead>
-                <tbody>
-                  {prs.map((p) => (
-                    <tr key={p.no} className="row-hover border-b border-ink/5">
-                      <td className="py-2 pr-3 font-mono text-xs font-black">
-                        {p.no}
-                      </td>
-                      <td className="py-2 pr-3 text-xs text-ink2">
-                        {p.created_at.slice(0, 10)}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">{p.need_date}</td>
-                      <td className="py-2 pr-3">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${PR_STATUS_COLOR[p.status] ?? PR_STATUS_COLOR.draft}`}
-                        >
-                          {p.status}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-3 text-[11px] italic text-ink2/70">
-                        {p.notes ?? "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-right">
-                        <Link
-                          href={`/procurement/requisition/${encodeURIComponent(p.no)}`}
-                          className="text-[11px] font-bold text-accent-strong hover:underline"
-                        >
-                          {t("common.detail", lang)} →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <PrTable rows={prs} />
           )}
         </Section>
 

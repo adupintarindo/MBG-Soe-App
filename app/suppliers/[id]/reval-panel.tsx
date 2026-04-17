@@ -9,10 +9,12 @@ import {
   Badge,
   Button,
   FieldLabel,
-  Input,
-  TableWrap,
-  THead
+  Input
 } from "@/components/ui";
+import {
+  SortableTable,
+  type SortableColumn
+} from "@/components/sortable-table";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 
@@ -169,76 +171,140 @@ export function RevalPanel({
           {t("reval.emptyHistory", lang)}
         </p>
       ) : (
-        <TableWrap>
-          <table className="w-full text-sm">
-            <THead>
-              <th className="py-2 pr-3">{t("reval.colPeriod", lang)}</th>
-              <th className="py-2 pr-3">{t("reval.colRange", lang)}</th>
-              <th className="py-2 pr-3 text-right">Q</th>
-              <th className="py-2 pr-3 text-right">D</th>
-              <th className="py-2 pr-3 text-right">P</th>
-              <th className="py-2 pr-3 text-right">C</th>
-              <th className="py-2 pr-3 text-right">R</th>
-              <th className="py-2 pr-3 text-right">Total</th>
-              <th className="py-2 pr-3">{t("reval.colReco", lang)}</th>
-              <th className="py-2 pr-3">{t("reval.colEval", lang)}</th>
-            </THead>
-            <tbody>
-              {history.map((r) => (
-                <tr key={r.id} className="row-hover border-b border-ink/5">
-                  <td className="py-2 pr-3">
-                    <Badge tone="info">{r.period}</Badge>
-                  </td>
-                  <td className="py-2 pr-3 font-mono text-[11px] text-ink2">
-                    {r.period_start} → {r.period_end}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-xs">
-                    {Number(r.quality_score).toFixed(0)}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-xs">
-                    {Number(r.delivery_score).toFixed(0)}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-xs">
-                    {Number(r.price_score).toFixed(0)}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-xs">
-                    {Number(r.compliance_score).toFixed(0)}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-xs">
-                    {Number(r.responsiveness_score).toFixed(0)}
-                  </td>
-                  <td className="py-2 pr-3 text-right font-mono text-sm font-black">
-                    {Number(r.total_score).toFixed(1)}
-                  </td>
-                  <td className="py-2 pr-3">
-                    {r.recommendation ? (
-                      <Badge
-                        tone={
-                          r.recommendation === "RETAIN"
-                            ? "ok"
-                            : r.recommendation === "IMPROVE"
-                              ? "info"
-                              : r.recommendation === "REPLACE"
-                                ? "warn"
-                                : "bad"
-                        }
-                      >
-                        {r.recommendation}
-                      </Badge>
-                    ) : (
-                      <span className="text-[11px] text-ink2/60">—</span>
-                    )}
-                  </td>
-                  <td className="py-2 pr-3 font-mono text-[10px] text-ink2/70">
-                    {new Date(r.evaluated_at).toLocaleDateString(
-                      lang === "EN" ? "en-US" : "id-ID"
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </TableWrap>
+        (() => {
+          const cols: SortableColumn<SupplierRevalRow>[] = [
+            {
+              key: "period",
+              label: t("reval.colPeriod", lang),
+              align: "left",
+              sortValue: (r) => r.period,
+              render: (r) => <Badge tone="info">{r.period}</Badge>
+            },
+            {
+              key: "range",
+              label: t("reval.colRange", lang),
+              align: "left",
+              sortValue: (r) => r.period_start,
+              render: (r) => (
+                <span className="font-mono text-[11px] text-ink2">
+                  {r.period_start} → {r.period_end}
+                </span>
+              )
+            },
+            {
+              key: "q",
+              label: "Q",
+              align: "right",
+              sortValue: (r) => Number(r.quality_score),
+              render: (r) => (
+                <span className="font-mono text-xs">
+                  {Number(r.quality_score).toFixed(0)}
+                </span>
+              )
+            },
+            {
+              key: "d",
+              label: "D",
+              align: "right",
+              sortValue: (r) => Number(r.delivery_score),
+              render: (r) => (
+                <span className="font-mono text-xs">
+                  {Number(r.delivery_score).toFixed(0)}
+                </span>
+              )
+            },
+            {
+              key: "p",
+              label: "P",
+              align: "right",
+              sortValue: (r) => Number(r.price_score),
+              render: (r) => (
+                <span className="font-mono text-xs">
+                  {Number(r.price_score).toFixed(0)}
+                </span>
+              )
+            },
+            {
+              key: "c",
+              label: "C",
+              align: "right",
+              sortValue: (r) => Number(r.compliance_score),
+              render: (r) => (
+                <span className="font-mono text-xs">
+                  {Number(r.compliance_score).toFixed(0)}
+                </span>
+              )
+            },
+            {
+              key: "r",
+              label: "R",
+              align: "right",
+              sortValue: (r) => Number(r.responsiveness_score),
+              render: (r) => (
+                <span className="font-mono text-xs">
+                  {Number(r.responsiveness_score).toFixed(0)}
+                </span>
+              )
+            },
+            {
+              key: "total",
+              label: "Total",
+              align: "right",
+              sortValue: (r) => Number(r.total_score),
+              render: (r) => (
+                <span className="font-mono text-sm font-black">
+                  {Number(r.total_score).toFixed(1)}
+                </span>
+              )
+            },
+            {
+              key: "reco",
+              label: t("reval.colReco", lang),
+              align: "left",
+              sortValue: (r) => r.recommendation ?? "",
+              render: (r) =>
+                r.recommendation ? (
+                  <Badge
+                    tone={
+                      r.recommendation === "RETAIN"
+                        ? "ok"
+                        : r.recommendation === "IMPROVE"
+                          ? "info"
+                          : r.recommendation === "REPLACE"
+                            ? "warn"
+                            : "bad"
+                    }
+                  >
+                    {r.recommendation}
+                  </Badge>
+                ) : (
+                  <span className="text-[11px] text-ink2/60">—</span>
+                )
+            },
+            {
+              key: "eval",
+              label: t("reval.colEval", lang),
+              align: "left",
+              sortValue: (r) => r.evaluated_at,
+              render: (r) => (
+                <span className="font-mono text-[10px] text-ink2/70">
+                  {new Date(r.evaluated_at).toLocaleDateString(
+                    lang === "EN" ? "en-US" : "id-ID"
+                  )}
+                </span>
+              )
+            }
+          ];
+          return (
+            <SortableTable<SupplierRevalRow>
+              tableClassName="text-sm"
+              rowKey={(r) => r.id}
+              initialSort={{ key: "eval", dir: "desc" }}
+              columns={cols}
+              rows={history}
+            />
+          );
+        })()
       )}
     </div>
   );
