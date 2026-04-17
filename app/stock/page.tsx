@@ -287,10 +287,10 @@ export default async function StockPage() {
                           <td className="py-2 pr-3 text-center text-xs">
                             {it.unit}
                           </td>
-                          <td className="py-2 pr-3 text-center font-mono text-xs">
+                          <td className="py-2 pr-3 text-left font-mono text-xs">
                             {formatIDR(Number(it.price_idr))}
                           </td>
-                          <td className="py-2 pr-3 text-center font-mono text-xs">
+                          <td className="py-2 pr-3 text-left font-mono text-xs">
                             {formatIDR(value)}
                           </td>
                           <td className="py-2 pr-3 text-center font-mono text-xs text-ink2/70">

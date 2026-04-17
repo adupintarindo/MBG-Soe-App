@@ -755,7 +755,7 @@ function TransactionPanel({ rows }: { rows: TxRow[] }) {
                 <th className="py-2 pl-3 pr-3">{t("supModal.txColDate", lang)}</th>
                 <th className="py-2 pr-3">{t("supModal.txColType", lang)}</th>
                 <th className="py-2 pr-3">{t("supModal.txColNumber", lang)}</th>
-                <th className="py-2 pr-3 text-right">{t("supModal.txColAmount", lang)}</th>
+                <th className="py-2 pr-3 text-center">{t("supModal.txColAmount", lang)}</th>
                 <th className="py-2 pr-3">{t("supModal.txColStatus", lang)}</th>
               </tr>
             </thead>
@@ -774,7 +774,7 @@ function TransactionPanel({ rows }: { rows: TxRow[] }) {
                     </Badge>
                   </td>
                   <td className="py-2 pr-3 font-mono text-[12px]">{r.no}</td>
-                  <td className="py-2 pr-3 text-right font-mono text-[12px] font-black">
+                  <td className="py-2 pr-3 text-left font-mono text-[12px] font-black">
                     {r.total != null ? formatIDR(r.total) : "—"}
                   </td>
                   <td className="py-2 pr-3">

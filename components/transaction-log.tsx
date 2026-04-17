@@ -114,14 +114,14 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
       ) : (
         <div className="max-h-[440px] overflow-auto rounded-xl ring-1 ring-ink/10">
           <table className="w-full text-xs">
-            <thead className="sticky top-0 bg-ink/5">
-              <tr className="text-left text-[10px] font-bold uppercase tracking-wide text-ink2">
-                <th className="px-3 py-2">{t("tx.colDate", lang)}</th>
-                <th className="px-3 py-2">{t("tx.colType", lang)}</th>
-                <th className="px-3 py-2">{t("tx.colRef", lang)}</th>
-                <th className="px-3 py-2">{t("tx.colSupplier", lang)}</th>
-                <th className="px-3 py-2">{t("tx.colDescription", lang)}</th>
-                <th className="px-3 py-2 text-right">{t("tx.colAmount", lang)}</th>
+            <thead className="sticky top-0 bg-primary-gradient shadow-[inset_0_-1px_0_rgba(255,255,255,0.12),inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <tr className="text-center text-[10px] font-extrabold uppercase tracking-[0.14em] text-white/95">
+                <th className="px-3 py-2.5">{t("tx.colDate", lang)}</th>
+                <th className="px-3 py-2.5">{t("tx.colType", lang)}</th>
+                <th className="px-3 py-2.5">{t("tx.colRef", lang)}</th>
+                <th className="px-3 py-2.5">{t("tx.colSupplier", lang)}</th>
+                <th className="px-3 py-2.5">{t("tx.colDescription", lang)}</th>
+                <th className="px-3 py-2.5">{t("tx.colAmount", lang)}</th>
               </tr>
             </thead>
             <tbody>
@@ -130,24 +130,24 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
                   key={r.id}
                   className="border-t border-ink/5 hover:bg-ink/[0.02]"
                 >
-                  <td className="whitespace-nowrap px-3 py-2 font-mono text-[11px]">
+                  <td className="whitespace-nowrap px-3 py-2 text-center font-mono text-[11px]">
                     {r.tx_date}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 text-center">
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-black ${TYPE_BADGE[r.tx_type]}`}
                     >
                       {TYPE_LABELS[r.tx_type]}
                     </span>
                   </td>
-                  <td className="px-3 py-2 font-mono text-[11px]">
+                  <td className="px-3 py-2 text-center font-mono text-[11px]">
                     {r.ref_no ?? "—"}
                   </td>
-                  <td className="px-3 py-2">{r.supplier_name ?? "—"}</td>
-                  <td className="px-3 py-2 text-ink2">
+                  <td className="px-3 py-2 text-center">{r.supplier_name ?? "—"}</td>
+                  <td className="px-3 py-2 text-center text-ink2">
                     {r.description ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right font-mono">
+                  <td className="whitespace-nowrap px-3 py-2 text-left font-mono">
                     {r.amount == null ? "—" : formatIDR(Number(r.amount))}
                   </td>
                 </tr>

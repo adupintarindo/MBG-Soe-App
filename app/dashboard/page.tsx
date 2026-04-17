@@ -29,7 +29,7 @@ import {
   type TopSupplier,
   type DailyPlan
 } from "@/lib/engine";
-import { t, ti, formatNumber, MONTHS } from "@/lib/i18n";
+import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -71,7 +71,8 @@ export default async function DashboardPage() {
     topSup,
     planning,
     txRowsRaw,
-    suppliers
+    suppliers,
+    attendanceRows
   ] = await Promise.all([
     dashboardKpis(supabase).catch(() => ({
       students_total: 0,
@@ -101,8 +102,53 @@ export default async function DashboardPage() {
     supabase
       .from("suppliers")
       .select("id, name")
+      .then((r) => r.data ?? []),
+    supabase
+      .from("school_attendance")
+      .select("att_date, school_id, qty")
+      .gte("att_date", today)
       .then((r) => r.data ?? [])
   ]);
+
+  // ---- portion counts per horizon date ----
+  const porsiByDate = new Map<
+    string,
+    { kecil: number; besar: number; total: number }
+  >();
+  await Promise.all(
+    planning.map(async (p) => {
+      const { data } = await supabase.rpc("porsi_counts", {
+        p_date: p.op_date
+      });
+      const row = (data ?? [])[0] as
+        | { besar: number; kecil: number; total: number }
+        | undefined;
+      if (row) {
+        porsiByDate.set(p.op_date, {
+          kecil: Number(row.kecil ?? 0),
+          besar: Number(row.besar ?? 0),
+          total: Number(row.total ?? 0)
+        });
+      }
+    })
+  );
+
+  // ---- schools served per date (distinct school_id with qty>0) ----
+  const schoolsPerDate = new Map<string, Set<string>>();
+  for (const r of attendanceRows as Array<{
+    att_date: string;
+    school_id: string;
+    qty: number | string;
+  }>) {
+    if (Number(r.qty) > 0) {
+      let set = schoolsPerDate.get(r.att_date);
+      if (!set) {
+        set = new Set();
+        schoolsPerDate.set(r.att_date, set);
+      }
+      set.add(r.school_id);
+    }
+  }
 
   // ---- derived ----
   const shortItems = shortages.filter((s) => Number(s.gap) > 0);
@@ -212,13 +258,13 @@ export default async function DashboardPage() {
             icon="👥"
             label={t("dashboard.kpiStudents", lang)}
             value={formatNumber(kpis.students_total, lang)}
-            sub={ti("dashboard.kpiStudentsSub", lang, { n: kpis.schools_active })}
+            palette="blue"
           />
           <KpiTile
             icon="🏫"
             label={t("dashboard.kpiSchoolsActive", lang)}
             value={kpis.schools_active.toString()}
-            sub={t("dashboard.kpiSchoolsSub", lang)}
+            palette="emerald"
           />
           <KpiTile
             icon="🍽️"
@@ -226,22 +272,102 @@ export default async function DashboardPage() {
             value={kpis.menu_today_name || "—"}
             size="md"
             tone={kpis.menu_today_name ? "info" : "default"}
-            sub={
-              todayPlan
-                ? ti("dashboard.kpiMenuSub", lang, {
-                    porsi: formatNumber(todayPlan.porsi_total, lang),
-                    kg: formatKg(todayPlan.total_kg)
-                  })
-                : t("dashboard.kpiMenuNotSet", lang)
-            }
+            palette="amber"
           />
           <KpiTile
             icon="🤝"
             label={t("dashboard.kpiSuppliersActive", lang)}
             value={kpis.suppliers_active.toString()}
-            sub={t("dashboard.kpiSuppliersSub", lang)}
+            palette="violet"
           />
         </KpiGrid>
+
+        {/* Menu & Portion Schedule · 10 days */}
+        <Section
+          banner
+          title={t("dashboard.scheduleTitle", lang)}
+          hint={t("dashboard.scheduleHint", lang)}
+        >
+          {planning.length === 0 ? (
+            <EmptyState message={t("dashboard.scheduleEmpty", lang)} />
+          ) : (
+            <TableWrap>
+              <table className="w-full text-sm tabular-nums">
+                <THead>
+                  <th className="w-12 py-2 pl-2 pr-3 text-center">
+                    {t("dashboard.tblNo", lang)}
+                  </th>
+                  <th className="py-2 pr-3">
+                    {t("dashboard.tblDayDate", lang)}
+                  </th>
+                  <th className="py-2 pr-3">
+                    {t("dashboard.tblMenuName", lang)}
+                  </th>
+                  <th className="py-2 pr-3 text-right">
+                    {t("dashboard.tblSchools", lang)}
+                  </th>
+                  <th className="py-2 pr-3 text-right">
+                    {t("dashboard.tblPorsiKecil", lang)}
+                  </th>
+                  <th className="py-2 pr-3 text-right">
+                    {t("dashboard.tblPorsiBesar", lang)}
+                  </th>
+                  <th className="py-2 pr-3 text-right">
+                    {t("dashboard.tblPorsiTotal", lang)}
+                  </th>
+                </THead>
+                <tbody>
+                  {planning.map((p, idx) => {
+                    const d = new Date(p.op_date + "T00:00:00");
+                    const dayName = DAYS.long[lang][d.getDay()];
+                    const dateLabel = `${dayName}, ${d.getDate()} ${MONTHS.long[lang][d.getMonth()]} ${d.getFullYear()}`;
+                    const porsi = porsiByDate.get(p.op_date);
+                    const schoolsCount =
+                      schoolsPerDate.get(p.op_date)?.size ?? 0;
+                    const kecil = porsi?.kecil ?? 0;
+                    const besar = porsi?.besar ?? 0;
+                    const totalPorsi = porsi?.total ?? p.porsi_total;
+                    return (
+                      <tr
+                        key={p.op_date}
+                        className="row-hover border-b border-ink/5"
+                      >
+                        <td className="py-2 pl-2 pr-3 text-center font-mono text-xs text-ink2">
+                          {idx + 1}
+                        </td>
+                        <td className="py-2 pr-3">
+                          <div className="font-semibold">{dateLabel}</div>
+                          {!p.operasional && (
+                            <Badge tone="warn" className="mt-1">
+                              {t("dashboard.badgeNonOp", lang)}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-2 pr-3 text-xs">
+                          {p.menu_name ?? (
+                            <span className="text-ink2/60">—</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono text-xs">
+                          {formatNumber(schoolsCount, lang)}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono text-xs">
+                          {formatNumber(kecil, lang)}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono text-xs">
+                          {formatNumber(besar, lang)}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                          {formatNumber(totalPorsi, lang)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </TableWrap>
+          )}
+        </Section>
 
         {/* 50 Transaksi Terakhir with filter */}
         <TransactionLog rows={txRows} />
@@ -498,7 +624,7 @@ export default async function DashboardPage() {
                   <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
                   <th className="py-2 pr-3">{t("dashboard.tblType", lang)}</th>
                   <th className="py-2 pr-3 text-right">{t("dashboard.tblInvoice", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("dashboard.tblTotalSpend", lang)}</th>
+                  <th className="py-2 pr-3">{t("dashboard.tblTotalSpend", lang)}</th>
                 </THead>
                 <tbody>
                   {topSup.map((s, i) => (
@@ -516,7 +642,7 @@ export default async function DashboardPage() {
                       <td className="py-2 pr-3 text-right font-mono text-xs">
                         {s.invoice_count}
                       </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                      <td className="py-2 pr-3 text-left font-mono text-xs font-black">
                         {formatIDR(Number(s.total_spend))}
                       </td>
                     </tr>

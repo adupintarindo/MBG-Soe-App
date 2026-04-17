@@ -54,6 +54,7 @@ interface SectionProps {
   className?: string;
   children: ReactNode;
   noPad?: boolean;
+  banner?: boolean;
 }
 
 const ACCENT_BORDER: Record<NonNullable<SectionProps["accent"]>, string> = {
@@ -71,8 +72,36 @@ export function Section({
   accent = "default",
   className = "",
   children,
-  noPad = false
+  noPad = false,
+  banner = false
 }: SectionProps) {
+  if (banner) {
+    return (
+      <section
+        className={`mb-6 overflow-hidden rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${className}`}
+      >
+        <header className="flex flex-wrap items-center justify-between gap-3 bg-ink px-6 py-4">
+          {title && (
+            <h2 className="font-display text-sm font-bold uppercase tracking-[0.12em] text-white sm:text-[13px]">
+              {title}
+            </h2>
+          )}
+          {actions && (
+            <div className="flex flex-wrap items-center gap-2">{actions}</div>
+          )}
+        </header>
+        <div className={noPad ? "" : "p-5"}>
+          {hint && (
+            <p className="mb-4 text-[13px] leading-relaxed text-ink2/70">
+              {hint}
+            </p>
+          )}
+          {children}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       className={`mb-6 rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${noPad ? "" : "p-5"} ${className}`}
@@ -110,6 +139,7 @@ interface KpiTileProps {
   sub?: ReactNode;
   tone?: "default" | "ok" | "warn" | "bad" | "info";
   size?: "lg" | "md" | "sm";
+  palette?: "blue" | "amber" | "emerald" | "orange" | "violet" | "slate";
 }
 
 const TONE_VALUE: Record<NonNullable<KpiTileProps["tone"]>, string> = {
@@ -120,13 +150,23 @@ const TONE_VALUE: Record<NonNullable<KpiTileProps["tone"]>, string> = {
   info: "text-accent-strong"
 };
 
+const PALETTE_HEADER: Record<NonNullable<KpiTileProps["palette"]>, string> = {
+  blue: "bg-primary-gradient",
+  amber: "bg-gradient-to-r from-teal-800 to-teal-700",
+  emerald: "bg-gradient-to-r from-emerald-800 to-emerald-700",
+  orange: "bg-gradient-to-r from-teal-800 to-teal-700",
+  violet: "bg-gradient-to-r from-slate-700 to-slate-900",
+  slate: "bg-gradient-to-r from-slate-700 to-slate-900"
+};
+
 export function KpiTile({
   icon,
   label,
   value,
   sub,
   tone = "default",
-  size = "lg"
+  size = "lg",
+  palette
 }: KpiTileProps) {
   const sizeCls =
     size === "lg"
@@ -134,11 +174,39 @@ export function KpiTile({
       : size === "md"
         ? "text-xl leading-tight"
         : "text-base leading-snug";
+
+  if (palette) {
+    return (
+      <div className="overflow-hidden rounded-2xl bg-white text-center shadow-card transition hover:-translate-y-0.5 hover:shadow-cardlg">
+        <div
+          className={`flex items-center justify-center gap-2 px-4 py-3 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white ${PALETTE_HEADER[palette]}`}
+        >
+          {icon && (
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-white/15 text-sm ring-1 ring-white/25">
+              {icon}
+            </span>
+          )}
+          <span>{label}</span>
+        </div>
+        <div className="px-4 py-5">
+          <div
+            className={`font-display font-extrabold tracking-crisp tabular-nums ${sizeCls} ${TONE_VALUE[tone]}`}
+          >
+            {value}
+          </div>
+          {sub && (
+            <div className="mt-2 text-[11.5px] font-semibold text-ink2/70">{sub}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-cardlg">
-      <div className="mb-1.5 flex items-center gap-2 font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-ink2/80">
+    <div className="rounded-2xl bg-white p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:shadow-cardlg">
+      <div className="mb-1.5 flex items-center justify-center gap-2 font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-ink2/80">
         {icon && <span className="text-sm">{icon}</span>}
-        <span className="truncate">{label}</span>
+        <span>{label}</span>
       </div>
       <div
         className={`font-display font-extrabold tracking-crisp tabular-nums ${sizeCls} ${TONE_VALUE[tone]}`}

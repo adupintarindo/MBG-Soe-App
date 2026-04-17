@@ -451,7 +451,7 @@ export default async function ProcurementPage() {
                   <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
                   <th className="py-2 pr-3">{t("procurement.colNeeded", lang)}</th>
                   <th className="py-2 pr-3">{t("procurement.colValidUntil", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("procurement.colAmount", lang)}</th>
+                  <th className="py-2 pr-3">{t("procurement.colAmount", lang)}</th>
                   <th className="py-2 pr-3">{t("common.status", lang)}</th>
                   <th className="py-2 pr-3">{t("procurement.colPO", lang)}</th>
                   <th className="py-2 pr-3"></th>
@@ -472,7 +472,7 @@ export default async function ProcurementPage() {
                       <td className="py-2 pr-3 text-xs">
                         {q.valid_until ?? "—"}
                       </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                      <td className="py-2 pr-3 text-left font-mono text-xs font-black">
                         {formatIDR(Number(q.total))}
                       </td>
                       <td className="py-2 pr-3">
@@ -514,7 +514,7 @@ export default async function ProcurementPage() {
                   <th className="py-2 pr-3">{t("common.delivery", lang)}</th>
                   <th className="py-2 pr-3 text-right">{t("procurement.colItems", lang)}</th>
                   <th className="py-2 pr-3 text-right">{t("procurement.colTotalQty", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("procurement.colAmount", lang)}</th>
+                  <th className="py-2 pr-3">{t("procurement.colAmount", lang)}</th>
                   <th className="py-2 pr-3">TOP</th>
                   <th className="py-2 pr-3">{t("common.status", lang)}</th>
                 </THead>
@@ -539,7 +539,7 @@ export default async function ProcurementPage() {
                           maximumFractionDigits: 1
                         })}
                       </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                      <td className="py-2 pr-3 text-left font-mono text-xs font-black">
                         {formatIDR(Number(p.total))}
                       </td>
                       <td className="py-2 pr-3 text-xs">{p.top ?? "—"}</td>
@@ -584,7 +584,7 @@ export default async function ProcurementPage() {
                   <th className="py-2 pr-3">{t("common.date", lang)}</th>
                   <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
                   <th className="py-2 pr-3">{t("procurement.colPO", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("common.total", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.total", lang)}</th>
                   <th className="py-2 pr-3">{t("procurement.colDueDate", lang)}</th>
                   <th className="py-2 pr-3">{t("common.status", lang)}</th>
                 </THead>
@@ -601,7 +601,7 @@ export default async function ProcurementPage() {
                       <td className="py-2 pr-3 font-mono text-xs">
                         {i.po_no ?? "—"}
                       </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                      <td className="py-2 pr-3 text-left font-mono text-xs font-black">
                         {formatIDR(Number(i.total))}
                       </td>
                       <td className="py-2 pr-3 text-xs">

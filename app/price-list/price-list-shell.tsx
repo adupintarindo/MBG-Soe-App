@@ -259,9 +259,9 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                   {w.label.replace(/^Wk \d+: /, "")}
                 </th>
               ))}
-              <th className="px-2 py-1.5 text-right">{t("priceList.colAvg", lang)}</th>
-              <th className="px-2 py-1.5 text-right">{t("priceList.colMin", lang)}</th>
-              <th className="px-2 py-1.5 text-right">{t("priceList.colMax", lang)}</th>
+              <th className="px-2 py-1.5 text-center">{t("priceList.colAvg", lang)}</th>
+              <th className="px-2 py-1.5 text-center">{t("priceList.colMin", lang)}</th>
+              <th className="px-2 py-1.5 text-center">{t("priceList.colMax", lang)}</th>
             </tr>
           </thead>
           <tbody>
@@ -311,9 +311,9 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                       </td>
                     );
                   })}
-                  <td className="px-2 py-1.5 text-right font-semibold text-slate-800">{fmtRp(stats.avg, lang)}</td>
-                  <td className="px-2 py-1.5 text-right text-emerald-700">{fmtRp(stats.min, lang)}</td>
-                  <td className="px-2 py-1.5 text-right text-rose-700">{fmtRp(stats.max, lang)}</td>
+                  <td className="px-2 py-1.5 text-left font-semibold text-slate-800">{fmtRp(stats.avg, lang)}</td>
+                  <td className="px-2 py-1.5 text-left text-emerald-700">{fmtRp(stats.min, lang)}</td>
+                  <td className="px-2 py-1.5 text-left text-rose-700">{fmtRp(stats.max, lang)}</td>
                 </tr>
               );
             })}

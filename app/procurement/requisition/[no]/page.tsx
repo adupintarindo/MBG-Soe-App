@@ -227,7 +227,7 @@ export default async function PrDetailPage({
                     <th className="px-3 py-2">{t("prDetail.colNo", lang)}</th>
                     <th className="px-3 py-2">{t("prDetail.colSupplier", lang)}</th>
                     <th className="px-3 py-2">{t("prDetail.colStatus", lang)}</th>
-                    <th className="px-3 py-2 text-right">{t("prDetail.colValue", lang)}</th>
+                    <th className="px-3 py-2 text-center">{t("prDetail.colValue", lang)}</th>
                     <th className="px-3 py-2">{t("prDetail.colPo", lang)}</th>
                     <th className="px-3 py-2"></th>
                   </tr>
@@ -246,7 +246,7 @@ export default async function PrDetailPage({
                           {q.status}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-xs">
+                      <td className="px-3 py-2 text-left font-mono text-xs">
                         {formatNumber(Number(q.total), lang)}
                       </td>
                       <td className="px-3 py-2 font-mono text-[11px]">

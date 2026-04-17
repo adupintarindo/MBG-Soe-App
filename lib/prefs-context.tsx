@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode
 } from "react";
+import { useRouter } from "next/navigation";
 import type { Lang } from "@/lib/i18n";
 
 export type Theme = "light" | "dark";
@@ -56,6 +57,7 @@ function applyLang(lang: Lang) {
 }
 
 export function PrefsProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [theme, setThemeState] = useState<Theme>(readInitialTheme);
   const [lang, setLangState] = useState<Lang>(readInitialLang);
 
@@ -94,7 +96,10 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
     try {
       window.localStorage.setItem(LANG_KEY, l);
     } catch {}
-  }, []);
+    // Server components read lang via cookie in getLang() — refresh so they
+    // re-render with the new locale instead of waiting for a hard reload.
+    router.refresh();
+  }, [router]);
 
   const toggleTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");

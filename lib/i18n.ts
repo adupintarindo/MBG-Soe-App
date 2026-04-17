@@ -181,6 +181,24 @@ export const LANG_KEYS = {
   "dashboard.tblKebutuhan": { ID: "Kebutuhan", EN: "Required" },
   "dashboard.tblShort": { ID: "Short", EN: "Short" },
   "dashboard.badgeNonOp": { ID: "NON-OP", EN: "NON-OP" },
+  "dashboard.scheduleTitle": {
+    ID: "🍽️ Jadwal Menu & Porsi · 10 Hari Ke Depan",
+    EN: "🍽️ Menu & Portion Schedule · Next 10 Days"
+  },
+  "dashboard.scheduleHint": {
+    ID: "Ringkasan menu harian, sekolah penerima, dan distribusi porsi kecil/besar per tanggal.",
+    EN: "Daily menu overview, receiving schools, and small/large portion split per date."
+  },
+  "dashboard.scheduleEmpty": {
+    ID: "Belum ada menu ter-assign di horizon ini.",
+    EN: "No menu has been assigned for this horizon yet."
+  },
+  "dashboard.tblDayDate": { ID: "Hari, Tanggal", EN: "Day, Date" },
+  "dashboard.tblMenuName": { ID: "Nama Menu", EN: "Menu Name" },
+  "dashboard.tblSchools": { ID: "Sekolah Menerima", EN: "Schools Served" },
+  "dashboard.tblPorsiKecil": { ID: "Porsi Kecil", EN: "Small Portion" },
+  "dashboard.tblPorsiBesar": { ID: "Porsi Besar", EN: "Large Portion" },
+  "dashboard.tblPorsiTotal": { ID: "Total Porsi", EN: "Total Portion" },
   "dashboard.stockAlertTitle": { ID: "⚠️ Alert Stok · Hari Ini", EN: "⚠️ Stock Alert · Today" },
   "dashboard.stockAlertHintOk": { ID: "Semua kebutuhan tercover.", EN: "All requirements covered." },
   "dashboard.stockAlertHintBad": { ID: "{n} item · gap {gap}", EN: "{n} items · gap {gap}" },

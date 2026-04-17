@@ -188,10 +188,10 @@ export default async function QuotationDetailPage({
                   <th className="py-2 pr-3">{t("qtDetail.colItem", lang)}</th>
                   <th className="py-2 pr-3 text-right">{t("qtDetail.colQty", lang)}</th>
                   <th className="py-2 pr-3">{t("qtDetail.colUnit", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("qtDetail.colSuggest", lang)}</th>
+                  <th className="py-2 pr-3">{t("qtDetail.colSuggest", lang)}</th>
                   <th className="py-2 pr-3 text-right">{t("qtDetail.colFinalQty", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("qtDetail.colFinalPrice", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("qtDetail.colSubtotal", lang)}</th>
+                  <th className="py-2 pr-3">{t("qtDetail.colFinalPrice", lang)}</th>
+                  <th className="py-2 pr-3">{t("qtDetail.colSubtotal", lang)}</th>
                   <th className="py-2 pr-3">{t("qtDetail.colNote", lang)}</th>
                 </THead>
                 <tbody>
@@ -216,7 +216,7 @@ export default async function QuotationDetailPage({
                           })}
                         </td>
                         <td className="py-2 pr-3 text-xs">{r.unit}</td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs text-ink2">
+                        <td className="py-2 pr-3 text-left font-mono text-xs text-ink2">
                           {r.price_suggested != null
                             ? formatIDR(Number(r.price_suggested))
                             : "—"}
@@ -228,12 +228,12 @@ export default async function QuotationDetailPage({
                               })
                             : "—"}
                         </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs font-black text-emerald-800">
+                        <td className="py-2 pr-3 text-left font-mono text-xs font-black text-emerald-800">
                           {r.price_quoted != null
                             ? formatIDR(Number(r.price_quoted))
                             : "—"}
                         </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                        <td className="py-2 pr-3 text-left font-mono text-xs font-black">
                           {formatIDR(Number(r.subtotal))}
                         </td>
                         <td className="py-2 pr-3 text-[11px] text-ink2">
@@ -248,7 +248,7 @@ export default async function QuotationDetailPage({
                     <td colSpan={7} className="py-2 pr-3 text-right font-black">
                       {t("qtDetail.total", lang)}
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono font-black text-ink">
+                    <td className="py-2 pr-3 text-left font-mono font-black text-ink">
                       {formatIDR(Number(qt.total))}
                     </td>
                     <td></td>
