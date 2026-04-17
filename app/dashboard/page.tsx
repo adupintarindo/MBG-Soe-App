@@ -156,9 +156,8 @@ export default async function DashboardPage() {
     return date.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
   };
 
-  // status today
+  // status today (used by KPI tile below; status chip lives in <Nav>)
   const todayPlan = planning.find((p) => p.op_date === today);
-  const opToday = todayPlan?.operasional ?? false;
 
   return (
     <div>
@@ -166,30 +165,22 @@ export default async function DashboardPage() {
         email={profile.email}
         role={profile.role}
         fullName={profile.full_name}
+        menuToday={{
+          id: kpis.menu_today_id,
+          name: kpis.menu_today_name
+        }}
       />
 
       <main className="mx-auto max-w-7xl px-6 py-8">
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-xl font-black text-ink">
+            <h1 className="text-xl font-black text-primary dark:text-d-text">
               Selamat datang, {profile.full_name || profile.email.split("@")[0]}
             </h1>
-            <p className="text-sm text-ink2/80">{formatDateID(now)}</p>
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 shadow-card">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-ink2">
-              Status hari ini
-            </span>
-            {opToday ? (
-              <span className="rounded-full bg-green-100 px-3 py-1 text-[11px] font-black text-green-800">
-                OPERASIONAL
-              </span>
-            ) : (
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-black text-amber-800">
-                NON-OPERASIONAL
-              </span>
-            )}
+            <p className="text-sm text-primary-2/80 dark:text-d-text-2">
+              {formatDateID(now)}
+            </p>
           </div>
         </div>
 
