@@ -46,6 +46,13 @@ function applyTheme(theme: Theme) {
 function applyLang(lang: Lang) {
   if (typeof document === "undefined") return;
   document.documentElement.setAttribute("lang", lang === "EN" ? "en" : "id");
+  // Sync to cookie so server components can read it.
+  try {
+    const oneYear = 60 * 60 * 24 * 365;
+    document.cookie = `${LANG_KEY}=${lang}; path=/; max-age=${oneYear}; SameSite=Lax`;
+  } catch {
+    // ignore
+  }
 }
 
 export function PrefsProvider({ children }: { children: ReactNode }) {

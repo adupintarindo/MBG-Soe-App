@@ -210,19 +210,12 @@ export function CalendarGrid({
 
   async function saveAssign(iso: string, menuId: number, note: string) {
     setError(null);
-    const { error: err } = await supabase
-      .from("menu_assign")
-      .upsert(
-        { assign_date: iso, menu_id: menuId, note: note || null } as never,
-        { onConflict: "assign_date" }
-      );
-    if (err) {
-      setError(err.message);
+    const res = await setAssignmentAction(iso, menuId, note);
+    if (!res.ok) {
+      setError(res.error ?? "Gagal menyimpan menu.");
       return;
     }
-    // Jika sebelumnya non-op, hapus
     if (nonOpByDate.has(iso)) {
-      await supabase.from("non_op_days").delete().eq("op_date", iso);
       setNonOpByDate((prev) => {
         const next = new Map(prev);
         next.delete(iso);
@@ -240,12 +233,9 @@ export function CalendarGrid({
 
   async function clearAssign(iso: string) {
     setError(null);
-    const { error: err } = await supabase
-      .from("menu_assign")
-      .delete()
-      .eq("assign_date", iso);
-    if (err) {
-      setError(err.message);
+    const res = await clearAssignmentAction(iso);
+    if (!res.ok) {
+      setError(res.error ?? "Gagal menghapus assignment.");
       return;
     }
     setAssignByDate((prev) => {
@@ -263,18 +253,12 @@ export function CalendarGrid({
       setError("Alasan non-operasional wajib diisi.");
       return;
     }
-    const { error: err } = await supabase
-      .from("non_op_days")
-      .upsert(
-        { op_date: iso, reason: clean } as never,
-        { onConflict: "op_date" }
-      );
-    if (err) {
-      setError(err.message);
+    const res = await markNonOpDayAction(iso, clean);
+    if (!res.ok) {
+      setError(res.error ?? "Gagal menandai non-operasional.");
       return;
     }
     if (assignByDate.has(iso)) {
-      await supabase.from("menu_assign").delete().eq("assign_date", iso);
       setAssignByDate((prev) => {
         const next = new Map(prev);
         next.delete(iso);
@@ -292,12 +276,9 @@ export function CalendarGrid({
 
   async function clearNonOp(iso: string) {
     setError(null);
-    const { error: err } = await supabase
-      .from("non_op_days")
-      .delete()
-      .eq("op_date", iso);
-    if (err) {
-      setError(err.message);
+    const res = await clearNonOpDayAction(iso);
+    if (!res.ok) {
+      setError(res.error ?? "Gagal menghapus non-operasional.");
       return;
     }
     setNonOpByDate((prev) => {
@@ -318,23 +299,14 @@ export function CalendarGrid({
       .map((e) => ({ school_id: e.school_id, att_date: iso, qty: e.qty! }));
     const toDelete = entries.filter((e) => e.qty === null).map((e) => e.school_id);
 
-    if (toUpsert.length > 0) {
-      const { error: err } = await supabase
-        .from("school_attendance")
-        .upsert(toUpsert as never, { onConflict: "school_id,att_date" });
-      if (err) {
-        setError(err.message);
-        return;
-      }
-    }
-    if (toDelete.length > 0) {
-      const { error: err } = await supabase
-        .from("school_attendance")
-        .delete()
-        .eq("att_date", iso)
-        .in("school_id", toDelete);
-      if (err) {
-        setError(err.message);
+    const payload = entries.map((e) => ({
+      school_id: e.school_id,
+      qty: e.qty ?? null
+    }));
+    if (payload.length > 0) {
+      const res = await saveAttendanceDayAction(iso, payload);
+      if (!res.ok) {
+        setError(res.error ?? "Gagal menyimpan kehadiran.");
         return;
       }
     }
