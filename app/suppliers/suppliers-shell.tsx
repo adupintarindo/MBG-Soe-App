@@ -43,7 +43,6 @@ interface Props {
   actions: SupplierAction[];
   canWriteActions: boolean;
   isSupplierRole: boolean;
-  currentSupplierId: string | null;
   isAdmin: boolean;
 }
 
@@ -57,7 +56,6 @@ export function SuppliersShell({
   actions,
   canWriteActions,
   isSupplierRole,
-  currentSupplierId,
   isAdmin
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);

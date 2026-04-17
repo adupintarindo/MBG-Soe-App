@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getHoliday } from "@/lib/holidays";
@@ -52,11 +52,8 @@ interface Props {
   monthMonth: number; // 1..12
   todayIso: string;
   menus: MenuRow[];
-  items: ItemRow[];
   initialAssigns: AssignRow[];
   initialNonOps: NonOpRow[];
-  schools: SchoolRow[];
-  initialAttendance: AttendanceRow[];
   recipientCount: number;
   canWrite: boolean;
 }
@@ -105,11 +102,6 @@ function parseIso(iso: string) {
   return { y, m, d, date: new Date(y, m - 1, d) };
 }
 
-function fmtLongID(iso: string) {
-  const { y, m, d, date } = parseIso(iso);
-  return `${DOW_LONG_ID[date.getDay()]}, ${d} ${MONTH_LONG_ID[m - 1]} ${y}`;
-}
-
 // Category → kombinasi bucket mapping
 const CAT_BUCKET: Record<string, "karbo" | "protein" | "sayur" | "buah" | null> =
   {
@@ -132,11 +124,8 @@ export function CalendarGrid({
   monthMonth,
   todayIso,
   menus,
-  items,
   initialAssigns,
   initialNonOps,
-  schools,
-  initialAttendance,
   recipientCount,
   canWrite
 }: Props) {
@@ -149,12 +138,15 @@ export function CalendarGrid({
   const [nonOpByDate, setNonOpByDate] = useState(
     () => new Map(initialNonOps.map((n) => [n.op_date, n]))
   );
-  const [attByKey, setAttByKey] = useState(
-    () =>
-      new Map(
-        initialAttendance.map((a) => [`${a.school_id}|${a.att_date}`, a.qty])
-      )
-  );
+  // Lazy-loaded reference data (fetched the first time user opens any modal)
+  const [items, setItems] = useState<ItemRow[] | null>(null);
+  const [schools, setSchools] = useState<SchoolRow[] | null>(null);
+  const [refLoading, setRefLoading] = useState(false);
+  const [refError, setRefError] = useState<string | null>(null);
+
+  // Attendance for the currently-open date. Fetched on modal open.
+  const [attForDate, setAttForDate] = useState<AttendanceRow[] | null>(null);
+
   const [openDate, setOpenDate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -170,13 +162,62 @@ export function CalendarGrid({
     return new Date(y, m - 1, d).getDay();
   }
 
-  function openEditor(iso: string) {
+  async function ensureReference() {
+    if (items && schools) return;
+    setRefLoading(true);
+    setRefError(null);
+    try {
+      const [itemsRes, schoolsRes] = await Promise.all([
+        items
+          ? Promise.resolve({ data: items, error: null })
+          : supabase
+              .from("items")
+              .select("code, name_en, category, active")
+              .eq("active", true)
+              .order("code"),
+        schools
+          ? Promise.resolve({ data: schools, error: null })
+          : supabase
+              .from("schools")
+              .select("id, name, level, students, kelas13, kelas46, guru")
+              .eq("active", true)
+              .order("id")
+      ]);
+      if (itemsRes.error) throw new Error(itemsRes.error.message);
+      if (schoolsRes.error) throw new Error(schoolsRes.error.message);
+      if (!items) setItems((itemsRes.data as ItemRow[]) ?? []);
+      if (!schools) setSchools((schoolsRes.data as SchoolRow[]) ?? []);
+    } catch (e) {
+      setRefError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRefLoading(false);
+    }
+  }
+
+  async function fetchAttendanceFor(iso: string) {
+    setAttForDate(null);
+    const { data, error: err } = await supabase
+      .from("school_attendance")
+      .select("school_id, att_date, qty")
+      .eq("att_date", iso);
+    if (err) {
+      setRefError(err.message);
+      setAttForDate([]);
+      return;
+    }
+    setAttForDate((data as AttendanceRow[]) ?? []);
+  }
+
+  async function openEditor(iso: string) {
     if (!canWrite) return;
     const dow = dayOfWeek(iso);
     if (dow === 0 || dow === 6) return;
     if (getHoliday(iso)) return;
     setError(null);
     setOpenDate(iso);
+    // Kick off both in parallel; modal shows skeleton until ready.
+    void ensureReference();
+    void fetchAttendanceFor(iso);
   }
 
   async function saveAssign(iso: string, menuId: number, note: string) {
@@ -310,15 +351,21 @@ export function CalendarGrid({
       }
     }
 
-    setAttByKey((prev) => {
-      const next = new Map(prev);
+    setAttForDate((prev) => {
+      const next = new Map(
+        (prev ?? []).map((r) => [r.school_id, r] as const)
+      );
       for (const row of toUpsert) {
-        next.set(`${row.school_id}|${iso}`, row.qty);
+        next.set(row.school_id, {
+          school_id: row.school_id,
+          att_date: iso,
+          qty: row.qty
+        });
       }
       for (const sid of toDelete) {
-        next.delete(`${sid}|${iso}`);
+        next.delete(sid);
       }
-      return next;
+      return Array.from(next.values());
     });
     startTransition(() => router.refresh());
   }
@@ -432,15 +479,17 @@ export function CalendarGrid({
           menus={menus}
           items={items}
           schools={schools}
-          attendanceForDate={schools.map((s) => ({
-            school_id: s.id,
-            qty: attByKey.get(`${s.id}|${openDate}`) ?? null
-          }))}
+          refLoading={refLoading}
+          refError={refError}
+          attForDate={attForDate}
           assign={assignByDate.get(openDate) ?? null}
           nonOp={nonOpByDate.get(openDate) ?? null}
           error={error}
           busy={isPending}
-          onClose={() => setOpenDate(null)}
+          onClose={() => {
+            setOpenDate(null);
+            setAttForDate(null);
+          }}
           onSaveAssign={saveAssign}
           onClearAssign={clearAssign}
           onMarkNonOp={markNonOp}
@@ -462,9 +511,11 @@ export function CalendarGrid({
 interface EditProps {
   iso: string;
   menus: MenuRow[];
-  items: ItemRow[];
-  schools: SchoolRow[];
-  attendanceForDate: { school_id: string; qty: number | null }[];
+  items: ItemRow[] | null;
+  schools: SchoolRow[] | null;
+  refLoading: boolean;
+  refError: string | null;
+  attForDate: AttendanceRow[] | null;
   assign: AssignRow | null;
   nonOp: NonOpRow | null;
   error: string | null;
@@ -485,7 +536,9 @@ function EditModal({
   menus,
   items,
   schools,
-  attendanceForDate,
+  refLoading,
+  refError,
+  attForDate,
   assign,
   nonOp,
   error,
@@ -513,23 +566,31 @@ function EditModal({
   const [note, setNote] = useState<string>(assign?.note ?? "");
   const [reason, setReason] = useState<string>(nonOp?.reason ?? "");
 
+  const safeSchools = schools ?? [];
+  const safeItems = items ?? [];
+
   const initialAttMap = useMemo(() => {
-    const m = new Map<string, number | null>();
-    for (const e of attendanceForDate) m.set(e.school_id, e.qty);
-    return m;
-  }, [attendanceForDate]);
+    const mp = new Map<string, number | null>();
+    for (const e of attForDate ?? []) mp.set(e.school_id, e.qty);
+    return mp;
+  }, [attForDate]);
+
   // empty string = full roster (no override); numeric string = override qty
-  const [attInputs, setAttInputs] = useState<Record<string, string>>(() => {
+  const [attInputs, setAttInputs] = useState<Record<string, string>>({});
+
+  // Sync inputs once schools + attendance are known / refreshed.
+  useEffect(() => {
+    if (!schools) return;
     const o: Record<string, string> = {};
     for (const s of schools) {
       const q = initialAttMap.get(s.id);
       o[s.id] = q == null ? "" : String(q);
     }
-    return o;
-  });
+    setAttInputs(o);
+  }, [schools, initialAttMap]);
 
   async function handleSaveAttendance() {
-    const entries = schools.map((s) => {
+    const entries = safeSchools.map((s) => {
       const raw = attInputs[s.id]?.trim() ?? "";
       if (raw === "") return { school_id: s.id, qty: null };
       const n = Number(raw);
@@ -539,14 +600,14 @@ function EditModal({
     await onSaveAttendance(iso, entries);
   }
 
-  const totalOverride = schools.reduce((sum, s) => {
+  const totalOverride = safeSchools.reduce((sum, s) => {
     const raw = attInputs[s.id]?.trim() ?? "";
     if (raw === "") return sum + (Number(s.students) || 0);
     const n = Number(raw);
     if (!Number.isFinite(n) || n < 0) return sum;
     return sum + Math.min(Math.floor(n), s.students);
   }, 0);
-  const totalFullRoster = schools.reduce(
+  const totalFullRoster = safeSchools.reduce(
     (s, x) => s + (Number(x.students) || 0),
     0
   );
@@ -563,17 +624,20 @@ function EditModal({
       sayur: [],
       buah: []
     };
-    for (const it of items) {
+    for (const it of safeItems) {
       const bucket = CAT_BUCKET[it.category];
       if (bucket) groups[bucket].push(it);
     }
     return groups;
-  }, [items]);
+  }, [safeItems]);
 
   async function handleMarkOperational() {
     if (nonOp) await onClearNonOp(iso);
     setMode("op");
   }
+
+  const refReady = items !== null && schools !== null;
+  const attReady = attForDate !== null;
 
   return (
     <div
@@ -657,6 +721,12 @@ function EditModal({
             </div>
           </section>
 
+          {refError && (
+            <div className="rounded-xl bg-red-50 p-3 text-xs font-bold text-red-800 ring-1 ring-red-200">
+              {refError}
+            </div>
+          )}
+
           {mode === "op" ? (
             <>
               {/* Status banner */}
@@ -723,32 +793,37 @@ function EditModal({
                     Kombinasi Menu
                   </h3>
                 </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <KombinasiSelect
-                    label="🍚 Karbohidrat"
-                    value={karbo}
-                    onChange={setKarbo}
-                    options={itemsByBucket.karbo}
-                  />
-                  <KombinasiSelect
-                    label="🍗 Protein"
-                    value={protein}
-                    onChange={setProtein}
-                    options={itemsByBucket.protein}
-                  />
-                  <KombinasiSelect
-                    label="🥬 Sayur"
-                    value={sayur}
-                    onChange={setSayur}
-                    options={itemsByBucket.sayur}
-                  />
-                  <KombinasiSelect
-                    label="🍌 Buah"
-                    value={buah}
-                    onChange={setBuah}
-                    options={itemsByBucket.buah}
-                  />
-                </div>
+
+                {!refReady ? (
+                  <SkeletonGrid label="Memuat bahan…" />
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <KombinasiSelect
+                      label="🍚 Karbohidrat"
+                      value={karbo}
+                      onChange={setKarbo}
+                      options={itemsByBucket.karbo}
+                    />
+                    <KombinasiSelect
+                      label="🍗 Protein"
+                      value={protein}
+                      onChange={setProtein}
+                      options={itemsByBucket.protein}
+                    />
+                    <KombinasiSelect
+                      label="🥬 Sayur"
+                      value={sayur}
+                      onChange={setSayur}
+                      options={itemsByBucket.sayur}
+                    />
+                    <KombinasiSelect
+                      label="🍌 Buah"
+                      value={buah}
+                      onChange={setBuah}
+                      options={itemsByBucket.buah}
+                    />
+                  </div>
+                )}
 
                 <div className="mt-4">
                   <span className="mb-1 block text-[11px] font-black uppercase tracking-wide text-ink2/70">
@@ -799,114 +874,121 @@ function EditModal({
                     👥 Konfirmasi Kehadiran per Sekolah
                   </h3>
                 </div>
-                <p className="mb-3 text-[11px] text-ink2/70">
-                  Kosongkan untuk pakai <b>full roster</b> ({totalFullRoster.toLocaleString("id-ID")}). Isi angka override kalau ada guru absen, ujian, atau event khusus. Rasio hadir otomatis diterapkan proporsional ke porsi kecil/besar/guru.
-                </p>
 
-                <div className="overflow-hidden rounded-xl ring-1 ring-ink/10">
-                  <table className="w-full text-xs">
-                    <thead className="bg-paper">
-                      <tr className="text-left text-[10px] font-black uppercase tracking-wide text-ink2">
-                        <th className="px-3 py-2">Sekolah</th>
-                        <th className="px-3 py-2 text-center">Lvl</th>
-                        <th className="px-3 py-2 text-right">Siswa</th>
-                        <th className="px-3 py-2 text-right">Hadir</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {schools.map((s) => {
-                        const raw = attInputs[s.id] ?? "";
-                        const effective = raw === "" ? s.students : Number(raw);
-                        const pct =
-                          s.students > 0
-                            ? Math.round((effective / s.students) * 100)
-                            : 0;
-                        return (
-                          <tr
-                            key={s.id}
-                            className="border-t border-ink/5 hover:bg-paper/60"
-                          >
-                            <td className="px-3 py-2">
-                              <div className="font-bold text-ink">{s.name}</div>
-                              <div className="font-mono text-[10px] text-ink2/60">
-                                {s.id}
-                              </div>
+                {!refReady || !attReady ? (
+                  <SkeletonTable />
+                ) : (
+                  <>
+                    <p className="mb-3 text-[11px] text-ink2/70">
+                      Kosongkan untuk pakai <b>full roster</b> ({totalFullRoster.toLocaleString("id-ID")}). Isi angka override kalau ada guru absen, ujian, atau event khusus. Rasio hadir otomatis diterapkan proporsional ke porsi kecil/besar/guru.
+                    </p>
+
+                    <div className="overflow-hidden rounded-xl ring-1 ring-ink/10">
+                      <table className="w-full text-xs">
+                        <thead className="bg-paper">
+                          <tr className="text-left text-[10px] font-black uppercase tracking-wide text-ink2">
+                            <th className="px-3 py-2">Sekolah</th>
+                            <th className="px-3 py-2 text-center">Lvl</th>
+                            <th className="px-3 py-2 text-right">Siswa</th>
+                            <th className="px-3 py-2 text-right">Hadir</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {safeSchools.map((s) => {
+                            const raw = attInputs[s.id] ?? "";
+                            const effective = raw === "" ? s.students : Number(raw);
+                            const pct =
+                              s.students > 0
+                                ? Math.round((effective / s.students) * 100)
+                                : 0;
+                            return (
+                              <tr
+                                key={s.id}
+                                className="border-t border-ink/5 hover:bg-paper/60"
+                              >
+                                <td className="px-3 py-2">
+                                  <div className="font-bold text-ink">{s.name}</div>
+                                  <div className="font-mono text-[10px] text-ink2/60">
+                                    {s.id}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 text-center text-[10px] font-bold text-ink2">
+                                  {s.level}
+                                </td>
+                                <td className="px-3 py-2 text-right font-mono text-ink2">
+                                  {s.students}
+                                </td>
+                                <td className="px-3 py-2 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={s.students}
+                                      value={raw}
+                                      onChange={(e) =>
+                                        setAttInputs((p) => ({
+                                          ...p,
+                                          [s.id]: e.target.value
+                                        }))
+                                      }
+                                      placeholder={String(s.students)}
+                                      className="w-20 rounded-lg border border-ink/20 bg-white px-2 py-1 text-right font-mono text-xs"
+                                    />
+                                    <span
+                                      className={`w-10 font-mono text-[10px] ${
+                                        pct >= 90
+                                          ? "text-emerald-700"
+                                          : pct >= 70
+                                            ? "text-amber-700"
+                                            : "text-red-700"
+                                      }`}
+                                    >
+                                      {pct}%
+                                    </span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot className="bg-paper/60">
+                          <tr>
+                            <td colSpan={2} className="px-3 py-2 text-[11px] font-black text-ink">
+                              Total efektif
                             </td>
-                            <td className="px-3 py-2 text-center text-[10px] font-bold text-ink2">
-                              {s.level}
+                            <td className="px-3 py-2 text-right font-mono text-[11px] text-ink2">
+                              {totalFullRoster.toLocaleString("id-ID")}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono text-ink2">
-                              {s.students}
-                            </td>
-                            <td className="px-3 py-2 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  max={s.students}
-                                  value={raw}
-                                  onChange={(e) =>
-                                    setAttInputs((p) => ({
-                                      ...p,
-                                      [s.id]: e.target.value
-                                    }))
-                                  }
-                                  placeholder={String(s.students)}
-                                  className="w-20 rounded-lg border border-ink/20 bg-white px-2 py-1 text-right font-mono text-xs"
-                                />
-                                <span
-                                  className={`w-10 font-mono text-[10px] ${
-                                    pct >= 90
-                                      ? "text-emerald-700"
-                                      : pct >= 70
-                                        ? "text-amber-700"
-                                        : "text-red-700"
-                                  }`}
-                                >
-                                  {pct}%
-                                </span>
-                              </div>
+                            <td className="px-3 py-2 text-right font-mono text-[11px] font-black text-ink">
+                              {totalOverride.toLocaleString("id-ID")}
                             </td>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                    <tfoot className="bg-paper/60">
-                      <tr>
-                        <td colSpan={2} className="px-3 py-2 text-[11px] font-black text-ink">
-                          Total efektif
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono text-[11px] text-ink2">
-                          {totalFullRoster.toLocaleString("id-ID")}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono text-[11px] font-black text-ink">
-                          {totalOverride.toLocaleString("id-ID")}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
+                        </tfoot>
+                      </table>
+                    </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    onClick={handleSaveAttendance}
-                    disabled={busy}
-                    className="rounded-xl bg-ink px-4 py-2 text-xs font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
-                  >
-                    💾 Simpan Kehadiran
-                  </button>
-                  <button
-                    onClick={() =>
-                      setAttInputs(
-                        Object.fromEntries(schools.map((s) => [s.id, ""]))
-                      )
-                    }
-                    disabled={busy}
-                    className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-ink ring-1 ring-ink/15 hover:bg-paper disabled:opacity-50"
-                  >
-                    Reset ke Full Roster
-                  </button>
-                </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={handleSaveAttendance}
+                        disabled={busy}
+                        className="rounded-xl bg-ink px-4 py-2 text-xs font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
+                      >
+                        💾 Simpan Kehadiran
+                      </button>
+                      <button
+                        onClick={() =>
+                          setAttInputs(
+                            Object.fromEntries(safeSchools.map((s) => [s.id, ""]))
+                          )
+                        }
+                        disabled={busy}
+                        className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-ink ring-1 ring-ink/15 hover:bg-paper disabled:opacity-50"
+                      >
+                        Reset ke Full Roster
+                      </button>
+                    </div>
+                  </>
+                )}
               </section>
             </>
           ) : (
@@ -991,5 +1073,33 @@ function KombinasiSelect({
         ))}
       </select>
     </label>
+  );
+}
+
+function SkeletonGrid({ label }: { label: string }) {
+  return (
+    <div aria-busy="true" aria-label={label}>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-3 w-24 animate-pulse rounded bg-ink/10" />
+            <div className="h-11 w-full animate-pulse rounded-xl bg-ink/5" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SkeletonTable() {
+  return (
+    <div aria-busy="true" className="space-y-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-10 w-full animate-pulse rounded-lg bg-ink/5"
+        />
+      ))}
+    </div>
   );
 }

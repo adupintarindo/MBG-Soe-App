@@ -167,7 +167,6 @@ export default async function SuppliersPage() {
             profile.role === "admin" || profile.role === "operator"
           }
           isSupplierRole={profile.role === "supplier"}
-          currentSupplierId={profile.supplier_id}
           isAdmin={profile.role === "admin"}
         />
       </PageContainer>
