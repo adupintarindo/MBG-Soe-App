@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { UserRole } from "@/lib/roles";
 import { canInvite, canWriteMenu, canWriteStock } from "@/lib/roles";
-import { type Lang, type LangKey, t } from "@/lib/i18n";
+import { type Lang, type LangKey, t, DAYS, MONTHS } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs-context";
 
 interface MenuToday {
@@ -70,37 +70,6 @@ const TABS: TabCard[] = [
   { href: "/sop", labelKey: "tabSOP", icon: "📚", group: "audit", show: () => true }
 ];
 
-const DAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-const DAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS_ID = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember"
-];
-const MONTHS_EN = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December"
-];
-
 function toWITA(d: Date): Date {
   const utcMs = d.getTime() + d.getTimezoneOffset() * 60000;
   return new Date(utcMs + 8 * 3600 * 1000);
@@ -108,10 +77,9 @@ function toWITA(d: Date): Date {
 
 function formatDate(d: Date, lang: Lang): string {
   const w = toWITA(d);
-  if (lang === "EN") {
-    return `${DAYS_EN[w.getDay()]}, ${w.getDate()} ${MONTHS_EN[w.getMonth()]} ${w.getFullYear()}`;
-  }
-  return `${DAYS_ID[w.getDay()]}, ${w.getDate()} ${MONTHS_ID[w.getMonth()]} ${w.getFullYear()}`;
+  const day = lang === "EN" ? DAYS.short.EN[w.getDay()] : DAYS.long.ID[w.getDay()];
+  const month = MONTHS.long[lang][w.getMonth()];
+  return `${day}, ${w.getDate()} ${month} ${w.getFullYear()}`;
 }
 
 function formatTimeWITA(d: Date): string {
@@ -333,7 +301,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
             <form action="/auth/signout" method="post" className="inline-flex">
               <button
                 type="submit"
-                title={`${displayName} · ${email} — Keluar`}
+                title={`${displayName} · ${email} — ${t("signOut", lang)}`}
                 className="group inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-primary-2 shadow-card transition hover:bg-primary hover:text-white dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark dark:hover:bg-accent-strong"
               >
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black text-white group-hover:bg-white group-hover:text-primary dark:bg-accent-strong dark:group-hover:bg-white dark:group-hover:text-primary">
@@ -350,7 +318,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
 
         {/* === Tabs === */}
         <nav
-          aria-label="Modul utama"
+          aria-label={t("navMainAria", lang)}
           ref={tabsRef}
           className="rounded-3xl border border-primary/10 bg-white/80 p-2 shadow-card ring-1 ring-primary/5 backdrop-blur dark:border-d-border/40 dark:bg-d-surface/70 dark:shadow-card-dark dark:ring-d-border/30"
         >

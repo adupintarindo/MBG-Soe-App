@@ -1141,6 +1141,36 @@ export interface Database {
           total_risks: number;
         }[];
       };
+      supplier_forecast_90d: {
+        Args: {
+          p_supplier_id?: string | null;
+          p_horizon_days?: number | null;
+        };
+        Returns: {
+          op_date: string;
+          item_code: string;
+          item_name: string;
+          unit: string;
+          category: Database["public"]["Enums"]["item_category"];
+          qty: number;
+          source: string;
+        }[];
+      };
+      supplier_forecast_monthly: {
+        Args: {
+          p_supplier_id?: string | null;
+          p_months?: number | null;
+        };
+        Returns: {
+          month: string;
+          item_code: string;
+          item_name: string;
+          unit: string;
+          category: Database["public"]["Enums"]["item_category"];
+          qty_total: number;
+          days_count: number;
+        }[];
+      };
     };
     Enums: {
       user_role: "admin" | "operator" | "ahli_gizi" | "supplier" | "viewer";
