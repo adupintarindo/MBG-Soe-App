@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0b2e4f;
+  --ink2: #133a63;
+  --accent: #f2a413;
+  --paper: #f8fafc;
+  --card-shadow: 0 2px 14px rgba(11, 46, 79, 0.08);
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tipografi angka tetap tabular agar rata di tabel stok / BOM */
+table,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pill level sekolah — dipakai di dashboard sekolah */
+.pill-lv {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.pill-lv-paud { background: linear-gradient(135deg, #fde7f3, #fbd1e7); color: #a9185c; }
+.pill-lv-sd   { background: linear-gradient(135deg, #dcebfa, #bedbf5); color: #00558f; }
+.pill-lv-smp  { background: linear-gradient(135deg, #d9f3df, #b6e6c0); color: #0a6b2e; }
+.pill-lv-sma  { background: linear-gradient(135deg, #ffecc7, #ffd995); color: #8a5900; }
+.pill-lv-smk  { background: linear-gradient(135deg, #ffd7cc, #ffb59d); color: #8a2a00; }
+
+/* Card utility — dipakai di berbagai tempat */
+.card {
+  background: white;
+  border-radius: 14px;
+  box-shadow: var(--card-shadow);
+  padding: 16px;
+}
+.card-lg {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(11, 46, 79, 0.12);
+  padding: 20px;
+}
