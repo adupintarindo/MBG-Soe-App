@@ -37,6 +37,39 @@ export interface UpcomingShortage {
   total_gap_kg: number;
 }
 
+export interface MonthlyRequirement {
+  item_code: string;
+  month: string;
+  qty_kg: number;
+}
+
+export interface TopSupplier {
+  supplier_id: string;
+  supplier_name: string;
+  supplier_type: Database["public"]["Enums"]["supplier_type"];
+  total_spend: number;
+  invoice_count: number;
+}
+
+export interface DailyPlan {
+  op_date: string;
+  menu_id: number | null;
+  menu_name: string | null;
+  porsi_total: number;
+  porsi_eff: number;
+  total_kg: number;
+  short_items: number;
+  operasional: boolean;
+}
+
+export interface DashboardKpis {
+  students_total: number;
+  schools_active: number;
+  menu_today_id: number | null;
+  menu_today_name: string | null;
+  suppliers_active: number;
+}
+
 // ---------- RPC wrappers ----------
 
 export async function porsiCounts(supabase: Client, date: string): Promise<PorsiCounts> {
@@ -86,6 +119,59 @@ export async function upcomingShortages(
   });
   if (error) throw error;
   return (data ?? []) as UpcomingShortage[];
+}
+
+export async function monthlyRequirements(
+  supabase: Client,
+  start: string,
+  months = 4
+): Promise<MonthlyRequirement[]> {
+  const { data, error } = await supabase.rpc("monthly_requirements", {
+    p_start: start,
+    p_months: months
+  });
+  if (error) throw error;
+  return (data ?? []) as MonthlyRequirement[];
+}
+
+export async function topSuppliersBySpend(
+  supabase: Client,
+  start: string,
+  end: string,
+  limit = 10
+): Promise<TopSupplier[]> {
+  const { data, error } = await supabase.rpc("top_suppliers_by_spend", {
+    p_start: start,
+    p_end: end,
+    p_limit: limit
+  });
+  if (error) throw error;
+  return (data ?? []) as TopSupplier[];
+}
+
+export async function dailyPlanning(
+  supabase: Client,
+  horizon = 10
+): Promise<DailyPlan[]> {
+  const { data, error } = await supabase.rpc("daily_planning", {
+    p_horizon: horizon
+  });
+  if (error) throw error;
+  return (data ?? []) as DailyPlan[];
+}
+
+export async function dashboardKpis(supabase: Client): Promise<DashboardKpis> {
+  const { data, error } = await supabase.rpc("dashboard_kpis").single();
+  if (error) throw error;
+  return (
+    data ?? {
+      students_total: 0,
+      schools_active: 0,
+      menu_today_id: null,
+      menu_today_name: null,
+      suppliers_active: 0
+    }
+  );
 }
 
 // ---------- Client-side pure helpers (tidak perlu RPC) ----------

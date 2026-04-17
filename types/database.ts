@@ -466,6 +466,47 @@ export interface Database {
         Returns: string | null;
       };
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      monthly_requirements: {
+        Args: { p_start: string; p_months?: number };
+        Returns: {
+          item_code: string;
+          month: string;
+          qty_kg: number;
+        }[];
+      };
+      top_suppliers_by_spend: {
+        Args: { p_start: string; p_end: string; p_limit?: number };
+        Returns: {
+          supplier_id: string;
+          supplier_name: string;
+          supplier_type: Database["public"]["Enums"]["supplier_type"];
+          total_spend: number;
+          invoice_count: number;
+        }[];
+      };
+      daily_planning: {
+        Args: { p_horizon?: number };
+        Returns: {
+          op_date: string;
+          menu_id: number | null;
+          menu_name: string | null;
+          porsi_total: number;
+          porsi_eff: number;
+          total_kg: number;
+          short_items: number;
+          operasional: boolean;
+        }[];
+      };
+      dashboard_kpis: {
+        Args: Record<string, never>;
+        Returns: {
+          students_total: number;
+          schools_active: number;
+          menu_today_id: number | null;
+          menu_today_name: string | null;
+          suppliers_active: number;
+        }[];
+      };
     };
     Enums: {
       user_role: "admin" | "operator" | "ahli_gizi" | "supplier" | "viewer";
