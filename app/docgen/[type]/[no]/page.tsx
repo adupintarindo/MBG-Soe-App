@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatIDR } from "@/lib/engine";
+import { PrintButton } from "./print-button";
 
 export const dynamic = "force-dynamic";
 
@@ -384,15 +385,7 @@ export default async function DocDetailPage({ params }: PageProps) {
                 {TITLE_MAP[type]} · {no}
               </div>
             </div>
-            <button
-              className="rounded-lg bg-ink px-4 py-2 text-xs font-bold text-white hover:bg-ink2 print:hidden"
-              onClick={() => {
-                if (typeof window !== "undefined") window.print();
-              }}
-              type="button"
-            >
-              🖨️ Print / Save PDF
-            </button>
+            <PrintButton />
           </div>
         </header>
       </div>
