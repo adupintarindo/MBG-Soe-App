@@ -353,7 +353,7 @@ export default async function DashboardPage() {
           )}
         </Section>
 
-        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="mb-6 grid grid-cols-1 gap-6">
           <Section
             title="🔔 10 Hari Ke Depan · Planning"
             hint="Prakiraan porsi × menu, tanpa hari non-operasional."

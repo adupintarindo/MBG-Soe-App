@@ -9,7 +9,7 @@
  * once we wire `upsert_supplier_price` in 0018.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
   COMMODITY_COLORS,
   COMMODITY_LABELS,
@@ -18,6 +18,7 @@ import {
   type PricePeriod,
   type PriceWeek
 } from "./types";
+import { upsertSupplierPrice } from "./actions";
 
 interface Props {
   periods: PricePeriod[];
@@ -55,9 +56,12 @@ function csvEscape(v: unknown): string {
   return `"${s.replace(/"/g, '""')}"`;
 }
 
-export function PriceListShell({ periods, weeks, rows, currentPeriodId, canEdit }: Props) {
+export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId, canEdit }: Props) {
   const [commodity, setCommodity] = useState<PriceCommodity | "">("");
   const [periodId, setPeriodId] = useState<number | null>(currentPeriodId);
+  const [rows, setRows] = useState<PriceListMatrixRow[]>(rowsProp);
+  const [pending, startTransition] = useTransition();
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const activeWeeks = useMemo(
     () => weeks.filter((w) => w.period_id === periodId).sort((a, b) => a.week_no - b.week_no),
@@ -122,15 +126,58 @@ export function PriceListShell({ periods, weeks, rows, currentPeriodId, canEdit 
   }
 
   function onCellBlur(
-    _row: PriceListMatrixRow,
-    _weekField: WeekField,
-    _newValue: string
+    row: PriceListMatrixRow,
+    weekField: WeekField,
+    newValue: string
   ) {
     if (!canEdit) return;
-    // TODO: call server action `upsertSupplierPrice({ supplier_id, commodity,
-    //        ingredient_name, week_id, price_per_kg })` once wired.
-    //        For now we just re-render on the fly via local state — persistence
-    //        lands with migration 0018 (RPC) + server action.
+    const weekNo = Number(weekField.slice(1));
+    const week = weeks.find((w) => w.period_id === row.period_id && w.week_no === weekNo);
+    if (!week) return;
+
+    const raw = newValue.trim().replace(/\./g, "").replace(/,/g, ".");
+    const parsed = raw === "" ? null : Number(raw);
+    if (parsed != null && Number.isNaN(parsed)) {
+      setErrorMsg(`Nilai "${newValue}" bukan angka valid`);
+      return;
+    }
+
+    // Optimistic update
+    setRows((prev) =>
+      prev.map((r) =>
+        r.supplier_id === row.supplier_id &&
+        r.commodity === row.commodity &&
+        r.ingredient_name === row.ingredient_name
+          ? { ...r, [weekField]: parsed }
+          : r
+      )
+    );
+
+    startTransition(async () => {
+      const res = await upsertSupplierPrice({
+        weekId: week.id,
+        supplierId: row.supplier_id,
+        commodity: row.commodity,
+        ingredientName: row.ingredient_name,
+        pricePerKg: parsed,
+        itemCode: row.item_code
+      });
+      if (!res.ok) {
+        setErrorMsg(res.error ?? "Gagal menyimpan");
+        // Rollback on error
+        setRows((prev) =>
+          prev.map((r) =>
+            r.supplier_id === row.supplier_id &&
+            r.commodity === row.commodity &&
+            r.ingredient_name === row.ingredient_name
+              ? { ...r, [weekField]: row[weekField] }
+              : r
+          )
+        );
+      } else {
+        setErrorMsg(null);
+      }
+    });
   }
 
   return (
@@ -177,7 +224,13 @@ export function PriceListShell({ periods, weeks, rows, currentPeriodId, canEdit 
       <p className="mt-2 text-xs text-slate-500">
         Benchmark harga mingguan Rp/kg antar supplier. Hijau = termurah, merah =
         termahal per baris. Period: <strong>{periods.find((p) => p.id === periodId)?.name}</strong>.
+        {pending && <span className="ml-2 text-blue-600">💾 menyimpan...</span>}
       </p>
+      {errorMsg && (
+        <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
+          ⚠ {errorMsg}
+        </div>
+      )}
 
       <div className="mt-3 overflow-auto" style={{ maxHeight: "70vh" }}>
         <table className="min-w-[1400px] border-collapse text-xs">
