@@ -153,11 +153,20 @@ export default async function DashboardPage() {
     const date = new Date(Number(y), Number(mo) - 1, 1);
     return date.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
   };
+  const displayCode = (code: string) => code.replace(/^Buah\s*-\s*/i, "");
   const commodityCategory = (name: string) => {
     const n = name.toLowerCase();
     if (n.startsWith("beras") || n.includes("nasi"))
       return { dot: "bg-amber-500", label: "Karbo" };
-    if (n.startsWith("buah") || n.includes("pisang") || n.includes("pepaya"))
+    if (
+      n.startsWith("buah") ||
+      n.includes("pisang") ||
+      n.includes("pepaya") ||
+      n.includes("melon") ||
+      n.includes("semangka") ||
+      n.includes("jeruk") ||
+      n.includes("apel")
+    )
       return { dot: "bg-fuchsia-500", label: "Buah" };
     if (
       n.includes("ayam") ||
@@ -299,7 +308,7 @@ export default async function DashboardPage() {
                               className={`h-2 w-2 shrink-0 rounded-full ${cat.dot}`}
                               aria-hidden
                             />
-                            <span className="font-semibold">{code}</span>
+                            <span className="font-semibold">{displayCode(code)}</span>
                             <span className="hidden text-[10px] font-medium uppercase tracking-wider text-ink2/60 md:inline">
                               {cat.label}
                             </span>
@@ -443,7 +452,7 @@ export default async function DashboardPage() {
                         className="row-hover border-b border-ink/5"
                       >
                         <td className="py-2 pr-3 font-semibold">
-                          {s.item_code}
+                          {displayCode(s.item_code)}
                         </td>
                         <td className="py-2 pr-3 text-right font-mono text-xs">
                           {Number(s.required).toFixed(2)}
