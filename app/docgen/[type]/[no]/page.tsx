@@ -3,17 +3,26 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { formatIDR } from "@/lib/engine";
 import { PrintButton } from "./print-button";
+import { t, ti, numberLocale } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
 type DocType = "po" | "grn" | "invoice" | "ba";
 
-const TITLE_MAP: Record<DocType, string> = {
-  po: "Purchase Order",
-  grn: "Goods Receipt Note",
-  invoice: "Invoice",
-  ba: "Berita Acara Terima Barang"
-};
+function typeTitle(ty: DocType, lang: Lang): string {
+  switch (ty) {
+    case "po":
+      return t("docgen.typePO", lang);
+    case "grn":
+      return t("docgen.typeGRN", lang);
+    case "invoice":
+      return t("docgen.typeInvoice", lang);
+    case "ba":
+      return t("docgen.typeBA", lang);
+  }
+}
 
 const TYPE_ICON: Record<DocType, string> = {
   po: "📝",
@@ -127,6 +136,7 @@ export default async function DocDetailPage({ params }: PageProps) {
   if (!["po", "grn", "invoice", "ba"].includes(type)) notFound();
 
   const supabase = createClient();
+  const lang = getLang();
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
@@ -170,7 +180,7 @@ export default async function DocDetailPage({ params }: PageProps) {
         <section className="mb-6 grid grid-cols-1 gap-6 border-b-2 border-ink/80 pb-5 sm:grid-cols-2">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-ink2/70">
-              Kepada (Supplier)
+              {t("docgen.toSupplier", lang)}
             </div>
             <div className="mt-1 text-base font-black text-ink">
               {supplier?.name ?? "—"}
@@ -182,32 +192,32 @@ export default async function DocDetailPage({ params }: PageProps) {
             <div className="text-xs font-mono text-ink2">{supplier?.email}</div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:text-right">
-            <FieldBlock label="No. Dokumen" value={<span className="font-mono text-sm font-black">{po.no}</span>} />
-            <FieldBlock label="Tanggal PO" value={po.po_date} />
-            <FieldBlock label="Delivery" value={po.delivery_date ?? "—"} />
-            <FieldBlock label="Status" value={<StatusPill status={po.status} />} />
-            <FieldBlock label="TOP" value={po.top ?? "—"} />
-            <FieldBlock label="Pembayaran" value={po.pay_method ?? "—"} />
+            <FieldBlock label={t("docgen.fldDocNo", lang)} value={<span className="font-mono text-sm font-black">{po.no}</span>} />
+            <FieldBlock label={t("docgen.fldPODate", lang)} value={po.po_date} />
+            <FieldBlock label={t("docgen.fldDelivery", lang)} value={po.delivery_date ?? "—"} />
+            <FieldBlock label={t("docgen.fldStatus", lang)} value={<StatusPill status={po.status} />} />
+            <FieldBlock label={t("docgen.fldTOP", lang)} value={po.top ?? "—"} />
+            <FieldBlock label={t("docgen.fldPayment", lang)} value={po.pay_method ?? "—"} />
             {po.ref_contract && (
-              <FieldBlock label="Ref Kontrak" value={po.ref_contract} />
+              <FieldBlock label={t("docgen.fldRefContract", lang)} value={po.ref_contract} />
             )}
           </div>
         </section>
 
         <div className="mb-2 text-xs font-black uppercase tracking-wide text-ink">
-          Detail Item ({rows.length} baris)
+          {ti("docgen.itemDetailTitle", lang, { n: rows.length })}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-ink bg-ink/5">
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">No.</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Item</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Kategori</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">Qty</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Unit</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">Harga</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">Subtotal</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colNo", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colItem", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colCategory", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colQty", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colUnit", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colPrice", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colSubtotal", lang)}</th>
               </tr>
             </thead>
             <tbody>
@@ -220,7 +230,7 @@ export default async function DocDetailPage({ params }: PageProps) {
                     <td className="border-x border-ink/20 px-2 py-1.5 text-xs font-semibold">{r.item_code}</td>
                     <td className="border-x border-ink/20 px-2 py-1.5 text-[10px] text-ink2/80">{it?.category}</td>
                     <td className="border-x border-ink/20 px-2 py-1.5 text-right font-mono text-xs">
-                      {Number(r.qty).toLocaleString("id-ID", { maximumFractionDigits: 2 })}
+                      {Number(r.qty).toLocaleString(numberLocale(lang), { maximumFractionDigits: 2 })}
                     </td>
                     <td className="border-x border-ink/20 px-2 py-1.5 text-xs">{r.unit}</td>
                     <td className="border-x border-ink/20 px-2 py-1.5 text-right font-mono text-xs">
@@ -234,7 +244,7 @@ export default async function DocDetailPage({ params }: PageProps) {
               })}
               <tr className="border-t-2 border-ink bg-ink/10">
                 <td colSpan={6} className="border-x border-ink/20 px-2 py-2 text-right text-xs font-black uppercase tracking-wide">
-                  Total Nilai PO
+                  {t("docgen.totalPO", lang)}
                 </td>
                 <td className="border-x border-ink/20 px-2 py-2 text-right font-mono text-sm font-black text-ink">
                   {formatIDR(Number(po.total))}
@@ -246,7 +256,7 @@ export default async function DocDetailPage({ params }: PageProps) {
 
         {po.notes && (
           <div className="mt-4 rounded-xl bg-paper p-3 text-xs text-ink2 ring-1 ring-ink/5 print:bg-white print:ring-ink/30">
-            <span className="font-black uppercase tracking-wide text-ink2/70">Catatan: </span>
+            <span className="font-black uppercase tracking-wide text-ink2/70">{t("docgen.noteLabel", lang)} </span>
             {po.notes}
           </div>
         )}
@@ -292,7 +302,7 @@ export default async function DocDetailPage({ params }: PageProps) {
         <section className="mb-6 grid grid-cols-1 gap-6 border-b-2 border-ink/80 pb-5 sm:grid-cols-2">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-ink2/70">
-              Diterima Dari
+              {t("docgen.receivedFrom", lang)}
             </div>
             <div className="mt-1 text-base font-black text-ink">
               {supplier?.name ?? "—"}
@@ -305,33 +315,33 @@ export default async function DocDetailPage({ params }: PageProps) {
             )}
           </div>
           <div className="grid grid-cols-2 gap-3 sm:text-right">
-            <FieldBlock label="No. Dokumen" value={<span className="font-mono text-sm font-black">{grn.no}</span>} />
-            <FieldBlock label="Tgl Terima" value={grn.grn_date} />
-            <FieldBlock label="Ref PO" value={grn.po_no ?? "—"} />
-            <FieldBlock label="Status QC" value={<StatusPill status={grn.status} />} />
+            <FieldBlock label={t("docgen.fldDocNo", lang)} value={<span className="font-mono text-sm font-black">{grn.no}</span>} />
+            <FieldBlock label={t("docgen.fldReceivedDate", lang)} value={grn.grn_date} />
+            <FieldBlock label={t("docgen.fldRefPO", lang)} value={grn.po_no ?? "—"} />
+            <FieldBlock label={t("docgen.fldQCStatus", lang)} value={<StatusPill status={grn.status} />} />
           </div>
         </section>
 
         <div className="mb-2 text-xs font-black uppercase tracking-wide text-ink">
-          Checklist Penerimaan ({poRows.length} item)
+          {ti("docgen.receivingChecklistTitle", lang, { n: poRows.length })}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-ink bg-ink/5">
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">No.</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Item</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">Qty PO</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Unit</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">Qty Terima</th>
-                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">QC</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colNo", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colItem", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colPoQty", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colUnit", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colReceiveQty", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colQC", lang)}</th>
               </tr>
             </thead>
             <tbody>
               {poRows.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="border-x border-ink/20 px-2 py-4 text-center text-xs text-ink2/60">
-                    Tidak ada detail (GRN tanpa PO referensi).
+                    {t("docgen.noDetailsGRN", lang)}
                   </td>
                 </tr>
               ) : (
@@ -346,7 +356,7 @@ export default async function DocDetailPage({ params }: PageProps) {
                     <td className="border-x border-ink/20 px-2 py-1.5 text-right font-mono text-xs text-ink2/60">
                       ________
                     </td>
-                    <td className="border-x border-ink/20 px-2 py-1.5 text-xs">☐ OK ☐ Reject</td>
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-xs">{t("docgen.qcOkReject", lang)}</td>
                   </tr>
                 ))
               )}
@@ -356,7 +366,7 @@ export default async function DocDetailPage({ params }: PageProps) {
 
         {grn.qc_note && (
           <div className="mt-4 rounded-xl bg-paper p-3 text-xs text-ink2 ring-1 ring-ink/5 print:bg-white print:ring-ink/30">
-            <span className="font-black uppercase tracking-wide text-ink2/70">Catatan QC: </span>
+            <span className="font-black uppercase tracking-wide text-ink2/70">{t("docgen.qcNoteLabel", lang)} </span>
             {grn.qc_note}
           </div>
         )}
@@ -386,7 +396,7 @@ export default async function DocDetailPage({ params }: PageProps) {
         <section className="mb-6 grid grid-cols-1 gap-6 border-b-2 border-ink/80 pb-5 sm:grid-cols-2">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-ink2/70">
-              Penagih (Supplier)
+              {t("docgen.biller", lang)}
             </div>
             <div className="mt-1 text-base font-black text-ink">
               {supplier?.name ?? "—"}
@@ -395,30 +405,29 @@ export default async function DocDetailPage({ params }: PageProps) {
             <div className="text-xs font-mono text-ink2">{supplier?.email}</div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:text-right">
-            <FieldBlock label="No. Invoice" value={<span className="font-mono text-sm font-black">{inv.no}</span>} />
-            <FieldBlock label="Tgl Terbit" value={inv.inv_date} />
-            <FieldBlock label="Jatuh Tempo" value={inv.due_date ?? "—"} />
-            <FieldBlock label="Status" value={<StatusPill status={inv.status} />} />
-            <FieldBlock label="Ref PO" value={inv.po_no ?? "—"} />
+            <FieldBlock label={t("docgen.fldInvNo", lang)} value={<span className="font-mono text-sm font-black">{inv.no}</span>} />
+            <FieldBlock label={t("docgen.fldIssued", lang)} value={inv.inv_date} />
+            <FieldBlock label={t("docgen.fldDue", lang)} value={inv.due_date ?? "—"} />
+            <FieldBlock label={t("docgen.fldStatus", lang)} value={<StatusPill status={inv.status} />} />
+            <FieldBlock label={t("docgen.fldRefPO", lang)} value={inv.po_no ?? "—"} />
           </div>
         </section>
 
         <div className="mb-4 rounded-2xl bg-ink/5 p-5 ring-1 ring-ink/10 print:bg-white print:ring-2 print:ring-ink">
           <div className="text-[10px] font-bold uppercase tracking-wider text-ink2/70">
-            Jumlah Tagihan
+            {t("docgen.billAmount", lang)}
           </div>
           <div className="mt-1 font-mono text-3xl font-black text-ink sm:text-4xl">
             {formatIDR(Number(inv.total))}
           </div>
           <div className="mt-2 text-[11px] text-ink2/70">
-            Harap transfer ke rekening supplier sesuai kontrak LTA · Mata uang IDR
+            {t("docgen.transferHint", lang)}
           </div>
         </div>
 
         <div className="rounded-xl bg-paper p-3 text-xs text-ink2 ring-1 ring-ink/5 print:bg-white print:ring-ink/30">
-          <span className="font-black uppercase tracking-wide text-ink2/70">Kepada: </span>
-          SPPG Nunumeu · Jl. Nunumeu, Kota Soe, Kabupaten Timor Tengah Selatan,
-          Nusa Tenggara Timur
+          <span className="font-black uppercase tracking-wide text-ink2/70">{t("docgen.to", lang)} </span>
+          {t("docgen.orgAddress", lang)}
         </div>
       </>
     );
@@ -435,13 +444,13 @@ export default async function DocDetailPage({ params }: PageProps) {
                 href="/docgen"
                 className="inline-flex items-center gap-1 rounded-xl border border-ink/15 bg-white px-3 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-paper"
               >
-                ← Kembali
+                {t("docgen.back", lang)}
               </a>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-base">{TYPE_ICON[type]}</span>
                   <span className="truncate text-sm font-black text-ink">
-                    {TITLE_MAP[type]}
+                    {typeTitle(type, lang)}
                   </span>
                   <StatusPill status={docStatus} />
                 </div>
@@ -465,22 +474,23 @@ export default async function DocDetailPage({ params }: PageProps) {
               </span>
               <div>
                 <div className="text-sm font-black uppercase tracking-wide text-ink">
-                  SPPG Nunumeu — MBG Soe
+                  {t("docgen.letterhead1", lang)}
                 </div>
                 <div className="text-[10px] text-ink2/80">
-                  Jl. Nunumeu, Kota Soe, Kabupaten TTS, Nusa Tenggara Timur
+                  {t("docgen.letterhead2", lang)}
                 </div>
                 <div className="text-[10px] text-ink2/80">
-                  WFP × IFSR × FFI · 9 sekolah · 2.055 siswa + 105 guru
+                  {t("docgen.letterhead3", lang)}
                 </div>
               </div>
             </div>
             <div className="text-right">
               <div className="text-xs font-black uppercase tracking-wider text-ink">
-                {TITLE_MAP[type]}
+                {typeTitle(type, lang)}
               </div>
               <div className="font-mono text-[10px] text-ink2/70">
-                Cetak: {new Date().toLocaleDateString("id-ID", {
+                {t("docgen.printedOn", lang)}{" "}
+                {new Date().toLocaleDateString(numberLocale(lang), {
                   day: "2-digit",
                   month: "long",
                   year: "numeric"
@@ -493,26 +503,28 @@ export default async function DocDetailPage({ params }: PageProps) {
 
           {/* Signatures */}
           <section className="mt-10 grid grid-cols-1 gap-6 border-t border-ink/15 pt-6 sm:grid-cols-3">
-            <SignBlock title="Disusun oleh" role="Operator SPPG" />
+            <SignBlock title={t("docgen.signCreatedBy", lang)} role={t("docgen.roleOperator", lang)} />
             <SignBlock
               title={
                 type === "po"
-                  ? "Disetujui oleh"
+                  ? t("docgen.signApprovedBy", lang)
                   : type === "grn"
-                    ? "Diterima oleh"
-                    : "Diverifikasi oleh"
+                    ? t("docgen.signReceivedBy", lang)
+                    : t("docgen.signVerifiedBy", lang)
               }
-              role="Kepala SPPG"
+              role={t("docgen.roleHead", lang)}
             />
             <SignBlock
-              title="Saksi"
-              role={type === "invoice" ? "Finance" : "Supplier"}
+              title={t("docgen.signWitness", lang)}
+              role={type === "invoice" ? t("docgen.roleFinance", lang) : t("docgen.roleSupplier", lang)}
             />
           </section>
 
           <footer className="mt-8 border-t border-ink/10 pt-3 text-[10px] text-ink2/60">
-            Dokumen terbit otomatis dari sistem MBG Soe Supply Chain · Auditable
-            via ref #{no} · {profile.full_name ?? profile.email}
+            {ti("docgen.footer", lang, {
+              no,
+              who: profile.full_name ?? profile.email
+            })}
           </footer>
         </article>
       </main>

@@ -13,6 +13,8 @@ import {
   Section
 } from "@/components/ui";
 import { SopShell } from "./sop-shell";
+import { t, ti } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,7 @@ export default async function SopPage() {
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
 
+  const lang = getLang();
   const supabase = createClient();
 
   // Compliance summary untuk 90 hari terakhir.
@@ -84,12 +87,12 @@ export default async function SopPage() {
       <PageContainer>
         <PageHeader
           icon="📘"
-          title="Standard Operating Procedure"
-          subtitle={`Manual SOP SPPG · referensi WHO / CODEX / BPOM / Permenkes · 90 hari eksekusi`}
+          title={t("sop.title", lang)}
+          subtitle={t("sop.subtitle", lang)}
           actions={
             <>
-              <Badge tone="info">{opCount} Operasional</Badge>
-              <Badge tone="ok">{hyCount} Higiene</Badge>
+              <Badge tone="info">{ti("sop.badgeOp", lang, { n: opCount })}</Badge>
+              <Badge tone="ok">{ti("sop.badgeHg", lang, { n: hyCount })}</Badge>
             </>
           }
         />
@@ -97,42 +100,51 @@ export default async function SopPage() {
         <KpiGrid>
           <KpiTile
             icon="📘"
-            label="Total SOP"
+            label={t("sop.kpiTotal", lang)}
             value={SOPS.length.toString()}
-            sub={`${sopsWithRuns} sudah dieksekusi · ${SOPS.length - sopsWithRuns} belum`}
+            sub={ti("sop.kpiTotalSub", lang, {
+              exec: sopsWithRuns,
+              rest: SOPS.length - sopsWithRuns
+            })}
           />
           <KpiTile
             icon="✅"
-            label="Eksekusi 90 hari"
+            label={t("sop.kpiExec", lang)}
             value={totalRuns.toString()}
             tone={totalRuns === 0 ? "warn" : "ok"}
-            sub="entry compliance log"
+            sub={t("sop.kpiExecSub", lang)}
           />
           <KpiTile
             icon="📊"
-            label="Avg Completion"
+            label={t("sop.kpiAvg", lang)}
             value={`${avgCompletion}%`}
             tone={
               avgCompletion >= 80 ? "ok" : avgCompletion >= 50 ? "warn" : "bad"
             }
-            sub="rata-rata centang langkah"
+            sub={t("sop.kpiAvgSub", lang)}
           />
           <KpiTile
             icon="⚠️"
-            label="Risiko Teramati"
+            label={t("sop.kpiRisk", lang)}
             value={totalRisksFlagged.toString()}
             tone={totalRisksFlagged > 0 ? "bad" : "default"}
-            sub={`${totalSteps} langkah total · ${totalRisks} risiko master`}
+            sub={ti("sop.kpiRiskSub", lang, {
+              steps: totalSteps,
+              risks: totalRisks
+            })}
           />
         </KpiGrid>
 
-        <Section title="📑 Daftar Isi" hint="Klik untuk buka detail SOP di popup.">
+        <Section title={t("sop.tocTitle", lang)} hint={t("sop.tocHint", lang)}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {(["OPERASIONAL", "HIGIENE"] as const).map((cat) => (
               <div key={cat}>
                 <div className="mb-2">
                   <Badge tone={CAT_BADGE[cat]}>
-                    {cat} · {grouped.get(cat)?.length ?? 0} SOP
+                    {ti("sop.catCount", lang, {
+                      cat: t(cat === "OPERASIONAL" ? "sop.catOp" : "sop.catHg", lang),
+                      n: grouped.get(cat)?.length ?? 0
+                    })}
                   </Badge>
                 </div>
                 <ol className="space-y-1 text-sm">
@@ -161,8 +173,7 @@ export default async function SopPage() {
         <SopShell sops={SOPS} compliance={compliance} canWrite={canWrite} />
 
         <p className="mt-8 text-center text-[11px] text-ink2/60">
-          SOP Manual · SPPG Nunumeu · Disusun IFSR × FFI untuk WFP × Pemkab TTS ·
-          Revisi terakhir 2026-04
+          {t("sop.footer", lang)}
         </p>
       </PageContainer>
     </div>

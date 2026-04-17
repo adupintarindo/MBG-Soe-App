@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { t, ti, numberLocale, type LangKey, type Lang } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 type DailyRow = {
   op_date: string;
@@ -24,30 +26,30 @@ type MonthlyRow = {
 
 type Tab = "daily" | "weekly" | "monthly";
 
-const SOURCE_BADGE: Record<string, { label: string; cls: string }> = {
+const SOURCE_BADGE: Record<string, { labelKey: LangKey; cls: string }> = {
   assigned: {
-    label: "assigned",
+    labelKey: "fcst.badgeAssigned",
     cls: "bg-emerald-100 text-emerald-800"
   },
   custom: {
-    label: "custom",
+    labelKey: "fcst.badgeCustom",
     cls: "bg-blue-100 text-blue-800"
   },
   cycle: {
-    label: "cycle (estimasi)",
+    labelKey: "fcst.badgeCycle",
     cls: "bg-amber-100 text-amber-900"
   }
 };
 
-function fmtQty(n: number | string) {
+function fmtQty(n: number | string, lang: Lang) {
   const v = Number(n);
   if (!Number.isFinite(v)) return "—";
-  return v.toLocaleString("id-ID", { maximumFractionDigits: 3 });
+  return v.toLocaleString(numberLocale(lang), { maximumFractionDigits: 3 });
 }
 
-function fmtDate(iso: string) {
+function fmtDate(iso: string, lang: Lang) {
   const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("id-ID", {
+  return d.toLocaleDateString(numberLocale(lang), {
     weekday: "short",
     day: "2-digit",
     month: "short"
@@ -69,9 +71,9 @@ function isoWeek(d: Date): { year: number; week: number; label: string } {
   };
 }
 
-function fmtMonth(iso: string) {
+function fmtMonth(iso: string, lang: Lang) {
   const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("id-ID", {
+  return d.toLocaleDateString(numberLocale(lang), {
     month: "long",
     year: "numeric"
   });
@@ -88,9 +90,9 @@ export function ForecastShell({
   monthly: MonthlyRow[];
   isStaffPreview: boolean;
 }) {
+  const { lang } = useLang();
   const [tab, setTab] = useState<Tab>("weekly");
 
-  // Build pivots
   const items = useMemo(() => {
     const m = new Map<
       string,
@@ -126,10 +128,9 @@ export function ForecastShell({
     [dailyByDate]
   );
 
-  // Weekly pivot: item × week
   const weeklyData = useMemo(() => {
     const weeks = new Map<string, { label: string; weekStart: string }>();
-    const cell = new Map<string, number>(); // key = `${item}|${week}`
+    const cell = new Map<string, number>();
     for (const r of daily) {
       const d = new Date(r.op_date + "T00:00:00");
       const w = isoWeek(d);
@@ -150,7 +151,6 @@ export function ForecastShell({
     return { weekList, cell };
   }, [daily]);
 
-  // Monthly pivot
   const monthlyByMonth = useMemo(() => {
     const m = new Map<string, MonthlyRow[]>();
     for (const r of monthly) {
@@ -173,65 +173,63 @@ export function ForecastShell({
     <div className="space-y-4">
       {isStaffPreview && (
         <div className="rounded-xl bg-amber-50 px-4 py-2 text-xs text-amber-900 ring-1 ring-amber-200">
-          ⚠ Staff-preview mode · supplier akan lihat view ini sendiri tanpa
-          harga/data supplier lain.
+          {t("fcst.staffPreview", lang)}
         </div>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex rounded-2xl bg-white p-1 shadow-card ring-1 ring-ink/10">
           <TabBtn
-            label={`Mingguan · ${weeklyData.weekList.length}`}
+            label={ti("fcst.tabWeekly", lang, { n: weeklyData.weekList.length })}
             active={tab === "weekly"}
             onClick={() => setTab("weekly")}
           />
           <TabBtn
-            label={`Harian · ${totalDays}`}
+            label={ti("fcst.tabDaily", lang, { n: totalDays })}
             active={tab === "daily"}
             onClick={() => setTab("daily")}
           />
           <TabBtn
-            label={`Bulanan · ${months.length}`}
+            label={ti("fcst.tabMonthly", lang, { n: months.length })}
             active={tab === "monthly"}
             onClick={() => setTab("monthly")}
           />
         </div>
         <div className="text-[11px] text-ink2/70">
-          {totalItems} komoditas · {totalDays} hari · horizon 90 hari
+          {ti("fcst.meta", lang, { items: totalItems, days: totalDays })}
         </div>
         <a
           href={`/api/supplier-forecast/export.xlsx${supplierId ? `?supplier_id=${encodeURIComponent(supplierId)}` : ""}`}
           className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white shadow-card hover:bg-emerald-700"
         >
-          📥 Export .xlsx
+          {t("fcst.export", lang)}
         </a>
       </div>
 
       {tab === "weekly" && (
-        <WeeklyView items={items} weeklyData={weeklyData} />
+        <WeeklyView items={items} weeklyData={weeklyData} lang={lang} />
       )}
       {tab === "daily" && (
-        <DailyView items={items} allDates={allDates} daily={daily} />
+        <DailyView items={items} allDates={allDates} daily={daily} lang={lang} />
       )}
       {tab === "monthly" && (
-        <MonthlyView months={months} monthlyByMonth={monthlyByMonth} />
+        <MonthlyView months={months} monthlyByMonth={monthlyByMonth} lang={lang} />
       )}
 
       <div className="rounded-xl bg-paper/60 px-4 py-3 text-[11px] text-ink2/80 ring-1 ring-ink/5">
-        <b>Legenda sumber data:</b>{" "}
+        <b>{t("fcst.legendTitle", lang)}</b>{" "}
         <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 font-bold text-emerald-800">
-          assigned
+          {t("fcst.badgeAssigned", lang)}
         </span>{" "}
-        = menu sudah di-assign operator ·{" "}
+        {t("fcst.legendAssigned", lang)} ·{" "}
         <span className="rounded-full bg-blue-100 px-2 py-0.5 font-bold text-blue-800">
-          custom
+          {t("fcst.badgeCustom", lang)}
         </span>{" "}
-        = menu custom tanggal itu ·{" "}
+        {t("fcst.legendCustom", lang)} ·{" "}
         <span className="rounded-full bg-amber-100 px-2 py-0.5 font-bold text-amber-900">
           cycle
         </span>{" "}
-        = estimasi berdasarkan rotasi cycle default (bisa berubah kalau operator
-        override).
+        {t("fcst.legendCycle", lang)}
       </div>
     </div>
   );
@@ -264,11 +262,13 @@ function TabBtn({
 function DailyView({
   items,
   allDates,
-  daily
+  daily,
+  lang
 }: {
   items: Array<{ code: string; name: string; unit: string; category: string }>;
   allDates: string[];
   daily: DailyRow[];
+  lang: Lang;
 }) {
   const qtyMap = useMemo(() => {
     const m = new Map<string, { qty: number; source: string }>();
@@ -284,7 +284,7 @@ function DailyView({
   if (items.length === 0 || allDates.length === 0) {
     return (
       <div className="rounded-xl bg-paper px-4 py-6 text-center text-sm text-ink2">
-        Tidak ada data harian.
+        {t("fcst.emptyDaily", lang)}
       </div>
     );
   }
@@ -295,7 +295,7 @@ function DailyView({
         <thead className="sticky top-0 z-10 bg-paper text-left text-[10px] font-black uppercase tracking-wide text-ink2">
           <tr>
             <th className="sticky left-0 z-20 bg-paper px-3 py-2">
-              Tanggal
+              {t("fcst.colDate", lang)}
             </th>
             {items.map((it) => (
               <th
@@ -315,7 +315,7 @@ function DailyView({
           {allDates.map((d) => (
             <tr key={d} className="border-t border-ink/5">
               <td className="sticky left-0 z-10 bg-white px-3 py-2 font-mono text-[10.5px] font-bold">
-                {fmtDate(d)}
+                {fmtDate(d, lang)}
               </td>
               {items.map((it) => {
                 const cell = qtyMap.get(`${d}|${it.code}`);
@@ -330,20 +330,21 @@ function DailyView({
                   );
                 }
                 const badge = SOURCE_BADGE[cell.source];
+                const badgeLabel = badge ? t(badge.labelKey, lang) : cell.source;
                 return (
                   <td
                     key={it.code}
                     className="px-3 py-2 text-right"
-                    title={badge?.label}
+                    title={badgeLabel}
                   >
                     <div className="font-mono font-bold tabular-nums">
-                      {fmtQty(cell.qty)}
+                      {fmtQty(cell.qty, lang)}
                     </div>
                     {badge && cell.source !== "assigned" && (
                       <div
                         className={`mt-0.5 inline-block rounded px-1 py-0.5 text-[9px] font-bold ${badge.cls}`}
                       >
-                        {cell.source}
+                        {badgeLabel}
                       </div>
                     )}
                   </td>
@@ -359,24 +360,25 @@ function DailyView({
 
 function WeeklyView({
   items,
-  weeklyData
+  weeklyData,
+  lang
 }: {
   items: Array<{ code: string; name: string; unit: string; category: string }>;
   weeklyData: {
     weekList: Array<{ label: string; weekStart: string }>;
     cell: Map<string, number>;
   };
+  lang: Lang;
 }) {
   const { weekList, cell } = weeklyData;
   if (items.length === 0 || weekList.length === 0) {
     return (
       <div className="rounded-xl bg-paper px-4 py-6 text-center text-sm text-ink2">
-        Tidak ada data mingguan.
+        {t("fcst.emptyWeekly", lang)}
       </div>
     );
   }
 
-  // Max per item for bar scaling
   const maxByItem = new Map<string, number>();
   for (const it of items) {
     let mx = 0;
@@ -392,20 +394,20 @@ function WeeklyView({
       <table className="w-full min-w-[900px] text-xs">
         <thead className="sticky top-0 z-10 bg-paper text-left text-[10px] font-black uppercase tracking-wide text-ink2">
           <tr>
-            <th className="sticky left-0 z-20 bg-paper px-3 py-2">Item</th>
+            <th className="sticky left-0 z-20 bg-paper px-3 py-2">{t("fcst.colItem", lang)}</th>
             {weekList.map((w) => (
               <th
                 key={w.label}
                 className="px-3 py-2 text-right"
-                title={`Mulai ${w.weekStart}`}
+                title={ti("fcst.weekStartHint", lang, { date: w.weekStart })}
               >
                 <div>{w.label}</div>
                 <div className="font-mono text-[9px] font-normal normal-case text-ink2/50">
-                  dari {w.weekStart.slice(5)}
+                  {ti("fcst.weekFrom", lang, { date: w.weekStart.slice(5) })}
                 </div>
               </th>
             ))}
-            <th className="px-3 py-2 text-right">Total 90d</th>
+            <th className="px-3 py-2 text-right">{t("fcst.colTotal90", lang)}</th>
           </tr>
         </thead>
         <tbody>
@@ -428,7 +430,7 @@ function WeeklyView({
                   return (
                     <td key={w.label} className="px-3 py-2 text-right">
                       <div className="font-mono font-bold tabular-nums">
-                        {v > 0 ? fmtQty(v) : "—"}
+                        {v > 0 ? fmtQty(v, lang) : "—"}
                       </div>
                       {v > 0 && (
                         <div className="mt-1 h-1 rounded-full bg-ink/5">
@@ -442,7 +444,7 @@ function WeeklyView({
                   );
                 })}
                 <td className="px-3 py-2 text-right font-mono font-black tabular-nums text-ink">
-                  {fmtQty(total)}
+                  {fmtQty(total, lang)}
                 </td>
               </tr>
             );
@@ -455,15 +457,17 @@ function WeeklyView({
 
 function MonthlyView({
   months,
-  monthlyByMonth
+  monthlyByMonth,
+  lang
 }: {
   months: string[];
   monthlyByMonth: Map<string, MonthlyRow[]>;
+  lang: Lang;
 }) {
   if (months.length === 0) {
     return (
       <div className="rounded-xl bg-paper px-4 py-6 text-center text-sm text-ink2">
-        Tidak ada data bulanan.
+        {t("fcst.emptyMonthly", lang)}
       </div>
     );
   }
@@ -480,10 +484,10 @@ function MonthlyView({
           >
             <div className="mb-3 flex items-baseline justify-between gap-2">
               <h3 className="font-display text-base font-black text-ink">
-                {fmtMonth(m)}
+                {fmtMonth(m, lang)}
               </h3>
               <span className="text-[11px] text-ink2/70">
-                {totalItems} item · {totalDays} hari operasional
+                {ti("fcst.monthMeta", lang, { items: totalItems, days: totalDays })}
               </span>
             </div>
             <div className="space-y-1.5">
@@ -504,7 +508,7 @@ function MonthlyView({
                     </div>
                     <div className="shrink-0 text-right">
                       <div className="font-mono font-black tabular-nums">
-                        {fmtQty(r.qty_total)} {r.unit}
+                        {fmtQty(r.qty_total, lang)} {r.unit}
                       </div>
                     </div>
                   </div>

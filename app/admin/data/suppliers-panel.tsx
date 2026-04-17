@@ -15,6 +15,8 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 type SupType = Database["public"]["Enums"]["supplier_type"];
 type SupStatus = Database["public"]["Enums"]["supplier_status"];
@@ -91,6 +93,7 @@ function rowToDraft(r: Row): Draft {
 }
 
 export function SuppliersPanel({ initial }: { initial: Row[] }) {
+  const { lang } = useLang();
   const supabase = createClient();
   const router = useRouter();
   const [rows, setRows] = useState<Row[]>(initial);
@@ -125,11 +128,11 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
   async function saveNew() {
     setErr(null);
     if (!draft.id.trim()) {
-      setErr("ID supplier wajib (mis. SUP-13).");
+      setErr(t("adminSup.errIdReq", lang));
       return;
     }
     if (!draft.name.trim()) {
-      setErr("Nama supplier wajib.");
+      setErr(t("adminSup.errNameReq", lang));
       return;
     }
     setBusy(true);
@@ -199,12 +202,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
   }
 
   async function remove(id: string) {
-    if (
-      !confirm(
-        `Hapus supplier ${id}? Tidak bisa kalau masih punya PO/invoice. Pertimbangkan set Aktif=false sebagai gantinya.`
-      )
-    )
-      return;
+    if (!confirm(ti("adminSup.confirmDel", lang, { id }))) return;
     setErr(null);
     setBusy(true);
     const { error } = await supabase.from("suppliers").delete().eq("id", id);
@@ -219,8 +217,8 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
 
   return (
     <Section
-      title="Supplier"
-      hint="Master vendor. ID format SUP-NN. Status menentukan apakah bisa transact (signed)."
+      title={t("adminSup.title", lang)}
+      hint={t("adminSup.hint", lang)}
       actions={
         <Button
           variant={adding ? "secondary" : "primary"}
@@ -231,64 +229,64 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
             setErr(null);
           }}
         >
-          {adding ? "× Batal Tambah" : "+ Tambah Supplier"}
+          {adding ? t("adminSup.btnCancelAdd", lang) : t("adminSup.btnAdd", lang)}
         </Button>
       }
     >
       {adding && (
         <div className="mb-4 rounded-xl bg-paper p-4 ring-1 ring-ink/5">
           <div className="grid gap-3 md:grid-cols-3">
-            <FieldBlock label="ID (unik)" required>
+            <FieldBlock label={t("adminSup.fldId", lang)} required>
               <Input
                 value={draft.id}
                 onChange={(e) => setDraft({ ...draft, id: e.target.value })}
                 placeholder="SUP-13"
               />
             </FieldBlock>
-            <FieldBlock label="Nama" required>
+            <FieldBlock label={t("adminSup.fldName", lang)} required>
               <Input
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder="CV Pangan Soe"
+                placeholder={t("adminSup.phName", lang)}
               />
             </FieldBlock>
-            <FieldBlock label="Tipe">
+            <FieldBlock label={t("adminSup.fldType", lang)}>
               <Select
                 value={draft.type}
                 onChange={(e) =>
                   setDraft({ ...draft, type: e.target.value as SupType })
                 }
               >
-                {SUP_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                {SUP_TYPES.map((tp) => (
+                  <option key={tp} value={tp}>
+                    {tp}
                   </option>
                 ))}
               </Select>
             </FieldBlock>
-            <FieldBlock label="Komoditas (CSV)">
+            <FieldBlock label={t("adminSup.fldCommodity", lang)}>
               <Input
                 value={draft.commodity}
                 onChange={(e) =>
                   setDraft({ ...draft, commodity: e.target.value })
                 }
-                placeholder="Beras, Telur"
+                placeholder={t("adminSup.phCommodity", lang)}
               />
             </FieldBlock>
-            <FieldBlock label="PIC">
+            <FieldBlock label={t("adminSup.fldPic", lang)}>
               <Input
                 value={draft.pic}
                 onChange={(e) => setDraft({ ...draft, pic: e.target.value })}
               />
             </FieldBlock>
-            <FieldBlock label="HP">
+            <FieldBlock label={t("adminSup.fldPhone", lang)}>
               <Input
                 value={draft.phone}
                 onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
-                placeholder="+62 8xx"
+                placeholder={t("adminSup.phPhone", lang)}
               />
             </FieldBlock>
-            <FieldBlock label="Alamat">
+            <FieldBlock label={t("adminSup.fldAddress", lang)}>
               <Input
                 value={draft.address}
                 onChange={(e) =>
@@ -296,21 +294,21 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                 }
               />
             </FieldBlock>
-            <FieldBlock label="Email">
+            <FieldBlock label={t("adminSup.fldEmail", lang)}>
               <Input
                 type="email"
                 value={draft.email}
                 onChange={(e) => setDraft({ ...draft, email: e.target.value })}
               />
             </FieldBlock>
-            <FieldBlock label="Score (0-100)">
+            <FieldBlock label={t("adminSup.fldScore", lang)}>
               <Input
                 type="number"
                 value={draft.score}
                 onChange={(e) => setDraft({ ...draft, score: e.target.value })}
               />
             </FieldBlock>
-            <FieldBlock label="Status">
+            <FieldBlock label={t("adminSup.fldStatus", lang)}>
               <Select
                 value={draft.status}
                 onChange={(e) =>
@@ -334,7 +332,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                   setDraft({ ...draft, active: e.target.checked })
                 }
               />
-              Aktif
+              {t("adminSup.lblActive", lang)}
             </label>
             <Button
               variant="primary"
@@ -342,7 +340,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
               disabled={busy}
               onClick={saveNew}
             >
-              {busy ? "Menyimpan…" : "Simpan Supplier"}
+              {busy ? t("adminSup.btnSaving", lang) : t("adminSup.btnSave", lang)}
             </Button>
           </div>
         </div>
@@ -350,22 +348,22 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <label className="block min-w-[200px] flex-1">
-          <FieldLabel>Cari ID / nama / komoditas</FieldLabel>
+          <FieldLabel>{t("adminSup.searchLabel", lang)}</FieldLabel>
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="ketik untuk filter…"
+            placeholder={t("adminSup.searchPh", lang)}
           />
         </label>
         <label className="block w-full sm:w-[180px]">
-          <FieldLabel>Status</FieldLabel>
+          <FieldLabel>{t("adminSup.fldStatus", lang)}</FieldLabel>
           <Select
             value={statusFilter}
             onChange={(e) =>
               setStatusFilter(e.target.value as SupStatus | "ALL")
             }
           >
-            <option value="ALL">Semua</option>
+            <option value="ALL">{t("adminSup.optAll", lang)}</option>
             {SUP_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -374,7 +372,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
           </Select>
         </label>
         <Badge tone="muted">
-          {filtered.length} dari {rows.length}
+          {ti("adminSup.filteredOf", lang, { shown: filtered.length, total: rows.length })}
         </Badge>
       </div>
 
@@ -385,18 +383,18 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
       )}
 
       {filtered.length === 0 ? (
-        <EmptyState icon="🤝" title="Tidak ada supplier" />
+        <EmptyState icon="🤝" title={t("adminSup.emptyTitle", lang)} />
       ) : (
         <TableWrap>
           <table className="w-full text-sm">
             <THead>
-              <th className="py-2 pr-3">ID</th>
-              <th className="py-2 pr-3">Nama</th>
-              <th className="py-2 pr-3">Tipe</th>
-              <th className="py-2 pr-3">Komoditas</th>
-              <th className="py-2 pr-3">PIC / HP</th>
-              <th className="py-2 pr-3 text-right">Score</th>
-              <th className="py-2 pr-3">Status</th>
+              <th className="py-2 pr-3">{t("adminSup.colId", lang)}</th>
+              <th className="py-2 pr-3">{t("adminSup.colName", lang)}</th>
+              <th className="py-2 pr-3">{t("adminSup.colType", lang)}</th>
+              <th className="py-2 pr-3">{t("adminSup.colCommodity", lang)}</th>
+              <th className="py-2 pr-3">{t("adminSup.colPicPhone", lang)}</th>
+              <th className="py-2 pr-3 text-right">{t("adminSup.colScore", lang)}</th>
+              <th className="py-2 pr-3">{t("adminSup.colStatus", lang)}</th>
               <th className="py-2 pr-3"></th>
             </THead>
             <tbody>
@@ -425,9 +423,9 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                           })
                         }
                       >
-                        {SUP_TYPES.map((t) => (
-                          <option key={t} value={t}>
-                            {t}
+                        {SUP_TYPES.map((tp) => (
+                          <option key={tp} value={tp}>
+                            {tp}
                           </option>
                         ))}
                       </Select>
@@ -450,7 +448,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                           onChange={(e) =>
                             setEditDraft({ ...editDraft, pic: e.target.value })
                           }
-                          placeholder="PIC"
+                          placeholder={t("adminSup.lblPic", lang)}
                         />
                         <Input
                           value={editDraft.phone}
@@ -460,7 +458,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                               phone: e.target.value
                             })
                           }
-                          placeholder="HP"
+                          placeholder={t("adminSup.lblPhone", lang)}
                         />
                       </div>
                     </td>
@@ -506,7 +504,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                               })
                             }
                           />
-                          Aktif
+                          {t("adminSup.lblActive", lang)}
                         </label>
                         <Button
                           size="sm"
@@ -514,7 +512,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                           disabled={busy}
                           onClick={saveEdit}
                         >
-                          Simpan
+                          {t("adminSup.btnSaveEdit", lang)}
                         </Button>
                         <Button
                           size="sm"
@@ -522,7 +520,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                           disabled={busy}
                           onClick={() => setEditId(null)}
                         >
-                          Batal
+                          {t("adminSup.btnCancelEdit", lang)}
                         </Button>
                       </div>
                     </td>
@@ -562,7 +560,7 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                       </Badge>
                       {!r.active && (
                         <Badge tone="muted" className="ml-1">
-                          nonaktif
+                          {t("adminSup.tagInactive", lang)}
                         </Badge>
                       )}
                     </td>
@@ -573,14 +571,14 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                           variant="secondary"
                           onClick={() => startEdit(r)}
                         >
-                          Edit
+                          {t("adminSup.btnEdit", lang)}
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => remove(r.id)}
                         >
-                          Hapus
+                          {t("adminSup.btnDelete", lang)}
                         </Button>
                       </div>
                     </td>
@@ -604,9 +602,10 @@ function FieldBlock({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  const { lang } = useLang();
   return (
     <label className="block">
-      <FieldLabel hint={required ? "wajib" : undefined}>{label}</FieldLabel>
+      <FieldLabel hint={required ? t("adminSup.required", lang) : undefined}>{label}</FieldLabel>
       {children}
     </label>
   );

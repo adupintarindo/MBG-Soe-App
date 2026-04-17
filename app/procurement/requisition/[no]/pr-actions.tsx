@@ -3,6 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ti, t } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 export function PrActions({
   prNo,
@@ -11,6 +13,7 @@ export function PrActions({
   prNo: string;
   pendingCount: number;
 }) {
+  const { lang } = useLang();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [busy, setBusy] = useState(false);
@@ -19,9 +22,7 @@ export function PrActions({
 
   async function generate() {
     if (
-      !confirm(
-        `Generate quotation untuk ${pendingCount} alokasi yang belum dispawn?`
-      )
+      !confirm(ti("prActions.confirm", lang, { n: pendingCount }))
     )
       return;
     setError(null);
@@ -38,8 +39,8 @@ export function PrActions({
       const created = (data as string[] | null) ?? [];
       alert(
         created.length === 0
-          ? "Tidak ada alokasi baru yang bisa dispawn."
-          : `✅ ${created.length} quotation dispawn:\n${created.join("\n")}`
+          ? t("prActions.noneSpawned", lang)
+          : ti("prActions.done", lang, { n: created.length, list: created.join("\n") })
       );
       startTransition(() => router.refresh());
     } finally {
@@ -55,7 +56,7 @@ export function PrActions({
         disabled={busy || pendingCount === 0}
         className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white shadow-card hover:bg-emerald-700 disabled:opacity-50"
       >
-        {busy ? "Memproses…" : `🚀 Generate Quotations (${pendingCount})`}
+        {busy ? t("prActions.processing", lang) : ti("prActions.btnGen", lang, { n: pendingCount })}
       </button>
       {error && (
         <span className="rounded-lg bg-red-50 px-2 py-1 text-xs text-red-800 ring-1 ring-red-200">

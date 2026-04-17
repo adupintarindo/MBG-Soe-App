@@ -3,6 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { t, ti, numberLocale } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 type PrRow = {
   pr_no: string;
@@ -45,10 +47,10 @@ interface Props {
   canWrite: boolean;
 }
 
-function fmtQty(n: number | string) {
+function fmtQty(n: number | string, lang: "ID" | "EN") {
   const v = Number(n);
   if (!Number.isFinite(v)) return "—";
-  return v.toLocaleString("id-ID", { maximumFractionDigits: 3 });
+  return v.toLocaleString(numberLocale(lang), { maximumFractionDigits: 3 });
 }
 
 export function PrAllocationPanel({
@@ -61,6 +63,7 @@ export function PrAllocationPanel({
   suppliers,
   canWrite
 }: Props) {
+  const { lang } = useLang();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [openLine, setOpenLine] = useState<number | null>(null);
@@ -97,12 +100,12 @@ export function PrAllocationPanel({
 
   async function saveAllocation(lineNo: number) {
     if (!draftSupplier) {
-      setError("Pilih supplier.");
+      setError(t("prAlloc.errPickSup", lang));
       return;
     }
     const qty = Number(draftQty);
     if (!Number.isFinite(qty) || qty <= 0) {
-      setError("Qty harus > 0.");
+      setError(t("prAlloc.errQty", lang));
       return;
     }
     setError(null);
@@ -127,7 +130,7 @@ export function PrAllocationPanel({
   }
 
   async function removeAllocation(id: number) {
-    if (!confirm("Hapus alokasi ini?")) return;
+    if (!confirm(t("prAlloc.confirmDel", lang))) return;
     setBusy(true);
     try {
       const { error: err } = await supabase
@@ -167,14 +170,14 @@ export function PrAllocationPanel({
       <table className="w-full min-w-[960px] text-xs">
         <thead className="bg-paper text-left text-[10px] font-black uppercase tracking-wide text-ink2">
           <tr>
-            <th className="px-3 py-2">No.</th>
-            <th className="px-3 py-2">Item</th>
-            <th className="px-3 py-2 text-right">Qty Total</th>
-            <th className="px-3 py-2 text-right">Planned</th>
-            <th className="px-3 py-2 text-right">Quoted</th>
-            <th className="px-3 py-2 text-right">PO</th>
-            <th className="px-3 py-2 text-right">Gap</th>
-            <th className="px-3 py-2">Alokasi Supplier</th>
+            <th className="px-3 py-2">{t("prAlloc.colNo", lang)}</th>
+            <th className="px-3 py-2">{t("prAlloc.colItem", lang)}</th>
+            <th className="px-3 py-2 text-right">{t("prAlloc.colQtyTotal", lang)}</th>
+            <th className="px-3 py-2 text-right">{t("prAlloc.colPlanned", lang)}</th>
+            <th className="px-3 py-2 text-right">{t("prAlloc.colQuoted", lang)}</th>
+            <th className="px-3 py-2 text-right">{t("prAlloc.colPo", lang)}</th>
+            <th className="px-3 py-2 text-right">{t("prAlloc.colGap", lang)}</th>
+            <th className="px-3 py-2">{t("prAlloc.colAlloc", lang)}</th>
           </tr>
         </thead>
         <tbody>
@@ -208,21 +211,21 @@ export function PrAllocationPanel({
                   </div>
                 </td>
                 <td className="px-3 py-3 text-right font-mono text-xs font-black">
-                  {fmtQty(r.qty_total)}
+                  {fmtQty(r.qty_total, lang)}
                 </td>
                 <td className="px-3 py-3 text-right font-mono text-xs">
-                  {fmtQty(plannedSum)}
+                  {fmtQty(plannedSum, lang)}
                 </td>
                 <td className="px-3 py-3 text-right font-mono text-xs text-blue-700">
-                  {quotedSum > 0 ? fmtQty(quotedSum) : "—"}
+                  {quotedSum > 0 ? fmtQty(quotedSum, lang) : "—"}
                 </td>
                 <td className="px-3 py-3 text-right font-mono text-xs text-emerald-800">
-                  {poSum > 0 ? fmtQty(poSum) : "—"}
+                  {poSum > 0 ? fmtQty(poSum, lang) : "—"}
                 </td>
                 <td
                   className={`px-3 py-3 text-right font-mono text-xs font-black ${gapTone}`}
                 >
-                  {fmtQty(gap)}
+                  {fmtQty(gap, lang)}
                 </td>
                 <td className="px-3 py-3">
                   <div className="space-y-1.5">
@@ -249,7 +252,7 @@ export function PrAllocationPanel({
                             }
                             className="rounded border border-ink/20 bg-white px-2 py-1 text-[11px]"
                           >
-                            <option value="">— Supplier —</option>
+                            <option value="">{t("prAlloc.optPickSup", lang)}</option>
                             {suppliers.map((s) => (
                               <option key={s.id} value={s.id}>
                                 {s.name}
@@ -262,14 +265,14 @@ export function PrAllocationPanel({
                             min={0}
                             value={draftQty}
                             onChange={(e) => setDraftQty(e.target.value)}
-                            placeholder="Qty"
+                            placeholder={t("prAlloc.phQty", lang)}
                             className="rounded border border-ink/20 bg-white px-2 py-1 text-right font-mono text-[11px]"
                           />
                           <input
                             type="text"
                             value={draftNote}
                             onChange={(e) => setDraftNote(e.target.value)}
-                            placeholder="Catatan (opsional)"
+                            placeholder={t("prAlloc.phNote", lang)}
                             className="rounded border border-ink/20 bg-white px-2 py-1 text-[11px]"
                           />
                         </div>
@@ -280,14 +283,14 @@ export function PrAllocationPanel({
                             disabled={busy}
                             className="rounded bg-ink px-2 py-1 text-[10.5px] font-black text-white hover:bg-ink2 disabled:opacity-50"
                           >
-                            Simpan
+                            {t("prAlloc.btnSave", lang)}
                           </button>
                           <button
                             type="button"
                             onClick={() => setOpenLine(null)}
                             className="rounded bg-white px-2 py-1 text-[10.5px] font-bold text-ink2 ring-1 ring-ink/15 hover:bg-paper"
                           >
-                            Batal
+                            {t("prAlloc.btnCancel", lang)}
                           </button>
                           {error && (
                             <span className="text-[10.5px] font-bold text-red-700">
@@ -303,10 +306,13 @@ export function PrAllocationPanel({
                         onClick={() => startAdd(r.line_no, gap)}
                         className="rounded-lg bg-white px-2 py-1 text-[10.5px] font-bold text-ink ring-1 ring-ink/15 hover:bg-paper"
                       >
-                        + Alokasi supplier
+                        {t("prAlloc.btnAdd", lang)}
                         {gap > 0.001 && (
                           <span className="ml-1 text-amber-700">
-                            (gap {fmtQty(gap)} {r.unit})
+                            {ti("prAlloc.gapLbl", lang, {
+                              qty: fmtQty(gap, lang),
+                              unit: r.unit
+                            })}
                           </span>
                         )}
                       </button>
@@ -335,6 +341,7 @@ function AllocationRow({
   onRemove: () => void;
   onUpdateQty: (n: number) => void;
 }) {
+  const { lang } = useLang();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(alloc.qty_planned));
 
@@ -367,7 +374,7 @@ function AllocationRow({
             }}
             className="text-[10px] font-black text-emerald-700 hover:underline"
           >
-            OK
+            {t("prAlloc.btnOk", lang)}
           </button>
           <button
             type="button"
@@ -377,12 +384,12 @@ function AllocationRow({
             }}
             className="text-[10px] font-bold text-ink2 hover:underline"
           >
-            batal
+            {t("prAlloc.btnCancelInline", lang)}
           </button>
         </>
       ) : (
         <span className="font-mono font-black">
-          {Number(alloc.qty_planned).toLocaleString("id-ID", {
+          {Number(alloc.qty_planned).toLocaleString(numberLocale(lang), {
             maximumFractionDigits: 3
           })}
         </span>
@@ -402,20 +409,20 @@ function AllocationRow({
             onClick={() => setEditing(true)}
             className="text-[10px] font-bold text-ink2 hover:underline"
           >
-            ubah
+            {t("prAlloc.btnEditInline", lang)}
           </button>
           <button
             type="button"
             onClick={onRemove}
             className="text-[10px] font-bold text-red-700 hover:underline"
           >
-            hapus
+            {t("prAlloc.btnDelInline", lang)}
           </button>
         </>
       )}
       {locked && (
         <span className="text-[9.5px] font-bold text-blue-700/70">
-          (terkunci · quotation sudah dispawn)
+          {t("prAlloc.locked", lang)}
         </span>
       )}
     </div>

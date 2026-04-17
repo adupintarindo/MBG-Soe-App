@@ -12,11 +12,14 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti, numberLocale } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
 export default async function InvitePage() {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -60,13 +63,13 @@ export default async function InvitePage() {
       <PageContainer>
         <PageHeader
           icon="🛡️"
-          title="Admin · Undang Pengguna"
-          subtitle="Buat undangan peran (Admin/Operator/Ahli Gizi/Supplier/Observer). Undangan berlaku 7 hari dan diklaim lewat magic-link pada email yang sama."
+          title={t("adminInvite.title", lang)}
+          subtitle={t("adminInvite.subtitle", lang)}
           actions={
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info">{counts.active} aktif</Badge>
-              <Badge tone="ok">{counts.used} digunakan</Badge>
-              <Badge tone="muted">{counts.expired} kadaluarsa</Badge>
+              <Badge tone="info">{ti("adminInvite.countActive", lang, { n: counts.active })}</Badge>
+              <Badge tone="ok">{ti("adminInvite.countUsed", lang, { n: counts.used })}</Badge>
+              <Badge tone="muted">{ti("adminInvite.countExpired", lang, { n: counts.expired })}</Badge>
             </div>
           }
         />
@@ -74,24 +77,24 @@ export default async function InvitePage() {
         <InviteForm suppliers={suppliersRes.data || []} />
 
         <Section
-          title="Undangan Terkini"
-          hint="20 undangan terbaru · urut dari paling baru"
+          title={t("adminInvite.recentTitle", lang)}
+          hint={t("adminInvite.recentHint", lang)}
         >
           {invites.length === 0 ? (
             <EmptyState
               icon="📨"
-              title="Belum ada undangan"
-              message="Buat undangan pertama Anda lewat form di atas."
+              title={t("adminInvite.emptyTitle", lang)}
+              message={t("adminInvite.emptyBody", lang)}
             />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">Email</th>
-                  <th className="py-2 pr-3">Peran</th>
-                  <th className="py-2 pr-3">Supplier</th>
-                  <th className="py-2 pr-3">Status</th>
-                  <th className="py-2 pr-3">Kadaluarsa</th>
+                  <th className="py-2 pr-3">{t("adminInvite.colEmail", lang)}</th>
+                  <th className="py-2 pr-3">{t("adminInvite.colRole", lang)}</th>
+                  <th className="py-2 pr-3">{t("adminInvite.colSupplier", lang)}</th>
+                  <th className="py-2 pr-3">{t("adminInvite.colStatus", lang)}</th>
+                  <th className="py-2 pr-3">{t("adminInvite.colExpires", lang)}</th>
                 </THead>
                 <tbody>
                   {invites.map((inv) => {
@@ -112,16 +115,16 @@ export default async function InvitePage() {
                         </td>
                         <td className="py-2 pr-3">
                           {inv.used_at ? (
-                            <Badge tone="ok">DIGUNAKAN</Badge>
+                            <Badge tone="ok">{t("adminInvite.badgeUsed", lang)}</Badge>
                           ) : expired ? (
-                            <Badge tone="muted">KADALUARSA</Badge>
+                            <Badge tone="muted">{t("adminInvite.badgeExpired", lang)}</Badge>
                           ) : (
-                            <Badge tone="info">AKTIF</Badge>
+                            <Badge tone="info">{t("adminInvite.badgeActive", lang)}</Badge>
                           )}
                         </td>
                         <td className="py-2 pr-3 text-[12px] text-ink2/70">
                           {new Date(inv.expires_at).toLocaleDateString(
-                            "id-ID",
+                            numberLocale(lang),
                             {
                               day: "2-digit",
                               month: "short",

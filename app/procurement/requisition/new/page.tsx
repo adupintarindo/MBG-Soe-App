@@ -8,12 +8,15 @@ import {
   Section
 } from "@/components/ui";
 import { NewPrForm } from "./new-pr-form";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
 const WRITE_ROLES = new Set(["admin", "operator"]);
 
 export default async function NewRequisitionPage() {
+  const lang = getLang();
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (!WRITE_ROLES.has(profile.role)) redirect("/procurement");
@@ -29,11 +32,11 @@ export default async function NewRequisitionPage() {
       <PageContainer>
         <PageHeader
           icon="📋"
-          title="Buat Purchase Requisition"
-          subtitle="Agregasi kebutuhan tanggal tertentu → split ke multiple supplier (qty absolut) → auto-generate quotation per supplier."
+          title={t("prNew.title", lang)}
+          subtitle={t("prNew.subtitle", lang)}
           actions={
             <LinkButton href="/procurement" variant="secondary" size="sm">
-              ← Kembali
+              {t("common.back", lang)}
             </LinkButton>
           }
         />

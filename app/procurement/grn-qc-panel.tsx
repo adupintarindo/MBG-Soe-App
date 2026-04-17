@@ -10,6 +10,8 @@ import type {
   NcrSeverity,
   NcrStatus
 } from "@/lib/engine";
+import { t, ti, numberLocale, formatNumber } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 const RESULT_TONE: Record<QcResult, string> = {
   pass: "bg-emerald-100 text-emerald-800",
@@ -64,6 +66,7 @@ export function GrnQcPanel({
   supplierIds,
   supplierNames
 }: Props) {
+  const { lang } = useLang();
   const [openGrn, setOpenGrn] = useState<string | null>(null);
   const [openNcr, setOpenNcr] = useState(false);
 
@@ -92,8 +95,7 @@ export function GrnQcPanel({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-[13px] text-ink2">
-          {grns.length} GRN · {qcAgg.length} dengan QC · {activeNcr.length}{" "}
-          NCR aktif
+          {ti("grnQc.summary", lang, { n: grns.length, qc: qcAgg.length, ncr: activeNcr.length })}
         </div>
         {canWrite && (
           <button
@@ -101,7 +103,7 @@ export function GrnQcPanel({
             onClick={() => setOpenNcr(true)}
             className="rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-card hover:bg-red-700"
           >
-            + Non-Conformance
+            {t("grnQc.btnNewNcr", lang)}
           </button>
         )}
       </div>
@@ -109,20 +111,20 @@ export function GrnQcPanel({
       <TableWrap>
         <table className="w-full text-sm">
           <THead>
-            <th className="py-2 pr-3">GRN</th>
-            <th className="py-2 pr-3">Tanggal</th>
-            <th className="py-2 pr-3">PO</th>
-            <th className="py-2 pr-3">Supplier</th>
-            <th className="py-2 pr-3 text-center">QC</th>
-            <th className="py-2 pr-3 text-center">NCR</th>
-            <th className="py-2 pr-3">Status</th>
+            <th className="py-2 pr-3">{t("grnQc.colGrn", lang)}</th>
+            <th className="py-2 pr-3">{t("grnQc.colDate", lang)}</th>
+            <th className="py-2 pr-3">{t("grnQc.colPo", lang)}</th>
+            <th className="py-2 pr-3">{t("grnQc.colSupplier", lang)}</th>
+            <th className="py-2 pr-3 text-center">{t("grnQc.colQc", lang)}</th>
+            <th className="py-2 pr-3 text-center">{t("grnQc.colNcr", lang)}</th>
+            <th className="py-2 pr-3">{t("grnQc.colStatus", lang)}</th>
             <th className="py-2 pr-3 text-right"></th>
           </THead>
           <tbody>
             {grns.length === 0 && (
               <tr>
                 <td colSpan={8} className="py-3">
-                  <EmptyState message="Belum ada GRN." />
+                  <EmptyState message={t("grnQc.emptyGrn", lang)} />
                 </td>
               </tr>
             )}
@@ -191,7 +193,7 @@ export function GrnQcPanel({
                   </td>
                   <td className="py-2 pr-3 text-right">
                     <span className="text-[11px] font-bold text-accent-strong">
-                      QC →
+                      {t("grnQc.linkQc", lang)}
                     </span>
                   </td>
                 </tr>
@@ -204,18 +206,18 @@ export function GrnQcPanel({
       {ncrs.length > 0 && (
         <div>
           <div className="mb-2 text-xs font-bold uppercase tracking-wide text-ink2/70">
-            Non-Conformance Log · {ncrs.length} entri
+            {ti("grnQc.logTitle", lang, { n: ncrs.length })}
           </div>
           <TableWrap>
             <table className="w-full text-sm">
               <THead>
-                <th className="py-2 pr-3">NCR</th>
-                <th className="py-2 pr-3">GRN</th>
-                <th className="py-2 pr-3">Supplier</th>
-                <th className="py-2 pr-3">Severity</th>
-                <th className="py-2 pr-3">Issue</th>
-                <th className="py-2 pr-3">Status</th>
-                <th className="py-2 pr-3">Dilaporkan</th>
+                <th className="py-2 pr-3">{t("grnQc.colNcrNo", lang)}</th>
+                <th className="py-2 pr-3">{t("grnQc.colGrn", lang)}</th>
+                <th className="py-2 pr-3">{t("grnQc.colSupplier", lang)}</th>
+                <th className="py-2 pr-3">{t("grnQc.colSeverity", lang)}</th>
+                <th className="py-2 pr-3">{t("grnQc.colIssue", lang)}</th>
+                <th className="py-2 pr-3">{t("grnQc.colStatus", lang)}</th>
+                <th className="py-2 pr-3">{t("grnQc.colReported", lang)}</th>
                 <th className="py-2 pr-3"></th>
               </THead>
               <tbody>
@@ -260,6 +262,7 @@ function NcrRow({
   canWrite: boolean;
   supplierName: string | null;
 }) {
+  const { lang } = useLang();
   const router = useRouter();
   const [pending, start] = useTransition();
 
@@ -267,7 +270,7 @@ function NcrRow({
     const body: Record<string, unknown> = { status };
     if (status === "resolved" || status === "waived") {
       const ca = window.prompt(
-        "Corrective action (singkat, muncul di log):",
+        t("grnQc.promptCa", lang),
         n.corrective_action ?? ""
       );
       if (ca === null) return;
@@ -327,12 +330,12 @@ function NcrRow({
         )}
       </td>
       <td className="py-2 pr-3 text-[10px] text-ink2">
-        {new Date(n.reported_at).toLocaleDateString("id-ID")}
+        {new Date(n.reported_at).toLocaleDateString(numberLocale(lang))}
       </td>
       <td className="py-2 pr-3 text-right">
         {n.cost_impact_idr && n.cost_impact_idr > 0 && (
           <span className="font-mono text-[10px] text-red-700">
-            -{Number(n.cost_impact_idr).toLocaleString("id-ID")}
+            -{formatNumber(Number(n.cost_impact_idr), lang)}
           </span>
         )}
       </td>
@@ -351,6 +354,7 @@ function GrnQcDetail({
   canWrite: boolean;
   onClose: () => void;
 }) {
+  const { lang } = useLang();
   const router = useRouter();
   const [checks, setChecks] = useState<GrnQcCheck[]>([]);
   const [draft, setDraft] = useState<
@@ -386,9 +390,9 @@ function GrnQcDetail({
         }>;
       };
       setDraft(
-        (j.template ?? []).map((t) => ({
-          checkpoint: t.checkpoint,
-          is_critical: t.is_critical,
+        (j.template ?? []).map((tpl) => ({
+          checkpoint: tpl.checkpoint,
+          is_critical: tpl.is_critical,
           result: "pass" as QcResult,
           note: ""
         }))
@@ -426,7 +430,7 @@ function GrnQcDetail({
         <div className="sticky top-0 flex items-center justify-between border-b border-ink/10 bg-paper px-5 py-3">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/60">
-              QC Checklist
+              {t("grnQc.detailHead", lang)}
             </div>
             <div className="font-mono text-sm font-black">{grnNo}</div>
           </div>
@@ -434,7 +438,7 @@ function GrnQcDetail({
             type="button"
             onClick={onClose}
             className="rounded-lg p-1 text-ink2 hover:bg-ink/5"
-            aria-label="Tutup"
+            aria-label={t("grnQc.closeAria", lang)}
           >
             ✕
           </button>
@@ -449,14 +453,14 @@ function GrnQcDetail({
             <div className="mb-4 space-y-2 rounded-xl bg-amber-50 p-3 ring-1 ring-amber-200">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-amber-900">
-                  Draft Pemeriksaan · {draft.length} checkpoint
+                  {ti("grnQc.draftTitle", lang, { n: draft.length })}
                 </span>
                 <button
                   type="button"
                   onClick={() => setDraft([])}
                   className="text-[10px] text-amber-900 underline"
                 >
-                  Reset
+                  {t("grnQc.btnReset", lang)}
                 </button>
               </div>
               {draft.map((d, idx) => (
@@ -499,7 +503,7 @@ function GrnQcDetail({
                         )
                       );
                     }}
-                    placeholder="catatan"
+                    placeholder={t("grnQc.phNote", lang)}
                     className="w-32 rounded border border-ink/10 px-1 py-0.5 text-[10px]"
                   />
                 </div>
@@ -510,17 +514,17 @@ function GrnQcDetail({
                 onClick={submit}
                 className="w-full rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
               >
-                {saving ? "Menyimpan…" : `Simpan ${draft.length} Checkpoint`}
+                {saving ? t("grnQc.saving", lang) : ti("grnQc.btnSaveDraft", lang, { n: draft.length })}
               </button>
             </div>
           )}
 
           <div className="mb-2 text-xs font-bold uppercase tracking-wide text-ink2/70">
-            Hasil Pemeriksaan ({checks.length})
+            {ti("grnQc.resultsTitle", lang, { n: checks.length })}
           </div>
-          {loading && <div className="text-xs text-ink2">Memuat…</div>}
+          {loading && <div className="text-xs text-ink2">{t("grnQc.loading", lang)}</div>}
           {!loading && checks.length === 0 && (
-            <EmptyState message="Belum ada pemeriksaan untuk GRN ini." />
+            <EmptyState message={t("grnQc.noChecks", lang)} />
           )}
           {checks.length > 0 && (
             <div className="space-y-1">
@@ -558,6 +562,7 @@ function GrnQcDetail({
 }
 
 function TemplateLoader({ onLoad }: { onLoad: (item: string) => void }) {
+  const { lang } = useLang();
   const [item, setItem] = useState("");
   return (
     <form
@@ -571,14 +576,14 @@ function TemplateLoader({ onLoad }: { onLoad: (item: string) => void }) {
         type="text"
         value={item}
         onChange={(e) => setItem(e.target.value)}
-        placeholder="Kode item (contoh: Beras Putih)"
+        placeholder={t("grnQc.phItem", lang)}
         className="flex-1 rounded-lg border border-ink/10 px-2 py-1 text-xs"
       />
       <button
         type="submit"
         className="rounded-lg bg-accent-strong px-3 py-1 text-xs font-bold text-white hover:brightness-110"
       >
-        Muat Template
+        {t("grnQc.btnLoadTemplate", lang)}
       </button>
     </form>
   );
@@ -591,6 +596,7 @@ function NewNcrDialog({
   onClose: () => void;
   grns: GrnRow[];
 }) {
+  const { lang } = useLang();
   const router = useRouter();
   const [saving, start] = useTransition();
   const [form, setForm] = useState({
@@ -634,7 +640,7 @@ function NewNcrDialog({
         className="w-full max-w-lg space-y-3 rounded-2xl bg-paper p-5 shadow-2xl"
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-black">Buat Non-Conformance</h3>
+          <h3 className="text-sm font-black">{t("grnQc.newNcrTitle", lang)}</h3>
           <button
             type="button"
             onClick={onClose}
@@ -645,13 +651,13 @@ function NewNcrDialog({
         </div>
 
         <label className="block text-xs">
-          <span className="mb-1 block font-bold">GRN (opsional)</span>
+          <span className="mb-1 block font-bold">{t("grnQc.fldGrnOpt", lang)}</span>
           <select
             value={form.grn_no}
             onChange={(e) => setForm({ ...form, grn_no: e.target.value })}
             className="w-full rounded-lg border border-ink/10 px-2 py-1.5 text-xs"
           >
-            <option value="">— tidak terhubung —</option>
+            <option value="">{t("grnQc.optNoLink", lang)}</option>
             {grns.map((g) => (
               <option key={g.no} value={g.no}>
                 {g.no} · {g.grn_date}
@@ -661,7 +667,7 @@ function NewNcrDialog({
         </label>
 
         <label className="block text-xs">
-          <span className="mb-1 block font-bold">Severity</span>
+          <span className="mb-1 block font-bold">{t("grnQc.fldSeverity", lang)}</span>
           <select
             value={form.severity}
             onChange={(e) =>
@@ -676,20 +682,20 @@ function NewNcrDialog({
         </label>
 
         <label className="block text-xs">
-          <span className="mb-1 block font-bold">Issue *</span>
+          <span className="mb-1 block font-bold">{t("grnQc.fldIssue", lang)}</span>
           <textarea
             required
             value={form.issue}
             onChange={(e) => setForm({ ...form, issue: e.target.value })}
             rows={3}
             className="w-full rounded-lg border border-ink/10 px-2 py-1.5 text-xs"
-            placeholder="Deskripsi masalah (mis. Beras berkutu 3 karung, tidak sesuai sample)"
+            placeholder={t("grnQc.phIssue", lang)}
           />
         </label>
 
         <div className="grid grid-cols-3 gap-2">
           <label className="block text-xs">
-            <span className="mb-1 block font-bold">Qty</span>
+            <span className="mb-1 block font-bold">{t("grnQc.fldQty", lang)}</span>
             <input
               type="number"
               step="0.01"
@@ -701,7 +707,7 @@ function NewNcrDialog({
             />
           </label>
           <label className="block text-xs">
-            <span className="mb-1 block font-bold">Unit</span>
+            <span className="mb-1 block font-bold">{t("grnQc.fldUnit", lang)}</span>
             <input
               type="text"
               value={form.unit}
@@ -711,7 +717,7 @@ function NewNcrDialog({
             />
           </label>
           <label className="block text-xs">
-            <span className="mb-1 block font-bold">Kerugian (IDR)</span>
+            <span className="mb-1 block font-bold">{t("grnQc.fldCost", lang)}</span>
             <input
               type="number"
               step="1"
@@ -730,14 +736,14 @@ function NewNcrDialog({
             onClick={onClose}
             className="rounded-lg bg-ink/5 px-3 py-1.5 text-xs font-bold text-ink"
           >
-            Batal
+            {t("grnQc.btnCancelDialog", lang)}
           </button>
           <button
             type="submit"
             disabled={saving}
             className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-50"
           >
-            {saving ? "Menyimpan…" : "Simpan NCR"}
+            {saving ? t("grnQc.saving", lang) : t("grnQc.btnSaveNcr", lang)}
           </button>
         </div>
       </form>

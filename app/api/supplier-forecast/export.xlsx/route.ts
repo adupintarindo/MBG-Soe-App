@@ -79,11 +79,11 @@ export async function GET(req: Request) {
       .eq("id", targetSupplierId)
       .maybeSingle(),
     supabase.rpc("supplier_forecast_90d", {
-      p_supplier_id: profile.role === "supplier" ? null : targetSupplierId,
+      p_supplier_id: profile.role === "supplier" ? undefined : targetSupplierId,
       p_horizon_days: 90
     }),
     supabase.rpc("supplier_forecast_monthly", {
-      p_supplier_id: profile.role === "supplier" ? null : targetSupplierId,
+      p_supplier_id: profile.role === "supplier" ? undefined : targetSupplierId,
       p_months: 3
     })
   ]);

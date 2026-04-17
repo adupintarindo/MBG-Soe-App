@@ -3,6 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { t } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 function todayIso() {
   const d = new Date();
@@ -16,6 +18,7 @@ function plusDays(iso: string, n: number) {
 }
 
 export function NewPrForm() {
+  const { lang } = useLang();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [needDate, setNeedDate] = useState(plusDays(todayIso(), 3));
@@ -30,7 +33,7 @@ export function NewPrForm() {
     try {
       const { data, error: err } = await supabase.rpc("pr_seed_from_date", {
         p_need_date: needDate,
-        p_notes: notes || null
+        p_notes: notes || undefined
       });
       if (err) {
         setError(err.message);
@@ -50,7 +53,7 @@ export function NewPrForm() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1 block text-[11px] font-bold text-ink2">
-            Tanggal Butuh Barang
+            {t("prNew.fldNeedDate", lang)}
           </span>
           <input
             type="date"
@@ -59,18 +62,18 @@ export function NewPrForm() {
             className="w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
           />
           <span className="mt-1 block text-[11px] text-ink2/60">
-            Sistem auto-fill item & qty dari kebutuhan menu tanggal tsb.
+            {t("prNew.fldNeedDateHint", lang)}
           </span>
         </label>
         <label className="block">
           <span className="mb-1 block text-[11px] font-bold text-ink2">
-            Catatan (opsional)
+            {t("prNew.fldNotes", lang)}
           </span>
           <input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="mis. butuh untuk minggu 1 Mei"
+            placeholder={t("prNew.phNotes", lang)}
             className="w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
           />
         </label>
@@ -84,8 +87,7 @@ export function NewPrForm() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-[11px] text-ink2/70">
-          Setelah PR dibuat, kamu bisa split tiap item ke multiple supplier
-          dengan qty absolut, lalu generate quotation per supplier sekali klik.
+          {t("prNew.helper", lang)}
         </div>
         <button
           type="button"
@@ -93,7 +95,7 @@ export function NewPrForm() {
           disabled={busy}
           className="rounded-xl bg-ink px-5 py-3 text-sm font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
         >
-          {busy ? "Membuat…" : "📋 Buat PR & Muat Kebutuhan"}
+          {busy ? t("prNew.creating", lang) : t("prNew.btnCreate", lang)}
         </button>
       </div>
     </div>

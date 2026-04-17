@@ -7,6 +7,8 @@ import { ItemsPanel } from "./items-panel";
 import { MenusPanel } from "./menus-panel";
 import { SuppliersPanel } from "./suppliers-panel";
 import { SchoolsPanel } from "./schools-panel";
+import { t, type LangKey } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 type ItemRow = Pick<
   Database["public"]["Tables"]["items"]["Row"],
@@ -69,28 +71,29 @@ interface Props {
 
 type TabKey = "reset" | "items" | "menus" | "suppliers" | "schools";
 
-const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: "items",     label: "Bahan Makanan",  icon: "🥕" },
-  { key: "menus",     label: "Menu",            icon: "🍲" },
-  { key: "suppliers", label: "Supplier",        icon: "🤝" },
-  { key: "schools",   label: "Sekolah",         icon: "🏫" },
-  { key: "reset",     label: "Reset Data",      icon: "🧨" }
+const TABS: { key: TabKey; labelKey: LangKey; icon: string }[] = [
+  { key: "items",     labelKey: "adminData.tabItems",     icon: "🥕" },
+  { key: "menus",     labelKey: "adminData.tabMenus",     icon: "🍲" },
+  { key: "suppliers", labelKey: "adminData.tabSuppliers", icon: "🤝" },
+  { key: "schools",   labelKey: "adminData.tabSchools",   icon: "🏫" },
+  { key: "reset",     labelKey: "adminData.tabReset",     icon: "🧨" }
 ];
 
 export function DataShell({ items, menus, suppliers, schools, counts }: Props) {
+  const { lang } = useLang();
   const [tab, setTab] = useState<TabKey>("items");
 
   return (
     <div>
       <div className="mb-5 flex flex-wrap gap-2 rounded-2xl bg-white p-2 shadow-card ring-1 ring-ink/5">
-        {TABS.map((t) => {
-          const isActive = tab === t.key;
-          const isReset = t.key === "reset";
+        {TABS.map((tb) => {
+          const isActive = tab === tb.key;
+          const isReset = tb.key === "reset";
           return (
             <button
-              key={t.key}
+              key={tb.key}
               type="button"
-              onClick={() => setTab(t.key)}
+              onClick={() => setTab(tb.key)}
               className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-[12px] font-bold transition ${
                 isActive
                   ? isReset
@@ -99,8 +102,8 @@ export function DataShell({ items, menus, suppliers, schools, counts }: Props) {
                   : "text-ink2 hover:bg-paper hover:text-ink"
               }`}
             >
-              <span aria-hidden>{t.icon}</span>
-              <span>{t.label}</span>
+              <span aria-hidden>{tb.icon}</span>
+              <span>{t(tb.labelKey, lang)}</span>
             </button>
           );
         })}

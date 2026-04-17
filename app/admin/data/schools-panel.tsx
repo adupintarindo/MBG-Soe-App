@@ -15,6 +15,8 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 type Level = Database["public"]["Enums"]["school_level"];
 type Row = Pick<
@@ -83,6 +85,7 @@ function rowToDraft(r: Row): Draft {
 }
 
 export function SchoolsPanel({ initial }: { initial: Row[] }) {
+  const { lang } = useLang();
   const supabase = createClient();
   const router = useRouter();
   const [rows, setRows] = useState<Row[]>(initial);
@@ -114,11 +117,11 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
   async function saveNew() {
     setErr(null);
     if (!draft.id.trim()) {
-      setErr("ID sekolah wajib (mis. SCH-10).");
+      setErr(t("adminSch.errIdReq", lang));
       return;
     }
     if (!draft.name.trim()) {
-      setErr("Nama sekolah wajib.");
+      setErr(t("adminSch.errNameReq", lang));
       return;
     }
     setBusy(true);
@@ -192,7 +195,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
   }
 
   async function remove(id: string) {
-    if (!confirm(`Hapus sekolah ${id}?`)) return;
+    if (!confirm(ti("adminSch.confirmDel", lang, { id }))) return;
     setErr(null);
     setBusy(true);
     const { error } = await supabase.from("schools").delete().eq("id", id);
@@ -207,8 +210,8 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
 
   return (
     <Section
-      title="Sekolah"
-      hint="Master cluster sekolah. Untuk SD: isi kelas13 (porsi kecil) + kelas46 (porsi besar). Selain SD pakai students."
+      title={t("adminSch.title", lang)}
+      hint={t("adminSch.hint", lang)}
       actions={
         <Button
           variant={adding ? "secondary" : "primary"}
@@ -219,28 +222,28 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
             setErr(null);
           }}
         >
-          {adding ? "× Batal Tambah" : "+ Tambah Sekolah"}
+          {adding ? t("adminSch.btnCancelAdd", lang) : t("adminSch.btnAdd", lang)}
         </Button>
       }
     >
       {adding && (
         <div className="mb-4 rounded-xl bg-paper p-4 ring-1 ring-ink/5">
           <div className="grid gap-3 md:grid-cols-3">
-            <FieldBlock label="ID (unik)" required>
+            <FieldBlock label={t("adminSch.fldId", lang)} required>
               <Input
                 value={draft.id}
                 onChange={(e) => setDraft({ ...draft, id: e.target.value })}
-                placeholder="SCH-10"
+                placeholder={t("adminSch.phId", lang)}
               />
             </FieldBlock>
-            <FieldBlock label="Nama" required>
+            <FieldBlock label={t("adminSch.fldName", lang)} required>
               <Input
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder="SD Inpres Kobelete"
+                placeholder={t("adminSch.phName", lang)}
               />
             </FieldBlock>
-            <FieldBlock label="Jenjang">
+            <FieldBlock label={t("adminSch.fldLevel", lang)}>
               <Select
                 value={draft.level}
                 onChange={(e) =>
@@ -254,7 +257,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                 ))}
               </Select>
             </FieldBlock>
-            <FieldBlock label="Total siswa">
+            <FieldBlock label={t("adminSch.fldStudents", lang)}>
               <Input
                 type="number"
                 value={draft.students}
@@ -263,7 +266,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                 }
               />
             </FieldBlock>
-            <FieldBlock label="SD kelas 1-3 (porsi kecil)">
+            <FieldBlock label={t("adminSch.fldKelas13", lang)}>
               <Input
                 type="number"
                 value={draft.kelas13}
@@ -272,7 +275,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                 }
               />
             </FieldBlock>
-            <FieldBlock label="SD kelas 4-6 (porsi besar)">
+            <FieldBlock label={t("adminSch.fldKelas46", lang)}>
               <Input
                 type="number"
                 value={draft.kelas46}
@@ -281,14 +284,14 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                 }
               />
             </FieldBlock>
-            <FieldBlock label="Guru">
+            <FieldBlock label={t("adminSch.fldGuru", lang)}>
               <Input
                 type="number"
                 value={draft.guru}
                 onChange={(e) => setDraft({ ...draft, guru: e.target.value })}
               />
             </FieldBlock>
-            <FieldBlock label="Jarak (km)">
+            <FieldBlock label={t("adminSch.fldDistance", lang)}>
               <Input
                 type="number"
                 step="0.1"
@@ -298,19 +301,19 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                 }
               />
             </FieldBlock>
-            <FieldBlock label="PIC">
+            <FieldBlock label={t("adminSch.fldPic", lang)}>
               <Input
                 value={draft.pic}
                 onChange={(e) => setDraft({ ...draft, pic: e.target.value })}
               />
             </FieldBlock>
-            <FieldBlock label="HP">
+            <FieldBlock label={t("adminSch.fldPhone", lang)}>
               <Input
                 value={draft.phone}
                 onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
               />
             </FieldBlock>
-            <FieldBlock label="Alamat">
+            <FieldBlock label={t("adminSch.fldAddress", lang)}>
               <Input
                 value={draft.address}
                 onChange={(e) =>
@@ -328,7 +331,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                   setDraft({ ...draft, active: e.target.checked })
                 }
               />
-              Aktif
+              {t("adminSch.lblActive", lang)}
             </label>
             <Button
               variant="primary"
@@ -336,7 +339,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
               disabled={busy}
               onClick={saveNew}
             >
-              {busy ? "Menyimpan…" : "Simpan Sekolah"}
+              {busy ? t("adminSch.btnSaving", lang) : t("adminSch.btnSave", lang)}
             </Button>
           </div>
         </div>
@@ -344,15 +347,15 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <label className="block min-w-[200px] flex-1">
-          <FieldLabel>Cari ID / nama / alamat</FieldLabel>
+          <FieldLabel>{t("adminSch.searchLabel", lang)}</FieldLabel>
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="ketik untuk filter…"
+            placeholder={t("adminSch.searchPh", lang)}
           />
         </label>
         <Badge tone="muted">
-          {filtered.length} dari {rows.length}
+          {ti("adminSch.filteredOf", lang, { shown: filtered.length, total: rows.length })}
         </Badge>
       </div>
 
@@ -363,18 +366,18 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
       )}
 
       {filtered.length === 0 ? (
-        <EmptyState icon="🏫" title="Belum ada sekolah" />
+        <EmptyState icon="🏫" title={t("adminSch.emptyTitle", lang)} />
       ) : (
         <TableWrap>
           <table className="w-full text-sm">
             <THead>
-              <th className="py-2 pr-3">ID</th>
-              <th className="py-2 pr-3">Nama</th>
-              <th className="py-2 pr-3">Jenjang</th>
-              <th className="py-2 pr-3 text-right">Siswa / K1-3 / K4-6</th>
-              <th className="py-2 pr-3 text-right">Guru</th>
-              <th className="py-2 pr-3 text-right">Jarak</th>
-              <th className="py-2 pr-3">PIC</th>
+              <th className="py-2 pr-3">{t("adminSch.colId", lang)}</th>
+              <th className="py-2 pr-3">{t("adminSch.colName", lang)}</th>
+              <th className="py-2 pr-3">{t("adminSch.colLevel", lang)}</th>
+              <th className="py-2 pr-3 text-right">{t("adminSch.colStudents", lang)}</th>
+              <th className="py-2 pr-3 text-right">{t("adminSch.colGuru", lang)}</th>
+              <th className="py-2 pr-3 text-right">{t("adminSch.colDistance", lang)}</th>
+              <th className="py-2 pr-3">{t("adminSch.colPic", lang)}</th>
               <th className="py-2 pr-3"></th>
             </THead>
             <tbody>
@@ -476,7 +479,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                           onChange={(e) =>
                             setEditDraft({ ...editDraft, pic: e.target.value })
                           }
-                          placeholder="PIC"
+                          placeholder={t("adminSch.fldPic", lang)}
                         />
                         <Input
                           value={editDraft.phone}
@@ -486,7 +489,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                               phone: e.target.value
                             })
                           }
-                          placeholder="HP"
+                          placeholder={t("adminSch.fldPhone", lang)}
                         />
                         <Input
                           value={editDraft.address}
@@ -496,7 +499,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                               address: e.target.value
                             })
                           }
-                          placeholder="Alamat"
+                          placeholder={t("adminSch.phAddress", lang)}
                         />
                       </div>
                     </td>
@@ -513,7 +516,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                               })
                             }
                           />
-                          Aktif
+                          {t("adminSch.lblActive", lang)}
                         </label>
                         <Button
                           size="sm"
@@ -521,7 +524,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                           disabled={busy}
                           onClick={saveEdit}
                         >
-                          Simpan
+                          {t("adminSch.btnSaveEdit", lang)}
                         </Button>
                         <Button
                           size="sm"
@@ -529,7 +532,7 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                           disabled={busy}
                           onClick={() => setEditId(null)}
                         >
-                          Batal
+                          {t("adminSch.btnCancelEdit", lang)}
                         </Button>
                       </div>
                     </td>
@@ -563,14 +566,14 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
                           variant="secondary"
                           onClick={() => startEdit(r)}
                         >
-                          Edit
+                          {t("adminSch.btnEdit", lang)}
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => remove(r.id)}
                         >
-                          Hapus
+                          {t("adminSch.btnDelete", lang)}
                         </Button>
                       </div>
                     </td>
@@ -594,9 +597,10 @@ function FieldBlock({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  const { lang } = useLang();
   return (
     <label className="block">
-      <FieldLabel hint={required ? "wajib" : undefined}>{label}</FieldLabel>
+      <FieldLabel hint={required ? t("adminSch.required", lang) : undefined}>{label}</FieldLabel>
       {children}
     </label>
   );

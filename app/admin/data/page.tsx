@@ -4,11 +4,14 @@ import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { Badge, PageContainer, PageHeader } from "@/components/ui";
 import { DataShell } from "./data-shell";
+import { t, ti } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDataPage() {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -81,14 +84,14 @@ export default async function AdminDataPage() {
       <PageContainer>
         <PageHeader
           icon="🗃️"
-          title="Admin · Data Master"
-          subtitle="Tambah, edit, atau reset data master & transaksi. Hanya admin yang punya akses ke modul ini."
+          title={t("adminData.title", lang)}
+          subtitle={t("adminData.subtitle", lang)}
           actions={
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info">{counts.items} item</Badge>
-              <Badge tone="info">{counts.menus} menu</Badge>
-              <Badge tone="info">{counts.suppliers} supplier</Badge>
-              <Badge tone="info">{counts.schools} sekolah</Badge>
+              <Badge tone="info">{ti("adminData.countItems", lang, { n: counts.items })}</Badge>
+              <Badge tone="info">{ti("adminData.countMenus", lang, { n: counts.menus })}</Badge>
+              <Badge tone="info">{ti("adminData.countSuppliers", lang, { n: counts.suppliers })}</Badge>
+              <Badge tone="info">{ti("adminData.countSchools", lang, { n: counts.schools })}</Badge>
             </div>
           }
         />

@@ -355,9 +355,9 @@ export async function listSupplierActions(
   } = {}
 ): Promise<SupplierAction[]> {
   const { data, error } = await supabase.rpc("list_supplier_actions", {
-    p_supplier_id: opts.supplierId ?? null,
-    p_status: opts.status ?? null,
-    p_source: opts.source ?? null
+    p_supplier_id: opts.supplierId ?? undefined,
+    p_status: opts.status ?? undefined,
+    p_source: opts.source ?? undefined
   });
   if (error) throw error;
   return (data ?? []) as SupplierAction[];
@@ -373,8 +373,8 @@ export async function updateActionStatus(
   const { data, error } = await supabase.rpc("update_action_status", {
     p_id: id,
     p_status: status,
-    p_notes: notes,
-    p_blocked_reason: blockedReason
+    p_notes: notes ?? undefined,
+    p_blocked_reason: blockedReason ?? undefined
   });
   if (error) throw error;
   return data;
@@ -658,8 +658,8 @@ export async function saveSupplierReval(
     p_period: args.period,
     p_start: args.start,
     p_end: args.end,
-    p_recommendation: args.recommendation ?? null,
-    p_notes: args.notes ?? null
+    p_recommendation: args.recommendation ?? undefined,
+    p_notes: args.notes ?? undefined
   });
   if (error) throw error;
   return Number(data);
@@ -739,8 +739,8 @@ export async function logSopRun(
     p_steps_checked: input.stepsChecked,
     p_steps_total: input.stepsTotal,
     p_risks_flagged: input.risksFlagged,
-    p_notes: input.notes ?? null,
-    p_run_date: input.runDate ?? null
+    p_notes: input.notes ?? undefined,
+    p_run_date: input.runDate ?? undefined
   });
   if (error) throw error;
   return data as number;
@@ -752,7 +752,7 @@ export async function listSopRuns(
   limit = 25
 ): Promise<SopRunRow[]> {
   const { data, error } = await supabase.rpc("list_sop_runs", {
-    p_sop_id: sopId,
+    p_sop_id: sopId ?? undefined,
     p_limit: limit
   });
   if (error) throw error;
@@ -765,8 +765,8 @@ export async function sopComplianceSummary(
   end?: string | null
 ): Promise<SopComplianceRow[]> {
   const { data, error } = await supabase.rpc("sop_compliance_summary", {
-    p_start: start ?? null,
-    p_end: end ?? null
+    p_start: start ?? undefined,
+    p_end: end ?? undefined
   });
   if (error) throw error;
   return (data ?? []) as SopComplianceRow[];

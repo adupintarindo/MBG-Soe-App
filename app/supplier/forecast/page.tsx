@@ -10,6 +10,8 @@ import {
   Section
 } from "@/components/ui";
 import { ForecastShell } from "./forecast-shell";
+import { t, ti } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +40,7 @@ export default async function SupplierForecastPage({
 }: {
   searchParams?: Promise<{ supplier_id?: string }> | { supplier_id?: string };
 }) {
+  const lang = getLang();
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
 
@@ -45,8 +48,6 @@ export default async function SupplierForecastPage({
     supplier_id?: string;
   };
 
-  // For supplier role, RPC forces own supplier_id — ignore any param.
-  // For staff, allow ?supplier_id=... for ops preview. Require supplier or param.
   let targetSupplierId: string | null = null;
   if (profile.role === "supplier") {
     targetSupplierId = profile.supplier_id ?? null;
@@ -61,8 +62,8 @@ export default async function SupplierForecastPage({
           <PageContainer>
             <PageHeader
               icon="⚠️"
-              title="Profil supplier belum lengkap"
-              subtitle="Akun supplier kamu belum ditautkan ke record supplier. Hubungi admin SPPG."
+              title={t("fcst.profileIncomplete", lang)}
+              subtitle={t("fcst.profileHelp", lang)}
             />
           </PageContainer>
         </div>
@@ -112,7 +113,6 @@ export default async function SupplierForecastPage({
     name: string;
   }>;
 
-  // For staff without supplier_id param → show picker
   if (!targetSupplierId && profile.role !== "supplier") {
     return (
       <div>
@@ -124,21 +124,21 @@ export default async function SupplierForecastPage({
         <PageContainer>
           <PageHeader
             icon="📅"
-            title="Forecast Kebutuhan 90 Hari"
-            subtitle="Preview kebutuhan per supplier (staff mode). Pilih supplier dulu."
+            title={t("fcst.title", lang)}
+            subtitle={t("fcst.subtitlePreview", lang)}
             actions={
               <LinkButton
                 href="/suppliers"
                 variant="secondary"
                 size="sm"
               >
-                ← Suppliers
+                {t("fcst.backSuppliers", lang)}
               </LinkButton>
             }
           />
-          <Section title="Pilih Supplier">
+          <Section title={t("fcst.pickSupTitle", lang)}>
             {suppliers.length === 0 ? (
-              <EmptyState message="Belum ada supplier aktif." />
+              <EmptyState message={t("fcst.noActiveSup", lang)} />
             ) : (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {suppliers.map((s) => (
@@ -159,14 +159,13 @@ export default async function SupplierForecastPage({
     );
   }
 
-  // Load forecast
   const [dailyRes, monthlyRes] = await Promise.all([
     supabase.rpc("supplier_forecast_90d", {
-      p_supplier_id: profile.role === "supplier" ? null : targetSupplierId,
+      p_supplier_id: profile.role === "supplier" ? undefined : targetSupplierId ?? undefined,
       p_horizon_days: 90
     }),
     supabase.rpc("supplier_forecast_monthly", {
-      p_supplier_id: profile.role === "supplier" ? null : targetSupplierId,
+      p_supplier_id: profile.role === "supplier" ? undefined : targetSupplierId ?? undefined,
       p_months: 3
     })
   ]);
@@ -185,25 +184,27 @@ export default async function SupplierForecastPage({
       <PageContainer>
         <PageHeader
           icon="📅"
-          title="Forecast Kebutuhan 90 Hari"
+          title={t("fcst.title", lang)}
           subtitle={
             <span className="inline-flex flex-wrap items-center gap-2">
               <b>{supMeta?.name ?? targetSupplierId}</b>
-              {supMeta?.pic && <span>· PIC: {supMeta.pic}</span>}
+              {supMeta?.pic && (
+                <span>{ti("fcst.subPic", lang, { pic: supMeta.pic })}</span>
+              )}
               {supMeta?.commodity && (
                 <span className="rounded-full bg-accent-strong/10 px-2 py-0.5 text-[10px] font-bold text-accent-strong">
                   {supMeta.commodity}
                 </span>
               )}
               <span className="text-ink2/60">
-                · hanya item yang Anda supply
+                {t("fcst.subHelp", lang)}
               </span>
             </span>
           }
           actions={
             profile.role === "supplier" ? (
               <LinkButton href="/dashboard" variant="secondary" size="sm">
-                ← Dashboard
+                {t("fcst.backDashboard", lang)}
               </LinkButton>
             ) : (
               <LinkButton
@@ -211,7 +212,7 @@ export default async function SupplierForecastPage({
                 variant="secondary"
                 size="sm"
               >
-                ← Pilih supplier lain
+                {t("fcst.backPickSup", lang)}
               </LinkButton>
             )
           }
@@ -221,14 +222,8 @@ export default async function SupplierForecastPage({
           <Section>
             <EmptyState
               icon="📭"
-              title="Belum ada forecast"
-              message={
-                <>
-                  Supplier belum ditautkan ke item manapun di katalog, atau
-                  tidak ada menu assigned/cycle untuk 90 hari ke depan. Hubungi
-                  admin SPPG kalau ini tidak sesuai.
-                </>
-              }
+              title={t("fcst.noForecastTitle", lang)}
+              message={t("fcst.noForecastMsg", lang)}
             />
           </Section>
         ) : (

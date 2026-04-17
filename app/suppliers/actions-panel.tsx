@@ -4,10 +4,10 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Input, Select } from "@/components/ui";
 import type { SupplierAction, ActionStatus, ActionPriority } from "@/lib/engine";
-import { t, ti, type LangKey } from "@/lib/i18n";
+import { t, ti, type Lang } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 
-function statusLabel(s: ActionStatus, lang: LangKey): string {
+function statusLabel(s: ActionStatus, lang: Lang): string {
   switch (s) {
     case "open":
       return t("actions.statusOpen", lang);
@@ -33,7 +33,7 @@ const STATUS_TONE: Record<
   cancelled: "muted"
 };
 
-function prioLabel(p: ActionPriority, lang: LangKey): string {
+function prioLabel(p: ActionPriority, lang: Lang): string {
   switch (p) {
     case "low":
       return t("actions.prioLow", lang);

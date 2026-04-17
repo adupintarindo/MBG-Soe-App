@@ -12,6 +12,8 @@ import {
 } from "@/components/ui";
 import { PrAllocationPanel } from "./allocation-panel";
 import { PrActions } from "./pr-actions";
+import { t, ti, formatNumber } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +62,7 @@ export default async function PrDetailPage({
 }) {
   const { no } = await Promise.resolve(params);
   const decoded = decodeURIComponent(no);
+  const lang = getLang();
   const supabase = createClient();
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -147,7 +150,7 @@ export default async function PrDetailPage({
       <PageContainer>
         <PageHeader
           icon="📋"
-          title={`Purchase Requisition · ${pr.no}`}
+          title={ti("prDetail.title", lang, { no: pr.no })}
           subtitle={
             <span className="inline-flex items-center gap-2">
               <span
@@ -155,30 +158,30 @@ export default async function PrDetailPage({
               >
                 {pr.status}
               </span>
-              <span>· butuh {pr.need_date}</span>
-              <span>· {rows.length} item</span>
-              <span>· {allocations.length} alokasi</span>
+              <span>{ti("prDetail.subNeed", lang, { date: pr.need_date })}</span>
+              <span>{ti("prDetail.subItems", lang, { n: rows.length })}</span>
+              <span>{ti("prDetail.subAlloc", lang, { n: allocations.length })}</span>
             </span>
           }
           actions={
             <LinkButton href="/procurement" variant="secondary" size="sm">
-              ← Kembali
+              {t("common.back", lang)}
             </LinkButton>
           }
         />
 
         {pr.notes && (
-          <Section title="Catatan" hint="Dari pembuat PR">
+          <Section title={t("prDetail.notesTitle", lang)} hint={t("prDetail.notesHint", lang)}>
             <p className="text-sm italic text-ink2">{pr.notes}</p>
           </Section>
         )}
 
         <Section
-          title={`Split Allocation · ${rows.length} item`}
-          hint="Qty absolut per supplier. Gap = qty_total − sum(planned). Kalau supplier balas qty < planned, tambah alokasi baru ke supplier cadangan untuk tutup gap."
+          title={ti("prDetail.splitTitle", lang, { n: rows.length })}
+          hint={t("prDetail.splitHint", lang)}
         >
           {rows.length === 0 ? (
-            <EmptyState message="PR ini belum punya item. Mungkin tanggal butuh tidak punya menu assigned." />
+            <EmptyState message={t("prDetail.splitEmpty", lang)} />
           ) : (
             <PrAllocationPanel
               prNo={pr.no}
@@ -199,8 +202,8 @@ export default async function PrDetailPage({
         </Section>
 
         <Section
-          title={`Quotations · ${quotations.length}`}
-          hint="Quotation yang sudah dispawn dari PR ini. Klik detail untuk isi harga final & convert ke PO."
+          title={ti("prDetail.qtTitle", lang, { n: quotations.length })}
+          hint={t("prDetail.qtHint", lang)}
           actions={
             canWrite && pendingAllocCount > 0 ? (
               <PrActions prNo={pr.no} pendingCount={pendingAllocCount} />
@@ -212,8 +215,8 @@ export default async function PrDetailPage({
               icon="📄"
               message={
                 canWrite
-                  ? "Belum ada quotation dispawn. Tambah alokasi dulu, lalu klik 'Generate Quotations'."
-                  : "Belum ada quotation."
+                  ? t("prDetail.qtEmptyWrite", lang)
+                  : t("prDetail.qtEmpty", lang)
               }
             />
           ) : (
@@ -221,11 +224,11 @@ export default async function PrDetailPage({
               <table className="w-full min-w-[700px] text-sm">
                 <thead className="bg-paper text-left text-[10.5px] font-bold uppercase tracking-wide text-ink2">
                   <tr>
-                    <th className="px-3 py-2">No</th>
-                    <th className="px-3 py-2">Supplier</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2 text-right">Nilai</th>
-                    <th className="px-3 py-2">PO</th>
+                    <th className="px-3 py-2">{t("prDetail.colNo", lang)}</th>
+                    <th className="px-3 py-2">{t("prDetail.colSupplier", lang)}</th>
+                    <th className="px-3 py-2">{t("prDetail.colStatus", lang)}</th>
+                    <th className="px-3 py-2 text-right">{t("prDetail.colValue", lang)}</th>
+                    <th className="px-3 py-2">{t("prDetail.colPo", lang)}</th>
                     <th className="px-3 py-2"></th>
                   </tr>
                 </thead>
@@ -244,7 +247,7 @@ export default async function PrDetailPage({
                         </span>
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-xs">
-                        {Number(q.total).toLocaleString("id-ID")}
+                        {formatNumber(Number(q.total), lang)}
                       </td>
                       <td className="px-3 py-2 font-mono text-[11px]">
                         {q.converted_po_no ?? "—"}
@@ -254,7 +257,7 @@ export default async function PrDetailPage({
                           href={`/procurement/quotation/${encodeURIComponent(q.no)}`}
                           className="text-[11px] font-bold text-accent-strong hover:underline"
                         >
-                          Detail →
+                          {t("prDetail.linkDetail", lang)}
                         </Link>
                       </td>
                     </tr>

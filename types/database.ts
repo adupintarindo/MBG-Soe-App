@@ -1,1222 +1,2253 @@
-// ============================================================================
-// Database types · Hand-authored dari 0001_schema.sql
-// Regenerate setelah migrasi perubahan dengan:
-//   pnpm db:types   (butuh supabase CLI + linked project)
-// ============================================================================
-
 export type Json =
   | string
   | number
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
-export interface Database {
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          id: string;
-          email: string;
-          full_name: string | null;
-          role: Database["public"]["Enums"]["user_role"];
-          supplier_id: string | null;
-          phone: string | null;
-          active: boolean;
-          created_at: string;
-          invited_by: string | null;
-          last_login_at: string | null;
-        };
-        Insert: {
-          id: string;
-          email: string;
-          full_name?: string | null;
-          role?: Database["public"]["Enums"]["user_role"];
-          supplier_id?: string | null;
-          phone?: string | null;
-          active?: boolean;
-          invited_by?: string | null;
-        };
-        Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
-        Relationships: [];
-      };
-      invites: {
-        Row: {
-          id: string;
-          email: string;
-          role: Database["public"]["Enums"]["user_role"];
-          supplier_id: string | null;
-          token: string;
-          created_by: string | null;
-          created_at: string;
-          expires_at: string;
-          used_at: string | null;
-          used_by: string | null;
-        };
-        Insert: {
-          email: string;
-          role: Database["public"]["Enums"]["user_role"];
-          supplier_id?: string | null;
-          created_by?: string | null;
-        };
-        Update: Partial<Database["public"]["Tables"]["invites"]["Insert"]>;
-        Relationships: [];
-      };
-      items: {
-        Row: {
-          code: string;
-          name_en: string | null;
-          unit: string;
-          category: Database["public"]["Enums"]["item_category"];
-          price_idr: number;
-          vol_weekly: number | null;
-          notes: string | null;
-          active: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          code: string;
-          name_en?: string | null;
-          unit: string;
-          category: Database["public"]["Enums"]["item_category"];
-          price_idr?: number;
-          vol_weekly?: number | null;
-          notes?: string | null;
-          active?: boolean;
-        };
-        Update: Partial<Database["public"]["Tables"]["items"]["Insert"]>;
-        Relationships: [];
-      };
-      menus: {
-        Row: {
-          id: number;
-          name: string;
-          name_en: string | null;
-          cycle_day: number | null;
-          active: boolean;
-          notes: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id: number;
-          name: string;
-          name_en?: string | null;
-          cycle_day?: number | null;
-          active?: boolean;
-          notes?: string | null;
-        };
-        Update: Partial<Database["public"]["Tables"]["menus"]["Insert"]>;
-        Relationships: [];
-      };
-      menu_bom: {
-        Row: {
-          menu_id: number;
-          item_code: string;
-          grams_per_porsi: number;
-          grams_paud: number;
-          grams_sd13: number;
-          grams_sd46: number;
-          grams_smp: number;
-        };
-        Insert: {
-          menu_id: number;
-          item_code: string;
-          grams_per_porsi: number;
-          grams_paud?: number;
-          grams_sd13?: number;
-          grams_sd46?: number;
-          grams_smp?: number;
-        };
-        Update: Partial<Database["public"]["Tables"]["menu_bom"]["Insert"]>;
-        Relationships: [];
-      };
-      schools: {
-        Row: {
-          id: string;
-          name: string;
-          level: Database["public"]["Enums"]["school_level"];
-          students: number;
-          kelas13: number;
-          kelas46: number;
-          guru: number;
-          distance_km: number | null;
-          pic: string | null;
-          phone: string | null;
-          address: string | null;
-          active: boolean;
-        };
-        Insert: {
-          id: string;
-          name: string;
-          level: Database["public"]["Enums"]["school_level"];
-          students?: number;
-          kelas13?: number;
-          kelas46?: number;
-          guru?: number;
-          distance_km?: number | null;
-          pic?: string | null;
-          phone?: string | null;
-          address?: string | null;
-          active?: boolean;
-        };
-        Update: Partial<Database["public"]["Tables"]["schools"]["Insert"]>;
-        Relationships: [];
-      };
-      school_attendance: {
-        Row: {
-          school_id: string;
-          att_date: string;
-          qty: number;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: {
-          school_id: string;
-          att_date: string;
-          qty: number;
-          updated_by?: string | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["school_attendance"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      suppliers: {
-        Row: {
-          id: string;
-          name: string;
-          type: Database["public"]["Enums"]["supplier_type"];
-          commodity: string | null;
-          pic: string | null;
-          phone: string | null;
-          address: string | null;
-          email: string | null;
-          notes: string | null;
-          score: number | null;
-          status: Database["public"]["Enums"]["supplier_status"];
-          active: boolean;
-          created_at: string;
-        };
-        Insert: {
-          id: string;
-          name: string;
-          type: Database["public"]["Enums"]["supplier_type"];
-          commodity?: string | null;
-          pic?: string | null;
-          phone?: string | null;
-          address?: string | null;
-          email?: string | null;
-          notes?: string | null;
-          score?: number | null;
-          status?: Database["public"]["Enums"]["supplier_status"];
-          active?: boolean;
-        };
-        Update: Partial<Database["public"]["Tables"]["suppliers"]["Insert"]>;
-        Relationships: [];
-      };
-      supplier_items: {
-        Row: {
-          supplier_id: string;
-          item_code: string;
-          is_main: boolean;
-          price_idr: number | null;
-          lead_time_days: number | null;
-        };
-        Insert: {
-          supplier_id: string;
-          item_code: string;
-          is_main?: boolean;
-          price_idr?: number | null;
-          lead_time_days?: number | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["supplier_items"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      supplier_certs: {
-        Row: {
-          id: number;
-          supplier_id: string;
-          name: string;
-          valid_until: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: number;
-          supplier_id: string;
-          name: string;
-          valid_until?: string | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["supplier_certs"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      supplier_reval: {
-        Row: {
-          id: number;
-          supplier_id: string;
-          period: Database["public"]["Enums"]["reval_period"];
-          period_start: string;
-          period_end: string;
-          quality_score: number;
-          delivery_score: number;
-          price_score: number;
-          compliance_score: number;
-          responsiveness_score: number;
-          w_quality: number;
-          w_delivery: number;
-          w_price: number;
-          w_compliance: number;
-          w_responsiveness: number;
-          total_score: number;
-          recommendation: string | null;
-          notes: string | null;
-          evaluator: string | null;
-          evaluated_at: string;
-        };
-        Insert: {
-          id?: number;
-          supplier_id: string;
-          period?: Database["public"]["Enums"]["reval_period"];
-          period_start: string;
-          period_end: string;
-          quality_score?: number;
-          delivery_score?: number;
-          price_score?: number;
-          compliance_score?: number;
-          responsiveness_score?: number;
-          w_quality?: number;
-          w_delivery?: number;
-          w_price?: number;
-          w_compliance?: number;
-          w_responsiveness?: number;
-          recommendation?: string | null;
-          notes?: string | null;
-          evaluator?: string | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["supplier_reval"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      qc_checklist_templates: {
-        Row: {
-          id: number;
-          category: Database["public"]["Enums"]["item_category"];
-          item_code: string | null;
-          checkpoint: string;
-          expected: string | null;
-          is_critical: boolean;
-          sort_order: number;
-          active: boolean;
-          created_at: string;
-        };
-        Insert: {
-          id?: number;
-          category: Database["public"]["Enums"]["item_category"];
-          item_code?: string | null;
-          checkpoint: string;
-          expected?: string | null;
-          is_critical?: boolean;
-          sort_order?: number;
-          active?: boolean;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["qc_checklist_templates"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      grn_qc_checks: {
-        Row: {
-          id: number;
-          grn_no: string;
-          item_code: string | null;
-          checkpoint: string;
-          is_critical: boolean;
-          result: Database["public"]["Enums"]["qc_result"];
-          note: string | null;
-          photo_url: string | null;
-          checked_by: string | null;
-          checked_at: string;
-        };
-        Insert: {
-          id?: number;
-          grn_no: string;
-          item_code?: string | null;
-          checkpoint: string;
-          is_critical?: boolean;
-          result?: Database["public"]["Enums"]["qc_result"];
-          note?: string | null;
-          photo_url?: string | null;
-          checked_by?: string | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["grn_qc_checks"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      non_conformance_log: {
-        Row: {
-          id: number;
-          ncr_no: string | null;
-          grn_no: string | null;
-          supplier_id: string | null;
-          item_code: string | null;
-          severity: Database["public"]["Enums"]["ncr_severity"];
-          status: Database["public"]["Enums"]["ncr_status"];
-          issue: string;
-          root_cause: string | null;
-          corrective_action: string | null;
-          qty_affected: number | null;
-          unit: string | null;
-          cost_impact_idr: number | null;
-          reported_at: string;
-          reported_by: string | null;
-          resolved_at: string | null;
-          resolved_by: string | null;
-          photo_url: string | null;
-          linked_action_id: number | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: number;
-          ncr_no?: string | null;
-          grn_no?: string | null;
-          supplier_id?: string | null;
-          item_code?: string | null;
-          severity?: Database["public"]["Enums"]["ncr_severity"];
-          status?: Database["public"]["Enums"]["ncr_status"];
-          issue: string;
-          root_cause?: string | null;
-          corrective_action?: string | null;
-          qty_affected?: number | null;
-          unit?: string | null;
-          cost_impact_idr?: number | null;
-          reported_by?: string | null;
-          photo_url?: string | null;
-          linked_action_id?: number | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["non_conformance_log"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      supplier_actions: {
-        Row: {
-          id: number;
-          supplier_id: string | null;
-          related_scope: string | null;
-          title: string;
-          description: string | null;
-          category: string | null;
-          priority: Database["public"]["Enums"]["action_priority"];
-          status: Database["public"]["Enums"]["action_status"];
-          owner: string;
-          owner_user_id: string | null;
-          target_date: string | null;
-          done_at: string | null;
-          done_by: string | null;
-          blocked_reason: string | null;
-          output_notes: string | null;
-          source: Database["public"]["Enums"]["action_source"];
-          source_ref: string | null;
-          created_at: string;
-          created_by: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          id?: number;
-          supplier_id?: string | null;
-          related_scope?: string | null;
-          title: string;
-          description?: string | null;
-          category?: string | null;
-          priority?: Database["public"]["Enums"]["action_priority"];
-          status?: Database["public"]["Enums"]["action_status"];
-          owner?: string;
-          owner_user_id?: string | null;
-          target_date?: string | null;
-          done_at?: string | null;
-          done_by?: string | null;
-          blocked_reason?: string | null;
-          output_notes?: string | null;
-          source?: Database["public"]["Enums"]["action_source"];
-          source_ref?: string | null;
-          created_by?: string | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["supplier_actions"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      menu_assign: {
-        Row: {
-          assign_date: string;
-          menu_id: number;
-          note: string | null;
-          assigned_by: string | null;
-          assigned_at: string;
-        };
-        Insert: {
-          assign_date: string;
-          menu_id: number;
-          note?: string | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["menu_assign"]["Insert"]
-        >;
-        Relationships: [];
-      };
       custom_menus: {
         Row: {
-          menu_date: string;
-          karbo: Json;
-          protein: Json;
-          sayur: Json;
-          buah: Json;
-          created_by: string | null;
-          created_at: string;
-        };
+          buah: Json
+          created_at: string
+          created_by: string | null
+          karbo: Json
+          menu_date: string
+          protein: Json
+          sayur: Json
+        }
         Insert: {
-          menu_date: string;
-          karbo?: Json;
-          protein?: Json;
-          sayur?: Json;
-          buah?: Json;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["custom_menus"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      non_op_days: {
-        Row: { op_date: string; reason: string; created_by: string | null; created_at: string };
-        Insert: { op_date: string; reason: string };
-        Update: Partial<Database["public"]["Tables"]["non_op_days"]["Insert"]>;
-        Relationships: [];
-      };
-      stock: {
+          buah?: Json
+          created_at?: string
+          created_by?: string | null
+          karbo?: Json
+          menu_date: string
+          protein?: Json
+          sayur?: Json
+        }
+        Update: {
+          buah?: Json
+          created_at?: string
+          created_by?: string | null
+          karbo?: Json
+          menu_date?: string
+          protein?: Json
+          sayur?: Json
+        }
+        Relationships: []
+      }
+      grn_qc_checks: {
         Row: {
-          item_code: string;
-          qty: number;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: { item_code: string; qty?: number };
-        Update: Partial<Database["public"]["Tables"]["stock"]["Insert"]>;
-        Relationships: [];
-      };
-      stock_moves: {
-        Row: {
-          id: number;
-          item_code: string;
-          delta: number;
-          reason: Database["public"]["Enums"]["move_reason"];
-          ref_doc: string | null;
-          ref_no: string | null;
-          note: string | null;
-          created_at: string;
-          created_by: string | null;
-        };
+          checked_at: string
+          checked_by: string | null
+          checkpoint: string
+          grn_no: string
+          id: number
+          is_critical: boolean
+          item_code: string | null
+          note: string | null
+          photo_url: string | null
+          result: Database["public"]["Enums"]["qc_result"]
+        }
         Insert: {
-          item_code: string;
-          delta: number;
-          reason: Database["public"]["Enums"]["move_reason"];
-          ref_doc?: string | null;
-          ref_no?: string | null;
-          note?: string | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["stock_moves"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      purchase_orders: {
+          checked_at?: string
+          checked_by?: string | null
+          checkpoint: string
+          grn_no: string
+          id?: number
+          is_critical?: boolean
+          item_code?: string | null
+          note?: string | null
+          photo_url?: string | null
+          result?: Database["public"]["Enums"]["qc_result"]
+        }
+        Update: {
+          checked_at?: string
+          checked_by?: string | null
+          checkpoint?: string
+          grn_no?: string
+          id?: number
+          is_critical?: boolean
+          item_code?: string | null
+          note?: string | null
+          photo_url?: string | null
+          result?: Database["public"]["Enums"]["qc_result"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grn_qc_checks_grn_no_fkey"
+            columns: ["grn_no"]
+            isOneToOne: false
+            referencedRelation: "grns"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "grn_qc_checks_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      grn_rows: {
         Row: {
-          no: string;
-          po_date: string;
-          supplier_id: string;
-          delivery_date: string | null;
-          total: number;
-          status: Database["public"]["Enums"]["po_status"];
-          ref_contract: string | null;
-          pay_method: string | null;
-          top: string | null;
-          notes: string | null;
-          created_at: string;
-          created_by: string | null;
-        };
+          created_at: string
+          created_by: string | null
+          grn_no: string
+          item_code: string
+          line_no: number
+          note: string | null
+          qty_ordered: number
+          qty_received: number
+          qty_rejected: number
+          unit: string
+        }
         Insert: {
-          no: string;
-          po_date: string;
-          supplier_id: string;
-          delivery_date?: string | null;
-          total?: number;
-          status?: Database["public"]["Enums"]["po_status"];
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["purchase_orders"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      po_rows: {
-        Row: {
-          po_no: string;
-          line_no: number;
-          item_code: string;
-          qty: number;
-          unit: string;
-          price: number;
-          subtotal: number;
-        };
-        Insert: {
-          po_no: string;
-          line_no: number;
-          item_code: string;
-          qty: number;
-          unit: string;
-          price: number;
-        };
-        Update: Partial<Database["public"]["Tables"]["po_rows"]["Insert"]>;
-        Relationships: [];
-      };
+          created_at?: string
+          created_by?: string | null
+          grn_no: string
+          item_code: string
+          line_no: number
+          note?: string | null
+          qty_ordered?: number
+          qty_received?: number
+          qty_rejected?: number
+          unit: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          grn_no?: string
+          item_code?: string
+          line_no?: number
+          note?: string | null
+          qty_ordered?: number
+          qty_received?: number
+          qty_rejected?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grn_rows_grn_no_fkey"
+            columns: ["grn_no"]
+            isOneToOne: false
+            referencedRelation: "grns"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "grn_rows_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       grns: {
         Row: {
-          no: string;
-          po_no: string | null;
-          grn_date: string;
-          status: Database["public"]["Enums"]["grn_status"];
-          qc_note: string | null;
-          created_at: string;
-          created_by: string | null;
-        };
+          created_at: string
+          created_by: string | null
+          grn_date: string
+          no: string
+          po_no: string | null
+          qc_note: string | null
+          status: Database["public"]["Enums"]["grn_status"]
+        }
         Insert: {
-          no: string;
-          grn_date: string;
-          po_no?: string | null;
-          status?: Database["public"]["Enums"]["grn_status"];
-          qc_note?: string | null;
-        };
-        Update: Partial<Database["public"]["Tables"]["grns"]["Insert"]>;
-        Relationships: [];
-      };
+          created_at?: string
+          created_by?: string | null
+          grn_date: string
+          no: string
+          po_no?: string | null
+          qc_note?: string | null
+          status?: Database["public"]["Enums"]["grn_status"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          grn_date?: string
+          no?: string
+          po_no?: string | null
+          qc_note?: string | null
+          status?: Database["public"]["Enums"]["grn_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grns_po_no_fkey"
+            columns: ["po_no"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["no"]
+          },
+        ]
+      }
+      invites: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          supplier_id: string | null
+          token: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          supplier_id?: string | null
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          supplier_id?: string | null
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
-          no: string;
-          po_no: string | null;
-          inv_date: string;
-          supplier_id: string;
-          total: number;
-          due_date: string | null;
-          status: Database["public"]["Enums"]["invoice_status"];
-          created_at: string;
-        };
+          created_at: string
+          due_date: string | null
+          inv_date: string
+          no: string
+          po_no: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          supplier_id: string
+          total: number
+        }
         Insert: {
-          no: string;
-          inv_date: string;
-          supplier_id: string;
-          total: number;
-          po_no?: string | null;
-          due_date?: string | null;
-          status?: Database["public"]["Enums"]["invoice_status"];
-        };
-        Update: Partial<Database["public"]["Tables"]["invoices"]["Insert"]>;
-        Relationships: [];
-      };
-      receipts: {
+          created_at?: string
+          due_date?: string | null
+          inv_date: string
+          no: string
+          po_no?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          supplier_id: string
+          total: number
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          inv_date?: string
+          no?: string
+          po_no?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          supplier_id?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_po_no_fkey"
+            columns: ["po_no"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "invoices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      items: {
         Row: {
-          id: string;
-          ref: string;
-          note: string | null;
-          photo_url: string | null;
-          created_at: string;
-          created_by: string | null;
-        };
-        Insert: { ref: string; note?: string | null; photo_url?: string | null };
-        Update: Partial<Database["public"]["Tables"]["receipts"]["Insert"]>;
-        Relationships: [];
-      };
-      transactions: {
-        Row: {
-          id: number;
-          tx_date: string;
-          tx_type: Database["public"]["Enums"]["tx_type"];
-          ref_no: string | null;
-          supplier_id: string | null;
-          amount: number | null;
-          description: string | null;
-          created_at: string;
-          created_by: string | null;
-        };
+          active: boolean
+          category: Database["public"]["Enums"]["item_category"]
+          code: string
+          created_at: string
+          name_en: string | null
+          notes: string | null
+          price_idr: number
+          unit: string
+          updated_at: string
+          vol_weekly: number | null
+        }
         Insert: {
-          tx_date: string;
-          tx_type: Database["public"]["Enums"]["tx_type"];
-          ref_no?: string | null;
-          supplier_id?: string | null;
-          amount?: number | null;
-          description?: string | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["transactions"]["Insert"]
-        >;
-        Relationships: [];
-      };
-      settings: {
+          active?: boolean
+          category: Database["public"]["Enums"]["item_category"]
+          code: string
+          created_at?: string
+          name_en?: string | null
+          notes?: string | null
+          price_idr?: number
+          unit: string
+          updated_at?: string
+          vol_weekly?: number | null
+        }
+        Update: {
+          active?: boolean
+          category?: Database["public"]["Enums"]["item_category"]
+          code?: string
+          created_at?: string
+          name_en?: string | null
+          notes?: string | null
+          price_idr?: number
+          unit?: string
+          updated_at?: string
+          vol_weekly?: number | null
+        }
+        Relationships: []
+      }
+      menu_assign: {
         Row: {
-          key: string;
-          value: Json;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: { key: string; value: Json };
-        Update: Partial<Database["public"]["Tables"]["settings"]["Insert"]>;
-        Relationships: [];
-      };
-      quotations: {
-        Row: {
-          no: string;
-          supplier_id: string;
-          quote_date: string;
-          valid_until: string | null;
-          need_date: string | null;
-          status: Database["public"]["Enums"]["quotation_status"];
-          total: number;
-          notes: string | null;
-          converted_po_no: string | null;
-          created_at: string;
-          created_by: string | null;
-          responded_at: string | null;
-          responded_by: string | null;
-        };
+          assign_date: string
+          assigned_at: string
+          assigned_by: string | null
+          menu_id: number
+          note: string | null
+        }
         Insert: {
-          no?: string;
-          supplier_id: string;
-          quote_date?: string;
-          valid_until?: string | null;
-          need_date?: string | null;
-          status?: Database["public"]["Enums"]["quotation_status"];
-          total?: number;
-          notes?: string | null;
-          converted_po_no?: string | null;
-          created_by?: string | null;
-        };
-        Update: Partial<Database["public"]["Tables"]["quotations"]["Insert"]>;
-        Relationships: [];
-      };
+          assign_date: string
+          assigned_at?: string
+          assigned_by?: string | null
+          menu_id: number
+          note?: string | null
+        }
+        Update: {
+          assign_date?: string
+          assigned_at?: string
+          assigned_by?: string | null
+          menu_id?: number
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_assign_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_bom: {
+        Row: {
+          grams_paud: number
+          grams_per_porsi: number
+          grams_sd13: number
+          grams_sd46: number
+          grams_smp: number
+          item_code: string
+          menu_id: number
+        }
+        Insert: {
+          grams_paud?: number
+          grams_per_porsi: number
+          grams_sd13?: number
+          grams_sd46?: number
+          grams_smp?: number
+          item_code: string
+          menu_id: number
+        }
+        Update: {
+          grams_paud?: number
+          grams_per_porsi?: number
+          grams_sd13?: number
+          grams_sd46?: number
+          grams_smp?: number
+          item_code?: string
+          menu_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_bom_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "menu_bom_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menus: {
+        Row: {
+          active: boolean
+          created_at: string
+          cycle_day: number | null
+          id: number
+          name: string
+          name_en: string | null
+          notes: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          cycle_day?: number | null
+          id: number
+          name: string
+          name_en?: string | null
+          notes?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          cycle_day?: number | null
+          id?: number
+          name?: string
+          name_en?: string | null
+          notes?: string | null
+        }
+        Relationships: []
+      }
+      non_conformance_log: {
+        Row: {
+          corrective_action: string | null
+          cost_impact_idr: number | null
+          created_at: string
+          grn_no: string | null
+          id: number
+          issue: string
+          item_code: string | null
+          linked_action_id: number | null
+          ncr_no: string | null
+          photo_url: string | null
+          qty_affected: number | null
+          reported_at: string
+          reported_by: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          root_cause: string | null
+          severity: Database["public"]["Enums"]["ncr_severity"]
+          status: Database["public"]["Enums"]["ncr_status"]
+          supplier_id: string | null
+          unit: string | null
+        }
+        Insert: {
+          corrective_action?: string | null
+          cost_impact_idr?: number | null
+          created_at?: string
+          grn_no?: string | null
+          id?: number
+          issue: string
+          item_code?: string | null
+          linked_action_id?: number | null
+          ncr_no?: string | null
+          photo_url?: string | null
+          qty_affected?: number | null
+          reported_at?: string
+          reported_by?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          root_cause?: string | null
+          severity?: Database["public"]["Enums"]["ncr_severity"]
+          status?: Database["public"]["Enums"]["ncr_status"]
+          supplier_id?: string | null
+          unit?: string | null
+        }
+        Update: {
+          corrective_action?: string | null
+          cost_impact_idr?: number | null
+          created_at?: string
+          grn_no?: string | null
+          id?: number
+          issue?: string
+          item_code?: string | null
+          linked_action_id?: number | null
+          ncr_no?: string | null
+          photo_url?: string | null
+          qty_affected?: number | null
+          reported_at?: string
+          reported_by?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          root_cause?: string | null
+          severity?: Database["public"]["Enums"]["ncr_severity"]
+          status?: Database["public"]["Enums"]["ncr_status"]
+          supplier_id?: string | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "non_conformance_log_grn_no_fkey"
+            columns: ["grn_no"]
+            isOneToOne: false
+            referencedRelation: "grns"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "non_conformance_log_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "non_conformance_log_linked_action_id_fkey"
+            columns: ["linked_action_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "non_conformance_log_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      non_op_days: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          op_date: string
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          op_date: string
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          op_date?: string
+          reason?: string
+        }
+        Relationships: []
+      }
+      po_rows: {
+        Row: {
+          item_code: string
+          line_no: number
+          po_no: string
+          price: number
+          qty: number
+          subtotal: number | null
+          unit: string
+        }
+        Insert: {
+          item_code: string
+          line_no: number
+          po_no: string
+          price: number
+          qty: number
+          subtotal?: number | null
+          unit: string
+        }
+        Update: {
+          item_code?: string
+          line_no?: number
+          po_no?: string
+          price?: number
+          qty?: number
+          subtotal?: number | null
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "po_rows_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "po_rows_po_no_fkey"
+            columns: ["po_no"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["no"]
+          },
+        ]
+      }
+      pr_allocations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: number
+          line_no: number
+          note: string | null
+          pr_no: string
+          qty_planned: number
+          quotation_no: string | null
+          supplier_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          line_no: number
+          note?: string | null
+          pr_no: string
+          qty_planned: number
+          quotation_no?: string | null
+          supplier_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          line_no?: number
+          note?: string | null
+          pr_no?: string
+          qty_planned?: number
+          quotation_no?: string | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_allocations_pr_no_line_no_fkey"
+            columns: ["pr_no", "line_no"]
+            isOneToOne: false
+            referencedRelation: "pr_rows"
+            referencedColumns: ["pr_no", "line_no"]
+          },
+          {
+            foreignKeyName: "pr_allocations_quotation_no_fkey"
+            columns: ["quotation_no"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "pr_allocations_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pr_rows: {
+        Row: {
+          item_code: string
+          line_no: number
+          note: string | null
+          pr_no: string
+          qty_total: number
+          unit: string
+        }
+        Insert: {
+          item_code: string
+          line_no: number
+          note?: string | null
+          pr_no: string
+          qty_total: number
+          unit: string
+        }
+        Update: {
+          item_code?: string
+          line_no?: number
+          note?: string | null
+          pr_no?: string
+          qty_total?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_rows_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "pr_rows_pr_no_fkey"
+            columns: ["pr_no"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["no"]
+          },
+        ]
+      }
+      price_periods: {
+        Row: {
+          active: boolean
+          created_at: string
+          end_date: string
+          id: number
+          name: string
+          notes: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          end_date: string
+          id?: number
+          name: string
+          notes?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          end_date?: string
+          id?: number
+          name?: string
+          notes?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      price_weeks: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: number
+          label: string
+          period_id: number
+          start_date: string
+          week_no: number
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: number
+          label: string
+          period_id: number
+          start_date: string
+          week_no: number
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: number
+          label?: string
+          period_id?: number
+          start_date?: string
+          week_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_weeks_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "price_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          invited_by: string | null
+          last_login_at: string | null
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          supplier_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          invited_by?: string | null
+          last_login_at?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          supplier_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          invited_by?: string | null
+          last_login_at?: string | null
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          supplier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          delivery_date: string | null
+          no: string
+          notes: string | null
+          pay_method: string | null
+          po_date: string
+          ref_contract: string | null
+          status: Database["public"]["Enums"]["po_status"]
+          supplier_id: string
+          top: string | null
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          no: string
+          notes?: string | null
+          pay_method?: string | null
+          po_date: string
+          ref_contract?: string | null
+          status?: Database["public"]["Enums"]["po_status"]
+          supplier_id: string
+          top?: string | null
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          delivery_date?: string | null
+          no?: string
+          notes?: string | null
+          pay_method?: string | null
+          po_date?: string
+          ref_contract?: string | null
+          status?: Database["public"]["Enums"]["po_status"]
+          supplier_id?: string
+          top?: string | null
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requisitions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          need_date: string
+          no: string
+          notes: string | null
+          status: Database["public"]["Enums"]["pr_status"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          need_date: string
+          no: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["pr_status"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          need_date?: string
+          no?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["pr_status"]
+        }
+        Relationships: []
+      }
+      qc_checklist_templates: {
+        Row: {
+          active: boolean
+          category: Database["public"]["Enums"]["item_category"]
+          checkpoint: string
+          created_at: string
+          expected: string | null
+          id: number
+          is_critical: boolean
+          item_code: string | null
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          category: Database["public"]["Enums"]["item_category"]
+          checkpoint: string
+          created_at?: string
+          expected?: string | null
+          id?: number
+          is_critical?: boolean
+          item_code?: string | null
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          category?: Database["public"]["Enums"]["item_category"]
+          checkpoint?: string
+          created_at?: string
+          expected?: string | null
+          id?: number
+          is_critical?: boolean
+          item_code?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qc_checklist_templates_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       quotation_rows: {
         Row: {
-          qt_no: string;
-          line_no: number;
-          item_code: string;
-          qty: number;
-          unit: string;
-          price_suggested: number | null;
-          price_quoted: number | null;
-          qty_quoted: number | null;
-          note: string | null;
-          subtotal: number;
-        };
+          item_code: string
+          line_no: number
+          note: string | null
+          price_quoted: number | null
+          price_suggested: number | null
+          qt_no: string
+          qty: number
+          qty_quoted: number | null
+          subtotal: number | null
+          unit: string
+        }
         Insert: {
-          qt_no: string;
-          line_no: number;
-          item_code: string;
-          qty: number;
-          unit: string;
-          price_suggested?: number | null;
-          price_quoted?: number | null;
-          qty_quoted?: number | null;
-          note?: string | null;
-        };
-        Update: Partial<
-          Database["public"]["Tables"]["quotation_rows"]["Insert"]
-        >;
-        Relationships: [];
-      };
+          item_code: string
+          line_no: number
+          note?: string | null
+          price_quoted?: number | null
+          price_suggested?: number | null
+          qt_no: string
+          qty: number
+          qty_quoted?: number | null
+          subtotal?: number | null
+          unit: string
+        }
+        Update: {
+          item_code?: string
+          line_no?: number
+          note?: string | null
+          price_quoted?: number | null
+          price_suggested?: number | null
+          qt_no?: string
+          qty?: number
+          qty_quoted?: number | null
+          subtotal?: number | null
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_rows_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "quotation_rows_qt_no_fkey"
+            columns: ["qt_no"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["no"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          converted_po_no: string | null
+          created_at: string
+          created_by: string | null
+          need_date: string | null
+          no: string
+          notes: string | null
+          pr_no: string | null
+          quote_date: string
+          responded_at: string | null
+          responded_by: string | null
+          status: Database["public"]["Enums"]["quotation_status"]
+          supplier_id: string
+          total: number
+          valid_until: string | null
+        }
+        Insert: {
+          converted_po_no?: string | null
+          created_at?: string
+          created_by?: string | null
+          need_date?: string | null
+          no: string
+          notes?: string | null
+          pr_no?: string | null
+          quote_date?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: Database["public"]["Enums"]["quotation_status"]
+          supplier_id: string
+          total?: number
+          valid_until?: string | null
+        }
+        Update: {
+          converted_po_no?: string | null
+          created_at?: string
+          created_by?: string | null
+          need_date?: string | null
+          no?: string
+          notes?: string | null
+          pr_no?: string | null
+          quote_date?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: Database["public"]["Enums"]["quotation_status"]
+          supplier_id?: string
+          total?: number
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_converted_po_no_fkey"
+            columns: ["converted_po_no"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "quotations_pr_no_fkey"
+            columns: ["pr_no"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "quotations_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          photo_url: string | null
+          ref: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          photo_url?: string | null
+          ref: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          photo_url?: string | null
+          ref?: string
+        }
+        Relationships: []
+      }
+      school_attendance: {
+        Row: {
+          att_date: string
+          qty: number
+          school_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          att_date: string
+          qty: number
+          school_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          att_date?: string
+          qty?: number
+          school_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_attendance_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schools: {
+        Row: {
+          active: boolean
+          address: string | null
+          distance_km: number | null
+          guru: number
+          id: string
+          kelas13: number
+          kelas46: number
+          level: Database["public"]["Enums"]["school_level"]
+          name: string
+          phone: string | null
+          pic: string | null
+          students: number
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          distance_km?: number | null
+          guru?: number
+          id: string
+          kelas13?: number
+          kelas46?: number
+          level: Database["public"]["Enums"]["school_level"]
+          name: string
+          phone?: string | null
+          pic?: string | null
+          students?: number
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          distance_km?: number | null
+          guru?: number
+          id?: string
+          kelas13?: number
+          kelas46?: number
+          level?: Database["public"]["Enums"]["school_level"]
+          name?: string
+          phone?: string | null
+          pic?: string | null
+          students?: number
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       sop_runs: {
         Row: {
-          id: number;
-          sop_id: string;
-          sop_title: string;
-          sop_category: string;
-          run_date: string;
-          steps_checked: number;
-          steps_total: number;
-          risks_flagged: string[];
-          notes: string | null;
-          evaluator: string | null;
-          created_by: string | null;
-          created_at: string;
-        };
+          created_at: string
+          created_by: string | null
+          evaluator: string | null
+          id: number
+          notes: string | null
+          risks_flagged: string[]
+          run_date: string
+          sop_category: string
+          sop_id: string
+          sop_title: string
+          steps_checked: number
+          steps_total: number
+        }
         Insert: {
-          id?: number;
-          sop_id: string;
-          sop_title: string;
-          sop_category: string;
-          run_date?: string;
-          steps_checked?: number;
-          steps_total?: number;
-          risks_flagged?: string[];
-          notes?: string | null;
-          evaluator?: string | null;
-        };
-        Update: Partial<Database["public"]["Tables"]["sop_runs"]["Insert"]>;
-        Relationships: [];
-      };
-    };
-    Views: Record<string, never>;
+          created_at?: string
+          created_by?: string | null
+          evaluator?: string | null
+          id?: never
+          notes?: string | null
+          risks_flagged?: string[]
+          run_date?: string
+          sop_category: string
+          sop_id: string
+          sop_title: string
+          steps_checked?: number
+          steps_total?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          evaluator?: string | null
+          id?: never
+          notes?: string | null
+          risks_flagged?: string[]
+          run_date?: string
+          sop_category?: string
+          sop_id?: string
+          sop_title?: string
+          steps_checked?: number
+          steps_total?: number
+        }
+        Relationships: []
+      }
+      stock: {
+        Row: {
+          item_code: string
+          qty: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          item_code: string
+          qty?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          item_code?: string
+          qty?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: true
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      stock_moves: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          delta: number
+          id: number
+          item_code: string
+          note: string | null
+          reason: Database["public"]["Enums"]["move_reason"]
+          ref_doc: string | null
+          ref_no: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          delta: number
+          id?: number
+          item_code: string
+          note?: string | null
+          reason: Database["public"]["Enums"]["move_reason"]
+          ref_doc?: string | null
+          ref_no?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          delta?: number
+          id?: number
+          item_code?: string
+          note?: string | null
+          reason?: Database["public"]["Enums"]["move_reason"]
+          ref_doc?: string | null
+          ref_no?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_moves_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      supplier_actions: {
+        Row: {
+          blocked_reason: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          done_at: string | null
+          done_by: string | null
+          id: number
+          output_notes: string | null
+          owner: string
+          owner_user_id: string | null
+          priority: Database["public"]["Enums"]["action_priority"]
+          related_scope: string | null
+          source: Database["public"]["Enums"]["action_source"]
+          source_ref: string | null
+          status: Database["public"]["Enums"]["action_status"]
+          supplier_id: string | null
+          target_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          blocked_reason?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          done_at?: string | null
+          done_by?: string | null
+          id?: number
+          output_notes?: string | null
+          owner?: string
+          owner_user_id?: string | null
+          priority?: Database["public"]["Enums"]["action_priority"]
+          related_scope?: string | null
+          source?: Database["public"]["Enums"]["action_source"]
+          source_ref?: string | null
+          status?: Database["public"]["Enums"]["action_status"]
+          supplier_id?: string | null
+          target_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          blocked_reason?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          done_at?: string | null
+          done_by?: string | null
+          id?: number
+          output_notes?: string | null
+          owner?: string
+          owner_user_id?: string | null
+          priority?: Database["public"]["Enums"]["action_priority"]
+          related_scope?: string | null
+          source?: Database["public"]["Enums"]["action_source"]
+          source_ref?: string | null
+          status?: Database["public"]["Enums"]["action_status"]
+          supplier_id?: string | null
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_actions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_certs: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          supplier_id: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+          supplier_id: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          supplier_id?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_certs_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_items: {
+        Row: {
+          is_main: boolean
+          item_code: string
+          lead_time_days: number | null
+          price_idr: number | null
+          supplier_id: string
+        }
+        Insert: {
+          is_main?: boolean
+          item_code: string
+          lead_time_days?: number | null
+          price_idr?: number | null
+          supplier_id: string
+        }
+        Update: {
+          is_main?: boolean
+          item_code?: string
+          lead_time_days?: number | null
+          price_idr?: number | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_items_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "supplier_items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_prices: {
+        Row: {
+          commodity: Database["public"]["Enums"]["price_commodity"]
+          created_at: string
+          created_by: string | null
+          id: number
+          ingredient_name: string
+          item_code: string | null
+          notes: string | null
+          price_per_item: number | null
+          price_per_kg: number | null
+          supplier_id: string
+          unit: string | null
+          updated_at: string
+          week_id: number
+        }
+        Insert: {
+          commodity: Database["public"]["Enums"]["price_commodity"]
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          ingredient_name: string
+          item_code?: string | null
+          notes?: string | null
+          price_per_item?: number | null
+          price_per_kg?: number | null
+          supplier_id: string
+          unit?: string | null
+          updated_at?: string
+          week_id: number
+        }
+        Update: {
+          commodity?: Database["public"]["Enums"]["price_commodity"]
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          ingredient_name?: string
+          item_code?: string | null
+          notes?: string | null
+          price_per_item?: number | null
+          price_per_kg?: number | null
+          supplier_id?: string
+          unit?: string | null
+          updated_at?: string
+          week_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_prices_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "supplier_prices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_prices_week_id_fkey"
+            columns: ["week_id"]
+            isOneToOne: false
+            referencedRelation: "price_weeks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_reval: {
+        Row: {
+          compliance_score: number
+          delivery_score: number
+          evaluated_at: string
+          evaluator: string | null
+          id: number
+          notes: string | null
+          period: Database["public"]["Enums"]["reval_period"]
+          period_end: string
+          period_start: string
+          price_score: number
+          quality_score: number
+          recommendation: string | null
+          responsiveness_score: number
+          supplier_id: string
+          total_score: number | null
+          w_compliance: number
+          w_delivery: number
+          w_price: number
+          w_quality: number
+          w_responsiveness: number
+        }
+        Insert: {
+          compliance_score?: number
+          delivery_score?: number
+          evaluated_at?: string
+          evaluator?: string | null
+          id?: number
+          notes?: string | null
+          period?: Database["public"]["Enums"]["reval_period"]
+          period_end: string
+          period_start: string
+          price_score?: number
+          quality_score?: number
+          recommendation?: string | null
+          responsiveness_score?: number
+          supplier_id: string
+          total_score?: number | null
+          w_compliance?: number
+          w_delivery?: number
+          w_price?: number
+          w_quality?: number
+          w_responsiveness?: number
+        }
+        Update: {
+          compliance_score?: number
+          delivery_score?: number
+          evaluated_at?: string
+          evaluator?: string | null
+          id?: number
+          notes?: string | null
+          period?: Database["public"]["Enums"]["reval_period"]
+          period_end?: string
+          period_start?: string
+          price_score?: number
+          quality_score?: number
+          recommendation?: string | null
+          responsiveness_score?: number
+          supplier_id?: string
+          total_score?: number | null
+          w_compliance?: number
+          w_delivery?: number
+          w_price?: number
+          w_quality?: number
+          w_responsiveness?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_reval_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          active: boolean
+          address: string | null
+          commodity: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          pic: string | null
+          score: number | null
+          status: Database["public"]["Enums"]["supplier_status"]
+          type: Database["public"]["Enums"]["supplier_type"]
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          commodity?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          pic?: string | null
+          score?: number | null
+          status?: Database["public"]["Enums"]["supplier_status"]
+          type: Database["public"]["Enums"]["supplier_type"]
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          commodity?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          pic?: string | null
+          score?: number | null
+          status?: Database["public"]["Enums"]["supplier_status"]
+          type?: Database["public"]["Enums"]["supplier_type"]
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: number
+          ref_no: string | null
+          supplier_id: string | null
+          tx_date: string
+          tx_type: Database["public"]["Enums"]["tx_type"]
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: number
+          ref_no?: string | null
+          supplier_id?: string | null
+          tx_date: string
+          tx_type: Database["public"]["Enums"]["tx_type"]
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: number
+          ref_no?: string | null
+          supplier_id?: string | null
+          tx_date?: string
+          tx_type?: Database["public"]["Enums"]["tx_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      v_price_list_matrix: {
+        Row: {
+          avg_per_kg: number | null
+          commodity: Database["public"]["Enums"]["price_commodity"] | null
+          ingredient_name: string | null
+          item_code: string | null
+          max_per_kg: number | null
+          min_per_kg: number | null
+          period_id: number | null
+          period_name: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          w1: number | null
+          w10: number | null
+          w11: number | null
+          w12: number | null
+          w2: number | null
+          w3: number | null
+          w4: number | null
+          w5: number | null
+          w6: number | null
+          w7: number | null
+          w8: number | null
+          w9: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_weeks_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "price_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_prices_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "supplier_prices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
     Functions: {
-      porsi_counts: {
-        Args: { p_date: string };
+      action_readiness_snapshot: {
+        Args: never
         Returns: {
-          kecil: number;
-          besar: number;
-          guru: number;
-          total: number;
-          operasional: boolean;
-        }[];
-      };
-      porsi_counts_tiered: {
-        Args: { p_date: string };
-        Returns: {
-          paud: number;
-          sd13: number;
-          sd46: number;
-          smp_plus: number;
-          total: number;
-          operasional: boolean;
-        }[];
-      };
+          blocked_cnt: number
+          cancelled_cnt: number
+          done_cnt: number
+          high_priority_open: number
+          in_progress_cnt: number
+          open_cnt: number
+          overdue_cnt: number
+          readiness_pct: number
+          total: number
+        }[]
+      }
+      admin_reset_master: { Args: never; Returns: Json }
+      admin_reset_stock: { Args: never; Returns: Json }
+      admin_reset_transactional: { Args: never; Returns: Json }
       bom_variance: {
-        Args: {
-          p_start: string;
-          p_end: string;
-          p_threshold_pct?: number;
-        };
+        Args: { p_end: string; p_start: string; p_threshold_pct?: number }
         Returns: {
-          item_code: string;
-          name_en: string | null;
-          unit: string;
-          category: Database["public"]["Enums"]["item_category"];
-          plan_kg: number;
-          actual_kg: number;
-          variance_kg: number;
-          variance_pct: number | null;
-          flag: string;
-        }[];
-      };
-      bom_variance_summary: {
-        Args: {
-          p_start: string;
-          p_end: string;
-          p_threshold_pct?: number;
-        };
-        Returns: {
-          total_items: number;
-          over_cnt: number;
-          under_cnt: number;
-          ok_cnt: number;
-          total_plan_kg: number;
-          total_actual_kg: number;
-          total_variance_kg: number;
-          total_variance_pct: number | null;
-        }[];
-      };
+          actual_kg: number
+          category: Database["public"]["Enums"]["item_category"]
+          flag: string
+          item_code: string
+          name_en: string
+          plan_kg: number
+          unit: string
+          variance_kg: number
+          variance_pct: number
+        }[]
+      }
       bom_variance_by_menu: {
-        Args: { p_start: string; p_end: string };
+        Args: { p_end: string; p_start: string }
         Returns: {
-          menu_id: number;
-          menu_name: string;
-          days_served: number;
-          plan_porsi: number;
-          plan_kg_total: number;
-          plan_cost_idr: number;
-        }[];
-      };
-      porsi_effective: {
-        Args: { p_date: string };
-        Returns: number;
-      };
-      requirement_for_date: {
-        Args: { p_date: string };
+          days_served: number
+          menu_id: number
+          menu_name: string
+          plan_cost_idr: number
+          plan_kg_total: number
+          plan_porsi: number
+        }[]
+      }
+      bom_variance_summary: {
+        Args: { p_end: string; p_start: string; p_threshold_pct?: number }
         Returns: {
-          item_code: string;
-          qty: number;
-          unit: string;
-          category: Database["public"]["Enums"]["item_category"];
-          price_idr: number;
-        }[];
-      };
-      stock_shortage_for_date: {
-        Args: { p_date: string };
-        Returns: {
-          item_code: string;
-          required: number;
-          on_hand: number;
-          gap: number;
-          unit: string;
-        }[];
-      };
-      upcoming_shortages: {
-        Args: { p_horizon: number };
-        Returns: {
-          op_date: string;
-          short_items: number;
-          total_gap_kg: number;
-        }[];
-      };
+          ok_cnt: number
+          over_cnt: number
+          total_actual_kg: number
+          total_items: number
+          total_plan_kg: number
+          total_variance_kg: number
+          total_variance_pct: number
+          under_cnt: number
+        }[]
+      }
+      convert_quotation_to_po: { Args: { p_qt_no: string }; Returns: string }
       create_invite: {
         Args: {
-          p_email: string;
-          p_role: Database["public"]["Enums"]["user_role"];
-          p_supplier_id?: string | null;
-        };
-        Returns: string;
-      };
+          p_email: string
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_supplier_id?: string
+        }
+        Returns: string
+      }
       current_role: {
-        Args: Record<string, never>;
-        Returns: Database["public"]["Enums"]["user_role"];
-      };
-      current_supplier_id: {
-        Args: Record<string, never>;
-        Returns: string | null;
-      };
-      is_admin: { Args: Record<string, never>; Returns: boolean };
-      admin_reset_transactional: {
-        Args: Record<string, never>;
-        Returns: Json;
-      };
-      admin_reset_stock: {
-        Args: Record<string, never>;
-        Returns: Json;
-      };
-      admin_reset_master: {
-        Args: Record<string, never>;
-        Returns: Json;
-      };
-      monthly_requirements: {
-        Args: { p_start: string; p_months?: number };
-        Returns: {
-          item_code: string;
-          month: string;
-          qty_kg: number;
-        }[];
-      };
-      top_suppliers_by_spend: {
-        Args: { p_start: string; p_end: string; p_limit?: number };
-        Returns: {
-          supplier_id: string;
-          supplier_name: string;
-          supplier_type: Database["public"]["Enums"]["supplier_type"];
-          total_spend: number;
-          invoice_count: number;
-        }[];
-      };
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      current_supplier_id: { Args: never; Returns: string }
       daily_planning: {
-        Args: { p_horizon?: number };
+        Args: { p_horizon?: number }
         Returns: {
-          op_date: string;
-          menu_id: number | null;
-          menu_name: string | null;
-          porsi_total: number;
-          porsi_eff: number;
-          total_kg: number;
-          short_items: number;
-          operasional: boolean;
-        }[];
-      };
+          menu_id: number
+          menu_name: string
+          op_date: string
+          operasional: boolean
+          porsi_eff: number
+          porsi_total: number
+          short_items: number
+          total_kg: number
+        }[]
+      }
       dashboard_kpis: {
-        Args: Record<string, never>;
+        Args: never
         Returns: {
-          students_total: number;
-          schools_active: number;
-          menu_today_id: number | null;
-          menu_today_name: string | null;
-          suppliers_active: number;
-        }[];
-      };
+          menu_today_id: number
+          menu_today_name: string
+          schools_active: number
+          students_total: number
+          suppliers_active: number
+        }[]
+      }
+      grn_qc_summary: {
+        Args: { p_grn_no: string }
+        Returns: {
+          critical: number
+          fail_total: number
+          has_critical: boolean
+          major: number
+          minor: number
+          pass: number
+          total: number
+        }[]
+      }
+      import_price_list_json: {
+        Args: { p_payload: Json; p_period_id: number }
+        Returns: {
+          cells_upserted: number
+          rows_processed: number
+          suppliers_missing: string[]
+        }[]
+      }
+      is_admin: { Args: never; Returns: boolean }
+      list_sop_runs: {
+        Args: { p_limit?: number; p_sop_id?: string }
+        Returns: {
+          created_at: string
+          evaluator: string
+          id: number
+          notes: string
+          risks_flagged: string[]
+          run_date: string
+          sop_category: string
+          sop_id: string
+          sop_title: string
+          steps_checked: number
+          steps_total: number
+        }[]
+      }
       list_supplier_actions: {
         Args: {
-          p_supplier_id?: string | null;
-          p_status?: Database["public"]["Enums"]["action_status"] | null;
-          p_source?: Database["public"]["Enums"]["action_source"] | null;
-        };
+          p_source?: Database["public"]["Enums"]["action_source"]
+          p_status?: Database["public"]["Enums"]["action_status"]
+          p_supplier_id?: string
+        }
         Returns: {
-          id: number;
-          supplier_id: string | null;
-          supplier_name: string | null;
-          related_scope: string | null;
-          title: string;
-          description: string | null;
-          category: string | null;
-          priority: Database["public"]["Enums"]["action_priority"];
-          status: Database["public"]["Enums"]["action_status"];
-          owner: string;
-          target_date: string | null;
-          done_at: string | null;
-          blocked_reason: string | null;
-          output_notes: string | null;
-          source: Database["public"]["Enums"]["action_source"];
-          source_ref: string | null;
-          days_to_target: number | null;
-          is_overdue: boolean;
-          created_at: string;
-          updated_at: string;
-        }[];
-      };
-      update_action_status: {
-        Args: {
-          p_id: number;
-          p_status: Database["public"]["Enums"]["action_status"];
-          p_notes?: string | null;
-          p_blocked_reason?: string | null;
-        };
-        Returns: Database["public"]["Tables"]["supplier_actions"]["Row"];
-      };
-      action_readiness_snapshot: {
-        Args: Record<string, never>;
-        Returns: {
-          total: number;
-          open_cnt: number;
-          in_progress_cnt: number;
-          blocked_cnt: number;
-          done_cnt: number;
-          cancelled_cnt: number;
-          overdue_cnt: number;
-          high_priority_open: number;
-          readiness_pct: number;
-        }[];
-      };
-      overdue_actions: {
-        Args: Record<string, never>;
-        Returns: {
-          id: number;
-          supplier_id: string | null;
-          supplier_name: string | null;
-          related_scope: string | null;
-          title: string;
-          priority: Database["public"]["Enums"]["action_priority"];
-          status: Database["public"]["Enums"]["action_status"];
-          target_date: string;
-          days_late: number;
-          owner: string;
-        }[];
-      };
-      qc_template_for_item: {
-        Args: { p_item: string };
-        Returns: {
-          id: number;
-          category: Database["public"]["Enums"]["item_category"];
-          checkpoint: string;
-          expected: string | null;
-          is_critical: boolean;
-          sort_order: number;
-        }[];
-      };
-      grn_qc_summary: {
-        Args: { p_grn_no: string };
-        Returns: {
-          total: number;
-          pass: number;
-          minor: number;
-          major: number;
-          critical: number;
-          fail_total: number;
-          has_critical: boolean;
-        }[];
-      };
-      ncr_open_snapshot: {
-        Args: Record<string, never>;
-        Returns: {
-          total: number;
-          open_cnt: number;
-          in_progress_cnt: number;
-          resolved_cnt: number;
-          critical_open: number;
-          avg_resolve_days: number | null;
-        }[];
-      };
-      quotation_seed_from_date: {
-        Args: { p_date: string };
-        Returns: {
-          item_code: string;
-          qty: number;
-          unit: string;
-          price_suggested: number | null;
-        }[];
-      };
-      convert_quotation_to_po: {
-        Args: { p_qt_no: string };
-        Returns: string;
-      };
-      supplier_scorecard_auto: {
-        Args: {
-          p_supplier_id: string;
-          p_start: string;
-          p_end: string;
-        };
-        Returns: {
-          quality_score: number;
-          delivery_score: number;
-          price_score: number;
-          compliance_score: number;
-          responsiveness_score: number;
-          total_score: number;
-          grn_count: number;
-          qc_pass: number;
-          qc_fail: number;
-          ncr_critical_open: number;
-          actions_overdue: number;
-          actions_total: number;
-        }[];
-      };
-      save_supplier_reval: {
-        Args: {
-          p_supplier_id: string;
-          p_period: Database["public"]["Enums"]["reval_period"];
-          p_start: string;
-          p_end: string;
-          p_recommendation?: string | null;
-          p_notes?: string | null;
-        };
-        Returns: number;
-      };
+          blocked_reason: string
+          category: string
+          created_at: string
+          days_to_target: number
+          description: string
+          done_at: string
+          id: number
+          is_overdue: boolean
+          output_notes: string
+          owner: string
+          priority: Database["public"]["Enums"]["action_priority"]
+          related_scope: string
+          source: Database["public"]["Enums"]["action_source"]
+          source_ref: string
+          status: Database["public"]["Enums"]["action_status"]
+          supplier_id: string
+          supplier_name: string
+          target_date: string
+          title: string
+          updated_at: string
+        }[]
+      }
       list_supplier_reval: {
-        Args: { p_supplier_id: string };
-        Returns: Database["public"]["Tables"]["supplier_reval"]["Row"][];
-      };
-      supplier_qc_gallery: {
-        Args: { p_supplier_id: string; p_limit?: number };
+        Args: { p_supplier_id: string }
         Returns: {
-          source: string;
-          ref_id: string;
-          item_code: string | null;
-          result: string;
-          note: string | null;
-          photo_url: string;
-          captured_at: string;
-        }[];
-      };
+          compliance_score: number
+          delivery_score: number
+          evaluated_at: string
+          evaluator: string | null
+          id: number
+          notes: string | null
+          period: Database["public"]["Enums"]["reval_period"]
+          period_end: string
+          period_start: string
+          price_score: number
+          quality_score: number
+          recommendation: string | null
+          responsiveness_score: number
+          supplier_id: string
+          total_score: number | null
+          w_compliance: number
+          w_delivery: number
+          w_price: number
+          w_quality: number
+          w_responsiveness: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "supplier_reval"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       log_sop_run: {
         Args: {
-          p_sop_id: string;
-          p_sop_title: string;
-          p_sop_category: string;
-          p_steps_checked: number;
-          p_steps_total: number;
-          p_risks_flagged: string[];
-          p_notes?: string | null;
-          p_run_date?: string | null;
-        };
-        Returns: number;
-      };
-      list_sop_runs: {
-        Args: { p_sop_id?: string | null; p_limit?: number };
+          p_notes?: string
+          p_risks_flagged: string[]
+          p_run_date?: string
+          p_sop_category: string
+          p_sop_id: string
+          p_sop_title: string
+          p_steps_checked: number
+          p_steps_total: number
+        }
+        Returns: number
+      }
+      monthly_requirements: {
+        Args: { p_months?: number; p_start: string }
         Returns: {
-          id: number;
-          sop_id: string;
-          sop_title: string;
-          sop_category: string;
-          run_date: string;
-          steps_checked: number;
-          steps_total: number;
-          risks_flagged: string[];
-          notes: string | null;
-          evaluator: string | null;
-          created_at: string;
-        }[];
-      };
-      sop_compliance_summary: {
-        Args: { p_start?: string | null; p_end?: string | null };
+          item_code: string
+          month: string
+          qty_kg: number
+        }[]
+      }
+      ncr_open_snapshot: {
+        Args: never
         Returns: {
-          sop_id: string;
-          sop_title: string;
-          sop_category: string;
-          run_count: number;
-          last_run: string | null;
-          avg_completion: number;
-          total_risks: number;
-        }[];
-      };
+          avg_resolve_days: number
+          critical_open: number
+          in_progress_cnt: number
+          open_cnt: number
+          resolved_cnt: number
+          total: number
+        }[]
+      }
+      overdue_actions: {
+        Args: never
+        Returns: {
+          days_late: number
+          id: number
+          owner: string
+          priority: Database["public"]["Enums"]["action_priority"]
+          related_scope: string
+          status: Database["public"]["Enums"]["action_status"]
+          supplier_id: string
+          supplier_name: string
+          target_date: string
+          title: string
+        }[]
+      }
+      porsi_counts: {
+        Args: { p_date: string }
+        Returns: {
+          besar: number
+          guru: number
+          kecil: number
+          operasional: boolean
+          total: number
+        }[]
+      }
+      porsi_counts_tiered: {
+        Args: { p_date: string }
+        Returns: {
+          operasional: boolean
+          paud: number
+          sd13: number
+          sd46: number
+          smp_plus: number
+          total: number
+        }[]
+      }
+      porsi_effective: { Args: { p_date: string }; Returns: number }
+      pr_allocation_summary: {
+        Args: { p_pr_no: string }
+        Returns: {
+          gap: number
+          item_code: string
+          line_no: number
+          qty_planned_sum: number
+          qty_po_sum: number
+          qty_quoted_sum: number
+          qty_total: number
+          unit: string
+        }[]
+      }
+      pr_generate_quotations: { Args: { p_pr_no: string }; Returns: string[] }
       pr_seed_from_date: {
-        Args: { p_need_date: string; p_notes?: string | null };
-        Returns: string;
-      };
-      pr_generate_quotations: {
-        Args: { p_pr_no: string };
-        Returns: string[];
-      };
+        Args: { p_need_date: string; p_notes?: string }
+        Returns: string
+      }
+      price_list_latest_benchmark: {
+        Args: { p_period_id: number }
+        Returns: {
+          commodity: Database["public"]["Enums"]["price_commodity"]
+          ingredient_name: string
+          latest_week_no: number
+          max_per_kg: number
+          median_per_kg: number
+          min_per_kg: number
+          supplier_cnt: number
+        }[]
+      }
+      qc_template_for_item: {
+        Args: { p_item: string }
+        Returns: {
+          category: Database["public"]["Enums"]["item_category"]
+          checkpoint: string
+          expected: string
+          id: number
+          is_critical: boolean
+          sort_order: number
+        }[]
+      }
+      quotation_seed_from_date: {
+        Args: { p_date: string }
+        Returns: {
+          item_code: string
+          price_suggested: number
+          qty: number
+          unit: string
+        }[]
+      }
+      requirement_for_date: {
+        Args: { p_date: string }
+        Returns: {
+          category: Database["public"]["Enums"]["item_category"]
+          item_code: string
+          price_idr: number
+          qty: number
+          unit: string
+        }[]
+      }
+      requirement_for_date_projected: {
+        Args: { p_date: string }
+        Returns: {
+          category: Database["public"]["Enums"]["item_category"]
+          item_code: string
+          qty: number
+          source: string
+          unit: string
+        }[]
+      }
+      save_supplier_reval: {
+        Args: {
+          p_end: string
+          p_notes?: string
+          p_period: Database["public"]["Enums"]["reval_period"]
+          p_recommendation?: string
+          p_start: string
+          p_supplier_id: string
+        }
+        Returns: number
+      }
+      sop_compliance_summary: {
+        Args: { p_end?: string; p_start?: string }
+        Returns: {
+          avg_completion: number
+          last_run: string
+          run_count: number
+          sop_category: string
+          sop_id: string
+          sop_title: string
+          total_risks: number
+        }[]
+      }
+      stock_shortage_for_date: {
+        Args: { p_date: string }
+        Returns: {
+          gap: number
+          item_code: string
+          on_hand: number
+          required: number
+          unit: string
+        }[]
+      }
+      supplier_forecast_90d: {
+        Args: { p_horizon_days?: number; p_supplier_id?: string }
+        Returns: {
+          category: Database["public"]["Enums"]["item_category"]
+          item_code: string
+          item_name: string
+          op_date: string
+          qty: number
+          source: string
+          unit: string
+        }[]
+      }
+      supplier_forecast_monthly: {
+        Args: { p_months?: number; p_supplier_id?: string }
+        Returns: {
+          category: Database["public"]["Enums"]["item_category"]
+          days_count: number
+          item_code: string
+          item_name: string
+          month: string
+          qty_total: number
+          unit: string
+        }[]
+      }
+      supplier_qc_gallery: {
+        Args: { p_limit?: number; p_supplier_id: string }
+        Returns: {
+          captured_at: string
+          item_code: string
+          note: string
+          photo_url: string
+          ref_id: string
+          result: string
+          source: string
+        }[]
+      }
+      supplier_scorecard_auto: {
+        Args: { p_end: string; p_start: string; p_supplier_id: string }
+        Returns: {
+          actions_overdue: number
+          actions_total: number
+          compliance_score: number
+          delivery_score: number
+          grn_count: number
+          ncr_critical_open: number
+          price_score: number
+          qc_fail: number
+          qc_pass: number
+          quality_score: number
+          responsiveness_score: number
+          total_score: number
+        }[]
+      }
+      top_suppliers_by_spend: {
+        Args: { p_end: string; p_limit?: number; p_start: string }
+        Returns: {
+          invoice_count: number
+          supplier_id: string
+          supplier_name: string
+          supplier_type: Database["public"]["Enums"]["supplier_type"]
+          total_spend: number
+        }[]
+      }
+      upcoming_shortages: {
+        Args: { p_horizon?: number }
+        Returns: {
+          op_date: string
+          short_items: number
+          total_gap_kg: number
+        }[]
+      }
+      update_action_status: {
+        Args: {
+          p_blocked_reason?: string
+          p_id: number
+          p_notes?: string
+          p_status: Database["public"]["Enums"]["action_status"]
+        }
+        Returns: {
+          blocked_reason: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          done_at: string | null
+          done_by: string | null
+          id: number
+          output_notes: string | null
+          owner: string
+          owner_user_id: string | null
+          priority: Database["public"]["Enums"]["action_priority"]
+          related_scope: string | null
+          source: Database["public"]["Enums"]["action_source"]
+          source_ref: string | null
+          status: Database["public"]["Enums"]["action_status"]
+          supplier_id: string | null
+          target_date: string | null
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "supplier_actions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       upsert_supplier_price: {
         Args: {
-          p_week_id: number;
-          p_supplier_id: string;
-          p_commodity: string;
-          p_ingredient_name: string;
-          p_price_per_kg?: number | null;
-          p_price_per_item?: number | null;
-          p_unit?: string | null;
-          p_item_code?: string | null;
-          p_notes?: string | null;
-        };
-        Returns: Record<string, unknown> | null;
-      };
-      import_price_list_json: {
-        Args: { p_period_id: number; p_payload: unknown };
+          p_commodity: Database["public"]["Enums"]["price_commodity"]
+          p_ingredient_name: string
+          p_item_code?: string
+          p_notes?: string
+          p_price_per_item?: number
+          p_price_per_kg?: number
+          p_supplier_id: string
+          p_unit?: string
+          p_week_id: number
+        }
         Returns: {
-          rows_processed: number;
-          cells_upserted: number;
-          suppliers_missing: string[];
-        }[];
-      };
-      pr_allocation_summary: {
-        Args: { p_pr_no: string };
-        Returns: {
-          line_no: number;
-          item_code: string;
-          unit: string;
-          qty_total: number;
-          qty_planned_sum: number;
-          qty_quoted_sum: number;
-          qty_po_sum: number;
-          gap: number;
-        }[];
-      };
-      supplier_forecast_90d: {
-        Args: {
-          p_supplier_id?: string | null;
-          p_horizon_days?: number | null;
-        };
-        Returns: {
-          op_date: string;
-          item_code: string;
-          item_name: string;
-          unit: string;
-          category: Database["public"]["Enums"]["item_category"];
-          qty: number;
-          source: string;
-        }[];
-      };
-      supplier_forecast_monthly: {
-        Args: {
-          p_supplier_id?: string | null;
-          p_months?: number | null;
-        };
-        Returns: {
-          month: string;
-          item_code: string;
-          item_name: string;
-          unit: string;
-          category: Database["public"]["Enums"]["item_category"];
-          qty_total: number;
-          days_count: number;
-        }[];
-      };
-    };
+          commodity: Database["public"]["Enums"]["price_commodity"]
+          created_at: string
+          created_by: string | null
+          id: number
+          ingredient_name: string
+          item_code: string | null
+          notes: string | null
+          price_per_item: number | null
+          price_per_kg: number | null
+          supplier_id: string
+          unit: string | null
+          updated_at: string
+          week_id: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "supplier_prices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+    }
     Enums: {
-      user_role: "admin" | "operator" | "ahli_gizi" | "supplier" | "viewer";
+      action_priority: "low" | "medium" | "high" | "critical"
+      action_source: "onboarding" | "mom" | "field" | "audit" | "ad_hoc"
+      action_status: "open" | "in_progress" | "blocked" | "done" | "cancelled"
+      grn_status: "pending" | "ok" | "partial" | "rejected"
+      invoice_status: "issued" | "paid" | "overdue" | "cancelled"
       item_category:
         | "BERAS"
         | "HEWANI"
@@ -1228,8 +2259,50 @@ export interface Database {
         | "REMPAH"
         | "BUAH"
         | "SEMBAKO"
-        | "LAIN";
-      school_level: "PAUD/TK" | "SD" | "SMP" | "SMA" | "SMK";
+        | "LAIN"
+      move_reason:
+        | "receipt"
+        | "consumption"
+        | "adjustment"
+        | "waste"
+        | "transfer_in"
+        | "transfer_out"
+        | "opening"
+      ncr_severity: "minor" | "major" | "critical"
+      ncr_status: "open" | "in_progress" | "resolved" | "waived"
+      po_status:
+        | "draft"
+        | "sent"
+        | "confirmed"
+        | "delivered"
+        | "closed"
+        | "cancelled"
+      pr_status:
+        | "draft"
+        | "allocated"
+        | "quotations_issued"
+        | "completed"
+        | "cancelled"
+      price_commodity:
+        | "BERAS"
+        | "SAYURAN"
+        | "BUAH"
+        | "PROTEIN_HEWANI"
+        | "PROTEIN_NABATI"
+        | "BUMBU_KERING"
+        | "MINYAK"
+      qc_result: "pass" | "minor" | "major" | "critical" | "na"
+      quotation_status:
+        | "draft"
+        | "sent"
+        | "responded"
+        | "accepted"
+        | "converted"
+        | "rejected"
+        | "expired"
+      reval_period: "quarterly" | "semester" | "annual" | "ad_hoc"
+      school_level: "PAUD/TK" | "SD" | "SMP" | "SMA" | "SMK"
+      supplier_status: "signed" | "awaiting" | "rejected" | "draft"
       supplier_type:
         | "BUMN"
         | "PT"
@@ -1239,53 +2312,215 @@ export interface Database {
         | "POKTAN"
         | "TOKO"
         | "KIOS"
-        | "INFORMAL";
-      supplier_status: "signed" | "awaiting" | "rejected" | "draft";
-      move_reason:
-        | "receipt"
-        | "consumption"
-        | "adjustment"
-        | "waste"
-        | "transfer_in"
-        | "transfer_out"
-        | "opening";
-      po_status:
-        | "draft"
-        | "sent"
-        | "confirmed"
-        | "delivered"
-        | "closed"
-        | "cancelled";
-      grn_status: "pending" | "ok" | "partial" | "rejected";
-      invoice_status: "issued" | "paid" | "overdue" | "cancelled";
-      tx_type:
-        | "po"
-        | "grn"
-        | "invoice"
-        | "payment"
-        | "adjustment"
-        | "receipt";
-      action_status:
-        | "open"
-        | "in_progress"
-        | "blocked"
-        | "done"
-        | "cancelled";
-      action_priority: "low" | "medium" | "high" | "critical";
-      action_source: "onboarding" | "mom" | "field" | "audit" | "ad_hoc";
-      qc_result: "pass" | "minor" | "major" | "critical" | "na";
-      ncr_severity: "minor" | "major" | "critical";
-      ncr_status: "open" | "in_progress" | "resolved" | "waived";
-      quotation_status:
-        | "draft"
-        | "sent"
-        | "responded"
-        | "accepted"
-        | "converted"
-        | "rejected"
-        | "expired";
-      reval_period: "quarterly" | "semester" | "annual" | "ad_hoc";
-    };
-    CompositeTypes: Record<string, never>;
-  };
+        | "INFORMAL"
+      tx_type: "po" | "grn" | "invoice" | "payment" | "adjustment" | "receipt"
+      user_role: "admin" | "operator" | "ahli_gizi" | "supplier" | "viewer"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      action_priority: ["low", "medium", "high", "critical"],
+      action_source: ["onboarding", "mom", "field", "audit", "ad_hoc"],
+      action_status: ["open", "in_progress", "blocked", "done", "cancelled"],
+      grn_status: ["pending", "ok", "partial", "rejected"],
+      invoice_status: ["issued", "paid", "overdue", "cancelled"],
+      item_category: [
+        "BERAS",
+        "HEWANI",
+        "NABATI",
+        "SAYUR_HIJAU",
+        "SAYUR",
+        "UMBI",
+        "BUMBU",
+        "REMPAH",
+        "BUAH",
+        "SEMBAKO",
+        "LAIN",
+      ],
+      move_reason: [
+        "receipt",
+        "consumption",
+        "adjustment",
+        "waste",
+        "transfer_in",
+        "transfer_out",
+        "opening",
+      ],
+      ncr_severity: ["minor", "major", "critical"],
+      ncr_status: ["open", "in_progress", "resolved", "waived"],
+      po_status: [
+        "draft",
+        "sent",
+        "confirmed",
+        "delivered",
+        "closed",
+        "cancelled",
+      ],
+      pr_status: [
+        "draft",
+        "allocated",
+        "quotations_issued",
+        "completed",
+        "cancelled",
+      ],
+      price_commodity: [
+        "BERAS",
+        "SAYURAN",
+        "BUAH",
+        "PROTEIN_HEWANI",
+        "PROTEIN_NABATI",
+        "BUMBU_KERING",
+        "MINYAK",
+      ],
+      qc_result: ["pass", "minor", "major", "critical", "na"],
+      quotation_status: [
+        "draft",
+        "sent",
+        "responded",
+        "accepted",
+        "converted",
+        "rejected",
+        "expired",
+      ],
+      reval_period: ["quarterly", "semester", "annual", "ad_hoc"],
+      school_level: ["PAUD/TK", "SD", "SMP", "SMA", "SMK"],
+      supplier_status: ["signed", "awaiting", "rejected", "draft"],
+      supplier_type: [
+        "BUMN",
+        "PT",
+        "CV",
+        "UD",
+        "KOPERASI",
+        "POKTAN",
+        "TOKO",
+        "KIOS",
+        "INFORMAL",
+      ],
+      tx_type: ["po", "grn", "invoice", "payment", "adjustment", "receipt"],
+      user_role: ["admin", "operator", "ahli_gizi", "supplier", "viewer"],
+    },
+  },
+} as const

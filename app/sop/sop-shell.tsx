@@ -5,35 +5,44 @@ import { Badge } from "@/components/ui";
 import type { SOP } from "@/lib/sops";
 import type { SopComplianceRow } from "@/lib/engine";
 import { SopRunForm } from "./sop-run-form";
+import { t, ti, numberLocale, type Lang } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 const CAT_RING: Record<SOP["category"], string> = {
   OPERASIONAL: "bg-sky-50 text-sky-900 ring-sky-200",
   HIGIENE: "bg-emerald-50 text-emerald-900 ring-emerald-200"
 };
 
-// Pemetaan SOP → halaman operasional terkait.
-const RELATED_ACTION: Record<string, { href: string; label: string } | null> = {
-  "SOP-OP-01": { href: "/procurement", label: "➜ Procurement · Catat GRN" },
-  "SOP-OP-02": { href: "/stock", label: "➜ Stock · Kelola Gudang" },
-  "SOP-OP-03": { href: "/menu", label: "➜ Menu · Edit BOM" },
-  "SOP-OP-04": { href: "/procurement", label: "➜ Procurement · Terbitkan PO" },
-  "SOP-OP-05": { href: "/schools", label: "➜ Schools · Porsi Efektif" },
-  "SOP-OP-06": { href: "/procurement", label: "➜ Procurement · Berita Acara" },
-  "SOP-OP-07": { href: "/procurement", label: "➜ Procurement · Invoice" },
-  "SOP-OP-08": { href: "/schools", label: "➜ Schools · Distribusi" },
-  "SOP-OP-09": { href: "/dashboard", label: "➜ Dashboard · Pelaporan Harian" },
-  "SOP-OP-10": { href: "/stock", label: "➜ Stock · Adjustment & Waste" },
-  "SOP-OP-11": { href: "/dashboard", label: "➜ Dashboard · Audit" },
+type RelatedLabelPair = { ID: string; EN: string };
+
+const RELATED_ACTION: Record<string, { href: string; label: RelatedLabelPair } | null> = {
+  "SOP-OP-01": { href: "/procurement", label: { ID: "➜ Procurement · Catat GRN", EN: "➜ Procurement · Log GRN" } },
+  "SOP-OP-02": { href: "/stock", label: { ID: "➜ Stock · Kelola Gudang", EN: "➜ Stock · Manage Warehouse" } },
+  "SOP-OP-03": { href: "/menu", label: { ID: "➜ Menu · Edit BOM", EN: "➜ Menu · Edit BOM" } },
+  "SOP-OP-04": { href: "/procurement", label: { ID: "➜ Procurement · Terbitkan PO", EN: "➜ Procurement · Issue PO" } },
+  "SOP-OP-05": { href: "/schools", label: { ID: "➜ Schools · Porsi Efektif", EN: "➜ Schools · Effective Portions" } },
+  "SOP-OP-06": { href: "/procurement", label: { ID: "➜ Procurement · Berita Acara", EN: "➜ Procurement · Official Report" } },
+  "SOP-OP-07": { href: "/procurement", label: { ID: "➜ Procurement · Invoice", EN: "➜ Procurement · Invoice" } },
+  "SOP-OP-08": { href: "/schools", label: { ID: "➜ Schools · Distribusi", EN: "➜ Schools · Distribution" } },
+  "SOP-OP-09": { href: "/dashboard", label: { ID: "➜ Dashboard · Pelaporan Harian", EN: "➜ Dashboard · Daily Report" } },
+  "SOP-OP-10": { href: "/stock", label: { ID: "➜ Stock · Adjustment & Waste", EN: "➜ Stock · Adjustment & Waste" } },
+  "SOP-OP-11": { href: "/dashboard", label: { ID: "➜ Dashboard · Audit", EN: "➜ Dashboard · Audit" } },
   "SOP-HG-01": null,
   "SOP-HG-02": null,
   "SOP-HG-03": null,
   "SOP-HG-04": null,
   "SOP-HG-05": null,
-  "SOP-HG-06": { href: "/procurement", label: "➜ Procurement · QC Harian" },
+  "SOP-HG-06": { href: "/procurement", label: { ID: "➜ Procurement · QC Harian", EN: "➜ Procurement · Daily QC" } },
   "SOP-HG-07": null,
   "SOP-HG-08": null,
-  "SOP-HG-09": { href: "/dashboard", label: "➜ Dashboard · Incident Log" }
+  "SOP-HG-09": { href: "/dashboard", label: { ID: "➜ Dashboard · Incident Log", EN: "➜ Dashboard · Incident Log" } }
 };
+
+function catLabel(cat: SOP["category"], lang: Lang): string {
+  return cat === "OPERASIONAL"
+    ? t("sop.catOp", lang)
+    : t("sop.catHg", lang);
+}
 
 interface Props {
   sops: SOP[];
@@ -42,6 +51,7 @@ interface Props {
 }
 
 export function SopShell({ sops, compliance, canWrite }: Props) {
+  const { lang } = useLang();
   const [openId, setOpenId] = useState<string | null>(null);
   const active = openId ? sops.find((s) => s.id === openId) ?? null : null;
 
@@ -75,15 +85,15 @@ export function SopShell({ sops, compliance, canWrite }: Props) {
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_RING[s.category]}`}
                 >
-                  {s.category}
+                  {catLabel(s.category, lang)}
                 </span>
                 <h3 className="truncate text-base font-black text-ink">
                   {s.title}
                 </h3>
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2 text-[10px] font-semibold text-ink2/70">
-                <Badge tone="neutral">{s.steps.length} langkah</Badge>
-                <Badge tone="bad">{s.risks.length} risiko</Badge>
+                <Badge tone="neutral">{ti("sop.badgeSteps", lang, { n: s.steps.length })}</Badge>
+                <Badge tone="bad">{ti("sop.badgeRisks", lang, { n: s.risks.length })}</Badge>
                 {c ? (
                   <Badge
                     tone={
@@ -97,7 +107,7 @@ export function SopShell({ sops, compliance, canWrite }: Props) {
                     {c.run_count}× · {Number(c.avg_completion).toFixed(0)}%
                   </Badge>
                 ) : (
-                  <Badge tone="muted">belum dieksekusi</Badge>
+                  <Badge tone="muted">{t("sop.badgeNotExec", lang)}</Badge>
                 )}
                 {related && (
                   <span
@@ -107,7 +117,7 @@ export function SopShell({ sops, compliance, canWrite }: Props) {
                     }}
                     className="hidden cursor-pointer rounded-full bg-accent-strong/10 px-2 py-0.5 text-[10px] font-bold text-accent-strong transition hover:bg-accent-strong hover:text-white md:inline-block"
                   >
-                    {related.label}
+                    {related.label[lang]}
                   </span>
                 )}
                 <span className="hidden text-ink2/60 lg:inline">{s.ref}</span>
@@ -137,9 +147,10 @@ function SopModal({
 }: {
   sop: SOP;
   canWrite: boolean;
-  related: { href: string; label: string } | null | undefined;
+  related: { href: string; label: RelatedLabelPair } | null | undefined;
   onClose: () => void;
 }) {
+  const { lang } = useLang();
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -170,20 +181,20 @@ function SopModal({
     const lines: string[] = [];
     lines.push(`# ${s.id} · ${s.title}`);
     lines.push("");
-    lines.push(`**Kategori:** ${s.category}`);
-    lines.push(`**Referensi:** ${s.ref}`);
+    lines.push(`${t("sop.mdCategoryLabel", lang)} ${catLabel(s.category, lang)}`);
+    lines.push(`${t("sop.mdRefLabel", lang)} ${s.ref}`);
     lines.push("");
-    lines.push(`## Scope`);
+    lines.push(`## ${t("sop.secScope", lang)}`);
     lines.push(s.scope);
     lines.push("");
-    lines.push(`## Langkah (${s.steps.length})`);
+    lines.push(`## ${t("sop.mdStepsHeading", lang)} (${s.steps.length})`);
     s.steps.forEach((st, i) => lines.push(`${i + 1}. ${st}`));
     lines.push("");
-    lines.push(`## Risiko Utama (${s.risks.length})`);
+    lines.push(`## ${t("sop.mdRisksHeading", lang)} (${s.risks.length})`);
     s.risks.forEach((r) => lines.push(`- ${r}`));
     lines.push("");
     lines.push(
-      `---\nSPPG Nunumeu · IFSR × FFI untuk WFP × Pemkab TTS · ${new Date().toISOString().slice(0, 10)}`
+      `---\n${ti("sop.mdFooter", lang, { date: new Date().toISOString().slice(0, 10) })}`
     );
     return lines.join("\n");
   }
@@ -194,8 +205,10 @@ function SopModal({
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
+    const htmlLang = lang === "EN" ? "en" : "id";
+    const printed = new Date().toLocaleString(numberLocale(lang));
     return `<!doctype html>
-<html lang="id"><head><meta charset="utf-8"/>
+<html lang="${htmlLang}"><head><meta charset="utf-8"/>
 <title>${esc(s.id)} · ${esc(s.title)}</title>
 <style>
   body{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:780px;margin:40px auto;padding:0 20px;color:#111;line-height:1.55}
@@ -210,15 +223,15 @@ function SopModal({
   @media print{body{margin:20px}}
 </style></head>
 <body>
-  <div class="meta">${esc(s.id)} · <span class="tag">${esc(s.category)}</span></div>
+  <div class="meta">${esc(s.id)} · <span class="tag">${esc(catLabel(s.category, lang))}</span></div>
   <h1>${esc(s.title)}</h1>
-  <div class="meta"><b>Ref:</b> ${esc(s.ref)}</div>
-  <h2>Scope</h2><p>${esc(s.scope)}</p>
-  <h2>Langkah (${s.steps.length})</h2>
+  <div class="meta"><b>${esc(t("sop.refLabel", lang))}</b> ${esc(s.ref)}</div>
+  <h2>${esc(t("sop.secScope", lang))}</h2><p>${esc(s.scope)}</p>
+  <h2>${esc(t("sop.mdStepsHeading", lang))} (${s.steps.length})</h2>
   <ol>${s.steps.map((st) => `<li>${esc(st)}</li>`).join("")}</ol>
-  <h2>Risiko Utama (${s.risks.length})</h2>
+  <h2>${esc(t("sop.mdRisksHeading", lang))} (${s.risks.length})</h2>
   <ul>${s.risks.map((r) => `<li class="risk">⚠ ${esc(r)}</li>`).join("")}</ul>
-  <footer>SPPG Nunumeu · IFSR × FFI untuk WFP × Pemkab TTS · Dicetak ${new Date().toLocaleString("id-ID")}</footer>
+  <footer>${esc(ti("sop.mdFooter", lang, { date: "" }))} ${esc(t("sop.htmlPrinted", lang))} ${esc(printed)}</footer>
 </body></html>`;
   }
 
@@ -233,7 +246,7 @@ function SopModal({
   function downloadPdf() {
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w) {
-      alert("Popup diblokir browser. Izinkan popup untuk download PDF.");
+      alert(t("sop.popupBlocked", lang));
       return;
     }
     w.document.open();
@@ -250,7 +263,7 @@ function SopModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`SOP ${sop.title}`}
+      aria-label={ti("sop.modalLabel", lang, { title: sop.title })}
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 px-3 py-6 backdrop-blur-sm"
       onClick={onClose}
     >
@@ -267,16 +280,16 @@ function SopModal({
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_RING[sop.category]}`}
               >
-                {sop.category}
+                {catLabel(sop.category, lang)}
               </span>
-              <Badge tone="neutral">{sop.steps.length} langkah</Badge>
-              <Badge tone="bad">{sop.risks.length} risiko</Badge>
+              <Badge tone="neutral">{ti("sop.badgeSteps", lang, { n: sop.steps.length })}</Badge>
+              <Badge tone="bad">{ti("sop.badgeRisks", lang, { n: sop.risks.length })}</Badge>
             </div>
             <h2 className="truncate text-lg font-black text-ink">
               {sop.title}
             </h2>
             <div className="mt-0.5 text-[11px] text-ink2/70">
-              <b>Ref:</b> {sop.ref}
+              <b>{t("sop.refLabel", lang)}</b> {sop.ref}
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -285,7 +298,7 @@ function SopModal({
                 href={related.href}
                 className="hidden rounded-xl bg-accent-strong px-3 py-2 text-[11px] font-black text-white ring-1 ring-accent-strong transition hover:bg-ink sm:inline-block"
               >
-                {related.label}
+                {related.label[lang]}
               </a>
             )}
             <div className="relative">
@@ -296,14 +309,14 @@ function SopModal({
                 aria-expanded={menuOpen}
                 className="flex items-center gap-1.5 rounded-xl bg-ink px-3 py-2 text-[11px] font-black text-white ring-1 ring-ink transition hover:bg-ink2"
               >
-                ⬇ Download
+                {t("sop.btnDownload", lang)}
                 <span className="text-[10px] opacity-70">▾</span>
               </button>
               {menuOpen && (
                 <>
                   <button
                     type="button"
-                    aria-label="Tutup menu"
+                    aria-label={t("sop.menuClose", lang)}
                     className="fixed inset-0 z-10 cursor-default"
                     onClick={() => setMenuOpen(false)}
                   />
@@ -317,7 +330,7 @@ function SopModal({
                       onClick={downloadPdf}
                       className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-xs font-bold text-ink transition hover:bg-paper"
                     >
-                      <span>📄 PDF (Cetak)</span>
+                      <span>{t("sop.menuPdf", lang)}</span>
                       <span className="text-[10px] font-normal text-ink2/60">
                         .pdf
                       </span>
@@ -328,7 +341,7 @@ function SopModal({
                       onClick={downloadHtml}
                       className="flex w-full items-center justify-between gap-2 border-t border-ink/5 px-4 py-2.5 text-left text-xs font-bold text-ink transition hover:bg-paper"
                     >
-                      <span>🌐 HTML Standalone</span>
+                      <span>{t("sop.menuHtml", lang)}</span>
                       <span className="text-[10px] font-normal text-ink2/60">
                         .html
                       </span>
@@ -339,7 +352,7 @@ function SopModal({
                       onClick={downloadMd}
                       className="flex w-full items-center justify-between gap-2 border-t border-ink/5 px-4 py-2.5 text-left text-xs font-bold text-ink transition hover:bg-paper"
                     >
-                      <span>📝 Markdown</span>
+                      <span>{t("sop.menuMd", lang)}</span>
                       <span className="text-[10px] font-normal text-ink2/60">
                         .md
                       </span>
@@ -351,7 +364,7 @@ function SopModal({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Tutup"
+              aria-label={t("sop.btnClose", lang)}
               className="flex h-10 w-10 items-center justify-center rounded-xl text-ink2 ring-1 ring-ink/10 transition hover:bg-ink/5"
             >
               ×
@@ -362,7 +375,7 @@ function SopModal({
         <div className="space-y-4 px-6 py-5">
           <div className="rounded-xl bg-paper px-4 py-3 ring-1 ring-ink/5">
             <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-              Scope
+              {t("sop.secScope", lang)}
             </div>
             <p className="mt-1 text-sm text-ink2">{sop.scope}</p>
           </div>
@@ -370,7 +383,7 @@ function SopModal({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[2fr_1fr]">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-                Langkah ({sop.steps.length})
+                {ti("sop.secSteps", lang, { n: sop.steps.length })}
               </div>
               <ol className="mt-2 space-y-1.5 text-sm">
                 {sop.steps.map((step, i) => (
@@ -385,7 +398,7 @@ function SopModal({
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-                Risiko Utama ({sop.risks.length})
+                {ti("sop.secRisks", lang, { n: sop.risks.length })}
               </div>
               <ul className="mt-2 space-y-1 text-xs">
                 {sop.risks.map((r, i) => (

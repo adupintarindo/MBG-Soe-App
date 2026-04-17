@@ -14,6 +14,8 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 type Row = Pick<
   Database["public"]["Tables"]["menus"]["Row"],
@@ -50,6 +52,7 @@ function rowToDraft(r: Row): Draft {
 }
 
 export function MenusPanel({ initial }: { initial: Row[] }) {
+  const { lang } = useLang();
   const supabase = createClient();
   const router = useRouter();
   const [rows, setRows] = useState<Row[]>(initial);
@@ -82,11 +85,11 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
     setErr(null);
     const id = parseInt(draft.id, 10);
     if (!Number.isFinite(id) || id < 1) {
-      setErr("ID menu wajib angka >= 1.");
+      setErr(t("adminMenus.errIdNumeric", lang));
       return;
     }
     if (!draft.name.trim()) {
-      setErr("Nama menu wajib diisi.");
+      setErr(t("adminMenus.errNameReq", lang));
       return;
     }
     setBusy(true);
@@ -142,12 +145,7 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
   }
 
   async function remove(id: number) {
-    if (
-      !confirm(
-        `Hapus menu M${id}? BOM otomatis ikut terhapus (cascade). Tidak bisa dihapus jika sudah di-assign ke tanggal.`
-      )
-    )
-      return;
+    if (!confirm(ti("adminMenus.confirmDel", lang, { id }))) return;
     setErr(null);
     setBusy(true);
     const { error } = await supabase.from("menus").delete().eq("id", id);
@@ -162,8 +160,8 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
 
   return (
     <Section
-      title="Menu (siklus)"
-      hint="Master menu siklus 10 hari (ADJUSTED WFP × IFSR × FFI). BOM (gramasi tiered P/SD₁₃/SD₄₆/S+) di-edit lewat migrasi SQL atau halaman Master Menu."
+      title={t("adminMenus.title", lang)}
+      hint={t("adminMenus.hint", lang)}
       actions={
         <Button
           variant={adding ? "secondary" : "primary"}
@@ -174,14 +172,14 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
             setErr(null);
           }}
         >
-          {adding ? "× Batal Tambah" : "+ Tambah Menu"}
+          {adding ? t("adminMenus.btnCancelAdd", lang) : t("adminMenus.btnAdd", lang)}
         </Button>
       }
     >
       {adding && (
         <div className="mb-4 rounded-xl bg-paper p-4 ring-1 ring-ink/5">
           <div className="grid gap-3 md:grid-cols-3">
-            <FieldBlock label="ID (1..n, unik)" required>
+            <FieldBlock label={t("adminMenus.fldId", lang)} required>
               <Input
                 type="number"
                 min={1}
@@ -190,23 +188,23 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
                 placeholder="15"
               />
             </FieldBlock>
-            <FieldBlock label="Nama (ID)" required>
+            <FieldBlock label={t("adminMenus.fldNameID", lang)} required>
               <Input
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder="Nasi Ayam Wortel Jagung"
+                placeholder={t("adminMenus.phNameID", lang)}
               />
             </FieldBlock>
-            <FieldBlock label="Nama EN">
+            <FieldBlock label={t("adminMenus.fldNameEN", lang)}>
               <Input
                 value={draft.name_en}
                 onChange={(e) =>
                   setDraft({ ...draft, name_en: e.target.value })
                 }
-                placeholder="Rice with Chicken & Veg"
+                placeholder={t("adminMenus.phNameEN", lang)}
               />
             </FieldBlock>
-            <FieldBlock label="Cycle day">
+            <FieldBlock label={t("adminMenus.fldCycleDay", lang)}>
               <Input
                 type="number"
                 min={1}
@@ -214,14 +212,14 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
                 onChange={(e) =>
                   setDraft({ ...draft, cycle_day: e.target.value })
                 }
-                placeholder="1..14"
+                placeholder={t("adminMenus.phCycle", lang)}
               />
             </FieldBlock>
-            <FieldBlock label="Catatan">
+            <FieldBlock label={t("adminMenus.fldNotes", lang)}>
               <Input
                 value={draft.notes}
                 onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
-                placeholder="opsional"
+                placeholder={t("adminMenus.phNotes", lang)}
               />
             </FieldBlock>
           </div>
@@ -234,7 +232,7 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
                   setDraft({ ...draft, active: e.target.checked })
                 }
               />
-              Aktif
+              {t("adminMenus.lblActive", lang)}
             </label>
             <Button
               variant="primary"
@@ -242,7 +240,7 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
               disabled={busy}
               onClick={saveNew}
             >
-              {busy ? "Menyimpan…" : "Simpan Menu"}
+              {busy ? t("adminMenus.btnSaving", lang) : t("adminMenus.btnSave", lang)}
             </Button>
           </div>
         </div>
@@ -250,15 +248,15 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <label className="block min-w-[200px] flex-1">
-          <FieldLabel>Cari nama / ID</FieldLabel>
+          <FieldLabel>{t("adminMenus.searchLabel", lang)}</FieldLabel>
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="ketik untuk filter…"
+            placeholder={t("adminMenus.searchPh", lang)}
           />
         </label>
         <Badge tone="muted">
-          {filtered.length} dari {rows.length}
+          {ti("adminMenus.filteredOf", lang, { shown: filtered.length, total: rows.length })}
         </Badge>
       </div>
 
@@ -269,17 +267,17 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
       )}
 
       {filtered.length === 0 ? (
-        <EmptyState icon="🍲" title="Belum ada menu" />
+        <EmptyState icon="🍲" title={t("adminMenus.emptyTitle", lang)} />
       ) : (
         <TableWrap>
           <table className="w-full text-sm">
             <THead>
-              <th className="py-2 pr-3">ID</th>
-              <th className="py-2 pr-3">Nama (ID)</th>
-              <th className="py-2 pr-3">Nama EN</th>
-              <th className="py-2 pr-3">Cycle Day</th>
-              <th className="py-2 pr-3">Catatan</th>
-              <th className="py-2 pr-3">Aktif</th>
+              <th className="py-2 pr-3">{t("adminMenus.colId", lang)}</th>
+              <th className="py-2 pr-3">{t("adminMenus.colNameID", lang)}</th>
+              <th className="py-2 pr-3">{t("adminMenus.colNameEN", lang)}</th>
+              <th className="py-2 pr-3">{t("adminMenus.colCycle", lang)}</th>
+              <th className="py-2 pr-3">{t("adminMenus.colNotes", lang)}</th>
+              <th className="py-2 pr-3">{t("adminMenus.colActive", lang)}</th>
               <th className="py-2 pr-3"></th>
             </THead>
             <tbody>
@@ -351,7 +349,7 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
                           disabled={busy}
                           onClick={saveEdit}
                         >
-                          Simpan
+                          {t("adminMenus.btnSaveEdit", lang)}
                         </Button>
                         <Button
                           size="sm"
@@ -359,7 +357,7 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
                           disabled={busy}
                           onClick={() => setEditId(null)}
                         >
-                          Batal
+                          {t("adminMenus.btnCancelEdit", lang)}
                         </Button>
                       </div>
                     </td>
@@ -369,7 +367,9 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
                     <td className="py-2 pr-3 font-mono text-[12px] text-ink">
                       M{r.id}
                     </td>
-                    <td className="py-2 pr-3 text-ink">{r.name}</td>
+                    <td className="py-2 pr-3 text-ink">
+                      {lang === "EN" && r.name_en ? r.name_en : r.name}
+                    </td>
                     <td className="py-2 pr-3 text-ink2">{r.name_en ?? "—"}</td>
                     <td className="py-2 pr-3 text-[12px] text-ink2">
                       {r.cycle_day ?? "—"}
@@ -379,9 +379,9 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
                     </td>
                     <td className="py-2 pr-3">
                       {r.active ? (
-                        <Badge tone="ok">aktif</Badge>
+                        <Badge tone="ok">{t("adminMenus.tagActive", lang)}</Badge>
                       ) : (
-                        <Badge tone="muted">nonaktif</Badge>
+                        <Badge tone="muted">{t("adminMenus.tagInactive", lang)}</Badge>
                       )}
                     </td>
                     <td className="py-2 pr-3">
@@ -391,14 +391,14 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
                           variant="secondary"
                           onClick={() => startEdit(r)}
                         >
-                          Edit
+                          {t("adminMenus.btnEdit", lang)}
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => remove(r.id)}
                         >
-                          Hapus
+                          {t("adminMenus.btnDelete", lang)}
                         </Button>
                       </div>
                     </td>
@@ -422,9 +422,10 @@ function FieldBlock({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  const { lang } = useLang();
   return (
     <label className="block">
-      <FieldLabel hint={required ? "wajib" : undefined}>{label}</FieldLabel>
+      <FieldLabel hint={required ? t("adminMenus.required", lang) : undefined}>{label}</FieldLabel>
       {children}
     </label>
   );

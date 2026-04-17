@@ -9,6 +9,8 @@ import {
   Section
 } from "@/components/ui";
 import { QuotationForm } from "./quotation-form";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,7 @@ interface ItemLite {
 }
 
 export default async function NewQuotationPage() {
+  const lang = getLang();
   const supabase = createClient();
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -60,11 +63,11 @@ export default async function NewQuotationPage() {
       <PageContainer>
         <PageHeader
           icon="📄"
-          title="Buat Quotation Baru"
-          subtitle="Draft harga ke supplier · isi manual atau seed dari tanggal menu · export .xlsx untuk ditandatangani supplier."
+          title={t("qtNew.title", lang)}
+          subtitle={t("qtNew.subtitle", lang)}
           actions={
             <LinkButton href="/procurement" variant="secondary" size="sm">
-              ← Kembali
+              {t("common.back", lang)}
             </LinkButton>
           }
         />

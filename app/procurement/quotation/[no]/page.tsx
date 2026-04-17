@@ -13,6 +13,8 @@ import {
   THead
 } from "@/components/ui";
 import { QuotationActions } from "./quotation-actions";
+import { t, ti, numberLocale } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,7 @@ export default async function QuotationDetailPage({
 }) {
   const { no } = await Promise.resolve(params);
   const decoded = decodeURIComponent(no);
+  const lang = getLang();
   const supabase = createClient();
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -96,6 +99,8 @@ export default async function QuotationDetailPage({
     profile.supplier_id === qt.supplier_id &&
     (qt.status === "sent" || qt.status === "responded");
 
+  const locale = numberLocale(lang);
+
   return (
     <div>
       <Nav
@@ -107,7 +112,7 @@ export default async function QuotationDetailPage({
       <PageContainer>
         <PageHeader
           icon="📄"
-          title={`Quotation · ${qt.no}`}
+          title={ti("qtDetail.title", lang, { no: qt.no })}
           subtitle={
             <span className="inline-flex items-center gap-2">
               <span
@@ -116,7 +121,9 @@ export default async function QuotationDetailPage({
                 {qt.status}
               </span>
               <span>· {qt.quote_date}</span>
-              {qt.need_date && <span>· butuh {qt.need_date}</span>}
+              {qt.need_date && (
+                <span>{ti("qtDetail.subNeed", lang, { date: qt.need_date })}</span>
+              )}
               {qt.converted_po_no && (
                 <span className="font-mono">→ {qt.converted_po_no}</span>
               )}
@@ -124,22 +131,22 @@ export default async function QuotationDetailPage({
           }
           actions={
             <LinkButton href="/procurement" variant="secondary" size="sm">
-              ← Kembali
+              {t("common.back", lang)}
             </LinkButton>
           }
         />
 
-        <Section title="Info" hint="Supplier & tanggal">
+        <Section title={t("qtDetail.infoTitle", lang)} hint={t("qtDetail.infoHint", lang)}>
           <dl className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <dt className="font-bold text-ink2/70">Supplier</dt>
+              <dt className="font-bold text-ink2/70">{t("qtDetail.lblSupplier", lang)}</dt>
               <dd className="font-black text-ink">
                 {supplier?.name ?? qt.supplier_id}
               </dd>
               <dd className="text-ink2">{supplier?.pic ?? "—"}</dd>
             </div>
             <div>
-              <dt className="font-bold text-ink2/70">Kontak</dt>
+              <dt className="font-bold text-ink2/70">{t("qtDetail.lblContact", lang)}</dt>
               <dd className="font-mono text-ink2">
                 {supplier?.phone ?? "—"}
               </dd>
@@ -148,13 +155,13 @@ export default async function QuotationDetailPage({
               </dd>
             </div>
             <div>
-              <dt className="font-bold text-ink2/70">Tanggal</dt>
-              <dd>Quotation: {qt.quote_date}</dd>
-              <dd>Valid s/d: {qt.valid_until ?? "—"}</dd>
-              <dd>Butuh: {qt.need_date ?? "—"}</dd>
+              <dt className="font-bold text-ink2/70">{t("qtDetail.lblDates", lang)}</dt>
+              <dd>{ti("qtDetail.dateQuote", lang, { date: qt.quote_date })}</dd>
+              <dd>{ti("qtDetail.dateValid", lang, { date: qt.valid_until ?? "—" })}</dd>
+              <dd>{ti("qtDetail.dateNeed", lang, { date: qt.need_date ?? "—" })}</dd>
             </div>
             <div>
-              <dt className="font-bold text-ink2/70">Total</dt>
+              <dt className="font-bold text-ink2/70">{t("qtDetail.lblTotal", lang)}</dt>
               <dd className="font-mono text-base font-black text-ink">
                 {formatIDR(Number(qt.total))}
               </dd>
@@ -167,22 +174,25 @@ export default async function QuotationDetailPage({
           </dl>
         </Section>
 
-        <Section title={`Item · ${rows.length} baris`} hint="Qty & harga final (dari supplier) akan overwrite qty & harga saran saat convert ke PO.">
+        <Section
+          title={ti("qtDetail.itemsTitle", lang, { n: rows.length })}
+          hint={t("qtDetail.itemsHint", lang)}
+        >
           {rows.length === 0 ? (
-            <div className="text-sm text-ink2/70">Belum ada baris.</div>
+            <div className="text-sm text-ink2/70">{t("qtDetail.itemsEmpty", lang)}</div>
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">No.</th>
-                  <th className="py-2 pr-3">Item</th>
-                  <th className="py-2 pr-3 text-right">Qty</th>
-                  <th className="py-2 pr-3">Unit</th>
-                  <th className="py-2 pr-3 text-right">Saran IDR</th>
-                  <th className="py-2 pr-3 text-right">Final Qty</th>
-                  <th className="py-2 pr-3 text-right">Final IDR</th>
-                  <th className="py-2 pr-3 text-right">Subtotal</th>
-                  <th className="py-2 pr-3">Catatan</th>
+                  <th className="py-2 pr-3">{t("qtDetail.colNo", lang)}</th>
+                  <th className="py-2 pr-3">{t("qtDetail.colItem", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("qtDetail.colQty", lang)}</th>
+                  <th className="py-2 pr-3">{t("qtDetail.colUnit", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("qtDetail.colSuggest", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("qtDetail.colFinalQty", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("qtDetail.colFinalPrice", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("qtDetail.colSubtotal", lang)}</th>
+                  <th className="py-2 pr-3">{t("qtDetail.colNote", lang)}</th>
                 </THead>
                 <tbody>
                   {rows.map((r) => {
@@ -201,7 +211,7 @@ export default async function QuotationDetailPage({
                           </div>
                         </td>
                         <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {Number(r.qty).toLocaleString("id-ID", {
+                          {Number(r.qty).toLocaleString(locale, {
                             maximumFractionDigits: 3
                           })}
                         </td>
@@ -213,7 +223,7 @@ export default async function QuotationDetailPage({
                         </td>
                         <td className="py-2 pr-3 text-right font-mono text-xs">
                           {r.qty_quoted != null
-                            ? Number(r.qty_quoted).toLocaleString("id-ID", {
+                            ? Number(r.qty_quoted).toLocaleString(locale, {
                                 maximumFractionDigits: 3
                               })
                             : "—"}
@@ -236,7 +246,7 @@ export default async function QuotationDetailPage({
                 <tfoot>
                   <tr>
                     <td colSpan={7} className="py-2 pr-3 text-right font-black">
-                      TOTAL
+                      {t("qtDetail.total", lang)}
                     </td>
                     <td className="py-2 pr-3 text-right font-mono font-black text-ink">
                       {formatIDR(Number(qt.total))}
@@ -249,20 +259,20 @@ export default async function QuotationDetailPage({
           )}
         </Section>
 
-        <Section title="Aksi" hint="Kelola status & export dokumen">
+        <Section title={t("qtDetail.actionsTitle", lang)} hint={t("qtDetail.actionsHint", lang)}>
           <div className="flex flex-wrap items-center gap-3">
             <a
               href={`/api/quotations/${encodeURIComponent(qt.no)}/export.xlsx`}
               className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white shadow-card hover:bg-emerald-700"
             >
-              📥 Download .xlsx
+              {t("qtDetail.btnXlsx", lang)}
             </a>
             <Link
               href={`/api/quotations/${encodeURIComponent(qt.no)}/print`}
               target="_blank"
               className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-ink ring-1 ring-ink/20 hover:bg-paper"
             >
-              🖨 Print Preview
+              {t("qtDetail.btnPrint", lang)}
             </Link>
             <QuotationActions
               qtNo={qt.no}

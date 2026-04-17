@@ -16,6 +16,8 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti, formatNumber } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 type Cat = Database["public"]["Enums"]["item_category"];
 type Row = Pick<
@@ -67,6 +69,7 @@ function rowToDraft(r: Row): DraftRow {
 }
 
 export function ItemsPanel({ initial }: { initial: Row[] }) {
+  const { lang } = useLang();
   const supabase = createClient();
   const router = useRouter();
   const [rows, setRows] = useState<Row[]>(initial);
@@ -102,11 +105,11 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
     setErr(null);
     const code = draft.code.trim();
     if (!code) {
-      setErr("Kode bahan wajib diisi.");
+      setErr(t("adminItems.errCodeReq", lang));
       return;
     }
     if (!draft.unit.trim()) {
-      setErr("Satuan wajib diisi (mis. kg, lt, butir).");
+      setErr(t("adminItems.errUnitReq", lang));
       return;
     }
     setBusy(true);
@@ -167,12 +170,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
   }
 
   async function remove(code: string) {
-    if (
-      !confirm(
-        `Hapus bahan "${code}"? Tidak bisa dihapus jika dipakai BOM/PO.`
-      )
-    )
-      return;
+    if (!confirm(ti("adminItems.confirmDel", lang, { code }))) return;
     setErr(null);
     setBusy(true);
     const { error } = await supabase.from("items").delete().eq("code", code);
@@ -187,8 +185,8 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
 
   return (
     <Section
-      title="Bahan Makanan (items)"
-      hint="Master bahan baku. Code = nama unik, dipakai sebagai FK di BOM, stock, PO."
+      title={t("adminItems.title", lang)}
+      hint={t("adminItems.hint", lang)}
       actions={
         <Button
           variant={adding ? "secondary" : "primary"}
@@ -199,22 +197,22 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
             setErr(null);
           }}
         >
-          {adding ? "× Batal Tambah" : "+ Tambah Bahan"}
+          {adding ? t("adminItems.btnCancelAdd", lang) : t("adminItems.btnAdd", lang)}
         </Button>
       }
     >
       {adding && (
         <div className="mb-4 rounded-xl bg-paper p-4 ring-1 ring-ink/5">
           <div className="grid gap-3 md:grid-cols-3">
-            <FieldBlock label="Kode (unik)" required>
+            <FieldBlock label={t("adminItems.fldCode", lang)} required>
               <Input
                 value={draft.code}
                 onChange={(e) => setDraft({ ...draft, code: e.target.value })}
-                placeholder="mis. Beras Putih"
+                placeholder={t("adminItems.phCode", lang)}
                 autoComplete="off"
               />
             </FieldBlock>
-            <FieldBlock label="Kategori">
+            <FieldBlock label={t("adminItems.fldCategory", lang)}>
               <Select
                 value={draft.category}
                 onChange={(e) =>
@@ -228,14 +226,14 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                 ))}
               </Select>
             </FieldBlock>
-            <FieldBlock label="Satuan" required>
+            <FieldBlock label={t("adminItems.fldUnit", lang)} required>
               <Input
                 value={draft.unit}
                 onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
-                placeholder="kg, lt, butir"
+                placeholder={t("adminItems.phUnit", lang)}
               />
             </FieldBlock>
-            <FieldBlock label="Harga (IDR)">
+            <FieldBlock label={t("adminItems.fldPrice", lang)}>
               <Input
                 type="number"
                 inputMode="numeric"
@@ -245,7 +243,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                 }
               />
             </FieldBlock>
-            <FieldBlock label="Volume / minggu">
+            <FieldBlock label={t("adminItems.fldVolWeekly", lang)}>
               <Input
                 type="number"
                 inputMode="decimal"
@@ -265,7 +263,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                   setDraft({ ...draft, active: e.target.checked })
                 }
               />
-              Aktif
+              {t("adminItems.lblActive", lang)}
             </label>
             <Button
               variant="primary"
@@ -273,7 +271,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
               disabled={busy}
               onClick={saveNew}
             >
-              {busy ? "Menyimpan…" : "Simpan Bahan"}
+              {busy ? t("adminItems.btnSaving", lang) : t("adminItems.btnSave", lang)}
             </Button>
           </div>
         </div>
@@ -281,20 +279,20 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <label className="block min-w-[200px] flex-1">
-          <FieldLabel>Cari kode</FieldLabel>
+          <FieldLabel>{t("adminItems.searchLabel", lang)}</FieldLabel>
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="ketik untuk filter…"
+            placeholder={t("adminItems.searchPh", lang)}
           />
         </label>
         <label className="block w-full sm:w-[180px]">
-          <FieldLabel>Kategori</FieldLabel>
+          <FieldLabel>{t("adminItems.fldCategory", lang)}</FieldLabel>
           <Select
             value={catFilter}
             onChange={(e) => setCatFilter(e.target.value as Cat | "ALL")}
           >
-            <option value="ALL">Semua</option>
+            <option value="ALL">{t("adminItems.optAll", lang)}</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -303,7 +301,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
           </Select>
         </label>
         <Badge tone="muted">
-          {filtered.length} dari {rows.length}
+          {ti("adminItems.filteredOf", lang, { shown: filtered.length, total: rows.length })}
         </Badge>
       </div>
 
@@ -316,20 +314,20 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
       {filtered.length === 0 ? (
         <EmptyState
           icon="🥕"
-          title="Belum ada bahan"
-          message="Tambahkan bahan pertama lewat tombol di atas."
+          title={t("adminItems.emptyTitle", lang)}
+          message={t("adminItems.emptyMsg", lang)}
         />
       ) : (
         <TableWrap>
           <table className="w-full text-sm">
             <THead>
-              <th className="py-2 px-3 text-center">Kode</th>
-              <th className="py-2 px-3 text-center">Kategori</th>
-              <th className="py-2 px-3 text-center">Satuan</th>
-              <th className="py-2 px-3 text-center">Harga (IDR)</th>
-              <th className="py-2 px-3 text-center">Vol/Mgg</th>
-              <th className="py-2 px-3 text-center">Aktif</th>
-              <th className="py-2 px-3 text-center">Aksi</th>
+              <th className="py-2 px-3 text-center">{t("adminItems.colCode", lang)}</th>
+              <th className="py-2 px-3 text-center">{t("adminItems.colCategory", lang)}</th>
+              <th className="py-2 px-3 text-center">{t("adminItems.colUnit", lang)}</th>
+              <th className="py-2 px-3 text-center">{t("adminItems.colPrice", lang)}</th>
+              <th className="py-2 px-3 text-center">{t("adminItems.colVolWk", lang)}</th>
+              <th className="py-2 px-3 text-center">{t("adminItems.colActive", lang)}</th>
+              <th className="py-2 px-3 text-center">{t("adminItems.colAction", lang)}</th>
             </THead>
             <tbody>
               {filtered.map((r) =>
@@ -410,7 +408,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                           disabled={busy}
                           onClick={saveEdit}
                         >
-                          Simpan
+                          {t("adminItems.btnSaveEdit", lang)}
                         </Button>
                         <Button
                           size="sm"
@@ -418,7 +416,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                           disabled={busy}
                           onClick={cancelEdit}
                         >
-                          Batal
+                          {t("adminItems.btnCancelEdit", lang)}
                         </Button>
                       </div>
                     </td>
@@ -437,16 +435,16 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                       {r.unit}
                     </td>
                     <td className="py-2 px-3 text-center font-mono text-[12px]">
-                      {Number(r.price_idr).toLocaleString("id-ID")}
+                      {formatNumber(Number(r.price_idr), lang)}
                     </td>
                     <td className="py-2 px-3 text-center font-mono text-[12px]">
-                      {Number(r.vol_weekly ?? 0).toLocaleString("id-ID")}
+                      {formatNumber(Number(r.vol_weekly ?? 0), lang)}
                     </td>
                     <td className="py-2 px-3 text-center">
                       {r.active ? (
-                        <Badge tone="ok">aktif</Badge>
+                        <Badge tone="ok">{t("adminItems.tagActive", lang)}</Badge>
                       ) : (
-                        <Badge tone="muted">nonaktif</Badge>
+                        <Badge tone="muted">{t("adminItems.tagInactive", lang)}</Badge>
                       )}
                     </td>
                     <td className="py-2 px-3 text-center">
@@ -456,14 +454,14 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                           variant="secondary"
                           onClick={() => startEdit(r)}
                         >
-                          Edit
+                          {t("adminItems.btnEdit", lang)}
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => remove(r.code)}
                         >
-                          Hapus
+                          {t("adminItems.btnDelete", lang)}
                         </Button>
                       </div>
                     </td>
@@ -487,9 +485,10 @@ function FieldBlock({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  const { lang } = useLang();
   return (
     <label className="block">
-      <FieldLabel hint={required ? "wajib" : undefined}>{label}</FieldLabel>
+      <FieldLabel hint={required ? t("adminItems.required", lang) : undefined}>{label}</FieldLabel>
       {children}
     </label>
   );

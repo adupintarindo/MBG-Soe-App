@@ -4,21 +4,24 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/roles";
 import { Badge, Button, FieldLabel, Input, Section, Select } from "@/components/ui";
+import { t, ti, type LangKey } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 interface SupplierOpt {
   id: string;
   name: string;
 }
 
-const ROLE_OPTIONS: { value: UserRole; label: string; desc: string }[] = [
-  { value: "admin",     label: "Admin",        desc: "Full akses semua modul" },
-  { value: "operator",  label: "Operator",     desc: "Stok, PO, GRN, invoice, receipt" },
-  { value: "ahli_gizi", label: "Ahli Gizi",    desc: "Menu master, BOM, kalender" },
-  { value: "supplier",  label: "Supplier",     desc: "Read PO/GRN/invoice miliknya" },
-  { value: "viewer",    label: "Observer",     desc: "Read-only (WFP, auditor)" }
+const ROLE_OPTIONS: { value: UserRole; labelKey: LangKey; descKey: LangKey }[] = [
+  { value: "admin",     labelKey: "adminInvite.roleAdmin",    descKey: "adminInvite.roleAdminDesc" },
+  { value: "operator",  labelKey: "adminInvite.roleOperator", descKey: "adminInvite.roleOperatorDesc" },
+  { value: "ahli_gizi", labelKey: "adminInvite.roleNutri",    descKey: "adminInvite.roleNutriDesc" },
+  { value: "supplier",  labelKey: "adminInvite.roleSupplier", descKey: "adminInvite.roleSupplierDesc" },
+  { value: "viewer",    labelKey: "adminInvite.roleObserver", descKey: "adminInvite.roleObserverDesc" }
 ];
 
 export function InviteForm({ suppliers }: { suppliers: SupplierOpt[] }) {
+  const { lang } = useLang();
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<UserRole>("operator");
@@ -38,7 +41,7 @@ export function InviteForm({ suppliers }: { suppliers: SupplierOpt[] }) {
     const { data, error } = await supabase.rpc("create_invite", {
       p_email: email.trim().toLowerCase(),
       p_role: role,
-      p_supplier_id: role === "supplier" ? supplierId || null : null
+      p_supplier_id: role === "supplier" ? supplierId || undefined : undefined
     });
 
     if (error) {
@@ -48,55 +51,53 @@ export function InviteForm({ suppliers }: { suppliers: SupplierOpt[] }) {
     }
     setStatus("ok");
     setToken(data as unknown as string);
-    setMessage(
-      `Undangan dibuat untuk ${email}. Minta user login via magic link di halaman /login — sistem akan cocokkan email dengan undangan ini.`
-    );
+    setMessage(ti("adminInvite.okMsg", lang, { email }));
     setEmail("");
   }
 
   return (
     <Section
-      title="Buat Undangan Baru"
-      hint="Email yang diundang akan otomatis terhubung ke profil saat login magic link pertama."
+      title={t("adminInvite.formTitle", lang)}
+      hint={t("adminInvite.formHint", lang)}
       accent="info"
     >
       <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
         <label className="block md:col-span-2">
-          <FieldLabel>Email pengguna</FieldLabel>
+          <FieldLabel>{t("adminInvite.fldEmail", lang)}</FieldLabel>
           <Input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="nama@instansi.go.id"
+            placeholder={t("adminInvite.phEmail", lang)}
             autoComplete="off"
           />
         </label>
 
         <label className="block">
-          <FieldLabel>Peran</FieldLabel>
+          <FieldLabel>{t("adminInvite.fldRole", lang)}</FieldLabel>
           <Select
             value={role}
             onChange={(e) => setRole(e.target.value as UserRole)}
           >
             {ROLE_OPTIONS.map((r) => (
               <option key={r.value} value={r.value}>
-                {r.label} — {r.desc}
+                {t(r.labelKey, lang)} — {t(r.descKey, lang)}
               </option>
             ))}
           </Select>
         </label>
 
         <label className="block">
-          <FieldLabel hint={role === "supplier" ? "wajib" : "abaikan"}>
-            Supplier
+          <FieldLabel hint={role === "supplier" ? t("adminInvite.supRequired", lang) : t("adminInvite.supIgnore", lang)}>
+            {t("adminInvite.fldSupplier", lang)}
           </FieldLabel>
           <Select
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
             disabled={role !== "supplier"}
           >
-            <option value="">— pilih supplier —</option>
+            <option value="">{t("adminInvite.optPickSup", lang)}</option>
             {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.id} · {s.name}
@@ -112,21 +113,21 @@ export function InviteForm({ suppliers }: { suppliers: SupplierOpt[] }) {
             size="md"
             disabled={status === "sending"}
           >
-            {status === "sending" ? "Mengirim…" : "Buat Undangan →"}
+            {status === "sending" ? t("adminInvite.btnSending", lang) : t("adminInvite.btnSend", lang)}
           </Button>
           <Badge tone="muted">
-            Berlaku 7 hari · sekali klaim
+            {t("adminInvite.badge7Days", lang)}
           </Badge>
         </div>
 
         {status === "ok" && message && (
           <div className="rounded-xl bg-green-50 p-4 text-sm text-green-900 ring-1 ring-green-200 md:col-span-2">
-            <div className="mb-1 font-black">✓ Undangan dibuat</div>
+            <div className="mb-1 font-black">✓ {t("adminInvite.okTitle", lang)}</div>
             <p className="leading-relaxed">{message}</p>
             {token && (
               <div className="mt-3">
                 <span className="text-[11px] font-bold uppercase tracking-wide text-green-900/70">
-                  Token
+                  {t("adminInvite.tokenLabel", lang)}
                 </span>
                 <code className="mt-1 block break-all rounded-lg bg-white px-3 py-2 font-mono text-[11px] text-ink shadow-sm">
                   {token}
@@ -138,7 +139,7 @@ export function InviteForm({ suppliers }: { suppliers: SupplierOpt[] }) {
 
         {status === "error" && message && (
           <div className="rounded-xl bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-200 md:col-span-2">
-            <div className="mb-1 font-black">✗ Gagal buat undangan</div>
+            <div className="mb-1 font-black">✗ {t("adminInvite.errTitle", lang)}</div>
             <p className="leading-relaxed">{message}</p>
           </div>
         )}

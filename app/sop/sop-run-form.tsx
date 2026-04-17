@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { logSopRun, listSopRuns, type SopRunRow } from "@/lib/engine";
 import { Badge, Button, FieldLabel } from "@/components/ui";
 import type { SOP } from "@/lib/sops";
+import { t, ti } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 interface Props {
   sop: SOP;
@@ -21,6 +23,7 @@ function todayISO(): string {
 }
 
 export function SopRunForm({ sop, canWrite }: Props) {
+  const { lang } = useLang();
   const supabase = createClient();
   const router = useRouter();
   const [runDate, setRunDate] = useState(todayISO());
@@ -91,7 +94,7 @@ export function SopRunForm({ sop, canWrite }: Props) {
     setErr(null);
     setOk(null);
     if (!runDate) {
-      setErr("Tanggal eksekusi wajib diisi.");
+      setErr(t("sopRun.errDate", lang));
       return;
     }
     setSaving(true);
@@ -109,7 +112,7 @@ export function SopRunForm({ sop, canWrite }: Props) {
         notes: notes.trim() || null,
         runDate
       });
-      setOk(`Tercatat (#${id}) · completion ${completion}%.`);
+      setOk(ti("sopRun.okSaved", lang, { id, pct: completion }));
 
       // Refresh history row-set in-panel.
       try {
@@ -136,10 +139,10 @@ export function SopRunForm({ sop, canWrite }: Props) {
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-            Catat Eksekusi SOP
+            {t("sopRun.secLabel", lang)}
           </div>
           <h4 className="text-sm font-black text-ink">
-            Checklist compliance · simpan sebagai audit trail
+            {t("sopRun.secHeading", lang)}
           </h4>
         </div>
         <span
@@ -159,7 +162,7 @@ export function SopRunForm({ sop, canWrite }: Props) {
         <div className="space-y-3">
           <div className="grid gap-3 md:grid-cols-[180px_1fr]">
             <label className="block">
-              <FieldLabel>Tanggal Eksekusi</FieldLabel>
+              <FieldLabel>{t("sopRun.dateLabel", lang)}</FieldLabel>
               <input
                 type="date"
                 value={runDate}
@@ -169,17 +172,17 @@ export function SopRunForm({ sop, canWrite }: Props) {
             </label>
             <div className="flex items-end gap-2">
               <Button variant="ghost" size="sm" onClick={checkAll}>
-                Centang semua
+                {t("sopRun.btnCheckAll", lang)}
               </Button>
               <Button variant="ghost" size="sm" onClick={reset}>
-                Reset
+                {t("sopRun.btnReset", lang)}
               </Button>
             </div>
           </div>
 
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-              Langkah dilakukan
+              {t("sopRun.stepsDone", lang)}
             </div>
             <ul className="mt-1.5 space-y-1.5 text-[12px]">
               {sop.steps.map((step, i) => {
@@ -215,7 +218,7 @@ export function SopRunForm({ sop, canWrite }: Props) {
           {sop.risks.length > 0 && (
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-                Risiko yang teramati (opsional)
+                {t("sopRun.risksObs", lang)}
               </div>
               <ul className="mt-1.5 space-y-1 text-[12px]">
                 {sop.risks.map((risk, i) => {
@@ -249,12 +252,12 @@ export function SopRunForm({ sop, canWrite }: Props) {
           )}
 
           <label className="block">
-            <FieldLabel>Catatan Evaluator</FieldLabel>
+            <FieldLabel>{t("sopRun.notesLabel", lang)}</FieldLabel>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              placeholder="Catatan tambahan, kendala, observasi (opsional)…"
+              placeholder={t("sopRun.notesPh", lang)}
               className="w-full rounded-lg bg-white px-3 py-2 text-sm text-ink ring-1 ring-ink/10"
             />
           </label>
@@ -266,7 +269,7 @@ export function SopRunForm({ sop, canWrite }: Props) {
               onClick={onSave}
               disabled={saving || pending}
             >
-              {saving ? "Menyimpan…" : "Simpan Eksekusi"}
+              {saving ? t("sopRun.btnSaving", lang) : t("sopRun.btnSave", lang)}
             </Button>
             {err && (
               <span className="text-[12px] font-semibold text-red-700">
@@ -282,8 +285,7 @@ export function SopRunForm({ sop, canWrite }: Props) {
         </div>
       ) : (
         <p className="rounded-xl bg-white px-4 py-3 text-[12px] text-ink2">
-          Hanya admin/operator/ahli gizi yang boleh mencatat eksekusi SOP.
-          Tampilan di bawah tetap bisa dilihat sebagai riwayat compliance.
+          {t("sopRun.noWrite", lang)}
         </p>
       )}
 
@@ -291,19 +293,21 @@ export function SopRunForm({ sop, canWrite }: Props) {
       <div className="mt-5">
         <div className="mb-2 flex items-baseline justify-between">
           <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-            Riwayat Eksekusi
+            {t("sopRun.historyLabel", lang)}
           </div>
           <span className="text-[10px] text-ink2/60">
-            {history ? `${history.length} entri terakhir` : "memuat…"}
+            {history
+              ? ti("sopRun.historyCount", lang, { n: history.length })
+              : t("sopRun.historyLoading", lang)}
           </span>
         </div>
         {loadingHistory ? (
           <p className="rounded-xl bg-white px-4 py-3 text-[12px] text-ink2/70">
-            Memuat riwayat…
+            {t("sopRun.historyLoadingText", lang)}
           </p>
         ) : !history || history.length === 0 ? (
           <p className="rounded-xl bg-white px-4 py-3 text-[12px] text-ink2">
-            Belum ada eksekusi tercatat untuk SOP ini.
+            {t("sopRun.historyEmpty", lang)}
           </p>
         ) : (
           <ul className="space-y-1.5">
@@ -329,7 +333,7 @@ export function SopRunForm({ sop, canWrite }: Props) {
                       </Badge>
                       {h.risks_flagged.length > 0 && (
                         <Badge tone="bad">
-                          ⚠ {h.risks_flagged.length} risiko
+                          {ti("sopRun.badgeRiskCount", lang, { n: h.risks_flagged.length })}
                         </Badge>
                       )}
                     </div>
