@@ -15,6 +15,7 @@ import {
 } from "@/lib/engine";
 import {
   Badge,
+  CategoryBadge,
   EmptyState,
   KpiGrid,
   KpiTile,
@@ -99,6 +100,27 @@ export default async function PlanningPage() {
     catTotals.set(cat, (catTotals.get(cat) ?? 0) + qty);
   }
 
+  // Forecast shortage derivations
+  const upcomingPeakGap = upcoming.reduce(
+    (m, u) => Math.max(m, Number(u.total_gap_kg) || 0),
+    0
+  );
+  const upcomingTotalGap = upcoming.reduce(
+    (s, u) => s + (Number(u.total_gap_kg) || 0),
+    0
+  );
+  const upcomingTotalItems = upcoming.reduce(
+    (s, u) => s + (u.short_items ?? 0),
+    0
+  );
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const DAY_SHORT_ID = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  const MONTH_SHORT_ID = [
+    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+    "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+  ];
+
   return (
     <div>
       <Nav
@@ -179,16 +201,16 @@ export default async function PlanningPage() {
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">#</th>
-                  <th className="py-2 pr-3">Komoditas</th>
-                  <th className="py-2 pr-3">Kategori</th>
+                  <th className="py-2 pr-3 text-center">#</th>
+                  <th className="py-2 pr-3 text-center">Komoditas</th>
+                  <th className="py-2 pr-3 text-center">Kategori</th>
                   {months.map((m) => (
-                    <th key={m} className="py-2 pr-3 text-right">
+                    <th key={m} className="py-2 pr-3 text-center">
                       {monthLabel(m)}
                     </th>
                   ))}
-                  <th className="py-2 pr-3 text-right">Total kg</th>
-                  <th className="py-2 pr-3 text-right">Est. Biaya</th>
+                  <th className="py-2 pr-3 text-center">Total kg</th>
+                  <th className="py-2 pr-3 text-center">Est. Biaya</th>
                 </THead>
                 <tbody>
                   {sortedItems.slice(0, 30).map(([code, total], i) => {
@@ -198,27 +220,27 @@ export default async function PlanningPage() {
                         key={code}
                         className="row-hover border-b border-ink/5"
                       >
-                        <td className="py-2 pr-3 text-ink2">{i + 1}</td>
-                        <td className="py-2 pr-3 font-semibold">{code}</td>
-                        <td className="py-2 pr-3 text-[10px] font-bold text-ink2/70">
-                          {it?.category}
+                        <td className="py-2 pr-3 text-center text-ink2">{i + 1}</td>
+                        <td className="py-2 pr-3 text-center font-semibold">{code}</td>
+                        <td className="py-2 pr-3 text-center">
+                          <CategoryBadge category={it?.category} size="sm" />
                         </td>
                         {months.map((m) => (
                           <td
                             key={m}
-                            className="py-2 pr-3 text-right font-mono text-xs"
+                            className="py-2 pr-3 text-center font-mono text-xs"
                           >
                             {(matrix[code][m] ?? 0).toLocaleString("id-ID", {
                               maximumFractionDigits: 1
                             })}
                           </td>
                         ))}
-                        <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                        <td className="py-2 pr-3 text-center font-mono text-xs font-black">
                           {total.toLocaleString("id-ID", {
                             maximumFractionDigits: 0
                           })}
                         </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs text-emerald-800">
+                        <td className="py-2 pr-3 text-center font-mono text-xs text-emerald-800">
                           {formatIDR(itemCost.get(code) ?? 0)}
                         </td>
                       </tr>
@@ -227,7 +249,7 @@ export default async function PlanningPage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-ink/20 bg-paper">
-                    <td colSpan={3} className="py-2 pr-3 font-black">
+                    <td colSpan={3} className="py-2 pr-3 text-center font-black">
                       TOTAL (TOP 30)
                     </td>
                     {months.map((m) => {
@@ -237,7 +259,7 @@ export default async function PlanningPage() {
                       return (
                         <td
                           key={m}
-                          className="py-2 pr-3 text-right font-mono text-xs font-black"
+                          className="py-2 pr-3 text-center font-mono text-xs font-black"
                         >
                           {col.toLocaleString("id-ID", {
                             maximumFractionDigits: 0
@@ -245,7 +267,7 @@ export default async function PlanningPage() {
                         </td>
                       );
                     })}
-                    <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                    <td className="py-2 pr-3 text-center font-mono text-xs font-black">
                       {sortedItems
                         .slice(0, 30)
                         .reduce((s, [, q]) => s + q, 0)
@@ -321,34 +343,184 @@ export default async function PlanningPage() {
 
         <Section
           title="🔭 Forecast Shortage · 30 Hari"
+          hint="Proyeksi hari dengan kekurangan stok relatif terhadap rencana BOM."
           accent={upcoming.length > 0 ? "warn" : "ok"}
+          actions={
+            upcoming.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-3 text-[10.5px] font-medium text-ink2/70">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-red-500" /> Kritis
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-amber-500" /> Tinggi
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-yellow-400" /> Sedang
+                </span>
+              </div>
+            ) : undefined
+          }
         >
           {upcoming.length === 0 ? (
             <EmptyState
               icon="✅"
               tone="ok"
-              message="Tidak ada shortage terdeteksi."
+              message="Tidak ada shortage terdeteksi dalam 30 hari ke depan."
             />
           ) : (
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              {upcoming.map((u) => (
-                <div
-                  key={u.op_date}
-                  className="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200"
-                >
-                  <div>
-                    <div className="text-xs font-bold text-amber-900">
-                      {u.op_date}
-                    </div>
-                    <div className="text-[11px] text-amber-800">
-                      {u.short_items} item kurang
-                    </div>
+            <div>
+              <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
+                    Hari Terdampak
                   </div>
-                  <div className="text-right text-xs font-bold text-amber-900">
-                    gap {formatKg(Number(u.total_gap_kg))}
+                  <div className="mt-0.5 text-lg font-bold leading-tight text-amber-900">
+                    {upcoming.length}
+                    <span className="ml-1 text-[10px] font-medium text-amber-700/70">
+                      / 30
+                    </span>
                   </div>
                 </div>
-              ))}
+                <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
+                    Total Gap
+                  </div>
+                  <div className="mt-0.5 text-lg font-bold leading-tight text-amber-900">
+                    {formatKg(upcomingTotalGap)}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
+                    Puncak / Hari
+                  </div>
+                  <div className="mt-0.5 text-lg font-bold leading-tight text-amber-900">
+                    {formatKg(upcomingPeakGap)}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
+                    Total Item Kurang
+                  </div>
+                  <div className="mt-0.5 text-lg font-bold leading-tight text-amber-900">
+                    {upcomingTotalItems}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {upcoming.map((u) => {
+                  const d = new Date(u.op_date);
+                  const gap = Number(u.total_gap_kg) || 0;
+                  const ratio = upcomingPeakGap > 0 ? gap / upcomingPeakGap : 0;
+                  const tier =
+                    ratio >= 0.8 ? "crit" : ratio >= 0.55 ? "high" : "med";
+                  const cfg = {
+                    crit: {
+                      dot: "bg-red-500",
+                      bar: "bg-gradient-to-r from-red-500 to-red-400",
+                      track: "bg-red-100",
+                      text: "text-red-900",
+                      sub: "text-red-700/80",
+                      ring: "ring-red-200/80",
+                      bg: "bg-gradient-to-br from-red-50 to-white"
+                    },
+                    high: {
+                      dot: "bg-amber-500",
+                      bar: "bg-gradient-to-r from-amber-500 to-amber-400",
+                      track: "bg-amber-100",
+                      text: "text-amber-900",
+                      sub: "text-amber-800/80",
+                      ring: "ring-amber-200/80",
+                      bg: "bg-gradient-to-br from-amber-50 to-white"
+                    },
+                    med: {
+                      dot: "bg-yellow-400",
+                      bar: "bg-gradient-to-r from-yellow-400 to-yellow-300",
+                      track: "bg-yellow-100",
+                      text: "text-yellow-900",
+                      sub: "text-yellow-800/80",
+                      ring: "ring-yellow-200/80",
+                      bg: "bg-gradient-to-br from-yellow-50 to-white"
+                    }
+                  }[tier];
+                  const isWknd = d.getDay() === 0 || d.getDay() === 6;
+                  const diffDays = Math.round(
+                    (d.getTime() - todayStart.getTime()) / 86400000
+                  );
+                  const rel =
+                    diffDays === 0
+                      ? "Hari ini"
+                      : diffDays === 1
+                        ? "Besok"
+                        : diffDays > 1
+                          ? `H+${diffDays}`
+                          : `${diffDays}`;
+
+                  return (
+                    <div
+                      key={u.op_date}
+                      className={`group relative overflow-hidden rounded-xl ${cfg.bg} px-4 py-3 ring-1 ${cfg.ring} transition hover:-translate-y-0.5 hover:shadow-card`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div
+                            className={`flex h-11 w-11 flex-col items-center justify-center rounded-lg bg-white/80 ring-1 ${cfg.ring}`}
+                          >
+                            <span
+                              className={`text-[9px] font-bold uppercase leading-none tracking-wide ${cfg.sub}`}
+                            >
+                              {DAY_SHORT_ID[d.getDay()]}
+                            </span>
+                            <span
+                              className={`mt-0.5 text-base font-bold leading-none ${cfg.text}`}
+                            >
+                              {d.getDate()}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <div
+                              className={`flex items-center gap-1.5 text-[13px] font-bold ${cfg.text}`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`}
+                              />
+                              {MONTH_SHORT_ID[d.getMonth()]} {d.getFullYear()}
+                              {isWknd && (
+                                <span className="ml-1 rounded bg-white/70 px-1.5 py-px text-[9px] font-semibold tracking-wide text-ink2/70">
+                                  WKND
+                                </span>
+                              )}
+                            </div>
+                            <div className={`mt-0.5 text-[11px] ${cfg.sub}`}>
+                              {rel} · {u.short_items} item kurang
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-sm font-bold ${cfg.text}`}>
+                            {formatKg(gap)}
+                          </div>
+                          <div
+                            className={`text-[9px] font-semibold uppercase tracking-wider ${cfg.sub}`}
+                          >
+                            gap
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className={`mt-3 h-1.5 w-full overflow-hidden rounded-full ${cfg.track}`}
+                      >
+                        <div
+                          className={`h-full rounded-full ${cfg.bar}`}
+                          style={{
+                            width: `${Math.max(8, Math.round(ratio * 100))}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </Section>

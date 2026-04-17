@@ -190,10 +190,10 @@ export default async function StockPage() {
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">Item</th>
-                  <th className="py-2 pr-3 text-right">Butuh</th>
-                  <th className="py-2 pr-3 text-right">Ada</th>
-                  <th className="py-2 pr-3 text-right">Kurang</th>
+                  <th className="py-2 pr-3 text-center">Item</th>
+                  <th className="py-2 pr-3 text-center">Butuh</th>
+                  <th className="py-2 pr-3 text-center">Ada</th>
+                  <th className="py-2 pr-3 text-center">Kurang</th>
                 </THead>
                 <tbody>
                   {shortList.map((s) => (
@@ -201,14 +201,16 @@ export default async function StockPage() {
                       key={s.item_code}
                       className="row-hover border-b border-ink/5"
                     >
-                      <td className="py-2 pr-3 font-semibold">{s.item_code}</td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
+                      <td className="py-2 pr-3 text-center font-semibold">
+                        {s.item_code}
+                      </td>
+                      <td className="py-2 pr-3 text-center font-mono text-xs">
                         {Number(s.required).toFixed(2)}
                       </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
+                      <td className="py-2 pr-3 text-center font-mono text-xs">
                         {Number(s.on_hand).toFixed(2)}
                       </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs font-black text-red-700">
+                      <td className="py-2 pr-3 text-center font-mono text-xs font-black text-red-700">
                         {Number(s.gap).toFixed(2)} {s.unit}
                       </td>
                     </tr>
@@ -245,13 +247,13 @@ export default async function StockPage() {
               <TableWrap>
                 <table className="w-full text-sm">
                   <THead>
-                    <th className="py-2 pr-3">Item</th>
-                    <th className="py-2 pr-3 text-right">Qty</th>
-                    <th className="py-2 pr-3">Unit</th>
-                    <th className="py-2 pr-3 text-right">Harga</th>
-                    <th className="py-2 pr-3 text-right">Nilai</th>
-                    <th className="py-2 pr-3 text-right">Vol Mingguan</th>
-                    <th className="py-2 pr-3 text-right">Status</th>
+                    <th className="py-2 pr-3 text-center">Item</th>
+                    <th className="py-2 pr-3 text-center">Qty</th>
+                    <th className="py-2 pr-3 text-center">Unit</th>
+                    <th className="py-2 pr-3 text-center">Harga</th>
+                    <th className="py-2 pr-3 text-center">Nilai</th>
+                    <th className="py-2 pr-3 text-center">Vol Mingguan</th>
+                    <th className="py-2 pr-3 text-center">Status</th>
                   </THead>
                   <tbody>
                     {list.map((it) => {
@@ -265,25 +267,27 @@ export default async function StockPage() {
                           key={it.code}
                           className="row-hover border-b border-ink/5"
                         >
-                          <td className="py-2 pr-3 font-semibold">
+                          <td className="py-2 pr-3 text-center font-semibold">
                             {it.code}
                           </td>
-                          <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+                          <td className="py-2 pr-3 text-center font-mono text-xs font-black">
                             {qty.toLocaleString("id-ID", {
                               maximumFractionDigits: 2
                             })}
                           </td>
-                          <td className="py-2 pr-3 text-xs">{it.unit}</td>
-                          <td className="py-2 pr-3 text-right font-mono text-xs">
+                          <td className="py-2 pr-3 text-center text-xs">
+                            {it.unit}
+                          </td>
+                          <td className="py-2 pr-3 text-center font-mono text-xs">
                             {formatIDR(Number(it.price_idr))}
                           </td>
-                          <td className="py-2 pr-3 text-right font-mono text-xs">
+                          <td className="py-2 pr-3 text-center font-mono text-xs">
                             {formatIDR(value)}
                           </td>
-                          <td className="py-2 pr-3 text-right font-mono text-xs text-ink2/70">
+                          <td className="py-2 pr-3 text-center font-mono text-xs text-ink2/70">
                             {weekly > 0 ? weekly.toFixed(1) : "—"}
                           </td>
-                          <td className="py-2 pr-3 text-right">
+                          <td className="py-2 pr-3 text-center">
                             {short && Number(short.gap) > 0 ? (
                               <Badge tone="bad">
                                 Kurang {Number(short.gap).toFixed(1)}
@@ -320,12 +324,12 @@ export default async function StockPage() {
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">Waktu</th>
-                  <th className="py-2 pr-3">Item</th>
-                  <th className="py-2 pr-3">Reason</th>
-                  <th className="py-2 pr-3 text-right">Delta</th>
-                  <th className="py-2 pr-3">Referensi</th>
-                  <th className="py-2 pr-3">Catatan</th>
+                  <th className="py-2 pr-3 text-center">Waktu</th>
+                  <th className="py-2 pr-3 text-center">Item</th>
+                  <th className="py-2 pr-3 text-center">Reason</th>
+                  <th className="py-2 pr-3 text-center">Delta</th>
+                  <th className="py-2 pr-3 text-center">Referensi</th>
+                  <th className="py-2 pr-3 text-center">Catatan</th>
                 </THead>
                 <tbody>
                   {moves.map((m) => (
@@ -333,7 +337,7 @@ export default async function StockPage() {
                       key={m.id}
                       className="row-hover border-b border-ink/5"
                     >
-                      <td className="py-2 pr-3 font-mono text-[11px]">
+                      <td className="py-2 pr-3 text-center font-mono text-[11px]">
                         {new Date(m.created_at).toLocaleString("id-ID", {
                           day: "2-digit",
                           month: "short",
@@ -341,8 +345,10 @@ export default async function StockPage() {
                           minute: "2-digit"
                         })}
                       </td>
-                      <td className="py-2 pr-3 font-semibold">{m.item_code}</td>
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pr-3 text-center font-semibold">
+                        {m.item_code}
+                      </td>
+                      <td className="py-2 pr-3 text-center">
                         <span
                           className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${REASON_COLOR[m.reason] ?? REASON_COLOR.adjustment}`}
                         >
@@ -350,17 +356,17 @@ export default async function StockPage() {
                         </span>
                       </td>
                       <td
-                        className={`py-2 pr-3 text-right font-mono text-xs font-black ${Number(m.delta) >= 0 ? "text-emerald-700" : "text-red-700"}`}
+                        className={`py-2 pr-3 text-center font-mono text-xs font-black ${Number(m.delta) >= 0 ? "text-emerald-700" : "text-red-700"}`}
                       >
                         {Number(m.delta) >= 0 ? "+" : ""}
                         {Number(m.delta).toFixed(2)}
                       </td>
-                      <td className="py-2 pr-3 font-mono text-[11px] text-ink2">
+                      <td className="py-2 pr-3 text-center font-mono text-[11px] text-ink2">
                         {m.ref_doc && m.ref_no
                           ? `${m.ref_doc.toUpperCase()} ${m.ref_no}`
                           : m.ref_doc || "—"}
                       </td>
-                      <td className="py-2 pr-3 text-xs text-ink2/70">
+                      <td className="py-2 pr-3 text-center text-xs text-ink2/70">
                         {m.note || "—"}
                       </td>
                     </tr>

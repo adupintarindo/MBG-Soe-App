@@ -195,6 +195,62 @@ export function Badge({ tone = "neutral", children, className = "" }: BadgeProps
   );
 }
 
+/* ---------- Category badge (icon + colored pill) ---------- */
+
+const CATEGORY_COLOR: Record<string, string> = {
+  BERAS: "bg-amber-50 text-amber-900 ring-amber-200",
+  HEWANI: "bg-rose-50 text-rose-900 ring-rose-200",
+  NABATI: "bg-emerald-50 text-emerald-900 ring-emerald-200",
+  SAYUR_HIJAU: "bg-green-50 text-green-900 ring-green-200",
+  SAYUR: "bg-lime-50 text-lime-900 ring-lime-200",
+  UMBI: "bg-orange-50 text-orange-900 ring-orange-200",
+  BUMBU: "bg-yellow-50 text-yellow-900 ring-yellow-200",
+  REMPAH: "bg-red-50 text-red-900 ring-red-200",
+  SEMBAKO: "bg-slate-50 text-slate-900 ring-slate-200",
+  BUAH: "bg-pink-50 text-pink-900 ring-pink-200",
+  LAIN: "bg-gray-50 text-gray-900 ring-gray-200"
+};
+
+const CATEGORY_ICON: Record<string, string> = {
+  BERAS: "🌾",
+  HEWANI: "🍗",
+  NABATI: "🫘",
+  SAYUR_HIJAU: "🥬",
+  SAYUR: "🥕",
+  UMBI: "🥔",
+  BUMBU: "🧅",
+  REMPAH: "🌶️",
+  SEMBAKO: "🛒",
+  BUAH: "🍎",
+  LAIN: "🍽️"
+};
+
+export function CategoryBadge({
+  category,
+  size = "md",
+  className = ""
+}: {
+  category: string | null | undefined;
+  size?: "sm" | "md";
+  className?: string;
+}) {
+  const cat = (category ?? "LAIN").toString().toUpperCase();
+  const color = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR.LAIN;
+  const icon = CATEGORY_ICON[cat] ?? CATEGORY_ICON.LAIN;
+  const pad = size === "sm" ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[10px]";
+  const iconSize = size === "sm" ? "text-[11px]" : "text-[12px]";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full font-bold ring-1 ${pad} ${color} ${className}`}
+    >
+      <span aria-hidden className={`${iconSize} leading-none`}>
+        {icon}
+      </span>
+      {cat}
+    </span>
+  );
+}
+
 /* ---------- Empty state ---------- */
 
 interface EmptyStateProps {
@@ -352,8 +408,8 @@ export function TableWrap({ children }: { children: ReactNode }) {
 
 export function THead({ children }: { children: ReactNode }) {
   return (
-    <thead>
-      <tr className="border-b border-ink/10 text-left font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-ink2">
+    <thead className="bg-primary-gradient dark:bg-primary-gradient-dark">
+      <tr className="border-b-2 border-gold/70 text-left font-display text-[10.5px] font-bold uppercase tracking-[0.09em] text-white/95 [&>th:first-child]:rounded-tl-lg [&>th:first-child]:pl-3 [&>th:last-child]:rounded-tr-lg [&>th:last-child]:pr-3">
         {children}
       </tr>
     </thead>

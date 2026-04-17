@@ -4,6 +4,7 @@ import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { formatIDR } from "@/lib/engine";
 import {
+  CategoryBadge,
   EmptyState,
   KpiGrid,
   KpiTile,
@@ -16,34 +17,6 @@ import {
 } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
-
-const CAT_COLOR: Record<string, string> = {
-  BERAS: "bg-amber-50 text-amber-900 ring-amber-200",
-  HEWANI: "bg-rose-50 text-rose-900 ring-rose-200",
-  NABATI: "bg-emerald-50 text-emerald-900 ring-emerald-200",
-  SAYUR_HIJAU: "bg-green-50 text-green-900 ring-green-200",
-  SAYUR: "bg-lime-50 text-lime-900 ring-lime-200",
-  UMBI: "bg-orange-50 text-orange-900 ring-orange-200",
-  BUMBU: "bg-yellow-50 text-yellow-900 ring-yellow-200",
-  REMPAH: "bg-red-50 text-red-900 ring-red-200",
-  SEMBAKO: "bg-slate-50 text-slate-900 ring-slate-200",
-  BUAH: "bg-pink-50 text-pink-900 ring-pink-200",
-  LAIN: "bg-gray-50 text-gray-900 ring-gray-200"
-};
-
-const CAT_ICON: Record<string, string> = {
-  BERAS: "🌾",
-  HEWANI: "🍗",
-  NABATI: "🫘",
-  SAYUR_HIJAU: "🥬",
-  SAYUR: "🥕",
-  UMBI: "🥔",
-  BUMBU: "🧅",
-  REMPAH: "🌶️",
-  SEMBAKO: "🛒",
-  BUAH: "🍎",
-  LAIN: "🍽️"
-};
 
 export default async function MenuMasterPage() {
   const supabase = createClient();
@@ -274,10 +247,10 @@ export default async function MenuMasterPage() {
                     <table className="w-full text-xs">
                       <thead className="bg-paper text-[10px] font-bold uppercase tracking-wide text-ink2">
                         <tr>
-                          <th className="px-2 py-2 text-left">Item</th>
-                          <th className="px-2 py-2 text-left">Kat</th>
-                          <th className="px-2 py-2 text-right" title="PAUD + SD 1-3 (3-9 th)">Kecil</th>
-                          <th className="px-2 py-2 text-right" title="SD 4-6 + SMP/SMA + Guru (10 th+)">Besar</th>
+                          <th className="px-2 py-2 text-center">Item</th>
+                          <th className="px-2 py-2 text-center">Kat</th>
+                          <th className="px-2 py-2 text-center" title="PAUD + SD 1-3 (3-9 th)">Kecil</th>
+                          <th className="px-2 py-2 text-center" title="SD 4-6 + SMP/SMA + Guru (10 th+)">Besar</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -289,23 +262,16 @@ export default async function MenuMasterPage() {
                               key={r.item_code}
                               className="border-t border-ink/5"
                             >
-                              <td className="px-2 py-1.5 font-semibold text-ink">
+                              <td className="px-2 py-1.5 text-center font-semibold text-ink">
                                 {r.item_code}
                               </td>
-                              <td className="px-2 py-1.5">
-                                <span
-                                  className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ring-1 ${CAT_COLOR[cat] ?? CAT_COLOR.LAIN}`}
-                                >
-                                  <span aria-hidden className="text-[11px] leading-none">
-                                    {CAT_ICON[cat] ?? CAT_ICON.LAIN}
-                                  </span>
-                                  {cat}
-                                </span>
+                              <td className="px-2 py-1.5 text-center">
+                                <CategoryBadge category={cat} size="sm" />
                               </td>
-                              <td className="px-2 py-1.5 text-right font-mono text-ink">
+                              <td className="px-2 py-1.5 text-center font-mono text-ink">
                                 {r.tiered ? r.kecil.toFixed(1) : r.grams.toFixed(1)}
                               </td>
-                              <td className="px-2 py-1.5 text-right font-mono font-black text-ink">
+                              <td className="px-2 py-1.5 text-center font-mono font-black text-ink">
                                 {r.tiered ? r.besar.toFixed(1) : r.grams.toFixed(1)}
                               </td>
                             </tr>
@@ -330,14 +296,13 @@ export default async function MenuMasterPage() {
           <TableWrap>
             <table className="w-full text-sm">
               <THead>
-                <th className="py-2 pr-3">#</th>
-                <th className="py-2 pr-3">Item</th>
-                <th className="py-2 pr-3">EN</th>
-                <th className="py-2 pr-3">Kategori</th>
-                <th className="py-2 pr-3">Unit</th>
-                <th className="py-2 pr-3 text-right">Harga (IDR)</th>
-                <th className="py-2 pr-3 text-right">Vol Mingguan</th>
-                <th className="py-2 pr-3 text-right">Supplier</th>
+                <th className="py-2 pr-3 text-center">#</th>
+                <th className="py-2 pr-3 text-center">Item</th>
+                <th className="py-2 pr-3 text-center">Kategori</th>
+                <th className="py-2 pr-3 text-center">Unit</th>
+                <th className="py-2 pr-3 text-center">Harga (IDR)</th>
+                <th className="py-2 pr-3 text-center">Vol Mingguan</th>
+                <th className="py-2 pr-3 text-center">Supplier</th>
               </THead>
               <tbody>
                 {items.map((it, i) => (
@@ -345,29 +310,21 @@ export default async function MenuMasterPage() {
                     key={it.code}
                     className={`row-hover border-b border-ink/5 ${!it.active ? "opacity-50" : ""}`}
                   >
-                    <td className="py-2 pr-3 text-ink2">{i + 1}</td>
-                    <td className="py-2 pr-3 font-semibold">{it.code}</td>
-                    <td className="py-2 pr-3 text-xs italic text-ink2/70">
-                      {it.name_en || "—"}
+                    <td className="py-2 pr-3 text-center text-ink2">{i + 1}</td>
+                    <td className="py-2 pr-3 text-center font-semibold">
+                      {it.code.replace(/^Buah\s*-\s*/i, "")}
                     </td>
-                    <td className="py-2 pr-3">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_COLOR[it.category] ?? CAT_COLOR.LAIN}`}
-                      >
-                        <span aria-hidden className="text-[12px] leading-none">
-                          {CAT_ICON[it.category] ?? CAT_ICON.LAIN}
-                        </span>
-                        {it.category}
-                      </span>
+                    <td className="py-2 pr-3 text-center">
+                      <CategoryBadge category={it.category} />
                     </td>
-                    <td className="py-2 pr-3 font-mono text-xs">{it.unit}</td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 text-center font-mono text-xs">{it.unit}</td>
+                    <td className="py-2 pr-3 text-center font-mono text-xs">
                       {formatIDR(Number(it.price_idr))}
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 text-center font-mono text-xs">
                       {Number(it.vol_weekly).toFixed(1)}
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 text-center font-mono text-xs">
                       {supCountByItem.get(it.code) ?? 0}
                     </td>
                   </tr>

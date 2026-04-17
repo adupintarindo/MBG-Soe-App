@@ -140,6 +140,8 @@ function SopModal({
   related: { href: string; label: string } | null | undefined;
   onClose: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -151,6 +153,98 @@ function SopModal({
       document.body.style.overflow = "";
     };
   }, [onClose]);
+
+  function triggerDownload(filename: string, content: string, mime: string) {
+    const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function buildMarkdown(s: SOP) {
+    const lines: string[] = [];
+    lines.push(`# ${s.id} · ${s.title}`);
+    lines.push("");
+    lines.push(`**Kategori:** ${s.category}`);
+    lines.push(`**Referensi:** ${s.ref}`);
+    lines.push("");
+    lines.push(`## Scope`);
+    lines.push(s.scope);
+    lines.push("");
+    lines.push(`## Langkah (${s.steps.length})`);
+    s.steps.forEach((st, i) => lines.push(`${i + 1}. ${st}`));
+    lines.push("");
+    lines.push(`## Risiko Utama (${s.risks.length})`);
+    s.risks.forEach((r) => lines.push(`- ${r}`));
+    lines.push("");
+    lines.push(
+      `---\nSPPG Nunumeu · IFSR × FFI untuk WFP × Pemkab TTS · ${new Date().toISOString().slice(0, 10)}`
+    );
+    return lines.join("\n");
+  }
+
+  function buildHtml(s: SOP) {
+    const esc = (t: string) =>
+      t
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    return `<!doctype html>
+<html lang="id"><head><meta charset="utf-8"/>
+<title>${esc(s.id)} · ${esc(s.title)}</title>
+<style>
+  body{font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:780px;margin:40px auto;padding:0 20px;color:#111;line-height:1.55}
+  .meta{font-size:12px;color:#555;margin-bottom:4px}
+  h1{font-size:22px;margin:0 0 8px}
+  h2{font-size:14px;margin:24px 0 8px;text-transform:uppercase;letter-spacing:.04em;color:#333}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:#eef;color:#224;margin-right:6px}
+  ol,ul{padding-left:22px}
+  li{margin:4px 0}
+  .risk{background:#fee;border:1px solid #fcc;border-radius:8px;padding:6px 10px;margin:4px 0;list-style:none}
+  footer{margin-top:32px;font-size:11px;color:#777;border-top:1px solid #eee;padding-top:10px}
+  @media print{body{margin:20px}}
+</style></head>
+<body>
+  <div class="meta">${esc(s.id)} · <span class="tag">${esc(s.category)}</span></div>
+  <h1>${esc(s.title)}</h1>
+  <div class="meta"><b>Ref:</b> ${esc(s.ref)}</div>
+  <h2>Scope</h2><p>${esc(s.scope)}</p>
+  <h2>Langkah (${s.steps.length})</h2>
+  <ol>${s.steps.map((st) => `<li>${esc(st)}</li>`).join("")}</ol>
+  <h2>Risiko Utama (${s.risks.length})</h2>
+  <ul>${s.risks.map((r) => `<li class="risk">⚠ ${esc(r)}</li>`).join("")}</ul>
+  <footer>SPPG Nunumeu · IFSR × FFI untuk WFP × Pemkab TTS · Dicetak ${new Date().toLocaleString("id-ID")}</footer>
+</body></html>`;
+  }
+
+  function downloadMd() {
+    triggerDownload(`${sop.id}.md`, buildMarkdown(sop), "text/markdown");
+    setMenuOpen(false);
+  }
+  function downloadHtml() {
+    triggerDownload(`${sop.id}.html`, buildHtml(sop), "text/html");
+    setMenuOpen(false);
+  }
+  function downloadPdf() {
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (!w) {
+      alert("Popup diblokir browser. Izinkan popup untuk download PDF.");
+      return;
+    }
+    w.document.open();
+    w.document.write(buildHtml(sop));
+    w.document.close();
+    setTimeout(() => {
+      w.focus();
+      w.print();
+    }, 400);
+    setMenuOpen(false);
+  }
 
   return (
     <div
@@ -194,6 +288,66 @@ function SopModal({
                 {related.label}
               </a>
             )}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                className="flex items-center gap-1.5 rounded-xl bg-ink px-3 py-2 text-[11px] font-black text-white ring-1 ring-ink transition hover:bg-ink2"
+              >
+                ⬇ Download
+                <span className="text-[10px] opacity-70">▾</span>
+              </button>
+              {menuOpen && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Tutup menu"
+                    className="fixed inset-0 z-10 cursor-default"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-ink/10"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={downloadPdf}
+                      className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-xs font-bold text-ink transition hover:bg-paper"
+                    >
+                      <span>📄 PDF (Cetak)</span>
+                      <span className="text-[10px] font-normal text-ink2/60">
+                        .pdf
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={downloadHtml}
+                      className="flex w-full items-center justify-between gap-2 border-t border-ink/5 px-4 py-2.5 text-left text-xs font-bold text-ink transition hover:bg-paper"
+                    >
+                      <span>🌐 HTML Standalone</span>
+                      <span className="text-[10px] font-normal text-ink2/60">
+                        .html
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={downloadMd}
+                      className="flex w-full items-center justify-between gap-2 border-t border-ink/5 px-4 py-2.5 text-left text-xs font-bold text-ink transition hover:bg-paper"
+                    >
+                      <span>📝 Markdown</span>
+                      <span className="text-[10px] font-normal text-ink2/60">
+                        .md
+                      </span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             <button
               type="button"
               onClick={onClose}

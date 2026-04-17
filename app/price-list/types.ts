@@ -8,7 +8,8 @@ export type PriceCommodity =
   | "BUAH"
   | "PROTEIN_HEWANI"
   | "PROTEIN_NABATI"
-  | "BUMBU_KERING";
+  | "BUMBU_KERING"
+  | "MINYAK";
 
 export interface PricePeriod {
   id: number;
@@ -72,7 +73,8 @@ export const COMMODITY_LABELS: Record<PriceCommodity, string> = {
   BUAH: "Buah",
   PROTEIN_HEWANI: "Protein Hewani",
   PROTEIN_NABATI: "Protein Nabati",
-  BUMBU_KERING: "Bumbu Kering"
+  BUMBU_KERING: "Bumbu Kering",
+  MINYAK: "Minyak"
 };
 
 export const COMMODITY_COLORS: Record<PriceCommodity, string> = {
@@ -81,5 +83,6 @@ export const COMMODITY_COLORS: Record<PriceCommodity, string> = {
   BUAH: "bg-orange-50 text-orange-900 ring-orange-200",
   PROTEIN_HEWANI: "bg-rose-50 text-rose-900 ring-rose-200",
   PROTEIN_NABATI: "bg-violet-50 text-violet-900 ring-violet-200",
-  BUMBU_KERING: "bg-slate-50 text-slate-900 ring-slate-200"
+  BUMBU_KERING: "bg-slate-50 text-slate-900 ring-slate-200",
+  MINYAK: "bg-yellow-50 text-yellow-900 ring-yellow-200"
 };

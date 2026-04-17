@@ -7,6 +7,7 @@ import type { Database } from "@/types/database";
 import {
   Badge,
   Button,
+  CategoryBadge,
   EmptyState,
   FieldLabel,
   Input,
@@ -19,7 +20,7 @@ import {
 type Cat = Database["public"]["Enums"]["item_category"];
 type Row = Pick<
   Database["public"]["Tables"]["items"]["Row"],
-  "code" | "name_en" | "unit" | "category" | "price_idr" | "vol_weekly" | "active"
+  "code" | "unit" | "category" | "price_idr" | "vol_weekly" | "active"
 >;
 
 const CATEGORIES: Cat[] = [
@@ -38,7 +39,6 @@ const CATEGORIES: Cat[] = [
 
 interface DraftRow {
   code: string;
-  name_en: string;
   unit: string;
   category: Cat;
   price_idr: string;
@@ -48,7 +48,6 @@ interface DraftRow {
 
 const EMPTY_DRAFT: DraftRow = {
   code: "",
-  name_en: "",
   unit: "kg",
   category: "BERAS",
   price_idr: "0",
@@ -59,7 +58,6 @@ const EMPTY_DRAFT: DraftRow = {
 function rowToDraft(r: Row): DraftRow {
   return {
     code: r.code,
-    name_en: r.name_en ?? "",
     unit: r.unit,
     category: r.category,
     price_idr: String(r.price_idr ?? 0),
@@ -86,10 +84,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
     return rows.filter((r) => {
       if (catFilter !== "ALL" && r.category !== catFilter) return false;
       if (!q) return true;
-      return (
-        r.code.toLowerCase().includes(q) ||
-        (r.name_en ?? "").toLowerCase().includes(q)
-      );
+      return r.code.toLowerCase().includes(q);
     });
   }, [rows, filter, catFilter]);
 
@@ -119,16 +114,13 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
       .from("items")
       .insert({
         code,
-        name_en: draft.name_en.trim() || null,
         unit: draft.unit.trim(),
         category: draft.category,
         price_idr: Number(draft.price_idr) || 0,
         vol_weekly: Number(draft.vol_weekly) || 0,
         active: draft.active
       })
-      .select(
-        "code, name_en, unit, category, price_idr, vol_weekly, active"
-      )
+      .select("code, unit, category, price_idr, vol_weekly, active")
       .single();
     setBusy(false);
     if (error) {
@@ -153,7 +145,6 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
     const { data, error } = await supabase
       .from("items")
       .update({
-        name_en: editDraft.name_en.trim() || null,
         unit: editDraft.unit.trim(),
         category: editDraft.category,
         price_idr: Number(editDraft.price_idr) || 0,
@@ -161,9 +152,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
         active: editDraft.active
       })
       .eq("code", editCode)
-      .select(
-        "code, name_en, unit, category, price_idr, vol_weekly, active"
-      )
+      .select("code, unit, category, price_idr, vol_weekly, active")
       .single();
     setBusy(false);
     if (error) {
@@ -223,15 +212,6 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                 onChange={(e) => setDraft({ ...draft, code: e.target.value })}
                 placeholder="mis. Beras Putih"
                 autoComplete="off"
-              />
-            </FieldBlock>
-            <FieldBlock label="Nama EN">
-              <Input
-                value={draft.name_en}
-                onChange={(e) =>
-                  setDraft({ ...draft, name_en: e.target.value })
-                }
-                placeholder="White Rice"
               />
             </FieldBlock>
             <FieldBlock label="Kategori">
@@ -301,7 +281,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <label className="block min-w-[200px] flex-1">
-          <FieldLabel>Cari kode / nama EN</FieldLabel>
+          <FieldLabel>Cari kode</FieldLabel>
           <Input
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
@@ -343,14 +323,13 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
         <TableWrap>
           <table className="w-full text-sm">
             <THead>
-              <th className="py-2 pr-3">Kode</th>
-              <th className="py-2 pr-3">Nama EN</th>
-              <th className="py-2 pr-3">Kategori</th>
-              <th className="py-2 pr-3">Satuan</th>
-              <th className="py-2 pr-3 text-right">Harga (IDR)</th>
-              <th className="py-2 pr-3 text-right">Vol/Mgg</th>
-              <th className="py-2 pr-3">Aktif</th>
-              <th className="py-2 pr-3"></th>
+              <th className="py-2 px-3 text-center">Kode</th>
+              <th className="py-2 px-3 text-center">Kategori</th>
+              <th className="py-2 px-3 text-center">Satuan</th>
+              <th className="py-2 px-3 text-center">Harga (IDR)</th>
+              <th className="py-2 px-3 text-center">Vol/Mgg</th>
+              <th className="py-2 px-3 text-center">Aktif</th>
+              <th className="py-2 px-3 text-center">Aksi</th>
             </THead>
             <tbody>
               {filtered.map((r) =>
@@ -359,21 +338,10 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                     key={r.code}
                     className="border-b border-ink/5 bg-amber-50/40"
                   >
-                    <td className="py-2 pr-3 font-mono text-[12px] text-ink">
+                    <td className="py-2 px-3 text-center font-mono text-[12px] text-ink">
                       {r.code}
                     </td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        value={editDraft.name_en}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            name_en: e.target.value
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 px-3 text-center">
                       <Select
                         value={editDraft.category}
                         onChange={(e) =>
@@ -390,7 +358,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                         ))}
                       </Select>
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 px-3 text-center">
                       <Input
                         value={editDraft.unit}
                         onChange={(e) =>
@@ -398,7 +366,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                         }
                       />
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 px-3 text-center">
                       <Input
                         type="number"
                         value={editDraft.price_idr}
@@ -410,7 +378,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                         }
                       />
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 px-3 text-center">
                       <Input
                         type="number"
                         value={editDraft.vol_weekly}
@@ -422,7 +390,7 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                         }
                       />
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 px-3 text-center">
                       <input
                         type="checkbox"
                         checked={editDraft.active}
@@ -434,8 +402,8 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                         }
                       />
                     </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex gap-1">
+                    <td className="py-2 px-3 text-center">
+                      <div className="flex justify-center gap-1">
                         <Button
                           size="sm"
                           variant="primary"
@@ -457,31 +425,32 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
                   </tr>
                 ) : (
                   <tr key={r.code} className="row-hover border-b border-ink/5">
-                    <td className="py-2 pr-3 font-mono text-[12px] text-ink">
+                    <td className="py-2 px-3 text-center font-mono text-[12px] text-ink">
                       {r.code}
                     </td>
-                    <td className="py-2 pr-3 text-ink2">{r.name_en ?? "—"}</td>
-                    <td className="py-2 pr-3">
-                      <Badge tone="accent">{r.category}</Badge>
+                    <td className="py-2 px-3 text-center">
+                      <div className="flex justify-center">
+                        <CategoryBadge category={r.category} />
+                      </div>
                     </td>
-                    <td className="py-2 pr-3 text-[12px] text-ink2">
+                    <td className="py-2 px-3 text-center text-[12px] text-ink2">
                       {r.unit}
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono text-[12px]">
+                    <td className="py-2 px-3 text-center font-mono text-[12px]">
                       {Number(r.price_idr).toLocaleString("id-ID")}
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono text-[12px]">
+                    <td className="py-2 px-3 text-center font-mono text-[12px]">
                       {Number(r.vol_weekly ?? 0).toLocaleString("id-ID")}
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 px-3 text-center">
                       {r.active ? (
                         <Badge tone="ok">aktif</Badge>
                       ) : (
                         <Badge tone="muted">nonaktif</Badge>
                       )}
                     </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex gap-1">
+                    <td className="py-2 px-3 text-center">
+                      <div className="flex justify-center gap-1">
                         <Button
                           size="sm"
                           variant="secondary"

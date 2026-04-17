@@ -153,36 +153,7 @@ export default async function DocGenPage() {
             }))}
           />
         </div>
-
-        <Section
-          title="📋 Template Statis"
-          hint="Template cetakan belum tersedia di sini — kontak admin untuk mendapatkan file master."
-        >
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <TemplateItem
-              title="Form Inspeksi Harian"
-              desc="Checklist QC bahan + suhu + higiene food handler."
-            />
-            <TemplateItem
-              title="Berita Acara Pemusnahan"
-              desc="Untuk bahan rusak/expired yang di-waste."
-            />
-            <TemplateItem
-              title="Form Vendor Matrix Scoring"
-              desc="Evaluasi kuartalan supplier (skor 0-100)."
-            />
-          </div>
-        </Section>
       </PageContainer>
-    </div>
-  );
-}
-
-function TemplateItem({ title, desc }: { title: string; desc: string }) {
-  return (
-    <div className="rounded-xl bg-paper p-3 ring-1 ring-ink/5 transition hover:shadow-card">
-      <div className="text-sm font-bold text-ink">{title}</div>
-      <div className="mt-1 text-[11px] text-ink2/70">{desc}</div>
     </div>
   );
 }

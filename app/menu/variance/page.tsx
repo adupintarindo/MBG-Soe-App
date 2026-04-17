@@ -11,6 +11,7 @@ import {
 } from "@/lib/engine";
 import {
   Badge,
+  CategoryBadge,
   EmptyState,
   KpiGrid,
   KpiTile,
@@ -45,20 +46,6 @@ function addDays(d: Date, n: number): Date {
   copy.setDate(copy.getDate() + n);
   return copy;
 }
-
-const CAT_COLOR: Record<string, string> = {
-  BERAS: "bg-amber-50 text-amber-900 ring-amber-200",
-  HEWANI: "bg-rose-50 text-rose-900 ring-rose-200",
-  NABATI: "bg-emerald-50 text-emerald-900 ring-emerald-200",
-  SAYUR_HIJAU: "bg-green-50 text-green-900 ring-green-200",
-  SAYUR: "bg-lime-50 text-lime-900 ring-lime-200",
-  UMBI: "bg-orange-50 text-orange-900 ring-orange-200",
-  BUMBU: "bg-yellow-50 text-yellow-900 ring-yellow-200",
-  REMPAH: "bg-red-50 text-red-900 ring-red-200",
-  SEMBAKO: "bg-slate-50 text-slate-900 ring-slate-200",
-  BUAH: "bg-pink-50 text-pink-900 ring-pink-200",
-  LAIN: "bg-gray-50 text-gray-900 ring-gray-200"
-};
 
 export default async function BomVariancePage({ searchParams }: PageProps) {
   const supabase = createClient();
@@ -257,11 +244,7 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
                           )}
                         </td>
                         <td className="py-2 pr-3">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_COLOR[cat] ?? CAT_COLOR.LAIN}`}
-                          >
-                            {cat}
-                          </span>
+                          <CategoryBadge category={cat} />
                         </td>
                         <td className="py-2 pr-3 text-right font-mono text-xs">
                           {Number(r.plan_kg).toFixed(2)}

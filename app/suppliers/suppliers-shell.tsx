@@ -1,17 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useMemo } from "react";
 import { formatIDR } from "@/lib/engine";
-import type { SupplierAction } from "@/lib/engine";
 import { Section, TableWrap, THead } from "@/components/ui";
-import { SupplierDetailModal } from "./supplier-detail-modal";
 import type {
   SupplierRow,
   SupItemLink,
-  InvoiceTx,
-  PoTx,
-  ItemCatalog,
-  SupplierCert
+  InvoiceTx
 } from "./types";
 
 const TYPE_COLOR: Record<string, string> = {
@@ -37,29 +33,9 @@ interface Props {
   suppliers: SupplierRow[];
   supItems: SupItemLink[];
   invoices: InvoiceTx[];
-  pos: PoTx[];
-  items: ItemCatalog[];
-  certs: SupplierCert[];
-  actions: SupplierAction[];
-  canWriteActions: boolean;
-  isSupplierRole: boolean;
-  isAdmin: boolean;
 }
 
-export function SuppliersShell({
-  suppliers,
-  supItems,
-  invoices,
-  pos,
-  items,
-  certs,
-  actions,
-  canWriteActions,
-  isSupplierRole,
-  isAdmin
-}: Props) {
-  const [openId, setOpenId] = useState<string | null>(null);
-
+export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
   const spendBySup = useMemo(() => {
     const m = new Map<string, { total: number; count: number }>();
     for (const inv of invoices) {
@@ -86,10 +62,6 @@ export function SuppliersShell({
     .filter((s) => s.status === "signed" || s.status === "awaiting")
     .sort((a, b) => Number(b.score ?? 0) - Number(a.score ?? 0));
 
-  const openSupplier = openId
-    ? (suppliers.find((s) => s.id === openId) ?? null)
-    : null;
-
   return (
     <>
       <Section
@@ -97,97 +69,125 @@ export function SuppliersShell({
         hint="Klik kartu untuk rincian, harga, sertifikasi & histori transaksi."
         noPad
       >
-        <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 lg:grid-cols-3">
           {topByScore.map((s) => {
             const spend = spendBySup.get(s.id);
             const linked = itemsBySup.get(s.id) ?? [];
             const score = Number(s.score ?? 0);
-            return (
-              <article
-                key={s.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => setOpenId(s.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setOpenId(s.id);
+            const scoreTone =
+              score >= 80
+                ? {
+                    text: "text-emerald-700",
+                    bg: "bg-emerald-50",
+                    ring: "ring-emerald-200/70",
+                    bar: "bg-emerald-500"
                   }
-                }}
-                className={`cursor-pointer rounded-2xl bg-paper p-5 text-left ring-1 ring-ink/5 transition hover:-translate-y-0.5 hover:shadow-card focus:outline-none focus:ring-2 focus:ring-accent-strong ${s.status === "rejected" ? "opacity-60" : ""}`}
+                : score >= 70
+                  ? {
+                      text: "text-amber-700",
+                      bg: "bg-amber-50",
+                      ring: "ring-amber-200/70",
+                      bar: "bg-amber-500"
+                    }
+                  : {
+                      text: "text-red-700",
+                      bg: "bg-red-50",
+                      ring: "ring-red-200/70",
+                      bar: "bg-red-500"
+                    };
+            return (
+              <Link
+                key={s.id}
+                href={`/suppliers/${s.id}`}
+                className={`group relative flex flex-col overflow-hidden rounded-2xl bg-white text-left shadow-card ring-1 ring-ink/[0.06] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-cardlg hover:ring-accent-strong/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-strong ${s.status === "rejected" ? "opacity-60" : ""}`}
               >
-                <header className="mb-2 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] font-bold text-ink2/60">
-                        {s.id}
-                      </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${TYPE_COLOR[s.type] ?? TYPE_COLOR.INFORMAL}`}
-                      >
-                        {s.type}
-                      </span>
-                    </div>
-                    <h3 className="mt-1 truncate text-sm font-black text-ink">
+                <span
+                  aria-hidden
+                  className={`absolute inset-y-0 left-0 w-1 ${scoreTone.bar}`}
+                />
+
+                <div className="flex items-center justify-between gap-2 px-5 pt-4">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] font-bold tracking-wider text-ink2/50">
+                      {s.id}
+                    </span>
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ring-1 ${TYPE_COLOR[s.type] ?? TYPE_COLOR.INFORMAL}`}
+                    >
+                      {s.type}
+                    </span>
+                  </div>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_COLOR[s.status] ?? STATUS_COLOR.draft}`}
+                  >
+                    {s.status}
+                  </span>
+                </div>
+
+                <div className="flex items-start justify-between gap-3 px-5 pt-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-[15px] font-black leading-tight text-ink">
                       {s.name}
                     </h3>
-                    <div className="truncate text-[11px] text-ink2/70">
+                    <div className="mt-0.5 truncate text-[11px] text-ink2/70">
                       {s.address}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/60">
+                  <div
+                    className={`flex flex-shrink-0 flex-col items-center justify-center rounded-xl px-2.5 py-1.5 ring-1 ${scoreTone.bg} ${scoreTone.ring}`}
+                  >
+                    <div className="text-[8px] font-bold uppercase tracking-[0.12em] text-ink2/60">
                       Score
                     </div>
                     <div
-                      className={`text-lg font-black ${
-                        score >= 80
-                          ? "text-emerald-700"
-                          : score >= 70
-                            ? "text-amber-700"
-                            : "text-red-700"
-                      }`}
+                      className={`text-lg font-black leading-none ${scoreTone.text}`}
                     >
                       {score.toFixed(1)}
                     </div>
-                    <span
-                      className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLOR[s.status] ?? STATUS_COLOR.draft}`}
-                    >
-                      {s.status}
-                    </span>
-                  </div>
-                </header>
-
-                <div className="space-y-0.5 text-[11px] text-ink">
-                  <div>
-                    <b>PIC:</b> {s.pic ?? "—"}
-                  </div>
-                  <div className="font-mono text-ink2">{s.phone ?? "—"}</div>
-                  <div className="font-mono text-ink2/70">
-                    {s.email ?? "—"}
                   </div>
                 </div>
 
+                <div className="mx-5 mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 border-t border-ink/[0.06] pt-3 text-[11px]">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-ink2/50">
+                    PIC
+                  </span>
+                  <span className="truncate font-semibold text-ink">
+                    {s.pic ?? "—"}
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-ink2/50">
+                    Tel
+                  </span>
+                  <span className="truncate font-mono text-ink2">
+                    {s.phone ?? "—"}
+                  </span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-ink2/50">
+                    Email
+                  </span>
+                  <span className="truncate font-mono text-ink2/80">
+                    {s.email ?? "—"}
+                  </span>
+                </div>
+
                 {linked.length > 0 && (
-                  <div className="mt-3 border-t border-ink/5 pt-2">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
+                  <div className="mx-5 mt-3 border-t border-ink/[0.06] pt-3">
+                    <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-ink2/60">
                       Komoditas · {linked.length} item
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {linked.slice(0, 8).map((li) => (
                         <span
                           key={li.item_code}
-                          className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-ink2 ring-1 ring-ink/5"
+                          className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold ring-1 ${li.is_main ? "bg-amber-50 text-amber-900 ring-amber-200" : "bg-primary-soft/60 text-ink2 ring-ink/[0.06]"}`}
                         >
                           {li.item_code}
                           {li.is_main && (
-                            <span className="ml-1 text-accent-strong">★</span>
+                            <span className="text-amber-500">★</span>
                           )}
                         </span>
                       ))}
                       {linked.length > 8 && (
-                        <span className="rounded-full bg-ink/5 px-2 py-0.5 text-[10px] font-semibold text-ink2/60">
-                          +{linked.length - 8} lagi
+                        <span className="inline-flex items-center rounded-md bg-ink/5 px-2 py-0.5 text-[10px] font-semibold text-ink2/60">
+                          +{linked.length - 8}
                         </span>
                       )}
                     </div>
@@ -195,8 +195,10 @@ export function SuppliersShell({
                 )}
 
                 {spend && (
-                  <div className="mt-3 flex items-center justify-between border-t border-ink/5 pt-2 text-[11px]">
-                    <span className="text-ink2/70">{spend.count} invoice</span>
+                  <div className="mx-5 mt-3 flex items-center justify-between rounded-lg bg-emerald-50/70 px-3 py-2 text-[11px] ring-1 ring-emerald-100">
+                    <span className="font-semibold text-emerald-900/80">
+                      {spend.count} invoice
+                    </span>
                     <span className="font-mono font-black text-emerald-800">
                       {formatIDR(spend.total)}
                     </span>
@@ -204,17 +206,20 @@ export function SuppliersShell({
                 )}
 
                 {s.notes && (
-                  <p className="mt-2 line-clamp-2 text-[10px] italic text-ink2/70">
+                  <p className="mx-5 mt-2 line-clamp-2 text-[10px] italic text-ink2/70">
                     {s.notes}
                   </p>
                 )}
 
-                <div className="mt-3 flex justify-end">
-                  <span className="text-[11px] font-bold text-accent-strong">
-                    Rincian →
+                <div className="mt-auto flex items-center justify-end border-t border-ink/[0.06] px-5 py-3">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-accent-strong">
+                    Rincian
+                    <span className="transition-transform duration-200 group-hover:translate-x-1">
+                      →
+                    </span>
                   </span>
                 </div>
-              </article>
+              </Link>
             );
           })}
         </div>
@@ -224,10 +229,9 @@ export function SuppliersShell({
         <Section title="❌ Supplier Rejected" accent="bad">
           <div className="space-y-2">
             {rejected.map((s) => (
-              <button
+              <Link
                 key={s.id}
-                type="button"
-                onClick={() => setOpenId(s.id)}
+                href={`/suppliers/${s.id}`}
                 className="flex w-full items-center justify-between rounded-xl bg-red-50 px-4 py-2 text-left ring-1 ring-red-200 transition hover:bg-red-100"
               >
                 <div>
@@ -239,7 +243,7 @@ export function SuppliersShell({
                 <span className="font-mono text-sm font-black text-red-700">
                   {Number(s.score ?? 0).toFixed(1)}
                 </span>
-              </button>
+              </Link>
             ))}
           </div>
         </Section>
@@ -249,58 +253,86 @@ export function SuppliersShell({
         <TableWrap>
           <table className="w-full text-sm">
             <THead>
-              <th className="py-2 pr-3">ID</th>
+              <th className="w-20 py-2 pl-3 pr-2">ID</th>
               <th className="py-2 pr-3">Nama</th>
-              <th className="py-2 pr-3">Tipe</th>
+              <th className="w-20 py-2 pr-3">Tipe</th>
               <th className="py-2 pr-3">Komoditas</th>
-              <th className="py-2 pr-3 text-right">Items</th>
-              <th className="py-2 pr-3 text-right">Skor</th>
-              <th className="py-2 pr-3">Status</th>
-              <th className="py-2 pr-3 text-right">Belanja</th>
-              <th className="py-2 pr-3"></th>
+              <th className="w-14 py-2 pr-3 text-right">Items</th>
+              <th className="w-16 py-2 pr-3 text-right">Skor</th>
+              <th className="w-24 py-2 pr-3">Status</th>
+              <th className="w-32 py-2 pl-3 pr-3 text-right">Belanja</th>
             </THead>
             <tbody>
               {suppliers.map((s) => {
                 const spend = spendBySup.get(s.id);
                 const linked = itemsBySup.get(s.id) ?? [];
+                const score = Number(s.score ?? 0);
                 return (
                   <tr
                     key={s.id}
-                    className="row-hover cursor-pointer border-b border-ink/5"
-                    onClick={() => setOpenId(s.id)}
+                    className="row-hover border-b border-ink/5 align-middle"
                   >
-                    <td className="py-2 pr-3 font-mono text-xs">{s.id}</td>
-                    <td className="py-2 pr-3 font-semibold">{s.name}</td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 pl-3 pr-2 align-middle font-mono text-[11px] text-ink2">
+                      <Link
+                        href={`/suppliers/${s.id}`}
+                        className="block hover:text-accent-strong hover:underline"
+                      >
+                        {s.id}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-3 align-middle font-semibold">
+                      <Link
+                        href={`/suppliers/${s.id}`}
+                        className="block hover:text-accent-strong hover:underline"
+                      >
+                        {s.name}
+                      </Link>
+                    </td>
+                    <td className="py-2 pr-3 align-middle">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${TYPE_COLOR[s.type] ?? TYPE_COLOR.INFORMAL}`}
+                        className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${TYPE_COLOR[s.type] ?? TYPE_COLOR.INFORMAL}`}
                       >
                         {s.type}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-[11px] text-ink2">
-                      {s.commodity}
+                    <td className="max-w-0 py-2 pr-3 align-middle">
+                      <Link
+                        href={`/suppliers/${s.id}`}
+                        className="block truncate text-[11px] text-ink2 hover:text-accent-strong"
+                        title={s.commodity ?? ""}
+                      >
+                        {s.commodity || "—"}
+                      </Link>
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 text-right align-middle font-mono text-xs tabular-nums">
                       {linked.length}
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs font-black">
-                      {Number(s.score ?? 0).toFixed(1)}
+                    <td
+                      className={`py-2 pr-3 text-right align-middle font-mono text-xs font-black tabular-nums ${
+                        score >= 80
+                          ? "text-emerald-700"
+                          : score >= 70
+                            ? "text-amber-700"
+                            : "text-red-700"
+                      }`}
+                    >
+                      {score.toFixed(1)}
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 pr-3 align-middle">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLOR[s.status] ?? STATUS_COLOR.draft}`}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLOR[s.status] ?? STATUS_COLOR.draft}`}
                       >
                         {s.status}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs">
-                      {spend ? formatIDR(spend.total) : "—"}
-                    </td>
-                    <td className="py-2 pr-3 text-right">
-                      <span className="text-[11px] font-bold text-accent-strong">
-                        Rincian →
-                      </span>
+                    <td className="py-2 pl-3 pr-3 text-right align-middle font-mono text-xs tabular-nums">
+                      {spend ? (
+                        <span className="font-bold text-emerald-800">
+                          {formatIDR(spend.total)}
+                        </span>
+                      ) : (
+                        <span className="text-ink2/40">—</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -309,26 +341,6 @@ export function SuppliersShell({
           </table>
         </TableWrap>
       </Section>
-
-      {openSupplier && (
-        <SupplierDetailModal
-          supplier={openSupplier}
-          supItems={supItems.filter((si) => si.supplier_id === openSupplier.id)}
-          invoices={invoices.filter(
-            (i) => i.supplier_id === openSupplier.id
-          )}
-          pos={pos.filter((p) => p.supplier_id === openSupplier.id)}
-          certs={certs.filter((c) => c.supplier_id === openSupplier.id)}
-          actions={actions.filter(
-            (a) => a.supplier_id === openSupplier.id
-          )}
-          canWriteActions={canWriteActions}
-          isSupplierRole={isSupplierRole}
-          items={items}
-          isAdmin={isAdmin}
-          onClose={() => setOpenId(null)}
-        />
-      )}
     </>
   );
 }

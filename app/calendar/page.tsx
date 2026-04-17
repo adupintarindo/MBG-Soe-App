@@ -232,8 +232,9 @@ export default async function CalendarPage({
 
         <Section noPad className="overflow-hidden">
           {/* Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-5 py-4">
-            <div className="flex items-center gap-2">
+          <div className="grid grid-cols-1 items-center gap-3 border-b border-ink/10 px-5 py-4 sm:grid-cols-3">
+            <div className="hidden sm:block" />
+            <div className="flex items-center justify-center gap-2">
               <LinkButton
                 href={prevHref}
                 variant="secondary"
@@ -254,7 +255,7 @@ export default async function CalendarPage({
                 ▶
               </LinkButton>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
               <LinkButton
                 href={todayHref}
                 variant={isCurrentMonth ? "ghost" : "primary"}

@@ -569,49 +569,6 @@ function EditModal({
   const safeSchools = schools ?? [];
   const safeItems = items ?? [];
 
-  const initialAttMap = useMemo(() => {
-    const mp = new Map<string, number | null>();
-    for (const e of attForDate ?? []) mp.set(e.school_id, e.qty);
-    return mp;
-  }, [attForDate]);
-
-  // empty string = full roster (no override); numeric string = override qty
-  const [attInputs, setAttInputs] = useState<Record<string, string>>({});
-
-  // Sync inputs once schools + attendance are known / refreshed.
-  useEffect(() => {
-    if (!schools) return;
-    const o: Record<string, string> = {};
-    for (const s of schools) {
-      const q = initialAttMap.get(s.id);
-      o[s.id] = q == null ? "" : String(q);
-    }
-    setAttInputs(o);
-  }, [schools, initialAttMap]);
-
-  async function handleSaveAttendance() {
-    const entries = safeSchools.map((s) => {
-      const raw = attInputs[s.id]?.trim() ?? "";
-      if (raw === "") return { school_id: s.id, qty: null };
-      const n = Number(raw);
-      if (!Number.isFinite(n) || n < 0) return { school_id: s.id, qty: null };
-      return { school_id: s.id, qty: Math.min(Math.floor(n), s.students) };
-    });
-    await onSaveAttendance(iso, entries);
-  }
-
-  const totalOverride = safeSchools.reduce((sum, s) => {
-    const raw = attInputs[s.id]?.trim() ?? "";
-    if (raw === "") return sum + (Number(s.students) || 0);
-    const n = Number(raw);
-    if (!Number.isFinite(n) || n < 0) return sum;
-    return sum + Math.min(Math.floor(n), s.students);
-  }, 0);
-  const totalFullRoster = safeSchools.reduce(
-    (s, x) => s + (Number(x.students) || 0),
-    0
-  );
-
   const currentMenu = useMemo(
     () => (assign ? menus.find((mm) => mm.id === assign.menu_id) ?? null : null),
     [assign, menus]
@@ -637,7 +594,6 @@ function EditModal({
   }
 
   const refReady = items !== null && schools !== null;
-  const attReady = attForDate !== null;
 
   return (
     <div
@@ -864,132 +820,6 @@ function EditModal({
                 </div>
               </section>
 
-              {/* Section 4 · Konfirmasi Kehadiran */}
-              <section className="rounded-2xl bg-white p-4 ring-1 ring-ink/10">
-                <div className="mb-3 flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-[11px] font-black text-white">
-                    4
-                  </span>
-                  <h3 className="text-sm font-black text-ink">
-                    👥 Konfirmasi Kehadiran per Sekolah
-                  </h3>
-                </div>
-
-                {!refReady || !attReady ? (
-                  <SkeletonTable />
-                ) : (
-                  <>
-                    <p className="mb-3 text-[11px] text-ink2/70">
-                      Kosongkan untuk pakai <b>full roster</b> ({totalFullRoster.toLocaleString("id-ID")}). Isi angka override kalau ada guru absen, ujian, atau event khusus. Rasio hadir otomatis diterapkan proporsional ke porsi kecil/besar/guru.
-                    </p>
-
-                    <div className="overflow-hidden rounded-xl ring-1 ring-ink/10">
-                      <table className="w-full text-xs">
-                        <thead className="bg-paper">
-                          <tr className="text-left text-[10px] font-black uppercase tracking-wide text-ink2">
-                            <th className="px-3 py-2">Sekolah</th>
-                            <th className="px-3 py-2 text-center">Lvl</th>
-                            <th className="px-3 py-2 text-right">Siswa</th>
-                            <th className="px-3 py-2 text-right">Hadir</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {safeSchools.map((s) => {
-                            const raw = attInputs[s.id] ?? "";
-                            const effective = raw === "" ? s.students : Number(raw);
-                            const pct =
-                              s.students > 0
-                                ? Math.round((effective / s.students) * 100)
-                                : 0;
-                            return (
-                              <tr
-                                key={s.id}
-                                className="border-t border-ink/5 hover:bg-paper/60"
-                              >
-                                <td className="px-3 py-2">
-                                  <div className="font-bold text-ink">{s.name}</div>
-                                  <div className="font-mono text-[10px] text-ink2/60">
-                                    {s.id}
-                                  </div>
-                                </td>
-                                <td className="px-3 py-2 text-center text-[10px] font-bold text-ink2">
-                                  {s.level}
-                                </td>
-                                <td className="px-3 py-2 text-right font-mono text-ink2">
-                                  {s.students}
-                                </td>
-                                <td className="px-3 py-2 text-right">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <input
-                                      type="number"
-                                      min={0}
-                                      max={s.students}
-                                      value={raw}
-                                      onChange={(e) =>
-                                        setAttInputs((p) => ({
-                                          ...p,
-                                          [s.id]: e.target.value
-                                        }))
-                                      }
-                                      placeholder={String(s.students)}
-                                      className="w-20 rounded-lg border border-ink/20 bg-white px-2 py-1 text-right font-mono text-xs"
-                                    />
-                                    <span
-                                      className={`w-10 font-mono text-[10px] ${
-                                        pct >= 90
-                                          ? "text-emerald-700"
-                                          : pct >= 70
-                                            ? "text-amber-700"
-                                            : "text-red-700"
-                                      }`}
-                                    >
-                                      {pct}%
-                                    </span>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                        <tfoot className="bg-paper/60">
-                          <tr>
-                            <td colSpan={2} className="px-3 py-2 text-[11px] font-black text-ink">
-                              Total efektif
-                            </td>
-                            <td className="px-3 py-2 text-right font-mono text-[11px] text-ink2">
-                              {totalFullRoster.toLocaleString("id-ID")}
-                            </td>
-                            <td className="px-3 py-2 text-right font-mono text-[11px] font-black text-ink">
-                              {totalOverride.toLocaleString("id-ID")}
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        onClick={handleSaveAttendance}
-                        disabled={busy}
-                        className="rounded-xl bg-ink px-4 py-2 text-xs font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
-                      >
-                        💾 Simpan Kehadiran
-                      </button>
-                      <button
-                        onClick={() =>
-                          setAttInputs(
-                            Object.fromEntries(safeSchools.map((s) => [s.id, ""]))
-                          )
-                        }
-                        disabled={busy}
-                        className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-ink ring-1 ring-ink/15 hover:bg-paper disabled:opacity-50"
-                      >
-                        Reset ke Full Roster
-                      </button>
-                    </div>
-                  </>
-                )}
-              </section>
             </>
           ) : (
             <section className="rounded-2xl bg-amber-50/60 p-4 ring-1 ring-amber-200">
@@ -1091,15 +921,3 @@ function SkeletonGrid({ label }: { label: string }) {
   );
 }
 
-function SkeletonTable() {
-  return (
-    <div aria-busy="true" className="space-y-2">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          key={i}
-          className="h-10 w-full animate-pulse rounded-lg bg-ink/5"
-        />
-      ))}
-    </div>
-  );
-}
