@@ -2,8 +2,16 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { getHoliday } from "@/lib/holidays";
+import {
+  setAssignment as setAssignmentAction,
+  clearAssignment as clearAssignmentAction,
+  markNonOpDay as markNonOpDayAction,
+  clearNonOpDay as clearNonOpDayAction,
+  saveAttendanceDay as saveAttendanceDayAction,
+  fetchAttendanceFor as fetchAttendanceForAction,
+  fetchCalendarReference as fetchCalendarReferenceAction
+} from "./actions";
 
 interface MenuRow {
   id: number;
@@ -130,7 +138,6 @@ export function CalendarGrid({
   canWrite
 }: Props) {
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
 
   const [assignByDate, setAssignByDate] = useState(
     () => new Map(initialAssigns.map((a) => [a.assign_date, a]))
@@ -167,26 +174,10 @@ export function CalendarGrid({
     setRefLoading(true);
     setRefError(null);
     try {
-      const [itemsRes, schoolsRes] = await Promise.all([
-        items
-          ? Promise.resolve({ data: items, error: null })
-          : supabase
-              .from("items")
-              .select("code, name_en, category, active")
-              .eq("active", true)
-              .order("code"),
-        schools
-          ? Promise.resolve({ data: schools, error: null })
-          : supabase
-              .from("schools")
-              .select("id, name, level, students, kelas13, kelas46, guru")
-              .eq("active", true)
-              .order("id")
-      ]);
-      if (itemsRes.error) throw new Error(itemsRes.error.message);
-      if (schoolsRes.error) throw new Error(schoolsRes.error.message);
-      if (!items) setItems((itemsRes.data as ItemRow[]) ?? []);
-      if (!schools) setSchools((schoolsRes.data as SchoolRow[]) ?? []);
+      const res = await fetchCalendarReferenceAction();
+      if (!res.ok || !res.data) throw new Error(res.error ?? "Gagal memuat referensi.");
+      if (!items) setItems(res.data.items);
+      if (!schools) setSchools(res.data.schools);
     } catch (e) {
       setRefError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -196,16 +187,13 @@ export function CalendarGrid({
 
   async function fetchAttendanceFor(iso: string) {
     setAttForDate(null);
-    const { data, error: err } = await supabase
-      .from("school_attendance")
-      .select("school_id, att_date, qty")
-      .eq("att_date", iso);
-    if (err) {
-      setRefError(err.message);
+    const res = await fetchAttendanceForAction(iso);
+    if (!res.ok) {
+      setRefError(res.error ?? "Gagal memuat kehadiran.");
       setAttForDate([]);
       return;
     }
-    setAttForDate((data as AttendanceRow[]) ?? []);
+    setAttForDate((res.data as AttendanceRow[]) ?? []);
   }
 
   async function openEditor(iso: string) {
