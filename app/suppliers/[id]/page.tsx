@@ -135,6 +135,13 @@ export default async function SupplierDetailPage({
                 ← Semua Supplier
               </LinkButton>
               <LinkButton
+                href={`/supplier/forecast?supplier_id=${encodeURIComponent(id)}`}
+                variant="secondary"
+                size="sm"
+              >
+                📅 Forecast 90h
+              </LinkButton>
+              <LinkButton
                 href={`/api/suppliers/${id}/lta?start=${start}&end=${end}`}
                 variant="primary"
                 size="sm"
