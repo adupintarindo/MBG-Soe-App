@@ -299,6 +299,7 @@ export default async function MenuMasterPage() {
                                   <span aria-hidden className="text-[11px] leading-none">
                                     {CAT_ICON[cat] ?? CAT_ICON.LAIN}
                                   </span>
+                                  {cat}
                                 </span>
                               </td>
                               <td className="px-2 py-1.5 text-right font-mono text-ink">
