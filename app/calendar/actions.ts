@@ -325,3 +325,126 @@ export async function autoAssignMonth(
   revalidatePath("/calendar");
   return { inserted: rows.length };
 }
+
+// ---------------------------------------------------------------------------
+// Populate bulan dari tanggal X dengan urutan menu mulai dari menu Y.
+// Cycle urut by menus.id (sama seperti autoAssignMonth), tapi:
+//   - start: tanggal user-defined (boleh di tengah bulan)
+//   - startMenuId: menu awal (M1/M2/..) — rotasi berlanjut setelahnya
+//   - overwrite: true → timpa assignment existing di range. false → skip hari yang sudah ada.
+// Hari skip: weekend (Sab/Min), holiday, non-op.
+// ---------------------------------------------------------------------------
+export async function populateMonthFrom(
+  year: number,
+  month: number,
+  startISO: string,
+  startMenuId: number,
+  overwrite: boolean
+): Promise<{ inserted: number; error?: string }> {
+  const auth = await requireWriter();
+  if (!auth.ok) return { inserted: 0, error: auth.error };
+
+  const supabase = createAdminClient();
+  const first = new Date(year, month - 1, 1);
+  const last = new Date(year, month, 0);
+  const start = toISODate(first);
+  const end = toISODate(last);
+
+  // Validate startISO is within month
+  if (startISO < start || startISO > end) {
+    return { inserted: 0, error: "Tanggal mulai harus di dalam bulan ini." };
+  }
+
+  const [menusRes, existingRes, nonOpRes] = await Promise.all([
+    supabase.from("menus").select("id").order("id"),
+    supabase
+      .from("menu_assign")
+      .select("assign_date")
+      .gte("assign_date", start)
+      .lte("assign_date", end),
+    supabase
+      .from("non_op_days")
+      .select("op_date")
+      .gte("op_date", start)
+      .lte("op_date", end)
+  ]);
+
+  const menus = (menusRes.data ?? []) as { id: number }[];
+  if (menus.length === 0) return { inserted: 0, error: "Belum ada menu siklus." };
+
+  const startIdx = menus.findIndex((m) => m.id === startMenuId);
+  if (startIdx < 0) return { inserted: 0, error: "Menu awal tidak valid." };
+
+  const existingSet = new Set(
+    ((existingRes.data ?? []) as { assign_date: string }[]).map((r) => r.assign_date)
+  );
+  const nonOpSet = new Set(
+    ((nonOpRes.data ?? []) as { op_date: string }[]).map((r) => r.op_date)
+  );
+
+  const rows: { assign_date: string; menu_id: number; note: null }[] = [];
+  let opIdx = 0;
+  const cursor = new Date(
+    Number(startISO.slice(0, 4)),
+    Number(startISO.slice(5, 7)) - 1,
+    Number(startISO.slice(8, 10))
+  );
+  while (cursor <= last) {
+    const iso = toISODate(cursor);
+    const dow = cursor.getDay();
+    cursor.setDate(cursor.getDate() + 1);
+    if (dow === 0 || dow === 6) continue;
+    if (getHoliday(iso)) continue;
+    if (nonOpSet.has(iso)) continue;
+    if (!overwrite && existingSet.has(iso)) {
+      // tetap advance pointer kalau mau skip — supaya urutan menu tidak bergeser
+      opIdx++;
+      continue;
+    }
+    rows.push({
+      assign_date: iso,
+      menu_id: menus[(startIdx + opIdx) % menus.length].id,
+      note: null
+    });
+    opIdx++;
+  }
+
+  if (rows.length === 0) return { inserted: 0 };
+
+  const { error } = await supabase
+    .from("menu_assign")
+    .upsert(rows as never, { onConflict: "assign_date" });
+  if (error) return { inserted: 0, error: error.message };
+
+  revalidatePath("/calendar");
+  return { inserted: rows.length };
+}
+
+// ---------------------------------------------------------------------------
+// Clear semua menu_assign dalam bulan.
+// ---------------------------------------------------------------------------
+export async function clearAllAssignments(
+  year: number,
+  month: number
+): Promise<{ deleted: number; error?: string }> {
+  const auth = await requireWriter();
+  if (!auth.ok) return { deleted: 0, error: auth.error };
+
+  const supabase = createAdminClient();
+  const first = new Date(year, month - 1, 1);
+  const last = new Date(year, month, 0);
+  const start = toISODate(first);
+  const end = toISODate(last);
+
+  const { data, error } = await supabase
+    .from("menu_assign")
+    .delete()
+    .gte("assign_date", start)
+    .lte("assign_date", end)
+    .select("assign_date");
+
+  if (error) return { deleted: 0, error: error.message };
+
+  revalidatePath("/calendar");
+  return { deleted: (data ?? []).length };
+}

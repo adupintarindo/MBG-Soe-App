@@ -21,9 +21,15 @@ type AttendanceRow = {
   qty: number;
 };
 
+type NonOpDay = {
+  op_date: string;
+  reason: string | null;
+};
+
 interface Props {
   schools: SchoolLite[];
   attendance: AttendanceRow[];
+  nonOpDays: NonOpDay[];
   canEdit: boolean;
 }
 
@@ -102,6 +108,7 @@ const GROUP_BADGE: Record<DisplayRow["group"], string> = {
 export function SchoolAttendancePanel({
   schools,
   attendance,
+  nonOpDays,
   canEdit
 }: Props) {
   const router = useRouter();
@@ -116,6 +123,31 @@ export function SchoolAttendancePanel({
     besar: t("schools.attGroupBesar", lang)
   };
 
+  // Non-operational day lookup (weekend OR in non_op_days table).
+  // Locked cells render as "—" and can't be edited; save sends qty=0.
+  const nonOpReason = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of nonOpDays) {
+      m.set(r.op_date, r.reason ?? t("calendar.nonOp", lang));
+    }
+    return m;
+  }, [nonOpDays, lang]);
+
+  const dayInfo = useMemo(
+    () =>
+      days.map((d) => {
+        const iso = toISO(d);
+        const weekend = d.getDay() === 0 || d.getDay() === 6;
+        const listedReason = nonOpReason.get(iso);
+        const nonOp = weekend || listedReason != null;
+        const reason =
+          listedReason ??
+          (weekend ? t("statusWeekend", lang) : null);
+        return { iso, weekend, nonOp, reason };
+      }),
+    [days, nonOpReason, lang]
+  );
+
   const displayRows = useMemo(() => buildDisplayRows(schools), [schools]);
 
   // Map school_id → list of display rowKeys (1 or 2)
@@ -128,6 +160,14 @@ export function SchoolAttendancePanel({
     }
     return m;
   }, [displayRows]);
+
+  const nonOpByIso = useMemo(() => {
+    const s = new Set<string>();
+    dayInfo.forEach((d) => {
+      if (d.nonOp) s.add(d.iso);
+    });
+    return s;
+  }, [dayInfo]);
 
   // Initial grid keyed by display rowKey. Persisted attendance is per school_id;
   // when SD school has saved total Q, split it proportionally between kecil/besar
@@ -143,7 +183,7 @@ export function SchoolAttendancePanel({
 
     for (const r of displayRows) {
       for (const k of dayKeys) {
-        m[r.rowKey][k] = r.cap;
+        m[r.rowKey][k] = nonOpByIso.has(k) ? 0 : r.cap;
       }
     }
 
@@ -194,7 +234,9 @@ export function SchoolAttendancePanel({
       for (const r of displayRows) {
         next[r.rowKey] = {};
         const v = Math.round(r.cap * pct);
-        for (const k of dayKeys) next[r.rowKey][k] = v;
+        for (const k of dayKeys) {
+          next[r.rowKey][k] = nonOpByIso.has(k) ? 0 : v;
+        }
       }
       return next;
     });
@@ -289,7 +331,7 @@ export function SchoolAttendancePanel({
           <THead>
             <th className="py-2 pr-3">{t("schools.attColSekolah", lang)}</th>
             <th className="py-2 pr-3">{t("schools.attColPorsi", lang)}</th>
-            <th className="py-2 pr-3 text-right">{t("schools.attColKapasitas", lang)}</th>
+            <th className="py-2 pr-3 text-center">{t("schools.attColKapasitas", lang)}</th>
             {days.map((d) => {
               const isWeekend = d.getDay() === 0 || d.getDay() === 6;
               return (
@@ -356,7 +398,7 @@ export function SchoolAttendancePanel({
                       <span className="text-[10px] text-ink2/30">—</span>
                     )}
                   </td>
-                  <td className="py-2 pr-3 text-right align-middle font-mono text-xs">
+                  <td className="py-2 pr-3 text-center align-middle font-mono text-xs">
                     {formatNumber(r.cap, lang)}
                   </td>
                   {dayKeys.map((k, di) => {
@@ -393,7 +435,7 @@ export function SchoolAttendancePanel({
               <td className="py-2 pr-3 font-black text-ink" colSpan={2}>
                 TOTAL
               </td>
-              <td className="py-2 pr-3 text-right font-mono text-xs font-black">
+              <td className="py-2 pr-3 text-center font-mono text-xs font-black">
                 {formatNumber(capTotal, lang)}
               </td>
               {colTotals.map((v, i) => {

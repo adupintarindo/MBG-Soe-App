@@ -272,47 +272,21 @@ export default async function MenuMasterPage() {
           title={ti("menu.commodityTitle", lang, { n: totalItems })}
           hint={t("menu.commodityHint", lang)}
         >
-          <TableWrap>
-            <table className="w-full text-sm">
-              <THead>
-                <th className="py-2 pr-3 text-center">{t("dashboard.tblNo", lang)}</th>
-                <th className="py-2 pr-3 text-center">{t("common.item", lang)}</th>
-                <th className="py-2 pr-3 text-center">{t("common.category", lang)}</th>
-                <th className="py-2 pr-3 text-center">{t("common.unit", lang)}</th>
-                <th className="py-2 pr-3 text-center">{t("menu.colPrice", lang)}</th>
-                <th className="py-2 pr-3 text-center">{t("stock.colVolWeekly", lang)}</th>
-                <th className="py-2 pr-3 text-center">{t("common.supplier", lang)}</th>
-              </THead>
-              <tbody>
-                {items.map((it, i) => (
-                  <tr
-                    key={it.code}
-                    className={`row-hover border-b border-ink/5 ${!it.active ? "opacity-50" : ""}`}
-                  >
-                    <td className="py-2 pr-3 text-center text-ink2">{i + 1}</td>
-                    <td className="py-2 pr-3 text-left font-semibold">
-                      {it.code.replace(/^Buah\s*-\s*/i, "")}
-                    </td>
-                    <td className="py-2 pr-3 text-center">
-                      <div className="flex justify-center">
-                        <CategoryBadge category={it.category} />
-                      </div>
-                    </td>
-                    <td className="py-2 pr-3 text-center font-mono text-xs">{it.unit}</td>
-                    <td className="py-2 pr-3 text-center font-mono text-xs">
-                      {formatIDR(Number(it.price_idr))}
-                    </td>
-                    <td className="py-2 pr-3 text-center font-mono text-xs">
-                      {Number(it.vol_weekly).toFixed(1)}
-                    </td>
-                    <td className="py-2 pr-3 text-center font-mono text-xs">
-                      {supCountByItem.get(it.code) ?? 0}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </TableWrap>
+          <CommodityTable
+            lang={lang}
+            rows={items.map(
+              (it): CommodityRow => ({
+                code: it.code,
+                displayCode: it.code.replace(/^Buah\s*-\s*/i, ""),
+                category: it.category,
+                unit: it.unit,
+                price_idr: Number(it.price_idr),
+                vol_weekly: Number(it.vol_weekly),
+                supplier_count: supCountByItem.get(it.code) ?? 0,
+                active: it.active
+              })
+            )}
+          />
         </Section>
 
         <p className="mt-8 text-center text-[11px] text-ink2/60">

@@ -194,6 +194,10 @@ export default async function SchoolsPage() {
             att_date: a.att_date,
             qty: Number(a.qty)
           }))}
+          nonOpDays={nonOpDays.map((r) => ({
+            op_date: r.op_date,
+            reason: r.reason
+          }))}
           canEdit={canEdit}
         />
 

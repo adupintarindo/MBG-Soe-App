@@ -9,47 +9,26 @@ import {
   type Shortage
 } from "@/lib/engine";
 import {
-  Badge,
-  CategoryBadge,
   EmptyState,
   KpiGrid,
   KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
-import { t, ti, formatNumber, type Lang, type LangKey } from "@/lib/i18n";
+import {
+  StockShortTable,
+  StockMasterTable,
+  StockMovesTable,
+  type ShortRow,
+  type StockMasterRow,
+  type MoveRow as StockMoveRow
+} from "@/components/stock-tables";
+import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
-
-const REASON_KEY: Record<string, LangKey> = {
-  receipt: "stock.reasonReceipt",
-  consumption: "stock.reasonConsumption",
-  adjustment: "stock.reasonAdjustment",
-  waste: "stock.reasonWaste",
-  transfer_in: "stock.reasonTransferIn",
-  transfer_out: "stock.reasonTransferOut",
-  opening: "stock.reasonOpening"
-};
-
-function reasonLabel(reason: string, lang: Lang): string {
-  const key = REASON_KEY[reason];
-  return key ? t(key, lang) : reason;
-}
-
-const REASON_COLOR: Record<string, string> = {
-  receipt: "bg-emerald-50 text-emerald-900",
-  consumption: "bg-rose-50 text-rose-900",
-  adjustment: "bg-amber-50 text-amber-900",
-  waste: "bg-red-50 text-red-900",
-  transfer_in: "bg-blue-50 text-blue-900",
-  transfer_out: "bg-indigo-50 text-indigo-900",
-  opening: "bg-slate-50 text-slate-900"
-};
 
 interface StockRow {
   item_code: string;
@@ -117,6 +96,42 @@ export default async function StockPage() {
   ).length;
   const shortList = shortages.filter((s) => Number(s.gap) > 0);
   const shortCount = shortList.length;
+
+  const shortRows: ShortRow[] = shortList.map((s) => ({
+    item_code: s.item_code,
+    required: Number(s.required),
+    on_hand: Number(s.on_hand),
+    gap: Number(s.gap),
+    unit: s.unit
+  }));
+
+  const masterRows: StockMasterRow[] = items.map((it) => {
+    const qty = Number(stockByCode.get(it.code)?.qty ?? 0);
+    const weekly = Number(it.vol_weekly ?? 0);
+    const short = shortByCode.get(it.code);
+    return {
+      code: it.code,
+      category: it.category,
+      qty,
+      unit: it.unit,
+      price_idr: Number(it.price_idr),
+      value: qty * Number(it.price_idr),
+      weekly,
+      weeksCover: weekly > 0 ? qty / weekly : 999,
+      shortGap: short ? Number(short.gap) : null
+    };
+  });
+
+  const moveRows: StockMoveRow[] = moves.map((m) => ({
+    id: m.id,
+    item_code: m.item_code,
+    delta: Number(m.delta),
+    reason: m.reason,
+    ref_doc: m.ref_doc,
+    ref_no: m.ref_no,
+    note: m.note,
+    created_at: m.created_at
+  }));
 
   return (
     <div>
@@ -189,37 +204,7 @@ export default async function StockPage() {
             hint={t("stock.shortHint", lang)}
             accent="bad"
           >
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3 text-center">{t("common.item", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.required", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.onHand", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.gap", lang)}</th>
-                </THead>
-                <tbody>
-                  {shortList.map((s) => (
-                    <tr
-                      key={s.item_code}
-                      className="row-hover border-b border-ink/5"
-                    >
-                      <td className="py-2 pr-3 text-left font-semibold">
-                        {s.item_code}
-                      </td>
-                      <td className="py-2 pr-3 text-center font-mono text-xs">
-                        {Number(s.required).toFixed(2)}
-                      </td>
-                      <td className="py-2 pr-3 text-center font-mono text-xs">
-                        {Number(s.on_hand).toFixed(2)}
-                      </td>
-                      <td className="py-2 pr-3 text-center font-mono text-xs font-black text-red-700">
-                        {Number(s.gap).toFixed(2)} {s.unit}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <StockShortTable lang={lang} rows={shortRows} />
           </Section>
         )}
 
@@ -235,87 +220,7 @@ export default async function StockPage() {
           {items.length === 0 ? (
             <EmptyState message={t("stock.movesEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="w-12 py-2 pr-3 text-center">{t("dashboard.tblNo", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.item", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.category", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.qty", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.unit", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("stock.colHarga", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("stock.colNilai", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("stock.colVolWeekly", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.status", lang)}</th>
-                </THead>
-                <tbody>
-                  {items.map((it, i) => {
-                    const qty = Number(stockByCode.get(it.code)?.qty ?? 0);
-                    const value = qty * Number(it.price_idr);
-                    const short = shortByCode.get(it.code);
-                    const weekly = Number(it.vol_weekly ?? 0);
-                    const weeksCover = weekly > 0 ? qty / weekly : 999;
-                    return (
-                      <tr
-                        key={it.code}
-                        className="row-hover border-b border-ink/5"
-                      >
-                        <td className="py-2 pr-3 text-center text-ink2">{i + 1}</td>
-                        <td className="py-2 pr-3 text-left font-semibold">
-                          {it.code}
-                        </td>
-                        <td className="py-2 pr-3 text-center">
-                          <div className="flex justify-center">
-                            <CategoryBadge category={it.category} />
-                          </div>
-                        </td>
-                        <td className="py-2 pr-3 text-center font-mono text-xs font-black">
-                          {formatNumber(qty, lang, {
-                            maximumFractionDigits: 2
-                          })}
-                        </td>
-                        <td className="py-2 pr-3 text-center text-xs">
-                          {it.unit}
-                        </td>
-                        <td className="py-2 pr-3 text-center font-mono text-xs">
-                          {formatIDR(Number(it.price_idr))}
-                        </td>
-                        <td className="py-2 pr-3 text-center font-mono text-xs">
-                          {formatIDR(value)}
-                        </td>
-                        <td className="py-2 pr-3 text-center font-mono text-xs text-ink2/70">
-                          {weekly > 0 ? weekly.toFixed(1) : "—"}
-                        </td>
-                        <td className="py-2 pr-3 text-center">
-                          {short && Number(short.gap) > 0 ? (
-                            <Badge tone="bad">
-                              {ti("stock.statusShort", lang, {
-                                gap: Number(short.gap).toFixed(1)
-                              })}
-                            </Badge>
-                          ) : qty <= 0 ? (
-                            <Badge tone="muted">{t("stock.statusEmpty", lang)}</Badge>
-                          ) : weeksCover < 1 ? (
-                            <Badge tone="warn">
-                              {ti("stock.statusLow", lang, {
-                                w: weeksCover.toFixed(1)
-                              })}
-                            </Badge>
-                          ) : (
-                            <Badge tone="ok">
-                              {t("stock.statusOK", lang)}
-                              {weeksCover < 99
-                                ? ` · ${weeksCover.toFixed(1)}w`
-                                : ""}
-                            </Badge>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
+            <StockMasterTable lang={lang} rows={masterRows} />
           )}
         </Section>
 
@@ -323,62 +228,7 @@ export default async function StockPage() {
           {moves.length === 0 ? (
             <EmptyState message={t("stock.movesEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3 text-center">{t("common.time", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.item", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.reason", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.delta", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("stock.colRef", lang)}</th>
-                  <th className="py-2 pr-3 text-center">{t("common.note", lang)}</th>
-                </THead>
-                <tbody>
-                  {moves.map((m) => (
-                    <tr
-                      key={m.id}
-                      className="row-hover border-b border-ink/5"
-                    >
-                      <td className="py-2 pr-3 text-center font-mono text-[11px]">
-                        {new Date(m.created_at).toLocaleString(
-                          lang === "EN" ? "en-US" : "id-ID",
-                          {
-                            day: "2-digit",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          }
-                        )}
-                      </td>
-                      <td className="py-2 pr-3 text-left font-semibold">
-                        {m.item_code}
-                      </td>
-                      <td className="py-2 pr-3 text-center">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${REASON_COLOR[m.reason] ?? REASON_COLOR.adjustment}`}
-                        >
-                          {reasonLabel(m.reason, lang)}
-                        </span>
-                      </td>
-                      <td
-                        className={`py-2 pr-3 text-center font-mono text-xs font-black ${Number(m.delta) >= 0 ? "text-emerald-700" : "text-red-700"}`}
-                      >
-                        {Number(m.delta) >= 0 ? "+" : ""}
-                        {Number(m.delta).toFixed(2)}
-                      </td>
-                      <td className="py-2 pr-3 text-center font-mono text-[11px] text-ink2">
-                        {m.ref_doc && m.ref_no
-                          ? `${m.ref_doc.toUpperCase()} ${m.ref_no}`
-                          : m.ref_doc || "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-center text-xs text-ink2/70">
-                        {m.note || "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <StockMovesTable lang={lang} rows={moveRows} />
           )}
         </Section>
       </PageContainer>

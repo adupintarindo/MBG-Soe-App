@@ -41,6 +41,8 @@ export function ScheduleTable({
       label: t("dashboard.tblDayDate", lang),
       align: "left",
       sortValue: (r) => r.op_date,
+      searchValue: (r) => `${r.op_date} ${r.dateLabel}`,
+      exportValue: (r) => r.dateLabel,
       render: (r) => (
         <div>
           <div className="font-semibold">{r.dateLabel}</div>
@@ -57,6 +59,8 @@ export function ScheduleTable({
       label: t("dashboard.tblMenuName", lang),
       align: "left",
       sortValue: (r) => r.menu_name ?? "",
+      searchValue: (r) => r.menu_name ?? "",
+      exportValue: (r) => r.menu_name ?? "",
       render: (r) =>
         r.menu_name ?? <span className="text-ink2/60">—</span>
     },
@@ -65,6 +69,7 @@ export function ScheduleTable({
       label: t("dashboard.tblSchools", lang),
       align: "right",
       sortValue: (r) => r.schools,
+      exportValue: (r) => r.schools,
       render: (r) => (
         <span className="font-mono text-xs">
           {formatNumber(r.schools, lang)}
@@ -76,6 +81,7 @@ export function ScheduleTable({
       label: t("dashboard.tblPorsiKecil", lang),
       align: "right",
       sortValue: (r) => r.kecil,
+      exportValue: (r) => r.kecil,
       render: (r) => (
         <span className="font-mono text-xs">
           {formatNumber(r.kecil, lang)}
@@ -87,6 +93,7 @@ export function ScheduleTable({
       label: t("dashboard.tblPorsiBesar", lang),
       align: "right",
       sortValue: (r) => r.besar,
+      exportValue: (r) => r.besar,
       render: (r) => (
         <span className="font-mono text-xs">
           {formatNumber(r.besar, lang)}
@@ -98,6 +105,7 @@ export function ScheduleTable({
       label: t("dashboard.tblPorsiTotal", lang),
       align: "right",
       sortValue: (r) => r.total,
+      exportValue: (r) => r.total,
       render: (r) => (
         <span className="font-mono text-xs font-black">
           {formatNumber(r.total, lang)}
@@ -113,6 +121,10 @@ export function ScheduleTable({
       initialSort={{ key: "date", dir: "asc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="menu-schedule"
+      exportSheetName="Menu Schedule"
     />
   );
 }
@@ -143,6 +155,8 @@ export function VolumeMatrixTable({
     label: monthLabels[m] ?? m,
     align: "right",
     sortValue: (r) => r.monthly[m] ?? 0,
+    exportValue: (r) => r.monthly[m] ?? 0,
+    exportLabel: monthLabels[m] ?? m,
     render: (r) => {
       const v = r.monthly[m] ?? 0;
       const rowMax = Math.max(1, ...months.map((x) => r.monthly[x] ?? 0));
@@ -192,6 +206,8 @@ export function VolumeMatrixTable({
       label: t("dashboard.tblCommodity", lang),
       align: "left",
       sortValue: (r) => displayCode(r.code),
+      searchValue: (r) => `${displayCode(r.code)} ${r.category}`,
+      exportValue: (r) => displayCode(r.code),
       render: (r) => (
         <span className="font-semibold">{displayCode(r.code)}</span>
       )
@@ -201,6 +217,8 @@ export function VolumeMatrixTable({
       label: t("common.category", lang),
       align: "left",
       sortValue: (r) => r.category,
+      searchValue: (r) => r.category,
+      exportValue: (r) => r.category,
       render: (r) => <CategoryBadge category={r.category} size="sm" />
     },
     ...monthCols,
@@ -209,6 +227,7 @@ export function VolumeMatrixTable({
       label: t("dashboard.tblTotalKg", lang),
       align: "right",
       sortValue: (r) => r.total,
+      exportValue: (r) => r.total,
       render: (r) => {
         const share = maxItemTotal > 0 ? r.total / maxItemTotal : 0;
         return (
@@ -236,6 +255,10 @@ export function VolumeMatrixTable({
       columns={columns}
       rows={rows}
       zebra
+      searchable
+      exportable
+      exportFileName="volume-matrix"
+      exportSheetName="Volume Matrix"
     />
   );
 }
@@ -263,6 +286,8 @@ export function PlanningTable({
       label: t("dashboard.tblDate", lang),
       align: "left",
       sortValue: (r) => r.op_date,
+      searchValue: (r) => r.op_date,
+      exportValue: (r) => r.op_date,
       render: (r) => (
         <div>
           <div className="font-mono text-[11px]">{r.op_date}</div>
@@ -279,6 +304,8 @@ export function PlanningTable({
       label: t("dashboard.tblMenu", lang),
       align: "left",
       sortValue: (r) => r.menu_name ?? "",
+      searchValue: (r) => r.menu_name ?? "",
+      exportValue: (r) => r.menu_name ?? "",
       render: (r) =>
         r.menu_name ?? <span className="text-ink2/60">—</span>
     },
@@ -287,6 +314,7 @@ export function PlanningTable({
       label: t("dashboard.tblPorsi", lang),
       align: "right",
       sortValue: (r) => r.porsi_total,
+      exportValue: (r) => r.porsi_total,
       render: (r) => (
         <span className="font-mono text-xs">
           {formatNumber(r.porsi_total, lang)}
@@ -298,6 +326,7 @@ export function PlanningTable({
       label: t("dashboard.tblKebutuhan", lang),
       align: "right",
       sortValue: (r) => r.total_kg,
+      exportValue: (r) => Number(r.total_kg),
       render: (r) => (
         <span className="font-mono text-xs">
           {formatKg(Number(r.total_kg), 1)}
@@ -309,6 +338,7 @@ export function PlanningTable({
       label: t("dashboard.tblShort", lang),
       align: "right",
       sortValue: (r) => r.short_items,
+      exportValue: (r) => r.short_items,
       render: (r) => (
         <span
           className={`font-mono text-xs font-black ${
@@ -328,6 +358,10 @@ export function PlanningTable({
       initialSort={{ key: "date", dir: "asc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="planning"
+      exportSheetName="Planning"
     />
   );
 }
@@ -354,6 +388,8 @@ export function StockAlertTable({
       label: t("dashboard.tblItem", lang),
       align: "left",
       sortValue: (r) => displayCode(r.item_code),
+      searchValue: (r) => displayCode(r.item_code),
+      exportValue: (r) => displayCode(r.item_code),
       render: (r) => (
         <span className="font-semibold">{displayCode(r.item_code)}</span>
       )
@@ -363,6 +399,7 @@ export function StockAlertTable({
       label: t("dashboard.tblButuh", lang),
       align: "right",
       sortValue: (r) => r.required,
+      exportValue: (r) => Number(r.required),
       render: (r) => (
         <span className="font-mono text-xs">
           {Number(r.required).toFixed(2)}
@@ -374,6 +411,7 @@ export function StockAlertTable({
       label: t("dashboard.tblAda", lang),
       align: "right",
       sortValue: (r) => r.on_hand,
+      exportValue: (r) => Number(r.on_hand),
       render: (r) => (
         <span className="font-mono text-xs">
           {Number(r.on_hand).toFixed(2)}
@@ -385,6 +423,7 @@ export function StockAlertTable({
       label: t("dashboard.tblKurang", lang),
       align: "right",
       sortValue: (r) => r.gap,
+      exportValue: (r) => `${Number(r.gap).toFixed(2)} ${r.unit}`,
       render: (r) => (
         <span className="font-mono text-xs font-black text-red-700">
           {Number(r.gap).toFixed(2)} {r.unit}
@@ -400,6 +439,10 @@ export function StockAlertTable({
       initialSort={{ key: "gap", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="stock-alert"
+      exportSheetName="Stock Alert"
     />
   );
 }
@@ -433,12 +476,16 @@ export function SupplierSpendTable({
       label: t("common.supplier", lang),
       align: "left",
       sortValue: (r) => r.supplier_name,
+      searchValue: (r) => `${r.supplier_name} ${r.supplier_id}`,
+      exportValue: (r) => r.supplier_name,
       render: (r) => <span className="font-semibold">{r.supplier_name}</span>
     },
     {
       key: "type",
       label: t("dashboard.tblType", lang),
       sortValue: (r) => r.supplier_type,
+      searchValue: (r) => r.supplier_type,
+      exportValue: (r) => r.supplier_type,
       render: (r) => <Badge tone="neutral">{r.supplier_type}</Badge>
     },
     {
@@ -446,6 +493,7 @@ export function SupplierSpendTable({
       label: t("dashboard.tblInvoice", lang),
       align: "right",
       sortValue: (r) => r.invoice_count,
+      exportValue: (r) => r.invoice_count,
       render: (r) => (
         <span className="font-mono text-xs">{r.invoice_count}</span>
       )
@@ -453,8 +501,9 @@ export function SupplierSpendTable({
     {
       key: "spend",
       label: t("dashboard.tblTotalSpend", lang),
-      align: "left",
+      align: "right",
       sortValue: (r) => r.total_spend,
+      exportValue: (r) => Number(r.total_spend),
       render: (r) => (
         <span className="font-mono text-xs font-black">
           {formatIDR(Number(r.total_spend))}
@@ -470,6 +519,10 @@ export function SupplierSpendTable({
       initialSort={{ key: "spend", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="supplier-spend"
+      exportSheetName="Supplier Spend"
     />
   );
 }

@@ -10,19 +10,21 @@ import {
   formatKg
 } from "@/lib/engine";
 import {
-  Badge,
-  CategoryBadge,
   EmptyState,
   KpiGrid,
   KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
-import { t, ti, formatNumber } from "@/lib/i18n";
+import {
+  VariancePerItemTable,
+  VarianceByMenuTable,
+  type VarianceRow,
+  type VarianceByMenuRow
+} from "@/components/variance-tables";
+import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -214,86 +216,23 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
               message={t("variance.emptyBody", lang)}
             />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">{t("variance.colFlag", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.item", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.category", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("variance.colPlanKg", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("variance.colActualKg", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("variance.colDeltaKg", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("variance.colDeltaPct", lang)}</th>
-                </THead>
-                <tbody>
-                  {rows.map((r) => {
-                    const cat = (r.category ?? "LAIN") as string;
-                    const flagTone: "bad" | "warn" | "ok" =
-                      r.flag === "OVER"
-                        ? "bad"
-                        : r.flag === "UNDER"
-                          ? "warn"
-                          : "ok";
-                    return (
-                      <tr
-                        key={r.item_code}
-                        className="row-hover border-b border-ink/5"
-                      >
-                        <td className="py-2 pr-3">
-                          <Badge tone={flagTone}>{r.flag}</Badge>
-                        </td>
-                        <td className="py-2 pr-3 font-semibold text-ink">
-                          {r.item_code}
-                          {r.name_en && (
-                            <span className="ml-1 text-[10px] italic text-ink2/60">
-                              · {r.name_en}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3">
-                          <CategoryBadge category={cat} />
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {Number(r.plan_kg).toFixed(2)}
-                        </td>
-                        <td className="py-2 pr-3 text-right font-mono text-xs">
-                          {Number(r.actual_kg).toFixed(2)}
-                        </td>
-                        <td
-                          className={`py-2 pr-3 text-right font-mono text-xs font-bold ${
-                            r.variance_kg > 0
-                              ? "text-red-700"
-                              : r.variance_kg < 0
-                                ? "text-amber-700"
-                                : "text-ink2"
-                          }`}
-                        >
-                          {r.variance_kg > 0 ? "+" : ""}
-                          {Number(r.variance_kg).toFixed(2)}
-                        </td>
-                        <td
-                          className={`py-2 pr-3 text-right font-mono text-xs font-black ${
-                            r.variance_pct == null
-                              ? "text-ink2"
-                              : Math.abs(Number(r.variance_pct)) > thresholdPct
-                                ? r.variance_pct > 0
-                                  ? "text-red-700"
-                                  : "text-amber-700"
-                                : "text-emerald-700"
-                          }`}
-                        >
-                          {r.variance_pct == null
-                            ? "—"
-                            : `${r.variance_pct > 0 ? "+" : ""}${Number(
-                                r.variance_pct
-                              ).toFixed(1)}%`}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </TableWrap>
+            <VariancePerItemTable
+              lang={lang}
+              thresholdPct={thresholdPct}
+              rows={rows.map(
+                (r): VarianceRow => ({
+                  item_code: r.item_code,
+                  name_en: r.name_en,
+                  category: (r.category ?? "LAIN") as string,
+                  flag: r.flag as "OVER" | "UNDER" | "OK",
+                  plan_kg: Number(r.plan_kg),
+                  actual_kg: Number(r.actual_kg),
+                  variance_kg: Number(r.variance_kg),
+                  variance_pct:
+                    r.variance_pct == null ? null : Number(r.variance_pct)
+                })
+              )}
+            />
           )}
         </Section>
 
@@ -304,45 +243,19 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
           {byMenu.length === 0 ? (
             <EmptyState message={t("variance.emptyMenu", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">{t("schools.colId", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.menu", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("variance.colDays", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("variance.colPorsi", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("variance.colTotalBahan", lang)}</th>
-                  <th className="py-2 pr-3">{t("variance.colCostBahan", lang)}</th>
-                </THead>
-                <tbody>
-                  {byMenu.map((m) => (
-                    <tr
-                      key={m.menu_id}
-                      className="row-hover border-b border-ink/5"
-                    >
-                      <td className="py-2 pr-3 font-mono text-[11px] text-ink2">
-                        M{m.menu_id}
-                      </td>
-                      <td className="py-2 pr-3 font-semibold text-ink">
-                        {m.menu_name}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {m.days_served}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {formatNumber(m.plan_porsi, lang)}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {formatKg(m.plan_kg_total, 1)}
-                      </td>
-                      <td className="py-2 pr-3 text-left font-mono text-xs font-bold text-emerald-800">
-                        {formatIDR(m.plan_cost_idr)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <VarianceByMenuTable
+              lang={lang}
+              rows={byMenu.map(
+                (m): VarianceByMenuRow => ({
+                  menu_id: m.menu_id,
+                  menu_name: m.menu_name,
+                  days_served: m.days_served,
+                  plan_porsi: m.plan_porsi,
+                  plan_kg_total: Number(m.plan_kg_total),
+                  plan_cost_idr: Number(m.plan_cost_idr)
+                })
+              )}
+            />
           )}
         </Section>
 

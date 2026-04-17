@@ -5,7 +5,7 @@ import { Nav } from "@/components/nav";
 import { toISODate } from "@/lib/engine";
 import { getHoliday, holidaysInRange } from "@/lib/holidays";
 import { CalendarGrid } from "./calendar-grid";
-import { AutoAssignButton } from "./auto-assign-button";
+import { PopulateControls } from "./populate-controls";
 import {
   LinkButton,
   PageContainer,
@@ -210,11 +210,9 @@ export default async function CalendarPage({
             </>
           }
           actions={
-            <div className="flex flex-wrap items-center gap-2">
-              {canWrite && unassigned > 0 && (
-                <AutoAssignButton year={year} month={month} unassigned={unassigned} />
-              )}
-            </div>
+            canWrite ? (
+              <PopulateControls year={year} month={month} menus={menus} />
+            ) : null
           }
         />
 
