@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Section, Button, TableWrap, THead } from "@/components/ui";
+import { t, ti, formatNumber, DAYS, MONTHS } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 type SchoolLite = {
   id: string;
@@ -34,22 +36,6 @@ type DisplayRow = {
   level: string;
   cap: number; // capacity for THIS row only
 };
-
-const DAY_NAME = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-const MONTH = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "Mei",
-  "Jun",
-  "Jul",
-  "Agu",
-  "Sep",
-  "Okt",
-  "Nov",
-  "Des"
-];
 
 function toISO(d: Date): string {
   const y = d.getFullYear();
@@ -107,12 +93,6 @@ function buildDisplayRows(schools: SchoolLite[]): DisplayRow[] {
   return rows;
 }
 
-const GROUP_LABEL: Record<DisplayRow["group"], string> = {
-  all: "",
-  kecil: "Porsi Kecil · kelas 1–3",
-  besar: "Porsi Besar · kelas 4–6"
-};
-
 const GROUP_BADGE: Record<DisplayRow["group"], string> = {
   all: "",
   kecil: "bg-amber-100 text-amber-900 ring-1 ring-amber-200",
@@ -125,8 +105,16 @@ export function SchoolAttendancePanel({
   canEdit
 }: Props) {
   const router = useRouter();
+  const { lang } = useLang();
   const days = useMemo(nextSevenDays, []);
   const dayKeys = days.map(toISO);
+  const DAY_NAME = DAYS.short[lang];
+  const MONTH = MONTHS.short[lang];
+  const GROUP_LABEL: Record<DisplayRow["group"], string> = {
+    all: "",
+    kecil: t("schools.attGroupKecil", lang),
+    besar: t("schools.attGroupBesar", lang)
+  };
 
   const displayRows = useMemo(() => buildDisplayRows(schools), [schools]);
 
@@ -232,7 +220,7 @@ export function SchoolAttendancePanel({
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "save failed");
-      setMsg(`Tersimpan · ${json.saved} baris`);
+      setMsg(ti("schools.attSavedMsg", lang, { n: json.saved }));
       router.refresh();
     } catch (e) {
       setMsg((e as Error).message);
@@ -250,8 +238,8 @@ export function SchoolAttendancePanel({
 
   return (
     <Section
-      title="Perkiraan Kehadiran Siswa · 7 Hari Ke Depan"
-      hint="Isi angka kehadiran per sekolah per tanggal. SD dipecah jadi Porsi Kecil (kelas 1–3) dan Porsi Besar (kelas 4–6) karena bobot porsi BOM-nya berbeda. Default = kapasitas penuh."
+      title={t("schools.attTitle", lang)}
+      hint={t("schools.attHint", lang)}
       actions={
         canEdit ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -261,7 +249,7 @@ export function SchoolAttendancePanel({
               onClick={() => fillPct(1.0)}
               disabled={saving}
             >
-              Isi Penuh
+              {t("schools.attFillFull", lang)}
             </Button>
             <Button
               variant="ghost"
@@ -269,7 +257,7 @@ export function SchoolAttendancePanel({
               onClick={() => fillPct(0.9)}
               disabled={saving}
             >
-              Estimasi 90%
+              {t("schools.attEst90", lang)}
             </Button>
             <Button
               variant="ghost"
@@ -277,7 +265,7 @@ export function SchoolAttendancePanel({
               onClick={() => fillPct(0.85)}
               disabled={saving}
             >
-              Estimasi 85%
+              {t("schools.attEst85", lang)}
             </Button>
             <Button
               variant="primary"
@@ -285,7 +273,7 @@ export function SchoolAttendancePanel({
               onClick={save}
               disabled={saving}
             >
-              {saving ? "Menyimpan…" : "Simpan Perkiraan"}
+              {saving ? t("schools.attSaving", lang) : t("schools.attSave", lang)}
             </Button>
             {msg && (
               <span className="text-[11px] font-bold text-accent-strong">
@@ -299,9 +287,9 @@ export function SchoolAttendancePanel({
       <TableWrap>
         <table className="w-full text-sm">
           <THead>
-            <th className="py-2 pr-3">Sekolah</th>
-            <th className="py-2 pr-3">Porsi</th>
-            <th className="py-2 pr-3 text-right">Kapasitas</th>
+            <th className="py-2 pr-3">{t("schools.attColSekolah", lang)}</th>
+            <th className="py-2 pr-3">{t("schools.attColPorsi", lang)}</th>
+            <th className="py-2 pr-3 text-right">{t("schools.attColKapasitas", lang)}</th>
             {days.map((d) => {
               const isWeekend = d.getDay() === 0 || d.getDay() === 6;
               return (
@@ -369,7 +357,7 @@ export function SchoolAttendancePanel({
                     )}
                   </td>
                   <td className="py-2 pr-3 text-right align-middle font-mono text-xs">
-                    {r.cap.toLocaleString("id-ID")}
+                    {formatNumber(r.cap, lang)}
                   </td>
                   {dayKeys.map((k, di) => {
                     const d = days[di];
@@ -406,12 +394,12 @@ export function SchoolAttendancePanel({
                 TOTAL
               </td>
               <td className="py-2 pr-3 text-right font-mono text-xs font-black">
-                {capTotal.toLocaleString("id-ID")}
+                {formatNumber(capTotal, lang)}
               </td>
-              {colTotals.map((t, i) => {
+              {colTotals.map((v, i) => {
                 const d = days[i];
                 const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                const pct = capTotal > 0 ? Math.round((t / capTotal) * 100) : 0;
+                const pct = capTotal > 0 ? Math.round((v / capTotal) * 100) : 0;
                 return (
                   <td
                     key={dayKeys[i]}
@@ -419,7 +407,7 @@ export function SchoolAttendancePanel({
                       isWeekend ? "bg-amber-50 text-amber-900" : "text-ink"
                     }`}
                   >
-                    <div>{t.toLocaleString("id-ID")}</div>
+                    <div>{formatNumber(v, lang)}</div>
                     <div className="text-[9px] font-semibold text-ink2/60">
                       {pct}%
                     </div>
@@ -430,13 +418,10 @@ export function SchoolAttendancePanel({
           </tfoot>
         </table>
       </TableWrap>
-      <p className="mt-3 text-[11px] text-ink2/70">
-        SD ditampilkan 2 baris karena bobot porsi BOM beda — Kecil ×0.7 (kelas
-        1–3) & Besar ×1.0 (kelas 4–6). Saat disimpan, kedua angka dijumlahkan
-        kembali jadi 1 entri per sekolah per tanggal. Akhir pekan ditandai
-        kuning. Nilai <b className="text-ink">&lt; kapasitas</b> akan
-        memproporsionalkan kebutuhan bahan untuk tanggal tsb.
-      </p>
+      <p
+        className="mt-3 text-[11px] text-ink2/70"
+        dangerouslySetInnerHTML={{ __html: t("schools.attFootnote", lang) }}
+      />
     </Section>
   );
 }

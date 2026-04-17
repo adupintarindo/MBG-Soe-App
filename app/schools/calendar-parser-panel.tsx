@@ -15,6 +15,8 @@ import {
   parseSchoolCalendar,
   type ParsedCalendarEntry
 } from "./calendar-parser";
+import { t, ti, DAYS } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 type ExistingRow = { op_date: string; reason: string };
 
@@ -37,6 +39,8 @@ const EXAMPLE = `# Contoh format — bisa campur. Baris kosong diabaikan.
 export function CalendarParserPanel({ canWrite, existing }: Props) {
   const router = useRouter();
   const supabase = createClient();
+  const { lang } = useLang();
+  const DAY_SHORT = DAYS.short[lang];
 
   const [raw, setRaw] = useState("");
   const [parsed, setParsed] = useState<ParsedCalendarEntry[]>([]);
@@ -77,7 +81,7 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
     setWarnings(res.warnings);
     setExcluded(new Set());
     if (res.entries.length === 0) {
-      setErr("Tidak ada baris yang bisa di-parse menjadi tanggal.");
+      setErr(t("calParser.errNoParsed", lang));
     }
   }
 
@@ -103,7 +107,7 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
     setErr(null);
     setOk(null);
     if (activeEntries.length === 0) {
-      setErr("Tidak ada entri yang akan di-import.");
+      setErr(t("calParser.errNoEntries", lang));
       return;
     }
     const override = overrideReason.trim();
@@ -119,7 +123,11 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
       return;
     }
     setOk(
-      `Berhasil import ${rows.length} tanggal (${newCount} baru · ${updateCount} update).`
+      ti("calParser.msgImported", lang, {
+        n: rows.length,
+        new: newCount,
+        update: updateCount
+      })
     );
     setParsed([]);
     setWarnings([]);
@@ -132,7 +140,7 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
     setErr(null);
     setOk(null);
     const confirmed = window.confirm(
-      `Hapus non-operasional tanggal ${opDate}?`
+      ti("calParser.confirmDelete", lang, { date: opDate })
     );
     if (!confirmed) return;
     const { error } = await supabase
@@ -143,20 +151,20 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
       setErr(error.message);
       return;
     }
-    setOk(`Tanggal ${opDate} dihapus dari non-operasional.`);
+    setOk(ti("calParser.msgDeleted", lang, { date: opDate }));
     startTransition(() => router.refresh());
   }
 
   return (
     <Section
-      title="Parser Kalender Pendidikan"
-      hint="Paste teks kalender Dinas (rentang tanggal + keterangan). Sistem menguraikan jadi baris non-operasional yang otomatis memblok penjadwalan BOM."
+      title={t("calParser.title", lang)}
+      hint={t("calParser.hint", lang)}
     >
       {canWrite ? (
         <div className="space-y-4">
           <div className="rounded-2xl bg-paper p-4 ring-1 ring-ink/5">
             <label className="block">
-              <FieldLabel>Teks kalender</FieldLabel>
+              <FieldLabel>{t("calParser.textLabel", lang)}</FieldLabel>
               <textarea
                 value={raw}
                 onChange={(e) => setRaw(e.target.value)}
@@ -167,10 +175,10 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
             </label>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Button variant="primary" size="sm" onClick={onParse}>
-                Parse
+                {t("calParser.btnParse", lang)}
               </Button>
               <Button variant="secondary" size="sm" onClick={useExample}>
-                Pakai contoh
+                {t("calParser.btnExample", lang)}
               </Button>
               <Button
                 variant="ghost"
@@ -184,7 +192,7 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
                   setOk(null);
                 }}
               >
-                Reset
+                {t("calParser.btnReset", lang)}
               </Button>
               {err && (
                 <span className="text-[12px] font-semibold text-red-700">
@@ -202,7 +210,7 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
           {warnings.length > 0 && (
             <div className="rounded-xl bg-amber-50 p-3 ring-1 ring-amber-200">
               <div className="text-[11px] font-black uppercase tracking-wide text-amber-900">
-                {warnings.length} baris tidak dikenali
+                {ti("calParser.warnUnrecognized", lang, { n: warnings.length })}
               </div>
               <ul className="mt-1 space-y-0.5 text-[11px] text-amber-900/90">
                 {warnings.slice(0, 10).map((w, i) => (
@@ -214,7 +222,7 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
                 ))}
                 {warnings.length > 10 && (
                   <li className="italic opacity-70">
-                    …dan {warnings.length - 10} baris lain.
+                    {ti("calParser.warnMoreLines", lang, { n: warnings.length - 10 })}
                   </li>
                 )}
               </ul>
@@ -225,12 +233,12 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
             <div className="rounded-2xl bg-white p-4 ring-1 ring-ink/5">
               <div className="mb-3 flex flex-wrap items-end gap-3">
                 <label className="block grow">
-                  <FieldLabel>Alasan override (opsional)</FieldLabel>
+                  <FieldLabel>{t("calParser.overrideLabel", lang)}</FieldLabel>
                   <input
                     type="text"
                     value={overrideReason}
                     onChange={(e) => setOverrideReason(e.target.value)}
-                    placeholder="Kosongkan untuk pakai keterangan per-baris"
+                    placeholder={t("calParser.overridePlaceholder", lang)}
                     className="w-full rounded-lg bg-white px-3 py-1.5 text-sm text-ink ring-1 ring-ink/10"
                   />
                 </label>
@@ -241,30 +249,30 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
                   disabled={pending || activeEntries.length === 0}
                 >
                   {pending
-                    ? "Mengimport…"
-                    : `Import ${activeEntries.length} tanggal`}
+                    ? t("calParser.btnImporting", lang)
+                    : ti("calParser.btnImportN", lang, { n: activeEntries.length })}
                 </Button>
               </div>
 
               <div className="mb-2 flex flex-wrap gap-3 text-[11px] font-semibold text-ink2">
                 <span>
-                  Total parsed:{" "}
+                  {t("calParser.statTotal", lang)}{" "}
                   <b className="text-ink">{parsed.length}</b>
                 </span>
                 <span>
-                  Aktif:{" "}
+                  {t("calParser.statActive", lang)}{" "}
                   <b className="text-emerald-700">{activeEntries.length}</b>
                 </span>
                 <span>
-                  Baru:{" "}
+                  {t("calParser.statNew", lang)}{" "}
                   <b className="text-accent-strong">{newCount}</b>
                 </span>
                 <span>
-                  Update existing:{" "}
+                  {t("calParser.statUpdate", lang)}{" "}
                   <b className="text-amber-700">{updateCount}</b>
                 </span>
                 <span>
-                  Dikecualikan:{" "}
+                  {t("calParser.statExcluded", lang)}{" "}
                   <b className="text-red-700">{excluded.size}</b>
                 </span>
               </div>
@@ -272,27 +280,19 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
               <TableWrap>
                 <table className="w-full text-sm">
                   <THead>
-                    <th className="py-2 pr-3">Sertakan</th>
-                    <th className="py-2 pr-3">Tanggal</th>
-                    <th className="py-2 pr-3">Hari</th>
-                    <th className="py-2 pr-3">Alasan</th>
-                    <th className="py-2 pr-3">Status</th>
-                    <th className="py-2 pr-3 text-right">Baris</th>
+                    <th className="py-2 pr-3">{t("calParser.colInclude", lang)}</th>
+                    <th className="py-2 pr-3">{t("calParser.colDate", lang)}</th>
+                    <th className="py-2 pr-3">{t("calParser.colDay", lang)}</th>
+                    <th className="py-2 pr-3">{t("calParser.colReason", lang)}</th>
+                    <th className="py-2 pr-3">{t("calParser.colStatus", lang)}</th>
+                    <th className="py-2 pr-3 text-right">{t("calParser.colLine", lang)}</th>
                   </THead>
                   <tbody>
                     {parsed.map((e) => {
                       const isExcluded = excluded.has(e.op_date);
                       const existingReason = existingMap.get(e.op_date);
                       const dow = new Date(e.op_date).getDay();
-                      const dowName = [
-                        "Min",
-                        "Sen",
-                        "Sel",
-                        "Rab",
-                        "Kam",
-                        "Jum",
-                        "Sab"
-                      ][dow];
+                      const dowName = DAY_SHORT[dow];
                       const isWeekend = dow === 0 || dow === 6;
                       return (
                         <tr
@@ -327,12 +327,12 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
                           <td className="py-2 pr-3">
                             {existingReason ? (
                               existingReason === e.reason ? (
-                                <Badge tone="neutral">sama</Badge>
+                                <Badge tone="neutral">{t("calParser.badgeSame", lang)}</Badge>
                               ) : (
-                                <Badge tone="warn">override</Badge>
+                                <Badge tone="warn">{t("calParser.badgeOverride", lang)}</Badge>
                               )
                             ) : (
-                              <Badge tone="ok">baru</Badge>
+                              <Badge tone="ok">{t("calParser.badgeNew", lang)}</Badge>
                             )}
                           </td>
                           <td className="py-2 pr-3 text-right font-mono text-[10px] text-ink2/60">
@@ -349,40 +349,32 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
         </div>
       ) : (
         <p className="rounded-xl bg-paper px-4 py-3 text-[12px] text-ink2">
-          Hanya admin/operator yang bisa mengimport kalender pendidikan.
+          {t("calParser.readOnly", lang)}
         </p>
       )}
 
       {/* Existing non_op_days reference */}
       <div className="mt-5">
         <div className="mb-2 text-[11px] font-black uppercase tracking-wide text-ink2/70">
-          Non-operasional tersimpan · {existing.length} tanggal
+          {ti("calParser.storedHeader", lang, { n: existing.length })}
         </div>
         {existing.length === 0 ? (
           <p className="rounded-xl bg-paper px-4 py-3 text-[12px] text-ink2">
-            Belum ada hari non-operasional tersimpan.
+            {t("calParser.emptyStored", lang)}
           </p>
         ) : (
           <TableWrap>
             <table className="w-full text-sm">
               <THead>
-                <th className="py-2 pr-3">Tanggal</th>
-                <th className="py-2 pr-3">Hari</th>
-                <th className="py-2 pr-3">Alasan</th>
-                {canWrite && <th className="py-2 pr-3 text-right">Aksi</th>}
+                <th className="py-2 pr-3">{t("calParser.colDate", lang)}</th>
+                <th className="py-2 pr-3">{t("calParser.colDay", lang)}</th>
+                <th className="py-2 pr-3">{t("calParser.colReason", lang)}</th>
+                {canWrite && <th className="py-2 pr-3 text-right">{t("calParser.colAksi", lang)}</th>}
               </THead>
               <tbody>
                 {existing.map((r) => {
                   const dow = new Date(r.op_date).getDay();
-                  const dowName = [
-                    "Min",
-                    "Sen",
-                    "Sel",
-                    "Rab",
-                    "Kam",
-                    "Jum",
-                    "Sab"
-                  ][dow];
+                  const dowName = DAY_SHORT[dow];
                   return (
                     <tr
                       key={r.op_date}
@@ -402,7 +394,7 @@ export function CalendarParserPanel({ canWrite, existing }: Props) {
                             size="sm"
                             onClick={() => onDelete(r.op_date)}
                           >
-                            Hapus
+                            {t("calParser.btnHapus", lang)}
                           </Button>
                         </td>
                       )}

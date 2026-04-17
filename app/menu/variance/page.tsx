@@ -22,6 +22,8 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti, formatNumber } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +51,7 @@ function addDays(d: Date, n: number): Date {
 
 export default async function BomVariancePage({ searchParams }: PageProps) {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -88,13 +91,13 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
       <PageContainer>
         <PageHeader
           icon="📉"
-          title="BOM Variance · Plan vs Actual"
+          title={t("variance.title", lang)}
           subtitle={
             <>
-              Periode <b>{start}</b> → <b>{end}</b> · Threshold ±{thresholdPct}%
+              {ti("variance.subtitle", lang, { start, end, pct: thresholdPct })}
               {!hasActual && (
                 <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900">
-                  Belum ada GRN actual dalam periode ini
+                  {t("variance.noGRN", lang)}
                 </span>
               )}
             </>
@@ -102,10 +105,10 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
           actions={
             <>
               <LinkButton href="/menu" variant="secondary" size="sm">
-                ← Master Menu
+                {t("variance.btnBackMenu", lang)}
               </LinkButton>
               <LinkButton href="/stock" variant="primary" size="sm">
-                📦 Stock →
+                {t("variance.btnStock", lang)}
               </LinkButton>
             </>
           }
@@ -116,7 +119,7 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
           className="mb-6 flex flex-wrap items-end gap-3 rounded-2xl bg-paper p-4 ring-1 ring-ink/5"
         >
           <label className="flex flex-col text-[11px] font-bold uppercase tracking-wide text-ink2">
-            Dari
+            {t("variance.filterFrom", lang)}
             <input
               type="date"
               name="start"
@@ -125,7 +128,7 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
             />
           </label>
           <label className="flex flex-col text-[11px] font-bold uppercase tracking-wide text-ink2">
-            Sampai
+            {t("variance.filterTo", lang)}
             <input
               type="date"
               name="end"
@@ -134,7 +137,7 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
             />
           </label>
           <label className="flex flex-col text-[11px] font-bold uppercase tracking-wide text-ink2">
-            Threshold (%)
+            {t("variance.filterThreshold", lang)}
             <input
               type="number"
               name="threshold"
@@ -149,29 +152,33 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
             type="submit"
             className="rounded-lg bg-primary-gradient px-4 py-2 text-sm font-bold text-white shadow-card hover:opacity-90"
           >
-            Terapkan
+            {t("variance.filterApply", lang)}
           </button>
         </form>
 
         <KpiGrid>
           <KpiTile
-            label="Item dalam scope"
+            label={t("variance.kpiScope", lang)}
             value={summary.total_items.toString()}
-            sub={`${overRows.length} over · ${underRows.length} under · ${okRows.length} ok`}
+            sub={ti("variance.kpiScopeSub", lang, {
+              over: overRows.length,
+              under: underRows.length,
+              ok: okRows.length
+            })}
           />
           <KpiTile
-            label="Rencana"
+            label={t("variance.kpiPlan", lang)}
             value={formatKg(summary.total_plan_kg, 1)}
-            sub="berat bahan basah"
+            sub={t("variance.kpiPlanSub", lang)}
           />
           <KpiTile
-            label="Realisasi"
+            label={t("variance.kpiActual", lang)}
             value={formatKg(summary.total_actual_kg, 1)}
-            sub="dari GRN ok/partial"
+            sub={t("variance.kpiActualSub", lang)}
             tone={hasActual ? "ok" : "default"}
           />
           <KpiTile
-            label="Variance"
+            label={t("variance.kpiVariance", lang)}
             value={
               summary.total_variance_pct == null
                 ? "—"
@@ -197,26 +204,26 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
         </KpiGrid>
 
         <Section
-          title="📋 Per Item"
-          hint={`Plan dihitung dari menu_assign × gramasi tiered × porsi hadir. Actual dari GRN (status ok/partial). Flag OVER/UNDER jika |variance| > ${thresholdPct}%.`}
+          title={t("variance.secPerItem", lang)}
+          hint={ti("variance.secPerItemHint", lang, { pct: thresholdPct })}
         >
           {rows.length === 0 ? (
             <EmptyState
               icon="🍚"
-              title="Tidak ada data variance"
-              message="Belum ada plan/actual untuk rentang tanggal ini. Pastikan menu_assign sudah ter-generate dan periode meliputi hari kerja."
+              title={t("variance.emptyTitle", lang)}
+              message={t("variance.emptyBody", lang)}
             />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">Flag</th>
-                  <th className="py-2 pr-3">Item</th>
-                  <th className="py-2 pr-3">Kategori</th>
-                  <th className="py-2 pr-3 text-right">Plan (kg)</th>
-                  <th className="py-2 pr-3 text-right">Actual (kg)</th>
-                  <th className="py-2 pr-3 text-right">Δ (kg)</th>
-                  <th className="py-2 pr-3 text-right">Δ (%)</th>
+                  <th className="py-2 pr-3">{t("variance.colFlag", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.item", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.category", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("variance.colPlanKg", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("variance.colActualKg", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("variance.colDeltaKg", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("variance.colDeltaPct", lang)}</th>
                 </THead>
                 <tbody>
                   {rows.map((r) => {
@@ -291,21 +298,21 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
         </Section>
 
         <Section
-          title="🍽️ Per Menu"
-          hint="Breakdown rencana per menu: jumlah hari tersajikan, total porsi, total kg bahan, dan perkiraan cost bahan."
+          title={t("variance.secPerMenu", lang)}
+          hint={t("variance.secPerMenuHint", lang)}
         >
           {byMenu.length === 0 ? (
-            <EmptyState message="Belum ada menu aktif dalam rentang tanggal." />
+            <EmptyState message={t("variance.emptyMenu", lang)} />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">ID</th>
-                  <th className="py-2 pr-3">Menu</th>
-                  <th className="py-2 pr-3 text-right">Hari</th>
-                  <th className="py-2 pr-3 text-right">Porsi</th>
-                  <th className="py-2 pr-3 text-right">Total Bahan</th>
-                  <th className="py-2 pr-3 text-right">Cost Bahan</th>
+                  <th className="py-2 pr-3">{t("schools.colId", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.menu", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("variance.colDays", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("variance.colPorsi", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("variance.colTotalBahan", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("variance.colCostBahan", lang)}</th>
                 </THead>
                 <tbody>
                   {byMenu.map((m) => (
@@ -323,7 +330,7 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
                         {m.days_served}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {m.plan_porsi.toLocaleString("id-ID")}
+                        {formatNumber(m.plan_porsi, lang)}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs">
                         {formatKg(m.plan_kg_total, 1)}
@@ -340,7 +347,7 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
         </Section>
 
         <p className="mt-8 text-center text-[11px] text-ink2/60">
-          BOM Variance · basis tiered gramasi 4 age-band · fallback grams_per_porsi · go-live 4 Mei 2026
+          {t("variance.footer", lang)}
         </p>
       </PageContainer>
     </div>

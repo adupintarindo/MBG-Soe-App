@@ -12,23 +12,10 @@ import {
   PageHeader,
   Section
 } from "@/components/ui";
+import { t, ti, MONTHS, DOW_HEAD } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
-
-const MONTH_LONG_ID = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember"
-];
 
 const WRITE_ROLES = new Set(["admin", "operator", "ahli_gizi"]);
 
@@ -104,6 +91,7 @@ export default async function CalendarPage({
   searchParams?: Promise<{ month?: string }> | { month?: string };
 }) {
   const supabase = createClient();
+  const lang = getLang();
 
   const sp = (await Promise.resolve(searchParams)) ?? {};
   const { year, month } = parseMonthParam(sp.month);
@@ -186,7 +174,7 @@ export default async function CalendarPage({
   const prevHref = `/calendar?month=${fmtMonthKey(prevYear, prevMonth)}`;
   const nextHref = `/calendar?month=${fmtMonthKey(nextYear, nextMonth)}`;
 
-  const monthLabel = `${MONTH_LONG_ID[month - 1]} ${year}`;
+  const monthLabel = `${MONTHS.long[lang][month - 1]} ${year}`;
   const canWrite = WRITE_ROLES.has(profile.role);
 
   return (
@@ -200,18 +188,23 @@ export default async function CalendarPage({
       <PageContainer>
         <PageHeader
           icon="📅"
-          title="Kalender Menu"
+          title={t("calendar.title", lang)}
           subtitle={
             <>
-              {monthLabel} · {opDays} hari operasional · {holDays} libur ·{" "}
-              {nonOpDays} non-op ·{" "}
+              {ti("calendar.subtitle", lang, {
+                month: monthLabel,
+                op: opDays,
+                hol: holDays,
+                nonOp: nonOpDays
+              })}{" "}
+              ·{" "}
               {unassigned > 0 ? (
                 <span className="font-bold text-red-700">
-                  {unassigned} belum di-assign
+                  {ti("calendar.unassignedWarn", lang, { n: unassigned })}
                 </span>
               ) : (
                 <span className="font-bold text-emerald-700">
-                  semua assigned
+                  {t("calendar.allAssigned", lang)}
                 </span>
               )}
             </>
@@ -222,7 +215,7 @@ export default async function CalendarPage({
                 <AutoAssignButton year={year} month={month} unassigned={unassigned} />
               )}
               <LinkButton href="/menu" variant="secondary" size="sm">
-                🍽️ Lihat BOM
+                {t("calendar.btnBOM", lang)}
               </LinkButton>
             </div>
           }
@@ -237,7 +230,7 @@ export default async function CalendarPage({
                 href={prevHref}
                 variant="secondary"
                 size="sm"
-                aria-label="Bulan sebelumnya"
+                aria-label={t("calendar.prevAria", lang)}
               >
                 ◀
               </LinkButton>
@@ -248,7 +241,7 @@ export default async function CalendarPage({
                 href={nextHref}
                 variant="secondary"
                 size="sm"
-                aria-label="Bulan berikutnya"
+                aria-label={t("calendar.nextAria", lang)}
               >
                 ▶
               </LinkButton>
@@ -257,7 +250,7 @@ export default async function CalendarPage({
 
           {/* Day-of-week header */}
           <div className="grid grid-cols-7 gap-1 border-b border-ink/5 px-4 py-2">
-            {["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"].map((d) => (
+            {DOW_HEAD[lang].map((d) => (
               <div
                 key={d}
                 className="text-center text-[10px] font-black uppercase tracking-wide text-ink2/70"
@@ -286,30 +279,30 @@ export default async function CalendarPage({
           <div className="flex flex-wrap items-center gap-4 border-t border-ink/10 bg-paper/40 px-5 py-3 text-[11px] font-semibold text-ink2">
             <LegendSwatch
               className="bg-gradient-to-b from-blue-800 to-blue-700"
-              label="Hari Menu"
+              label={t("calendar.legendMenu", lang)}
             />
             <LegendSwatch
               className="bg-rose-100 ring-1 ring-rose-300"
-              label="Libur Nasional"
+              label={t("calendar.legendHoliday", lang)}
             />
             <LegendSwatch
               className="bg-amber-50 ring-1 ring-amber-200"
-              label="Weekend"
+              label={t("calendar.legendWeekend", lang)}
             />
             <LegendSwatch
               className="bg-orange-100 ring-1 ring-orange-300"
-              label="Tidak Operasional"
+              label={t("calendar.legendNonOp", lang)}
             />
             <span className="ml-auto text-ink2/60">
-              💡 Klik tanggal untuk assign menu / tandai Tidak Operasional
+              {t("calendar.legendHint", lang)}
             </span>
           </div>
         </Section>
 
         {holidaysData.length > 0 && (
           <Section
-            title="Libur Nasional Bulan Ini"
-            hint="Dihitung otomatis sebagai non-operasional."
+            title={t("calendar.holidaysTitle", lang)}
+            hint={t("calendar.holidaysHint", lang)}
           >
             <div className="flex flex-wrap gap-2">
               {holidaysData.map((h) => (

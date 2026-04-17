@@ -446,7 +446,7 @@ export default async function ProcurementPage() {
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">{t("procurement.colPRNo", lang).replace(" PR", "")}</th>
+                  <th className="py-2 pr-3">No.</th>
                   <th className="py-2 pr-3">{t("common.date", lang)}</th>
                   <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
                   <th className="py-2 pr-3">{t("procurement.colNeeded", lang)}</th>
@@ -490,7 +490,7 @@ export default async function ProcurementPage() {
                           href={`/procurement/quotation/${encodeURIComponent(q.no)}`}
                           className="text-[11px] font-bold text-accent-strong hover:underline"
                         >
-                          Detail →
+                          {t("common.detail", lang)} →
                         </Link>
                       </td>
                     </tr>
@@ -501,22 +501,22 @@ export default async function ProcurementPage() {
           )}
         </Section>
 
-        <Section title="📝 Purchase Orders" hint="50 PO terbaru">
+        <Section title={t("procurement.secPOtitle", lang)} hint={t("procurement.secPOhint", lang)}>
           {pos.length === 0 ? (
-            <EmptyState message="Belum ada PO." />
+            <EmptyState message={t("procurement.poEmpty", lang)} />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">No</th>
-                  <th className="py-2 pr-3">Tanggal</th>
-                  <th className="py-2 pr-3">Supplier</th>
-                  <th className="py-2 pr-3">Delivery</th>
-                  <th className="py-2 pr-3 text-right">Items</th>
-                  <th className="py-2 pr-3 text-right">Total Qty</th>
-                  <th className="py-2 pr-3 text-right">Nilai</th>
+                  <th className="py-2 pr-3">No.</th>
+                  <th className="py-2 pr-3">{t("common.date", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.delivery", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("procurement.colItems", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("procurement.colTotalQty", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("procurement.colAmount", lang)}</th>
                   <th className="py-2 pr-3">TOP</th>
-                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">{t("common.status", lang)}</th>
                 </THead>
                 <tbody>
                   {pos.map((p) => (
@@ -535,7 +535,7 @@ export default async function ProcurementPage() {
                         {rowCountByPO.get(p.no) ?? 0}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {(qtyByPO.get(p.no) ?? 0).toLocaleString("id-ID", {
+                        {formatNumber(qtyByPO.get(p.no) ?? 0, lang, {
                           maximumFractionDigits: 1
                         })}
                       </td>
@@ -559,8 +559,8 @@ export default async function ProcurementPage() {
         </Section>
 
         <Section
-          title="📦 GRN · QC Checklist · Non-Conformance"
-          hint="Klik baris untuk buat pemeriksaan QC dari template · NCR dicatat per severity."
+          title={t("procurement.secGRNtitle", lang)}
+          hint={t("procurement.secGRNhint", lang)}
           accent={ncrStats.critical_open > 0 ? "bad" : "default"}
         >
           <GrnQcPanel
@@ -573,20 +573,20 @@ export default async function ProcurementPage() {
           />
         </Section>
 
-        <Section title="💰 Invoice" hint="50 invoice terbaru">
+        <Section title={t("procurement.secINVtitle", lang)} hint={t("procurement.secINVhint", lang)}>
           {invoices.length === 0 ? (
-            <EmptyState message="Belum ada invoice." />
+            <EmptyState message={t("procurement.invEmpty", lang)} />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">No Invoice</th>
-                  <th className="py-2 pr-3">Tanggal</th>
-                  <th className="py-2 pr-3">Supplier</th>
-                  <th className="py-2 pr-3">PO</th>
-                  <th className="py-2 pr-3 text-right">Total</th>
-                  <th className="py-2 pr-3">Jatuh Tempo</th>
-                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">{t("procurement.colInvoiceNo", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.date", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
+                  <th className="py-2 pr-3">{t("procurement.colPO", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("common.total", lang)}</th>
+                  <th className="py-2 pr-3">{t("procurement.colDueDate", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.status", lang)}</th>
                 </THead>
                 <tbody>
                   {invoices.map((i) => (
@@ -623,11 +623,11 @@ export default async function ProcurementPage() {
         </Section>
 
         <Section
-          title="📷 Bukti Terima (Foto)"
-          hint="20 terbaru · klik untuk detail di procurement system"
+          title={t("procurement.secReceiptsTitle", lang)}
+          hint={t("procurement.secReceiptsHint", lang)}
         >
           {receipts.length === 0 ? (
-            <EmptyState message="Belum ada foto bukti." />
+            <EmptyState message={t("procurement.receiptsEmpty", lang)} />
           ) : (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {receipts.map((r) => (
@@ -644,13 +644,13 @@ export default async function ProcurementPage() {
                     />
                   ) : (
                     <div className="flex h-40 items-center justify-center bg-ink/5 text-xs text-ink2/60">
-                      (tanpa foto)
+                      {t("procurement.noPhoto", lang)}
                     </div>
                   )}
                   <div className="p-2 text-[11px]">
                     <div className="font-mono font-bold text-ink">{r.ref}</div>
                     <div className="text-ink2/70">
-                      {new Date(r.created_at).toLocaleDateString("id-ID")}
+                      {new Date(r.created_at).toLocaleDateString(lang === "EN" ? "en-US" : "id-ID")}
                     </div>
                     {r.note && (
                       <div className="mt-1 line-clamp-2 text-ink2">

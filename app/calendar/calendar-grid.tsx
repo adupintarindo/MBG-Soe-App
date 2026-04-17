@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getHoliday } from "@/lib/holidays";
+import { t, ti, MONTHS, DAYS, formatNumber } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 import {
   setAssignment as setAssignmentAction,
   clearAssignment as clearAssignmentAction,
@@ -66,45 +68,6 @@ interface Props {
   canWrite: boolean;
 }
 
-const DOW_ID = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-const DOW_LONG_ID = [
-  "Minggu",
-  "Senin",
-  "Selasa",
-  "Rabu",
-  "Kamis",
-  "Jumat",
-  "Sabtu"
-];
-const MONTH_SHORT_ID = [
-  "JAN",
-  "FEB",
-  "MAR",
-  "APR",
-  "MEI",
-  "JUN",
-  "JUL",
-  "AGU",
-  "SEP",
-  "OKT",
-  "NOV",
-  "DES"
-];
-const MONTH_LONG_ID = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember"
-];
-
 function parseIso(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
   return { y, m, d, date: new Date(y, m - 1, d) };
@@ -138,6 +101,7 @@ export function CalendarGrid({
   canWrite
 }: Props) {
   const router = useRouter();
+  const { lang } = useLang();
 
   const [assignByDate, setAssignByDate] = useState(
     () => new Map(initialAssigns.map((a) => [a.assign_date, a]))
@@ -175,7 +139,7 @@ export function CalendarGrid({
     setRefError(null);
     try {
       const res = await fetchCalendarReferenceAction();
-      if (!res.ok || !res.data) throw new Error(res.error ?? "Gagal memuat referensi.");
+      if (!res.ok || !res.data) throw new Error(res.error ?? t("calGrid.errLoadRef", lang));
       if (!items) setItems(res.data.items);
       if (!schools) setSchools(res.data.schools);
     } catch (e) {
@@ -189,7 +153,7 @@ export function CalendarGrid({
     setAttForDate(null);
     const res = await fetchAttendanceForAction(iso);
     if (!res.ok) {
-      setRefError(res.error ?? "Gagal memuat kehadiran.");
+      setRefError(res.error ?? t("calGrid.errLoadAtt", lang));
       setAttForDate([]);
       return;
     }
@@ -212,7 +176,7 @@ export function CalendarGrid({
     setError(null);
     const res = await setAssignmentAction(iso, menuId, note);
     if (!res.ok) {
-      setError(res.error ?? "Gagal menyimpan menu.");
+      setError(res.error ?? t("calGrid.errSaveMenu", lang));
       return;
     }
     if (nonOpByDate.has(iso)) {
@@ -235,7 +199,7 @@ export function CalendarGrid({
     setError(null);
     const res = await clearAssignmentAction(iso);
     if (!res.ok) {
-      setError(res.error ?? "Gagal menghapus assignment.");
+      setError(res.error ?? t("calGrid.errClearAssign", lang));
       return;
     }
     setAssignByDate((prev) => {
@@ -250,12 +214,12 @@ export function CalendarGrid({
     setError(null);
     const clean = reason.trim();
     if (!clean) {
-      setError("Alasan non-operasional wajib diisi.");
+      setError(t("calGrid.errReasonRequired", lang));
       return;
     }
     const res = await markNonOpDayAction(iso, clean);
     if (!res.ok) {
-      setError(res.error ?? "Gagal menandai non-operasional.");
+      setError(res.error ?? t("calGrid.errMarkNonOp", lang));
       return;
     }
     if (assignByDate.has(iso)) {
@@ -278,7 +242,7 @@ export function CalendarGrid({
     setError(null);
     const res = await clearNonOpDayAction(iso);
     if (!res.ok) {
-      setError(res.error ?? "Gagal menghapus non-operasional.");
+      setError(res.error ?? t("calGrid.errClearNonOp", lang));
       return;
     }
     setNonOpByDate((prev) => {
@@ -306,7 +270,7 @@ export function CalendarGrid({
     if (payload.length > 0) {
       const res = await saveAttendanceDayAction(iso, payload);
       if (!res.ok) {
-        setError(res.error ?? "Gagal menyimpan kehadiran.");
+        setError(res.error ?? t("calGrid.errSaveAttendance", lang));
         return;
       }
     }
@@ -330,7 +294,9 @@ export function CalendarGrid({
     startTransition(() => router.refresh());
   }
 
-  const recipientLabel = `${recipientCount.toLocaleString("id-ID")} penerima`;
+  const recipientLabel = ti("calGrid.recipientLabel", lang, {
+    n: formatNumber(recipientCount, lang)
+  });
 
   return (
     <>
@@ -380,9 +346,9 @@ export function CalendarGrid({
                 holidayName
                   ? `${holidayName} · ${iso}`
                   : nonOp
-                    ? `Non-Op: ${nonOp.reason}`
+                    ? ti("calGrid.titleNonOp", lang, { reason: nonOp.reason })
                     : menu
-                      ? `M${menu.id} · ${menu.name}`
+                      ? `M${menu.id} · ${lang === "EN" && menu.name_en ? menu.name_en : menu.name}`
                       : iso
               }
               className={`flex min-h-[92px] flex-col rounded-xl p-2 text-left text-[10px] transition ${toneCls} ${dimCls} ${ringCls} ${cursorCls}`}
@@ -417,7 +383,7 @@ export function CalendarGrid({
               ) : menu ? (
                 <div className="mt-1 flex flex-1 flex-col justify-between gap-1">
                   <div className="line-clamp-2 text-[11px] font-bold leading-tight">
-                    {menu.name}
+                    {lang === "EN" && menu.name_en ? menu.name_en : menu.name}
                   </div>
                   <div className="text-[9px] font-semibold uppercase tracking-wide text-white/85">
                     {recipientLabel}
@@ -425,7 +391,7 @@ export function CalendarGrid({
                 </div>
               ) : isWknd ? null : inMonth ? (
                 <div className="mt-1 text-[10px] font-semibold text-ink2/40">
-                  klik untuk assign
+                  {t("calGrid.clickToAssign", lang)}
                 </div>
               ) : null}
             </button>
@@ -460,8 +426,7 @@ export function CalendarGrid({
 
       {!canWrite && (
         <p className="mt-3 text-xs text-ink2/70">
-          Mode read-only · hanya admin, operator, dan ahli gizi yang bisa
-          mengubah jadwal.
+          {t("calGrid.readOnlyNote", lang)}
         </p>
       )}
     </>
@@ -510,10 +475,11 @@ function EditModal({
   onClearNonOp,
   onSaveAttendance
 }: EditProps) {
+  const { lang } = useLang();
   const { y, m, d, date } = parseIso(iso);
-  const dowLong = DOW_LONG_ID[date.getDay()];
-  const monthShort = MONTH_SHORT_ID[m - 1];
-  const monthLong = MONTH_LONG_ID[m - 1];
+  const dowLong = DAYS.long[lang][date.getDay()];
+  const monthShort = MONTHS.short[lang][m - 1].toUpperCase();
+  const monthLong = MONTHS.long[lang][m - 1];
 
   const [mode, setMode] = useState<"op" | "nonop">(nonOp ? "nonop" : "op");
   const [selectedMenuId, setSelectedMenuId] = useState<number>(
@@ -567,12 +533,15 @@ function EditModal({
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-ink/10 px-6 py-4">
           <h2 className="text-base font-black text-ink sm:text-lg">
-            📆 Atur Jadwal Menu · {dowLong}, {d} {monthLong} {y}
+            {t("calGrid.modalTitlePrefix", lang)} · {dowLong},{" "}
+            {lang === "EN"
+              ? `${monthLong} ${d}, ${y}`
+              : `${d} ${monthLong} ${y}`}
           </h2>
           <button
             onClick={onClose}
             className="flex h-9 w-9 items-center justify-center rounded-xl border border-ink/15 text-ink2 hover:bg-paper"
-            aria-label="Tutup"
+            aria-label={t("calGrid.closeAria", lang)}
           >
             ✕
           </button>

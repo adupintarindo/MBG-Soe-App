@@ -20,18 +20,25 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti, formatNumber, type Lang, type LangKey } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-const REASON_LABEL: Record<string, string> = {
-  receipt: "Terima",
-  consumption: "Konsumsi",
-  adjustment: "Adjust",
-  waste: "Waste",
-  transfer_in: "Transfer In",
-  transfer_out: "Transfer Out",
-  opening: "Opening"
+const REASON_KEY: Record<string, LangKey> = {
+  receipt: "stock.reasonReceipt",
+  consumption: "stock.reasonConsumption",
+  adjustment: "stock.reasonAdjustment",
+  waste: "stock.reasonWaste",
+  transfer_in: "stock.reasonTransferIn",
+  transfer_out: "stock.reasonTransferOut",
+  opening: "stock.reasonOpening"
 };
+
+function reasonLabel(reason: string, lang: Lang): string {
+  const key = REASON_KEY[reason];
+  return key ? t(key, lang) : reason;
+}
 
 const REASON_COLOR: Record<string, string> = {
   receipt: "bg-emerald-50 text-emerald-900",
@@ -69,6 +76,7 @@ interface MoveRow {
 
 export default async function StockPage() {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -128,23 +136,22 @@ export default async function StockPage() {
       <PageContainer>
         <PageHeader
           icon="📦"
-          title="Stok Gudang SPPG"
-          subtitle={
-            <>
-              {items.length} SKU · {items.length - emptyItems} ada stok ·{" "}
-              {emptyItems} kosong
-            </>
-          }
+          title={t("stock.title", lang)}
+          subtitle={ti("stock.subtitle", lang, {
+            sku: items.length,
+            inStock: items.length - emptyItems,
+            empty: emptyItems
+          })}
           actions={
             <>
               <LinkButton href="/procurement" variant="secondary" size="sm">
-                🧾 PO / GRN
+                {t("stock.btnProcurement", lang)}
               </LinkButton>
               <LinkButton href="/menu/variance" variant="secondary" size="sm">
-                📉 BOM Variance
+                {t("stock.btnVariance", lang)}
               </LinkButton>
               <LinkButton href="/planning" variant="primary" size="sm">
-                📈 Kebutuhan →
+                {t("stock.btnPlanning", lang)}
               </LinkButton>
             </>
           }
@@ -153,47 +160,49 @@ export default async function StockPage() {
         <KpiGrid>
           <KpiTile
             icon="📦"
-            label="SKU Dikelola"
+            label={t("stock.kpiSku", lang)}
             value={items.length.toString()}
-            sub={`${items.length - emptyItems} ada stok`}
+            sub={ti("stock.kpiSkuSub", lang, { n: items.length - emptyItems })}
           />
           <KpiTile
             icon="💰"
-            label="Nilai Stok"
+            label={t("stock.kpiValue", lang)}
             value={formatIDR(totalValue)}
             size="md"
             tone="ok"
-            sub="harga referensi"
+            sub={t("stock.kpiValueSub", lang)}
           />
           <KpiTile
             icon="📉"
-            label="Stok Kosong"
+            label={t("stock.kpiEmpty", lang)}
             value={emptyItems.toString()}
             tone={emptyItems > 0 ? "warn" : "default"}
-            sub={`${((emptyItems / Math.max(1, items.length)) * 100).toFixed(0)}% dari SKU`}
+            sub={ti("stock.kpiEmptySub", lang, {
+              pct: ((emptyItems / Math.max(1, items.length)) * 100).toFixed(0)
+            })}
           />
           <KpiTile
             icon="⚠️"
-            label="Kurang Hari Ini"
+            label={t("stock.kpiShort", lang)}
             value={shortCount.toString()}
             tone={shortCount > 0 ? "bad" : "ok"}
-            sub="vs kebutuhan harian"
+            sub={t("stock.kpiShortSub", lang)}
           />
         </KpiGrid>
 
         {shortCount > 0 && (
           <Section
-            title={`⚠️ ${shortCount} Item Kurang untuk Hari Ini`}
-            hint="Kekurangan dihitung dari kebutuhan BOM hari ini vs on-hand."
+            title={ti("stock.shortTitle", lang, { n: shortCount })}
+            hint={t("stock.shortHint", lang)}
             accent="bad"
           >
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3 text-center">Item</th>
-                  <th className="py-2 pr-3 text-center">Butuh</th>
-                  <th className="py-2 pr-3 text-center">Ada</th>
-                  <th className="py-2 pr-3 text-center">Kurang</th>
+                  <th className="py-2 pr-3 text-center">{t("common.item", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("common.required", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("common.onHand", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("common.gap", lang)}</th>
                 </THead>
                 <tbody>
                   {shortList.map((s) => (
@@ -225,10 +234,10 @@ export default async function StockPage() {
           {[...itemsByCat.entries()].map(([cat, list]) => (
             <Section
               key={cat}
-              title={`${cat} · ${list.length} item`}
+              title={ti("stock.catTitle", lang, { cat, n: list.length })}
               actions={
                 <span className="text-[11px] font-semibold text-ink2/70">
-                  Total nilai{" "}
+                  {t("stock.catTotalValue", lang)}{" "}
                   <b className="text-ink">
                     {formatIDR(
                       list.reduce(
@@ -247,13 +256,13 @@ export default async function StockPage() {
               <TableWrap>
                 <table className="w-full text-sm">
                   <THead>
-                    <th className="py-2 pr-3 text-center">Item</th>
-                    <th className="py-2 pr-3 text-center">Qty</th>
-                    <th className="py-2 pr-3 text-center">Unit</th>
-                    <th className="py-2 pr-3 text-center">Harga</th>
-                    <th className="py-2 pr-3 text-center">Nilai</th>
-                    <th className="py-2 pr-3 text-center">Vol Mingguan</th>
-                    <th className="py-2 pr-3 text-center">Status</th>
+                    <th className="py-2 pr-3 text-center">{t("common.item", lang)}</th>
+                    <th className="py-2 pr-3 text-center">{t("common.qty", lang)}</th>
+                    <th className="py-2 pr-3 text-center">{t("common.unit", lang)}</th>
+                    <th className="py-2 pr-3 text-center">{t("stock.colHarga", lang)}</th>
+                    <th className="py-2 pr-3 text-center">{t("stock.colNilai", lang)}</th>
+                    <th className="py-2 pr-3 text-center">{t("stock.colVolWeekly", lang)}</th>
+                    <th className="py-2 pr-3 text-center">{t("common.status", lang)}</th>
                   </THead>
                   <tbody>
                     {list.map((it) => {
@@ -271,7 +280,7 @@ export default async function StockPage() {
                             {it.code}
                           </td>
                           <td className="py-2 pr-3 text-center font-mono text-xs font-black">
-                            {qty.toLocaleString("id-ID", {
+                            {formatNumber(qty, lang, {
                               maximumFractionDigits: 2
                             })}
                           </td>
@@ -290,19 +299,23 @@ export default async function StockPage() {
                           <td className="py-2 pr-3 text-center">
                             {short && Number(short.gap) > 0 ? (
                               <Badge tone="bad">
-                                Kurang {Number(short.gap).toFixed(1)}
+                                {ti("stock.statusShort", lang, {
+                                  gap: Number(short.gap).toFixed(1)
+                                })}
                               </Badge>
                             ) : qty <= 0 ? (
-                              <Badge tone="muted">Kosong</Badge>
+                              <Badge tone="muted">{t("stock.statusEmpty", lang)}</Badge>
                             ) : weeksCover < 1 ? (
                               <Badge tone="warn">
-                                Low · {weeksCover.toFixed(1)}w
+                                {ti("stock.statusLow", lang, {
+                                  w: weeksCover.toFixed(1)
+                                })}
                               </Badge>
                             ) : (
                               <Badge tone="ok">
-                                OK{" "}
+                                {t("stock.statusOK", lang)}
                                 {weeksCover < 99
-                                  ? `· ${weeksCover.toFixed(1)}w`
+                                  ? ` · ${weeksCover.toFixed(1)}w`
                                   : ""}
                               </Badge>
                             )}
@@ -317,19 +330,19 @@ export default async function StockPage() {
           ))}
         </div>
 
-        <Section title="📋 50 Pergerakan Stok Terakhir">
+        <Section title={t("stock.movesTitle", lang)}>
           {moves.length === 0 ? (
-            <EmptyState message="Belum ada pergerakan stok." />
+            <EmptyState message={t("stock.movesEmpty", lang)} />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3 text-center">Waktu</th>
-                  <th className="py-2 pr-3 text-center">Item</th>
-                  <th className="py-2 pr-3 text-center">Reason</th>
-                  <th className="py-2 pr-3 text-center">Delta</th>
-                  <th className="py-2 pr-3 text-center">Referensi</th>
-                  <th className="py-2 pr-3 text-center">Catatan</th>
+                  <th className="py-2 pr-3 text-center">{t("common.time", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("common.item", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("common.reason", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("common.delta", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("stock.colRef", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("common.note", lang)}</th>
                 </THead>
                 <tbody>
                   {moves.map((m) => (
@@ -338,12 +351,15 @@ export default async function StockPage() {
                       className="row-hover border-b border-ink/5"
                     >
                       <td className="py-2 pr-3 text-center font-mono text-[11px]">
-                        {new Date(m.created_at).toLocaleString("id-ID", {
-                          day: "2-digit",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })}
+                        {new Date(m.created_at).toLocaleString(
+                          lang === "EN" ? "en-US" : "id-ID",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          }
+                        )}
                       </td>
                       <td className="py-2 pr-3 text-center font-semibold">
                         {m.item_code}
@@ -352,7 +368,7 @@ export default async function StockPage() {
                         <span
                           className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${REASON_COLOR[m.reason] ?? REASON_COLOR.adjustment}`}
                         >
-                          {REASON_LABEL[m.reason] ?? m.reason}
+                          {reasonLabel(m.reason, lang)}
                         </span>
                       </td>
                       <td

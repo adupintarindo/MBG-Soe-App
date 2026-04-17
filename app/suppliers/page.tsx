@@ -15,11 +15,14 @@ import type {
   SupItemLink,
   InvoiceTx
 } from "./types";
+import { t, ti, formatNumber } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
 export default async function SuppliersPage() {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -80,11 +83,15 @@ export default async function SuppliersPage() {
       <PageContainer>
         <PageHeader
           icon="🤝"
-          title="Supplier & Vendor Matrix"
+          title={t("suppliers.title", lang)}
           subtitle={
             <>
-              {suppliers.length} supplier · {signed} signed · {awaiting}{" "}
-              awaiting · {rejected} rejected · rata-rata skor{" "}
+              {ti("suppliers.subtitle", lang, {
+                n: suppliers.length,
+                signed,
+                awaiting,
+                rejected
+              })}{" "}
               <b className="text-ink">{avgScore.toFixed(1)}</b>
             </>
           }
@@ -93,28 +100,28 @@ export default async function SuppliersPage() {
         <KpiGrid>
           <KpiTile
             icon="✅"
-            label="Signed LTA"
+            label={t("suppliers.kpiSigned", lang)}
             value={signed.toString()}
             tone="ok"
-            sub="siap operasional"
+            sub={t("suppliers.kpiSignedSub", lang)}
           />
           <KpiTile
             icon="⏳"
-            label="Awaiting"
+            label={t("suppliers.kpiAwaiting", lang)}
             value={awaiting.toString()}
             tone="warn"
-            sub="menunggu teken"
+            sub={t("suppliers.kpiAwaitingSub", lang)}
           />
           <KpiTile
             icon="❌"
-            label="Rejected"
+            label={t("suppliers.kpiRejected", lang)}
             value={rejected.toString()}
             tone={rejected > 0 ? "bad" : "default"}
-            sub="skor < 70"
+            sub={t("suppliers.kpiRejectedSub", lang)}
           />
           <KpiTile
             icon="📋"
-            label="Onboarding Readiness"
+            label={t("suppliers.kpiReadiness", lang)}
             value={`${readiness.readiness_pct.toFixed(0)}%`}
             tone={
               readiness.overdue_cnt > 0
@@ -123,7 +130,11 @@ export default async function SuppliersPage() {
                   ? "ok"
                   : "warn"
             }
-            sub={`${readiness.done_cnt}/${readiness.total} done · ${readiness.overdue_cnt} overdue`}
+            sub={ti("suppliers.kpiReadinessSub", lang, {
+              done: readiness.done_cnt,
+              total: readiness.total,
+              overdue: readiness.overdue_cnt
+            })}
           />
         </KpiGrid>
 

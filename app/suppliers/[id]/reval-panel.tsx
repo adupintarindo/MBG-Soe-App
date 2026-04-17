@@ -13,6 +13,8 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 interface Props {
   supplierId: string;
@@ -29,13 +31,6 @@ const PERIOD_OPTIONS: RevalPeriod[] = [
   "ad_hoc"
 ];
 
-const RECO_OPTIONS = [
-  { v: "RETAIN", label: "RETAIN — pertahankan" },
-  { v: "IMPROVE", label: "IMPROVE — perbaikan" },
-  { v: "REPLACE", label: "REPLACE — ganti" },
-  { v: "EXIT", label: "EXIT — putus kontrak" }
-];
-
 export function RevalPanel({
   supplierId,
   defaultStart,
@@ -45,6 +40,13 @@ export function RevalPanel({
 }: Props) {
   const supabase = createClient();
   const router = useRouter();
+  const { lang } = useLang();
+  const RECO_OPTIONS = [
+    { v: "RETAIN", label: t("reval.recoRetain", lang) },
+    { v: "IMPROVE", label: t("reval.recoImprove", lang) },
+    { v: "REPLACE", label: t("reval.recoReplace", lang) },
+    { v: "EXIT", label: t("reval.recoExit", lang) }
+  ];
   const [period, setPeriod] = useState<RevalPeriod>("quarterly");
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
@@ -58,7 +60,7 @@ export function RevalPanel({
     setErr(null);
     setOk(null);
     if (!start || !end || start > end) {
-      setErr("Rentang tanggal tidak valid.");
+      setErr(t("reval.invalidDateRange", lang));
       return;
     }
     try {
@@ -70,7 +72,7 @@ export function RevalPanel({
         recommendation: reco,
         notes: notes.trim() || null
       });
-      setOk(`Tersimpan (#${id}).`);
+      setOk(ti("reval.saved", lang, { id }));
       setNotes("");
       startTransition(() => router.refresh());
     } catch (e: unknown) {
@@ -85,7 +87,7 @@ export function RevalPanel({
         <div className="mb-5 rounded-2xl bg-paper p-4 ring-1 ring-ink/5">
           <div className="grid gap-3 md:grid-cols-4">
             <label className="block">
-              <FieldLabel>Periode</FieldLabel>
+              <FieldLabel>{t("reval.lblPeriod", lang)}</FieldLabel>
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value as RevalPeriod)}
@@ -99,7 +101,7 @@ export function RevalPanel({
               </select>
             </label>
             <label className="block">
-              <FieldLabel>Dari</FieldLabel>
+              <FieldLabel>{t("reval.lblFrom", lang)}</FieldLabel>
               <Input
                 type="date"
                 value={start}
@@ -107,7 +109,7 @@ export function RevalPanel({
               />
             </label>
             <label className="block">
-              <FieldLabel>Sampai</FieldLabel>
+              <FieldLabel>{t("reval.lblTo", lang)}</FieldLabel>
               <Input
                 type="date"
                 value={end}
@@ -115,7 +117,7 @@ export function RevalPanel({
               />
             </label>
             <label className="block">
-              <FieldLabel>Rekomendasi</FieldLabel>
+              <FieldLabel>{t("reval.lblReco", lang)}</FieldLabel>
               <select
                 value={reco}
                 onChange={(e) => setReco(e.target.value)}
@@ -130,13 +132,13 @@ export function RevalPanel({
             </label>
           </div>
           <label className="mt-3 block">
-            <FieldLabel>Catatan Evaluator</FieldLabel>
+            <FieldLabel>{t("reval.lblNotes", lang)}</FieldLabel>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               className="w-full rounded-lg bg-white px-3 py-2 text-sm text-ink ring-1 ring-ink/10"
-              placeholder="Catatan tambahan (opsional)…"
+              placeholder={t("reval.notesPh", lang)}
             />
           </label>
           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -146,7 +148,7 @@ export function RevalPanel({
               disabled={pending}
               onClick={onSave}
             >
-              {pending ? "Menyimpan…" : "Hitung & Simpan Evaluasi"}
+              {pending ? t("reval.btnSaving", lang) : t("reval.btnSave", lang)}
             </Button>
             {err && (
               <span className="text-[12px] font-semibold text-red-700">
@@ -164,22 +166,22 @@ export function RevalPanel({
 
       {history.length === 0 ? (
         <p className="rounded-xl bg-paper px-4 py-3 text-[12px] text-ink2">
-          Belum ada riwayat evaluasi untuk supplier ini.
+          {t("reval.emptyHistory", lang)}
         </p>
       ) : (
         <TableWrap>
           <table className="w-full text-sm">
             <THead>
-              <th className="py-2 pr-3">Periode</th>
-              <th className="py-2 pr-3">Rentang</th>
+              <th className="py-2 pr-3">{t("reval.colPeriod", lang)}</th>
+              <th className="py-2 pr-3">{t("reval.colRange", lang)}</th>
               <th className="py-2 pr-3 text-right">Q</th>
               <th className="py-2 pr-3 text-right">D</th>
               <th className="py-2 pr-3 text-right">P</th>
               <th className="py-2 pr-3 text-right">C</th>
               <th className="py-2 pr-3 text-right">R</th>
               <th className="py-2 pr-3 text-right">Total</th>
-              <th className="py-2 pr-3">Reco</th>
-              <th className="py-2 pr-3">Evaluasi</th>
+              <th className="py-2 pr-3">{t("reval.colReco", lang)}</th>
+              <th className="py-2 pr-3">{t("reval.colEval", lang)}</th>
             </THead>
             <tbody>
               {history.map((r) => (
@@ -228,7 +230,9 @@ export function RevalPanel({
                     )}
                   </td>
                   <td className="py-2 pr-3 font-mono text-[10px] text-ink2/70">
-                    {new Date(r.evaluated_at).toLocaleDateString("id-ID")}
+                    {new Date(r.evaluated_at).toLocaleDateString(
+                      lang === "EN" ? "en-US" : "id-ID"
+                    )}
                   </td>
                 </tr>
               ))}

@@ -6,6 +6,8 @@ import { formatIDR } from "@/lib/engine";
 import type { SupplierAction } from "@/lib/engine";
 import { Badge, Button, Input, Select } from "@/components/ui";
 import { ActionsPanel } from "./actions-panel";
+import { t, ti } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 import type {
   SupplierRow,
   SupItemLink,
@@ -63,6 +65,7 @@ export function SupplierDetailModal({
   onClose
 }: Props) {
   const router = useRouter();
+  const { lang } = useLang();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -118,7 +121,7 @@ export function SupplierDetailModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Rincian ${supplier.name}`}
+      aria-label={ti("supModal.ariaDetail", lang, { name: supplier.name })}
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-3 backdrop-blur-sm sm:p-6"
       onClick={onClose}
     >
@@ -149,14 +152,14 @@ export function SupplierDetailModal({
             <a
               href={`/suppliers/${supplier.id}`}
               className="hidden rounded-xl bg-accent-strong px-3 py-2 text-[11px] font-black text-white ring-1 ring-accent-strong transition hover:bg-ink sm:inline-block"
-              title="Panel lengkap: Re-evaluasi, QC gallery, LTA"
+              title={t("supModal.fullPanelTitle", lang)}
             >
-              Panel Lengkap →
+              {t("supModal.fullPanel", lang)}
             </a>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Tutup"
+              aria-label={t("supModal.closeAria", lang)}
               className="flex h-10 w-10 items-center justify-center rounded-xl text-ink2 ring-1 ring-ink/10 transition hover:bg-ink/5"
             >
               ×
@@ -193,7 +196,7 @@ export function SupplierDetailModal({
               supplierId={supplier.id}
               canWrite={canWriteActions}
               isSupplierRole={isSupplierRole}
-              title={`📋 Action Items · ${supplier.name}`}
+              title={ti("supModal.actionsTitle", lang, { name: supplier.name })}
             />
           </div>
 
@@ -215,10 +218,11 @@ function InfoPanel({
   waLink: string | null;
   mapsLink: string | null;
 }) {
+  const { lang } = useLang();
   return (
     <section className="rounded-2xl bg-paper p-5 ring-1 ring-ink/5">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-ink">
-        🏢 Info Supplier
+        {t("supModal.infoTitle", lang)}
       </h3>
 
       <div className="mb-2 flex items-center gap-2">
@@ -231,18 +235,18 @@ function InfoPanel({
       </div>
 
       <div className="mb-3 text-[12px] text-ink2/80">
-        <span className="font-mono">{supplier.id}</span> · Status:{" "}
-        <b className="text-ink">{supplier.status}</b> · Score:{" "}
+        <span className="font-mono">{supplier.id}</span> · {t("supModal.infoStatus", lang)}{" "}
+        <b className="text-ink">{supplier.status}</b> · {t("supModal.infoScore", lang)}{" "}
         <b className="text-ink">{Number(supplier.score ?? 0).toFixed(1)}</b>
       </div>
 
       <div className="space-y-1.5 text-[12px] text-ink">
         <div>
-          <b>PIC:</b> {supplier.pic ?? "—"}
+          <b>{t("supModal.infoPic", lang)}</b> {supplier.pic ?? "—"}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span>
-            <b>Telepon:</b>{" "}
+            <b>{t("supModal.infoPhone", lang)}</b>{" "}
             <span className="font-mono text-ink2">
               {supplier.phone ?? "—"}
             </span>
@@ -259,14 +263,14 @@ function InfoPanel({
           )}
         </div>
         <div>
-          <b>Email:</b>{" "}
+          <b>{t("supModal.infoEmail", lang)}</b>{" "}
           <span className="font-mono text-ink2">
             {supplier.email ?? "—"}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span>
-            <b>Alamat:</b> {supplier.address ?? "—"}
+            <b>{t("supModal.infoAddress", lang)}</b> {supplier.address ?? "—"}
           </span>
           {mapsLink && (
             <a
@@ -283,7 +287,7 @@ function InfoPanel({
 
       {supplier.notes && (
         <div className="mt-3 border-t border-ink/10 pt-2 text-[12px] text-ink2">
-          <b>Catatan:</b> {supplier.notes}
+          <b>{t("supModal.infoNotes", lang)}</b> {supplier.notes}
         </div>
       )}
     </section>
@@ -303,6 +307,7 @@ function RatingCertPanel({
   onChange: () => void;
   score: number;
 }) {
+  const { lang } = useLang();
   const [hover, setHover] = useState<number>(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -324,7 +329,7 @@ function RatingCertPanel({
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal simpan rating.");
+      setErr(j.error ?? t("supModal.errSaveRating", lang));
       return;
     }
     onChange();
@@ -334,7 +339,7 @@ function RatingCertPanel({
     if (!isAdmin) return;
     const name = certName.trim();
     if (!name) {
-      setErr("Nama sertifikat wajib.");
+      setErr(t("supModal.errCertName", lang));
       return;
     }
     setErr(null);
@@ -347,7 +352,7 @@ function RatingCertPanel({
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal simpan sertifikat.");
+      setErr(j.error ?? t("supModal.errSaveCert", lang));
       return;
     }
     setCertName("");
@@ -357,7 +362,7 @@ function RatingCertPanel({
 
   async function removeCert(id: number) {
     if (!isAdmin) return;
-    if (!confirm("Hapus sertifikat ini?")) return;
+    if (!confirm(t("supModal.errDeleteCert", lang))) return;
     setErr(null);
     setBusy(true);
     const res = await fetch(
@@ -367,7 +372,7 @@ function RatingCertPanel({
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal hapus.");
+      setErr(j.error ?? t("supModal.errDelete", lang));
       return;
     }
     onChange();
@@ -376,13 +381,13 @@ function RatingCertPanel({
   return (
     <section className="rounded-2xl bg-paper p-5 ring-1 ring-ink/5">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-ink">
-        ⭐ Rating & Sertifikasi
+        {t("supModal.ratingTitle", lang)}
       </h3>
 
       <div className="mb-2 text-[12px] text-ink2/70">
         {score > 0
-          ? `Skor ${score.toFixed(1)} / 100 · ${starValue}/5 bintang`
-          : "Belum dinilai"}
+          ? ti("supModal.ratingScoreText", lang, { score: score.toFixed(1), stars: starValue })
+          : t("supModal.ratingNotYet", lang)}
       </div>
 
       <div className="mb-4 flex items-center gap-3">
@@ -397,7 +402,7 @@ function RatingCertPanel({
                 onClick={() => setStars(n)}
                 onMouseEnter={() => setHover(n)}
                 onMouseLeave={() => setHover(0)}
-                aria-label={`Set rating ${n} bintang`}
+                aria-label={ti("supModal.ratingAria", lang, { n })}
                 className={`text-xl transition ${active ? "text-amber-400" : "text-ink/20"} ${isAdmin ? "hover:scale-110" : "cursor-default"}`}
               >
                 ★
@@ -406,17 +411,17 @@ function RatingCertPanel({
           })}
         </div>
         {isAdmin && (
-          <span className="text-[11px] text-ink2/60">Klik untuk set</span>
+          <span className="text-[11px] text-ink2/60">{t("supModal.ratingClickToSet", lang)}</span>
         )}
       </div>
 
       <div className="mb-2 flex items-center gap-2 text-[12px] font-bold text-ink">
-        📜 Sertifikasi
+        {t("supModal.certsTitle", lang)}
       </div>
 
       {certs.length === 0 ? (
         <p className="mb-3 text-[12px] text-ink2/70">
-          Belum ada sertifikasi tercatat.
+          {t("supModal.certsEmpty", lang)}
         </p>
       ) : (
         <ul className="mb-3 space-y-1.5">
@@ -434,8 +439,8 @@ function RatingCertPanel({
                     <span
                       className={`ml-2 text-[11px] ${expired ? "text-red-700" : "text-ink2/70"}`}
                     >
-                      s/d {c.valid_until}
-                      {expired && " · kadaluarsa"}
+                      {ti("supModal.certValidUntil", lang, { date: c.valid_until })}
+                      {expired && t("supModal.certExpired", lang)}
                     </span>
                   )}
                 </span>
@@ -445,7 +450,7 @@ function RatingCertPanel({
                     onClick={() => removeCert(c.id)}
                     className="text-[11px] font-bold text-red-700 hover:underline"
                   >
-                    Hapus
+                    {t("supModal.certDelete", lang)}
                   </button>
                 )}
               </li>
@@ -459,14 +464,14 @@ function RatingCertPanel({
           <Input
             value={certName}
             onChange={(e) => setCertName(e.target.value)}
-            placeholder="Nama sertifikat (cth: Halal)"
+            placeholder={t("supModal.certPhName", lang)}
             className="min-w-[160px] flex-1"
           />
           <Input
             type="date"
             value={certUntil}
             onChange={(e) => setCertUntil(e.target.value)}
-            placeholder="Berlaku s/d"
+            placeholder={t("supModal.certPhUntil", lang)}
             className="w-[160px]"
           />
           <Button
@@ -475,7 +480,7 @@ function RatingCertPanel({
             disabled={busy}
             onClick={addCert}
           >
-            + Sertifikat
+            {t("supModal.certBtnAdd", lang)}
           </Button>
         </div>
       )}
@@ -502,6 +507,7 @@ function CommodityPanel({
   isAdmin: boolean;
   onChange: () => void;
 }) {
+  const { lang } = useLang();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [prices, setPrices] = useState<Record<string, string>>(() => {
@@ -539,7 +545,7 @@ function CommodityPanel({
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal simpan harga.");
+      setErr(j.error ?? t("supModal.errSavePrice", lang));
       return;
     }
     onChange();
@@ -547,7 +553,7 @@ function CommodityPanel({
 
   async function removeItem(code: string) {
     if (!isAdmin) return;
-    if (!confirm(`Hapus komoditas ${code} dari supplier ini?`)) return;
+    if (!confirm(ti("supModal.confirmRemoveItem", lang, { code }))) return;
     setErr(null);
     setBusy(true);
     const res = await fetch(
@@ -557,7 +563,7 @@ function CommodityPanel({
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal hapus.");
+      setErr(j.error ?? t("supModal.errDelete", lang));
       return;
     }
     onChange();
@@ -566,7 +572,7 @@ function CommodityPanel({
   async function addItem() {
     if (!isAdmin) return;
     if (!newCode) {
-      setErr("Pilih komoditas dulu.");
+      setErr(t("supModal.errChooseItem", lang));
       return;
     }
     setErr(null);
@@ -582,7 +588,7 @@ function CommodityPanel({
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal tambah.");
+      setErr(j.error ?? t("supModal.errAddItem", lang));
       return;
     }
     setNewCode("");
@@ -593,26 +599,26 @@ function CommodityPanel({
   return (
     <section className="rounded-2xl bg-paper p-5 ring-1 ring-ink/5">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-ink">
-        💰 Daftar Komoditas & Harga
+        {t("supModal.commodityTitle", lang)}
         <span className="text-[11px] font-semibold text-ink2/70">
-          · edit harga inline, tekan 💾 untuk simpan
+          {t("supModal.commodityHint", lang)}
         </span>
       </h3>
 
       {supItems.length === 0 ? (
         <p className="mb-3 text-[12px] text-ink2/70">
-          Supplier belum punya komoditas tercatat. Tambahkan di bawah.
+          {t("supModal.commodityEmpty", lang)}
         </p>
       ) : (
         <div className="mb-3 overflow-x-auto rounded-xl bg-white ring-1 ring-ink/5">
           <table className="w-full text-sm">
             <thead className="bg-ink/[0.02] text-left text-[11px] font-bold uppercase tracking-wide text-ink2/70">
               <tr>
-                <th className="py-2 pl-3 pr-3">Komoditas</th>
-                <th className="py-2 pr-3">Satuan</th>
-                <th className="py-2 pr-3 text-right">Harga Saat Ini</th>
-                <th className="py-2 pr-3 text-center">Histori</th>
-                <th className="py-2 pr-3 text-right">Aksi</th>
+                <th className="py-2 pl-3 pr-3">{t("supModal.colCommodity", lang)}</th>
+                <th className="py-2 pr-3">{t("supModal.colUnit", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("supModal.colCurrentPrice", lang)}</th>
+                <th className="py-2 pr-3 text-center">{t("supModal.colHistory", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("supModal.colAksi", lang)}</th>
               </tr>
             </thead>
             <tbody>
@@ -652,7 +658,7 @@ function CommodityPanel({
                             type="button"
                             onClick={() => savePrice(si.item_code)}
                             disabled={busy}
-                            aria-label="Simpan harga"
+                            aria-label={t("supModal.ariaSavePrice", lang)}
                             className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-ink text-white hover:bg-accent-strong"
                           >
                             💾
@@ -661,7 +667,7 @@ function CommodityPanel({
                             type="button"
                             onClick={() => removeItem(si.item_code)}
                             disabled={busy}
-                            aria-label="Hapus komoditas"
+                            aria-label={t("supModal.ariaRemoveItem", lang)}
                             className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-red-700 ring-1 ring-red-200 hover:bg-red-50"
                           >
                             ✕
@@ -680,7 +686,7 @@ function CommodityPanel({
       {isAdmin && (
         <>
           <div className="mt-3 mb-2 flex items-center gap-2 text-[12px] font-bold text-ink">
-            + Tambah Komoditas Baru
+            {t("supModal.addItemTitle", lang)}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select
@@ -688,7 +694,7 @@ function CommodityPanel({
               onChange={(e) => setNewCategory(e.target.value)}
               className="w-[160px]"
             >
-              <option value="">Semua kategori</option>
+              <option value="">{t("supModal.allCategories", lang)}</option>
               {categories.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -700,7 +706,7 @@ function CommodityPanel({
               onChange={(e) => setNewCode(e.target.value)}
               className="min-w-[180px] flex-1"
             >
-              <option value="">— pilih komoditas —</option>
+              <option value="">{t("supModal.chooseCommodity", lang)}</option>
               {filteredItems.map((it) => (
                 <option key={it.code} value={it.code}>
                   {it.name_en} ({it.code} · {it.unit})
@@ -711,11 +717,11 @@ function CommodityPanel({
               type="number"
               value={newPrice}
               onChange={(e) => setNewPrice(e.target.value)}
-              placeholder="Harga IDR"
+              placeholder={t("supModal.phPriceIdr", lang)}
               className="w-[140px] font-mono"
             />
             <Button size="sm" variant="primary" disabled={busy} onClick={addItem}>
-              + Tambah
+              {t("supModal.btnAdd", lang)}
             </Button>
           </div>
         </>
@@ -727,29 +733,30 @@ function CommodityPanel({
 }
 
 function TransactionPanel({ rows }: { rows: TxRow[] }) {
+  const { lang } = useLang();
   return (
     <section className="rounded-2xl bg-paper p-5 ring-1 ring-ink/5">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-ink">
-        📋 Histori Transaksi
+        {t("supModal.txTitle", lang)}
         <span className="text-[11px] font-semibold text-ink2/70">
-          · 20 terakhir
+          {t("supModal.txHint", lang)}
         </span>
       </h3>
 
       {rows.length === 0 ? (
         <p className="text-center text-[12px] text-ink2/60">
-          Belum ada transaksi.
+          {t("supModal.txEmpty", lang)}
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl bg-white ring-1 ring-ink/5">
           <table className="w-full text-sm">
             <thead className="bg-ink/[0.02] text-left text-[11px] font-bold uppercase tracking-wide text-ink2/70">
               <tr>
-                <th className="py-2 pl-3 pr-3">Tanggal</th>
-                <th className="py-2 pr-3">Tipe</th>
-                <th className="py-2 pr-3">Nomor</th>
-                <th className="py-2 pr-3 text-right">Nilai</th>
-                <th className="py-2 pr-3">Status</th>
+                <th className="py-2 pl-3 pr-3">{t("supModal.txColDate", lang)}</th>
+                <th className="py-2 pr-3">{t("supModal.txColType", lang)}</th>
+                <th className="py-2 pr-3">{t("supModal.txColNumber", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("supModal.txColAmount", lang)}</th>
+                <th className="py-2 pr-3">{t("supModal.txColStatus", lang)}</th>
               </tr>
             </thead>
             <tbody>

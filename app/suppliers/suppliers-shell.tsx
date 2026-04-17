@@ -9,6 +9,8 @@ import type {
   SupItemLink,
   InvoiceTx
 } from "./types";
+import { t, ti } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
 const TYPE_COLOR: Record<string, string> = {
   BUMN: "bg-red-50 text-red-900 ring-red-200",
@@ -36,6 +38,7 @@ interface Props {
 }
 
 export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
+  const { lang } = useLang();
   const spendBySup = useMemo(() => {
     const m = new Map<string, { total: number; count: number }>();
     for (const inv of invoices) {
@@ -65,8 +68,8 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
   return (
     <>
       <Section
-        title="Vendor Cards · Signed + Awaiting"
-        hint="Klik kartu untuk rincian, harga, sertifikasi & histori transaksi."
+        title={t("suppliers.cardsTitle", lang)}
+        hint={t("suppliers.cardsHint", lang)}
         noPad
       >
         <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-2 lg:grid-cols-3">
@@ -137,7 +140,7 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
                     className={`flex flex-shrink-0 flex-col items-center justify-center rounded-xl px-2.5 py-1.5 ring-1 ${scoreTone.bg} ${scoreTone.ring}`}
                   >
                     <div className="text-[8px] font-bold uppercase tracking-[0.12em] text-ink2/60">
-                      Score
+                      {t("suppliers.cardScore", lang)}
                     </div>
                     <div
                       className={`text-lg font-black leading-none ${scoreTone.text}`}
@@ -149,19 +152,19 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
 
                 <div className="mx-5 mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 border-t border-ink/[0.06] pt-3 text-[11px]">
                   <span className="text-[9px] font-bold uppercase tracking-wider text-ink2/50">
-                    PIC
+                    {t("suppliers.cardPic", lang)}
                   </span>
                   <span className="truncate font-semibold text-ink">
                     {s.pic ?? "—"}
                   </span>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-ink2/50">
-                    Tel
+                    {t("suppliers.cardTel", lang)}
                   </span>
                   <span className="truncate font-mono text-ink2">
                     {s.phone ?? "—"}
                   </span>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-ink2/50">
-                    Email
+                    {t("suppliers.cardEmail", lang)}
                   </span>
                   <span className="truncate font-mono text-ink2/80">
                     {s.email ?? "—"}
@@ -171,7 +174,7 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
                 {linked.length > 0 && (
                   <div className="mx-5 mt-3 border-t border-ink/[0.06] pt-3">
                     <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-ink2/60">
-                      Komoditas · {linked.length} item
+                      {ti("suppliers.cardCommodity", lang, { n: linked.length })}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {linked.slice(0, 8).map((li) => (
@@ -197,7 +200,7 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
                 {spend && (
                   <div className="mx-5 mt-3 flex items-center justify-between rounded-lg bg-emerald-50/70 px-3 py-2 text-[11px] ring-1 ring-emerald-100">
                     <span className="font-semibold text-emerald-900/80">
-                      {spend.count} invoice
+                      {ti("suppliers.cardInvoices", lang, { n: spend.count })}
                     </span>
                     <span className="font-mono font-black text-emerald-800">
                       {formatIDR(spend.total)}
@@ -213,7 +216,7 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
 
                 <div className="mt-auto flex items-center justify-end border-t border-ink/[0.06] px-5 py-3">
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-accent-strong">
-                    Rincian
+                    {t("suppliers.cardDetail", lang)}
                     <span className="transition-transform duration-200 group-hover:translate-x-1">
                       →
                     </span>
@@ -226,7 +229,7 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
       </Section>
 
       {rejected.length > 0 && (
-        <Section title="❌ Supplier Rejected" accent="bad">
+        <Section title={t("suppliers.rejectedTitle", lang)} accent="bad">
           <div className="space-y-2">
             {rejected.map((s) => (
               <Link
@@ -249,18 +252,18 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
         </Section>
       )}
 
-      <Section title={`Tabel Lengkap · ${suppliers.length} Supplier`}>
+      <Section title={ti("suppliers.tableTitle", lang, { n: suppliers.length })}>
         <TableWrap>
           <table className="w-full text-sm">
             <THead>
-              <th className="w-20 py-2 pl-3 pr-2">ID</th>
-              <th className="py-2 pr-3">Nama</th>
-              <th className="w-20 py-2 pr-3">Tipe</th>
-              <th className="py-2 pr-3">Komoditas</th>
-              <th className="w-14 py-2 pr-3 text-right">Items</th>
-              <th className="w-16 py-2 pr-3 text-right">Skor</th>
-              <th className="w-24 py-2 pr-3">Status</th>
-              <th className="w-32 py-2 pl-3 pr-3 text-right">Belanja</th>
+              <th className="w-20 py-2 pl-3 pr-2">{t("suppliers.colId", lang)}</th>
+              <th className="py-2 pr-3">{t("suppliers.colName", lang)}</th>
+              <th className="w-20 py-2 pr-3">{t("suppliers.colType", lang)}</th>
+              <th className="py-2 pr-3">{t("suppliers.colKomoditas", lang)}</th>
+              <th className="w-14 py-2 pr-3 text-right">{t("suppliers.colItems", lang)}</th>
+              <th className="w-16 py-2 pr-3 text-right">{t("suppliers.colScore", lang)}</th>
+              <th className="w-24 py-2 pr-3">{t("suppliers.colStatus", lang)}</th>
+              <th className="w-32 py-2 pl-3 pr-3 text-right">{t("suppliers.colSpend", lang)}</th>
             </THead>
             <tbody>
               {suppliers.map((s) => {

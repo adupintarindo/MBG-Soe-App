@@ -15,11 +15,14 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti, formatNumber } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
 export default async function MenuMasterPage() {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -153,23 +156,22 @@ export default async function MenuMasterPage() {
       <PageContainer>
         <PageHeader
           icon="🍽️"
-          title="Master Menu · BOM"
-          subtitle={
-            <>
-              Siklus {menus.length} hari · {totalItems} komoditas · {totalBOM}{" "}
-              entri BOM · 2 porsi (Kecil 3-9 th / Besar 10 th+)
-            </>
-          }
+          title={t("menu.title", lang)}
+          subtitle={ti("menu.subtitle", lang, {
+            n: menus.length,
+            items: totalItems,
+            bom: totalBOM
+          })}
           actions={
             <>
               <LinkButton href="/calendar" variant="secondary" size="sm">
-                📅 Kalender Menu
+                {t("menu.btnCalendar", lang)}
               </LinkButton>
               <LinkButton href="/menu/variance" variant="secondary" size="sm">
-                📉 BOM Variance
+                {t("menu.btnVariance", lang)}
               </LinkButton>
               <LinkButton href="/planning" variant="primary" size="sm">
-                📊 Rencana Kebutuhan →
+                {t("menu.btnPlanning", lang)}
               </LinkButton>
             </>
           }
@@ -177,32 +179,32 @@ export default async function MenuMasterPage() {
 
         <KpiGrid>
           <KpiTile
-            label="Menu Aktif"
+            label={t("menu.kpiActive", lang)}
             value={menus.filter((m) => m.active).length.toString()}
-            sub={`dari ${menus.length} siklus`}
+            sub={ti("menu.kpiActiveSub", lang, { n: menus.length })}
           />
           <KpiTile
-            label="Rata-rata Gram/Porsi"
+            label={t("menu.kpiAvgGram", lang)}
             value={avgGrams.toString()}
-            sub="gram bahan basah"
+            sub={t("menu.kpiAvgGramSub", lang)}
           />
           <KpiTile
-            label="Rata-rata Cost/Porsi"
+            label={t("menu.kpiAvgCost", lang)}
             value={formatIDR(avgCost)}
             size="md"
             tone="ok"
-            sub="harga bahan saja"
+            sub={t("menu.kpiAvgCostSub", lang)}
           />
           <KpiTile
-            label="Komoditas"
+            label={t("menu.kpiCommodity", lang)}
             value={totalItems.toString()}
-            sub={`${categories.length} kategori`}
+            sub={ti("menu.kpiCommoditySub", lang, { n: categories.length })}
           />
         </KpiGrid>
 
         <Section
-          title={`${menus.length} Siklus Menu · BOM per Porsi`}
-          hint="Tiap kartu menampilkan Bill of Materials per porsi (gram bahan basah)."
+          title={ti("menu.cycleTitle", lang, { n: menus.length })}
+          hint={t("menu.cycleHint", lang)}
           noPad
         >
           <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
@@ -229,28 +231,28 @@ export default async function MenuMasterPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/60">
-                      Total
+                      {t("menu.totalLabel", lang)}
                     </div>
                     <div className="font-mono text-sm font-black text-ink">
                       {totalGrams.toFixed(0)} g
                     </div>
                     <div className="mt-0.5 text-[10px] font-semibold text-emerald-700">
-                      {formatIDR(costPerPorsi)}/porsi
+                      {formatIDR(costPerPorsi)}{t("menu.perPorsi", lang)}
                     </div>
                   </div>
                 </header>
 
                 {rows.length === 0 ? (
-                  <EmptyState message="Belum ada BOM untuk menu ini." />
+                  <EmptyState message={t("menu.bomEmpty", lang)} />
                 ) : (
                   <div className="overflow-hidden rounded-xl bg-white ring-1 ring-ink/5">
                     <table className="w-full text-xs">
                       <thead className="bg-paper text-[10px] font-bold uppercase tracking-wide text-ink2">
                         <tr>
-                          <th className="px-2 py-2 text-center">Item</th>
-                          <th className="px-2 py-2 text-center">Kat</th>
-                          <th className="px-2 py-2 text-center" title="PAUD + SD 1-3 (3-9 th)">Kecil</th>
-                          <th className="px-2 py-2 text-center" title="SD 4-6 + SMP/SMA + Guru (10 th+)">Besar</th>
+                          <th className="px-2 py-2 text-center">{t("common.item", lang)}</th>
+                          <th className="px-2 py-2 text-center">{t("menu.colKat", lang)}</th>
+                          <th className="px-2 py-2 text-center" title={t("menu.titleSmall", lang)}>{t("menu.colSmall", lang)}</th>
+                          <th className="px-2 py-2 text-center" title={t("menu.titleLarge", lang)}>{t("menu.colLarge", lang)}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -279,9 +281,10 @@ export default async function MenuMasterPage() {
                         })}
                       </tbody>
                     </table>
-                    <div className="border-t border-ink/5 bg-paper px-2 py-1 text-[9px] text-ink2/70">
-                      Gramasi: <b>Kecil</b> = PAUD + SD 1-3 (3-9 th) · <b>Besar</b> = SD 4-6 + SMP/SMA + Guru (10 th+)
-                    </div>
+                    <div
+                      className="border-t border-ink/5 bg-paper px-2 py-1 text-[9px] text-ink2/70"
+                      dangerouslySetInnerHTML={{ __html: t("menu.gramasiNote", lang) }}
+                    />
                   </div>
                 )}
               </article>
@@ -290,19 +293,19 @@ export default async function MenuMasterPage() {
         </Section>
 
         <Section
-          title={`📦 Master Komoditas · ${totalItems} item`}
-          hint="Harga referensi · Volume mingguan · Sumber supplier"
+          title={ti("menu.commodityTitle", lang, { n: totalItems })}
+          hint={t("menu.commodityHint", lang)}
         >
           <TableWrap>
             <table className="w-full text-sm">
               <THead>
-                <th className="py-2 pr-3 text-center">No.</th>
-                <th className="py-2 pr-3 text-center">Item</th>
-                <th className="py-2 pr-3 text-center">Kategori</th>
-                <th className="py-2 pr-3 text-center">Unit</th>
-                <th className="py-2 pr-3 text-center">Harga (IDR)</th>
-                <th className="py-2 pr-3 text-center">Vol Mingguan</th>
-                <th className="py-2 pr-3 text-center">Supplier</th>
+                <th className="py-2 pr-3 text-center">{t("dashboard.tblNo", lang)}</th>
+                <th className="py-2 pr-3 text-center">{t("common.item", lang)}</th>
+                <th className="py-2 pr-3 text-center">{t("common.category", lang)}</th>
+                <th className="py-2 pr-3 text-center">{t("common.unit", lang)}</th>
+                <th className="py-2 pr-3 text-center">{t("menu.colPrice", lang)}</th>
+                <th className="py-2 pr-3 text-center">{t("stock.colVolWeekly", lang)}</th>
+                <th className="py-2 pr-3 text-center">{t("common.supplier", lang)}</th>
               </THead>
               <tbody>
                 {items.map((it, i) => (
@@ -335,8 +338,7 @@ export default async function MenuMasterPage() {
         </Section>
 
         <p className="mt-8 text-center text-[11px] text-ink2/60">
-          Master Menu · Bill of Materials · Data siklus {menus.length} hari —
-          revisi per Go-Live 4 Mei 2026
+          {ti("menu.footer", lang, { n: menus.length })}
         </p>
       </PageContainer>
     </div>

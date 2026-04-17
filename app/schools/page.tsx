@@ -11,6 +11,8 @@ import {
 } from "@/components/ui";
 import { SchoolAttendancePanel } from "./attendance-panel";
 import { CalendarParserPanel } from "./calendar-parser-panel";
+import { t, ti, formatNumber } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +66,7 @@ function porsiEff(s: {
 
 export default async function SchoolsPage() {
   const supabase = createClient();
+  const lang = getLang();
 
   const days = nextSevenDateISO();
 
@@ -137,13 +140,15 @@ export default async function SchoolsPage() {
       <PageContainer>
         <PageHeader
           icon="🏫"
-          title="Sekolah Penerima"
+          title={t("schools.title", lang)}
           subtitle={
             <>
-              {totals.schools} sekolah aktif ·{" "}
-              {totals.students.toLocaleString("id-ID")} siswa ·{" "}
-              {totals.guru.toLocaleString("id-ID")} guru · porsi efektif{" "}
-              <b className="text-ink">{totals.eff.toLocaleString("id-ID")}</b>
+              {ti("schools.subtitle", lang, {
+                n: totals.schools,
+                students: formatNumber(totals.students, lang),
+                teachers: formatNumber(totals.guru, lang)
+              })}{" "}
+              <b className="text-ink">{formatNumber(totals.eff, lang)}</b>
             </>
           }
         />
@@ -166,7 +171,7 @@ export default async function SchoolsPage() {
                   {d.count}
                 </div>
                 <div className="text-[11px] font-semibold text-ink2/70">
-                  {d.students.toLocaleString("id-ID")} siswa
+                  {formatNumber(d.students, lang)} {t("schools.studentsSuffix", lang)}
                 </div>
               </div>
             );
@@ -201,22 +206,22 @@ export default async function SchoolsPage() {
         />
 
         <Section
-          title="Roster Sekolah · Breakdown Porsi"
-          hint="Porsi efektif menentukan volume BOM harian — Kecil (0.7) untuk PAUD/TK + SD kelas 1–3, Besar (1.0) untuk SD kelas 4–6 ke atas."
+          title={t("schools.rosterTitle", lang)}
+          hint={t("schools.rosterHint", lang)}
         >
           <TableWrap>
             <table className="w-full text-sm">
               <THead>
-                <th className="py-2 pr-3">ID</th>
-                <th className="py-2 pr-3">Nama</th>
-                <th className="py-2 pr-3">Jenjang</th>
-                <th className="py-2 pr-3 text-right">Siswa</th>
-                <th className="py-2 pr-3 text-right">Kecil (0.7)</th>
-                <th className="py-2 pr-3 text-right">Besar (1.0)</th>
-                <th className="py-2 pr-3 text-right">Guru</th>
-                <th className="py-2 pr-3 text-right">Porsi Eff.</th>
-                <th className="py-2 pr-3 text-right">Jarak (km)</th>
-                <th className="py-2 pr-3">Kontak</th>
+                <th className="py-2 pr-3">{t("schools.colId", lang)}</th>
+                <th className="py-2 pr-3">{t("schools.colName", lang)}</th>
+                <th className="py-2 pr-3">{t("schools.colLevel", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("schools.colStudents", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("schools.colSmall", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("schools.colLarge", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("schools.colTeachers", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("schools.colEff", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("schools.colDistance", lang)}</th>
+                <th className="py-2 pr-3">{t("schools.colContact", lang)}</th>
               </THead>
               <tbody>
                 {schools.map((s) => {
@@ -241,19 +246,19 @@ export default async function SchoolsPage() {
                         </span>
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {s.students.toLocaleString("id-ID")}
+                        {formatNumber(s.students, lang)}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs text-amber-700">
-                        {p.kecil.toLocaleString("id-ID")}
+                        {formatNumber(p.kecil, lang)}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs text-emerald-700">
-                        {p.besar.toLocaleString("id-ID")}
+                        {formatNumber(p.besar, lang)}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs">
                         {p.guru}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs font-black text-ink">
-                        {p.eff.toLocaleString("id-ID")}
+                        {formatNumber(p.eff, lang)}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs">
                         {Number(s.distance_km ?? 0).toFixed(1)}
@@ -271,22 +276,22 @@ export default async function SchoolsPage() {
               <tfoot>
                 <tr className="border-t-2 border-ink/20 bg-paper">
                   <td colSpan={3} className="py-2 pr-3 font-black text-ink">
-                    TOTAL · {totals.schools} sekolah aktif
+                    {ti("schools.totalLabel", lang, { n: totals.schools })}
                   </td>
                   <td className="py-2 pr-3 text-right font-mono text-xs font-black">
-                    {totals.students.toLocaleString("id-ID")}
+                    {formatNumber(totals.students, lang)}
                   </td>
                   <td className="py-2 pr-3 text-right font-mono text-xs font-black text-amber-700">
-                    {totals.kecil.toLocaleString("id-ID")}
+                    {formatNumber(totals.kecil, lang)}
                   </td>
                   <td className="py-2 pr-3 text-right font-mono text-xs font-black text-emerald-700">
-                    {totals.besar.toLocaleString("id-ID")}
+                    {formatNumber(totals.besar, lang)}
                   </td>
                   <td className="py-2 pr-3 text-right font-mono text-xs font-black">
-                    {totals.guru.toLocaleString("id-ID")}
+                    {formatNumber(totals.guru, lang)}
                   </td>
                   <td className="py-2 pr-3 text-right font-mono text-sm font-black text-ink">
-                    {totals.eff.toLocaleString("id-ID")}
+                    {formatNumber(totals.eff, lang)}
                   </td>
                   <td colSpan={2}></td>
                 </tr>
@@ -294,9 +299,7 @@ export default async function SchoolsPage() {
             </table>
           </TableWrap>
           <p className="mt-4 text-[11px] text-ink2/70">
-            <b>Porsi Efektif</b> = (Kecil × 0.7) + (Besar × 1.0) + (Guru × 1.0).
-            Kecil mencakup PAUD/TK dan SD kelas 1–3. Besar mencakup SD kelas
-            4–6, SMP, SMA, SMK.
+            {t("schools.footnote", lang)}
           </p>
         </Section>
       </PageContainer>

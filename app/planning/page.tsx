@@ -25,6 +25,8 @@ import {
   TableWrap,
   THead
 } from "@/components/ui";
+import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,7 @@ interface ItemLite {
 
 export default async function PlanningPage() {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -85,8 +88,8 @@ export default async function PlanningPage() {
 
   const monthLabel = (m: string) => {
     const [y, mo] = m.split("-");
-    const date = new Date(Number(y), Number(mo) - 1, 1);
-    return date.toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
+    const idx = Number(mo) - 1;
+    return `${MONTHS.short[lang][idx]} ${y.slice(2)}`;
   };
 
   const opDays = daily.filter((d) => d.operasional).length;
@@ -115,11 +118,8 @@ export default async function PlanningPage() {
   );
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const DAY_SHORT_ID = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-  const MONTH_SHORT_ID = [
-    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-    "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
-  ];
+  const DAY_SHORT = DAYS.short[lang];
+  const MONTH_SHORT = MONTHS.short[lang];
 
   return (
     <div>
@@ -132,40 +132,40 @@ export default async function PlanningPage() {
       <PageContainer>
         <PageHeader
           icon="📈"
-          title="Rencana Kebutuhan Bahan"
-          subtitle="Proyeksi 6 bulan berdasarkan menu assignment × porsi efektif × BOM"
+          title={t("planning.title", lang)}
+          subtitle={t("planning.subtitle", lang)}
         />
 
         <KpiGrid>
           <KpiTile
             icon="📅"
-            label="Hari Operasional"
+            label={t("planning.kpiOpDays", lang)}
             value={`${opDays} / ${daily.length}`}
-            sub="30 hari ke depan"
+            sub={t("planning.kpiOpDaysSub", lang)}
           />
           <KpiTile
             icon="🍽️"
-            label="Total Porsi"
-            value={totalPorsi.toLocaleString("id-ID")}
-            sub="akumulasi horizon"
+            label={t("planning.kpiTotalPorsi", lang)}
+            value={formatNumber(totalPorsi, lang)}
+            sub={t("planning.kpiTotalPorsiSub", lang)}
           />
           <KpiTile
             icon="⚖️"
-            label="Total Kebutuhan"
+            label={t("planning.kpiTotalKg", lang)}
             value={formatKg(totalKg, 0)}
-            sub="bahan basah"
+            sub={t("planning.kpiTotalKgSub", lang)}
           />
           <KpiTile
             icon="💰"
-            label="Estimasi Belanja"
+            label={t("planning.kpiEstSpend", lang)}
             value={formatIDR(grandTotalCost)}
             tone="ok"
             size="md"
-            sub="6 bulan ke depan"
+            sub={t("planning.kpiEstSpendSub", lang)}
           />
         </KpiGrid>
 
-        <Section title="Distribusi Kebutuhan per Kategori (6 bulan)" accent="info">
+        <Section title={t("planning.catDistTitle", lang)} accent="info">
           <div className="space-y-2">
             {[...catTotals.entries()]
               .sort((a, b) => b[1] - a[1])
@@ -192,25 +192,28 @@ export default async function PlanningPage() {
         </Section>
 
         <Section
-          title={`Matriks Kebutuhan · ${months.length} Bulan · ${sortedItems.length} komoditas`}
-          hint="Top 30 komoditas, urut dari volume terbesar."
+          title={ti("planning.matrixTitle", lang, {
+            months: months.length,
+            items: sortedItems.length
+          })}
+          hint={t("planning.matrixHint", lang)}
         >
           {sortedItems.length === 0 ? (
-            <EmptyState message="Belum ada data kebutuhan." />
+            <EmptyState message={t("planning.matrixEmpty", lang)} />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3 text-center">No.</th>
-                  <th className="py-2 pr-3 text-center">Komoditas</th>
-                  <th className="py-2 pr-3 text-center">Kategori</th>
+                  <th className="py-2 pr-3 text-center">{t("dashboard.tblNo", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("common.commodity", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("common.category", lang)}</th>
                   {months.map((m) => (
                     <th key={m} className="py-2 pr-3 text-center">
                       {monthLabel(m)}
                     </th>
                   ))}
-                  <th className="py-2 pr-3 text-center">Total kg</th>
-                  <th className="py-2 pr-3 text-center">Est. Biaya</th>
+                  <th className="py-2 pr-3 text-center">{t("planning.colTotalKg", lang)}</th>
+                  <th className="py-2 pr-3 text-center">{t("planning.colEstCost", lang)}</th>
                 </THead>
                 <tbody>
                   {sortedItems.slice(0, 30).map(([code, total], i) => {
@@ -230,13 +233,13 @@ export default async function PlanningPage() {
                             key={m}
                             className="py-2 pr-3 text-center font-mono text-xs"
                           >
-                            {(matrix[code][m] ?? 0).toLocaleString("id-ID", {
+                            {formatNumber(matrix[code][m] ?? 0, lang, {
                               maximumFractionDigits: 1
                             })}
                           </td>
                         ))}
                         <td className="py-2 pr-3 text-center font-mono text-xs font-black">
-                          {total.toLocaleString("id-ID", {
+                          {formatNumber(total, lang, {
                             maximumFractionDigits: 0
                           })}
                         </td>
@@ -250,7 +253,7 @@ export default async function PlanningPage() {
                 <tfoot>
                   <tr className="border-t-2 border-ink/20 bg-paper">
                     <td colSpan={3} className="py-2 pr-3 text-center font-black">
-                      TOTAL (TOP 30)
+                      {t("planning.totalTop30", lang)}
                     </td>
                     {months.map((m) => {
                       const col = sortedItems
@@ -261,17 +264,18 @@ export default async function PlanningPage() {
                           key={m}
                           className="py-2 pr-3 text-center font-mono text-xs font-black"
                         >
-                          {col.toLocaleString("id-ID", {
+                          {formatNumber(col, lang, {
                             maximumFractionDigits: 0
                           })}
                         </td>
                       );
                     })}
                     <td className="py-2 pr-3 text-center font-mono text-xs font-black">
-                      {sortedItems
-                        .slice(0, 30)
-                        .reduce((s, [, q]) => s + q, 0)
-                        .toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+                      {formatNumber(
+                        sortedItems.slice(0, 30).reduce((s, [, q]) => s + q, 0),
+                        lang,
+                        { maximumFractionDigits: 0 }
+                      )}
                     </td>
                     <td className="py-2 pr-3 text-right font-mono text-xs font-black text-emerald-800">
                       {formatIDR(
@@ -287,17 +291,17 @@ export default async function PlanningPage() {
           )}
         </Section>
 
-        <Section title="30 Hari ke Depan · Planning Harian">
+        <Section title={t("planning.dailyTitle", lang)}>
           <TableWrap>
             <table className="w-full text-sm">
               <THead>
-                <th className="py-2 pr-3">Tanggal</th>
-                <th className="py-2 pr-3">Menu</th>
-                <th className="py-2 pr-3 text-right">Porsi</th>
-                <th className="py-2 pr-3 text-right">Porsi Eff</th>
-                <th className="py-2 pr-3 text-right">Kebutuhan</th>
-                <th className="py-2 pr-3 text-right">Short</th>
-                <th className="py-2 pr-3">Status</th>
+                <th className="py-2 pr-3">{t("common.date", lang)}</th>
+                <th className="py-2 pr-3">{t("common.menu", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("common.porsi", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("planning.colPorsiEff", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("common.needed", lang)}</th>
+                <th className="py-2 pr-3 text-right">{t("common.short", lang)}</th>
+                <th className="py-2 pr-3">{t("common.status", lang)}</th>
               </THead>
               <tbody>
                 {daily.map((p) => (
@@ -312,10 +316,10 @@ export default async function PlanningPage() {
                       )}
                     </td>
                     <td className="py-2 pr-3 text-right font-mono text-xs">
-                      {p.porsi_total.toLocaleString("id-ID")}
+                      {formatNumber(p.porsi_total, lang)}
                     </td>
                     <td className="py-2 pr-3 text-right font-mono text-xs">
-                      {Number(p.porsi_eff).toLocaleString("id-ID", {
+                      {formatNumber(Number(p.porsi_eff), lang, {
                         maximumFractionDigits: 1
                       })}
                     </td>
@@ -329,9 +333,9 @@ export default async function PlanningPage() {
                     </td>
                     <td className="py-2 pr-3">
                       {p.operasional ? (
-                        <Badge tone="ok">OP</Badge>
+                        <Badge tone="ok">{t("planning.badgeOP", lang)}</Badge>
                       ) : (
-                        <Badge tone="warn">NON-OP</Badge>
+                        <Badge tone="warn">{t("dashboard.badgeNonOp", lang)}</Badge>
                       )}
                     </td>
                   </tr>
@@ -342,20 +346,20 @@ export default async function PlanningPage() {
         </Section>
 
         <Section
-          title="🔭 Forecast Shortage · 30 Hari"
-          hint="Proyeksi hari dengan kekurangan stok relatif terhadap rencana BOM."
+          title={t("planning.forecastTitle", lang)}
+          hint={t("planning.forecastHint", lang)}
           accent={upcoming.length > 0 ? "warn" : "ok"}
           actions={
             upcoming.length > 0 ? (
               <div className="flex flex-wrap items-center gap-3 text-[10.5px] font-medium text-ink2/70">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-red-500" /> Kritis
+                  <span className="h-2 w-2 rounded-full bg-red-500" /> {t("planning.tierCritical", lang)}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-amber-500" /> Tinggi
+                  <span className="h-2 w-2 rounded-full bg-amber-500" /> {t("planning.tierHigh", lang)}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-yellow-400" /> Sedang
+                  <span className="h-2 w-2 rounded-full bg-yellow-400" /> {t("planning.tierMed", lang)}
                 </span>
               </div>
             ) : undefined
@@ -365,14 +369,14 @@ export default async function PlanningPage() {
             <EmptyState
               icon="✅"
               tone="ok"
-              message="Tidak ada shortage terdeteksi dalam 30 hari ke depan."
+              message={t("planning.forecastEmpty", lang)}
             />
           ) : (
             <div>
               <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
-                    Hari Terdampak
+                    {t("planning.fcHariTerdampak", lang)}
                   </div>
                   <div className="mt-0.5 text-lg font-bold leading-tight text-amber-900">
                     {upcoming.length}
@@ -383,7 +387,7 @@ export default async function PlanningPage() {
                 </div>
                 <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
-                    Total Gap
+                    {t("planning.fcTotalGap", lang)}
                   </div>
                   <div className="mt-0.5 text-lg font-bold leading-tight text-amber-900">
                     {formatKg(upcomingTotalGap)}
@@ -391,7 +395,7 @@ export default async function PlanningPage() {
                 </div>
                 <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
-                    Puncak / Hari
+                    {t("planning.fcPeak", lang)}
                   </div>
                   <div className="mt-0.5 text-lg font-bold leading-tight text-amber-900">
                     {formatKg(upcomingPeakGap)}
@@ -399,7 +403,7 @@ export default async function PlanningPage() {
                 </div>
                 <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
-                    Total Item Kurang
+                    {t("planning.fcTotalItems", lang)}
                   </div>
                   <div className="mt-0.5 text-lg font-bold leading-tight text-amber-900">
                     {upcomingTotalItems}
@@ -449,9 +453,9 @@ export default async function PlanningPage() {
                   );
                   const rel =
                     diffDays === 0
-                      ? "Hari ini"
+                      ? t("planning.fcToday", lang)
                       : diffDays === 1
-                        ? "Besok"
+                        ? t("planning.fcTomorrow", lang)
                         : diffDays > 1
                           ? `H+${diffDays}`
                           : `${diffDays}`;
@@ -469,7 +473,7 @@ export default async function PlanningPage() {
                             <span
                               className={`text-[9px] font-bold uppercase leading-none tracking-wide ${cfg.sub}`}
                             >
-                              {DAY_SHORT_ID[d.getDay()]}
+                              {DAY_SHORT[d.getDay()]}
                             </span>
                             <span
                               className={`mt-0.5 text-base font-bold leading-none ${cfg.text}`}
@@ -484,7 +488,7 @@ export default async function PlanningPage() {
                               <span
                                 className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`}
                               />
-                              {MONTH_SHORT_ID[d.getMonth()]} {d.getFullYear()}
+                              {MONTH_SHORT[d.getMonth()]} {d.getFullYear()}
                               {isWknd && (
                                 <span className="ml-1 rounded bg-white/70 px-1.5 py-px text-[9px] font-semibold tracking-wide text-ink2/70">
                                   WKND
@@ -492,7 +496,7 @@ export default async function PlanningPage() {
                               )}
                             </div>
                             <div className={`mt-0.5 text-[11px] ${cfg.sub}`}>
-                              {rel} · {u.short_items} item kurang
+                              {ti("planning.fcItemsShort", lang, { rel, n: u.short_items })}
                             </div>
                           </div>
                         </div>
@@ -503,7 +507,7 @@ export default async function PlanningPage() {
                           <div
                             className={`text-[9px] font-semibold uppercase tracking-wider ${cfg.sub}`}
                           >
-                            gap
+                            {t("planning.fcGap", lang)}
                           </div>
                         </div>
                       </div>

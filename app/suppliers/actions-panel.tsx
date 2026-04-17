@@ -4,14 +4,23 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Input, Select } from "@/components/ui";
 import type { SupplierAction, ActionStatus, ActionPriority } from "@/lib/engine";
+import { t, ti, type LangKey } from "@/lib/i18n";
+import { useLang } from "@/lib/prefs-context";
 
-const STATUS_LABEL: Record<ActionStatus, string> = {
-  open: "Open",
-  in_progress: "In Progress",
-  blocked: "Blocked",
-  done: "Done",
-  cancelled: "Cancelled"
-};
+function statusLabel(s: ActionStatus, lang: LangKey): string {
+  switch (s) {
+    case "open":
+      return t("actions.statusOpen", lang);
+    case "in_progress":
+      return t("actions.statusInProgress", lang);
+    case "blocked":
+      return t("actions.statusBlocked", lang);
+    case "done":
+      return t("actions.statusDone", lang);
+    case "cancelled":
+      return t("actions.statusCancelled", lang);
+  }
+}
 
 const STATUS_TONE: Record<
   ActionStatus,
@@ -24,12 +33,18 @@ const STATUS_TONE: Record<
   cancelled: "muted"
 };
 
-const PRIO_LABEL: Record<ActionPriority, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-  critical: "Critical"
-};
+function prioLabel(p: ActionPriority, lang: LangKey): string {
+  switch (p) {
+    case "low":
+      return t("actions.prioLow", lang);
+    case "medium":
+      return t("actions.prioMedium", lang);
+    case "high":
+      return t("actions.prioHigh", lang);
+    case "critical":
+      return t("actions.prioCritical", lang);
+  }
+}
 
 const PRIO_TONE: Record<ActionPriority, string> = {
   low: "bg-slate-100 text-slate-700",
@@ -55,9 +70,11 @@ export function ActionsPanel({
   canWrite,
   isSupplierRole = false,
   compact = false,
-  title = "📋 Action Tracker · Onboarding & Follow-up"
+  title
 }: Props) {
   const router = useRouter();
+  const { lang } = useLang();
+  const resolvedTitle = title ?? t("actions.title", lang);
   const [filterStatus, setFilterStatus] = useState<string>("active");
   const [filterPriority, setFilterPriority] = useState<string>("");
   const [busy, setBusy] = useState<number | null>(null);
@@ -116,14 +133,14 @@ export function ActionsPanel({
     setBusy(null);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal update status.");
+      setErr(j.error ?? t("actions.errUpdate", lang));
       return;
     }
     router.refresh();
   }
 
   async function quickNote(id: number) {
-    const note = prompt("Catatan progress / output:");
+    const note = prompt(t("actions.quickNotePrompt", lang));
     if (note == null) return;
     setBusy(id);
     setErr(null);
@@ -135,21 +152,21 @@ export function ActionsPanel({
     setBusy(null);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal simpan catatan.");
+      setErr(j.error ?? t("actions.errNote", lang));
       return;
     }
     router.refresh();
   }
 
   async function deleteAction(id: number) {
-    if (!confirm("Hapus action ini? Tindakan ini tidak bisa dibatalkan.")) return;
+    if (!confirm(t("actions.deleteConfirm", lang))) return;
     setBusy(id);
     setErr(null);
     const res = await fetch(`/api/actions/${id}`, { method: "DELETE" });
     setBusy(null);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal hapus.");
+      setErr(j.error ?? t("actions.errDelete", lang));
       return;
     }
     router.refresh();
@@ -161,9 +178,9 @@ export function ActionsPanel({
     >
       <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 text-sm font-black text-ink">
-          {title}
+          {resolvedTitle}
           <span className="text-[11px] font-semibold text-ink2/70">
-            · {counts.total} total
+            {ti("actions.totalSuffix", lang, { n: counts.total })}
           </span>
         </h3>
 
@@ -173,24 +190,24 @@ export function ActionsPanel({
             onChange={(e) => setFilterStatus(e.target.value)}
             className="h-8 w-[130px] text-[12px]"
           >
-            <option value="active">Aktif (non-done)</option>
-            <option value="all">Semua status</option>
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="blocked">Blocked</option>
-            <option value="done">Done</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="active">{t("actions.filterActive", lang)}</option>
+            <option value="all">{t("actions.filterAll", lang)}</option>
+            <option value="open">{t("actions.statusOpen", lang)}</option>
+            <option value="in_progress">{t("actions.statusInProgress", lang)}</option>
+            <option value="blocked">{t("actions.statusBlocked", lang)}</option>
+            <option value="done">{t("actions.statusDone", lang)}</option>
+            <option value="cancelled">{t("actions.statusCancelled", lang)}</option>
           </Select>
           <Select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
             className="h-8 w-[120px] text-[12px]"
           >
-            <option value="">Semua prio</option>
-            <option value="critical">Critical</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="">{t("actions.filterAllPrio", lang)}</option>
+            <option value="critical">{t("actions.prioCritical", lang)}</option>
+            <option value="high">{t("actions.prioHigh", lang)}</option>
+            <option value="medium">{t("actions.prioMedium", lang)}</option>
+            <option value="low">{t("actions.prioLow", lang)}</option>
           </Select>
           {canWrite && !isSupplierRole && (
             <Button
@@ -198,28 +215,28 @@ export function ActionsPanel({
               variant="primary"
               onClick={() => setShowNew((v) => !v)}
             >
-              {showNew ? "× Tutup" : "+ Action"}
+              {showNew ? t("actions.btnClose", lang) : t("actions.btnAdd", lang)}
             </Button>
           )}
         </div>
       </header>
 
       <div className="mb-3 flex flex-wrap gap-2 text-[11px]">
-        <MiniStat label="Open" value={counts.open} tone="info" />
+        <MiniStat label={t("actions.statusOpen", lang)} value={counts.open} tone="info" />
         <MiniStat
-          label="In Progress"
+          label={t("actions.statusInProgress", lang)}
           value={counts.in_progress}
           tone="accent"
         />
-        <MiniStat label="Blocked" value={counts.blocked} tone="warn" />
-        <MiniStat label="Done" value={counts.done} tone="ok" />
+        <MiniStat label={t("actions.statusBlocked", lang)} value={counts.blocked} tone="warn" />
+        <MiniStat label={t("actions.statusDone", lang)} value={counts.done} tone="ok" />
         <MiniStat
-          label="Overdue"
+          label={t("actions.statOverdue", lang)}
           value={counts.overdue}
           tone={counts.overdue > 0 ? "bad" : "muted"}
         />
         <MiniStat
-          label="High/Crit Open"
+          label={t("actions.statHighCrit", lang)}
           value={counts.high_open}
           tone={counts.high_open > 0 ? "warn" : "muted"}
         />
@@ -238,7 +255,7 @@ export function ActionsPanel({
 
       {filtered.length === 0 ? (
         <p className="rounded-xl bg-white p-4 text-center text-[12px] text-ink2/70 ring-1 ring-ink/5">
-          Tidak ada action sesuai filter.
+          {t("actions.emptyFilter", lang)}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -265,14 +282,14 @@ export function ActionsPanel({
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${PRIO_TONE[a.priority]}`}
                       >
-                        {PRIO_LABEL[a.priority]}
+                        {prioLabel(a.priority, lang)}
                       </span>
                       <Badge tone={STATUS_TONE[a.status]}>
-                        {STATUS_LABEL[a.status]}
+                        {statusLabel(a.status, lang)}
                       </Badge>
                       {a.is_overdue && (
                         <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-900">
-                          ⚠ Overdue
+                          {t("actions.overdueBadge", lang)}
                         </span>
                       )}
                       {a.category && (
@@ -315,24 +332,24 @@ export function ActionsPanel({
                         }`}
                       >
                         {a.days_to_target < 0
-                          ? `${-a.days_to_target}d telat`
+                          ? ti("actions.daysLate", lang, { n: -a.days_to_target })
                           : a.days_to_target === 0
-                            ? "hari ini"
-                            : `H-${a.days_to_target}`}
+                            ? t("actions.today", lang)
+                            : ti("actions.daysLeft", lang, { n: a.days_to_target })}
                       </div>
                     )}
-                    <div className="text-ink2/60">owner: {a.owner}</div>
+                    <div className="text-ink2/60">{ti("actions.owner", lang, { name: a.owner })}</div>
                   </div>
                 </div>
 
                 {a.blocked_reason && (
                   <div className="mt-2 rounded-lg bg-red-50 p-2 text-[11px] text-red-900 ring-1 ring-red-200">
-                    <b>Blocked:</b> {a.blocked_reason}
+                    <b>{t("actions.blocked", lang)}</b> {a.blocked_reason}
                   </div>
                 )}
                 {a.output_notes && (
                   <div className="mt-2 rounded-lg bg-emerald-50 p-2 text-[11px] text-emerald-900 ring-1 ring-emerald-200">
-                    <b>Catatan:</b> {a.output_notes}
+                    <b>{t("actions.note", lang)}</b> {a.output_notes}
                   </div>
                 )}
 
@@ -344,7 +361,7 @@ export function ActionsPanel({
                       onChange={(e) => {
                         const next = e.target.value as ActionStatus;
                         if (next === "blocked") {
-                          const reason = prompt("Alasan blocked:");
+                          const reason = prompt(t("actions.blockedReasonPrompt", lang));
                           if (reason == null) return;
                           patchStatus(a.id, next, {
                             blocked_reason: reason
@@ -355,11 +372,11 @@ export function ActionsPanel({
                       }}
                       className="h-7 w-[130px] text-[11px]"
                     >
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="blocked">Blocked</option>
-                      <option value="done">Done</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="open">{t("actions.statusOpen", lang)}</option>
+                      <option value="in_progress">{t("actions.statusInProgress", lang)}</option>
+                      <option value="blocked">{t("actions.statusBlocked", lang)}</option>
+                      <option value="done">{t("actions.statusDone", lang)}</option>
+                      <option value="cancelled">{t("actions.statusCancelled", lang)}</option>
                     </Select>
                     <button
                       type="button"
@@ -367,7 +384,7 @@ export function ActionsPanel({
                       disabled={busy === a.id}
                       className="rounded-lg bg-ink/5 px-2 py-1 text-[11px] font-bold text-ink2 hover:bg-ink/10"
                     >
-                      + catatan
+                      {t("actions.quickNote", lang)}
                     </button>
                     {!isSupplierRole && (
                       <button
@@ -376,7 +393,7 @@ export function ActionsPanel({
                         disabled={busy === a.id}
                         className="rounded-lg px-2 py-1 text-[11px] font-bold text-red-700 hover:bg-red-50"
                       >
-                        hapus
+                        {t("actions.delete", lang)}
                       </button>
                     )}
                     {a.source_ref && (
@@ -434,6 +451,7 @@ function NewActionForm({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { lang } = useLang();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [supplierId, setSupplierId] = useState(defaultSupplierId ?? "");
@@ -448,7 +466,7 @@ function NewActionForm({
 
   async function submit() {
     if (!title.trim()) {
-      setErr("Judul wajib.");
+      setErr(t("actions.errTitle", lang));
       return;
     }
     setBusy(true);
@@ -471,7 +489,7 @@ function NewActionForm({
     setBusy(false);
     if (!res.ok) {
       const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? "Gagal simpan.");
+      setErr(j.error ?? t("actions.errSave", lang));
       return;
     }
     onCreated();
@@ -479,50 +497,50 @@ function NewActionForm({
 
   return (
     <div className="mb-3 rounded-xl bg-white p-3 ring-1 ring-accent-strong/30">
-      <div className="mb-2 text-[12px] font-bold text-ink">+ Action Baru</div>
+      <div className="mb-2 text-[12px] font-bold text-ink">{t("actions.newTitle", lang)}</div>
       <div className="grid gap-2 md:grid-cols-2">
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Judul action (wajib)"
+          placeholder={t("actions.phTitle", lang)}
           className="md:col-span-2"
         />
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Deskripsi (opsional)"
+          placeholder={t("actions.phDesc", lang)}
           rows={2}
           className="rounded-xl border border-ink/15 bg-white px-3 py-2 text-[12px] text-ink outline-none focus:border-accent-strong md:col-span-2"
         />
         <Input
           value={supplierId}
           onChange={(e) => setSupplierId(e.target.value)}
-          placeholder="Supplier ID (cth: SUP-01)"
+          placeholder={t("actions.phSupplierId", lang)}
           disabled={!!defaultSupplierId}
         />
         <Input
           value={relatedScope}
           onChange={(e) => setRelatedScope(e.target.value)}
-          placeholder="Scope lain (nama supplier / komoditas)"
+          placeholder={t("actions.phScope", lang)}
         />
         <Input
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          placeholder="Kategori (cth: Quality Control)"
+          placeholder={t("actions.phCategory", lang)}
         />
         <Select
           value={priority}
           onChange={(e) => setPriority(e.target.value as ActionPriority)}
         >
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
+          <option value="low">{t("actions.prioLow", lang)}</option>
+          <option value="medium">{t("actions.prioMedium", lang)}</option>
+          <option value="high">{t("actions.prioHigh", lang)}</option>
+          <option value="critical">{t("actions.prioCritical", lang)}</option>
         </Select>
         <Input
           value={owner}
           onChange={(e) => setOwner(e.target.value)}
-          placeholder="Owner / PIC"
+          placeholder={t("actions.phOwner", lang)}
         />
         <Input
           type="date"
@@ -530,19 +548,19 @@ function NewActionForm({
           onChange={(e) => setTargetDate(e.target.value)}
         />
         <Select value={source} onChange={(e) => setSource(e.target.value)}>
-          <option value="ad_hoc">Ad-hoc</option>
-          <option value="onboarding">Onboarding</option>
-          <option value="mom">MoM Meeting</option>
-          <option value="field">Field visit</option>
-          <option value="audit">Audit</option>
+          <option value="ad_hoc">{t("actions.srcAdhoc", lang)}</option>
+          <option value="onboarding">{t("actions.srcOnboarding", lang)}</option>
+          <option value="mom">{t("actions.srcMom", lang)}</option>
+          <option value="field">{t("actions.srcField", lang)}</option>
+          <option value="audit">{t("actions.srcAudit", lang)}</option>
         </Select>
       </div>
       <div className="mt-3 flex items-center gap-2">
         <Button size="sm" variant="primary" disabled={busy} onClick={submit}>
-          💾 Simpan
+          {t("actions.btnSave", lang)}
         </Button>
         <Button size="sm" variant="ghost" disabled={busy} onClick={onClose}>
-          Batal
+          {t("actions.btnCancel", lang)}
         </Button>
         {err && (
           <span className="text-[11px] font-bold text-red-700">{err}</span>

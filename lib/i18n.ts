@@ -418,6 +418,110 @@ export const LANG_KEYS = {
     EN: "Effective Servings = (Small × 0.7) + (Large × 1.0) + (Teachers × 1.0). Small covers PAUD/TK and SD grades 1–3. Large covers SD grades 4–6, SMP, SMA, SMK."
   },
   "schools.footnoteLabel": { ID: "Porsi Efektif", EN: "Effective Servings" },
+  "schools.attTitle": {
+    ID: "Perkiraan Kehadiran Siswa · 7 Hari Ke Depan",
+    EN: "Expected Student Attendance · Next 7 Days"
+  },
+  "schools.attHint": {
+    ID: "Isi angka kehadiran per sekolah per tanggal. SD dipecah jadi Porsi Kecil (kelas 1–3) dan Porsi Besar (kelas 4–6) karena bobot porsi BOM-nya berbeda. Default = kapasitas penuh.",
+    EN: "Enter attendance per school per date. SD is split into Small Servings (grades 1–3) and Large Servings (grades 4–6) because their BOM weights differ. Default = full capacity."
+  },
+  "schools.attFillFull": { ID: "Isi Penuh", EN: "Fill Full" },
+  "schools.attEst90": { ID: "Estimasi 90%", EN: "90% Estimate" },
+  "schools.attEst85": { ID: "Estimasi 85%", EN: "85% Estimate" },
+  "schools.attSave": { ID: "Simpan Perkiraan", EN: "Save Estimate" },
+  "schools.attSaving": { ID: "Menyimpan…", EN: "Saving…" },
+  "schools.attSavedMsg": { ID: "Tersimpan · {n} baris", EN: "Saved · {n} rows" },
+  "schools.attColSekolah": { ID: "Sekolah", EN: "School" },
+  "schools.attColPorsi": { ID: "Porsi", EN: "Servings" },
+  "schools.attColKapasitas": { ID: "Kapasitas", EN: "Capacity" },
+  "schools.attGroupKecil": { ID: "Porsi Kecil · kelas 1–3", EN: "Small Servings · grades 1–3" },
+  "schools.attGroupBesar": { ID: "Porsi Besar · kelas 4–6", EN: "Large Servings · grades 4–6" },
+  "schools.attFootnote": {
+    ID: "SD ditampilkan 2 baris karena bobot porsi BOM beda — Kecil ×0.7 (kelas 1–3) & Besar ×1.0 (kelas 4–6). Saat disimpan, kedua angka dijumlahkan kembali jadi 1 entri per sekolah per tanggal. Akhir pekan ditandai kuning. Nilai <b class='text-ink'>&lt; kapasitas</b> akan memproporsionalkan kebutuhan bahan untuk tanggal tsb.",
+    EN: "SD is shown in 2 rows because BOM serving weights differ — Small ×0.7 (grades 1–3) & Large ×1.0 (grades 4–6). On save, both values are summed back into one entry per school per date. Weekends are highlighted in yellow. A value <b class='text-ink'>&lt; capacity</b> will proportionally reduce ingredient requirements for that date."
+  },
+  "calParser.title": {
+    ID: "Parser Kalender Pendidikan",
+    EN: "Education Calendar Parser"
+  },
+  "calParser.hint": {
+    ID: "Paste teks kalender Dinas (rentang tanggal + keterangan). Sistem menguraikan jadi baris non-operasional yang otomatis memblok penjadwalan BOM.",
+    EN: "Paste the official education calendar text (date range + description). The system parses it into non-operational rows that automatically block BOM scheduling."
+  },
+  "calParser.textLabel": { ID: "Teks kalender", EN: "Calendar text" },
+  "calParser.btnParse": { ID: "Parse", EN: "Parse" },
+  "calParser.btnExample": { ID: "Pakai contoh", EN: "Use example" },
+  "calParser.btnReset": { ID: "Reset", EN: "Reset" },
+  "calParser.errNoParsed": {
+    ID: "Tidak ada baris yang bisa di-parse menjadi tanggal.",
+    EN: "No lines could be parsed into dates."
+  },
+  "calParser.errNoEntries": {
+    ID: "Tidak ada entri yang akan di-import.",
+    EN: "No entries to import."
+  },
+  "calParser.warnUnrecognized": {
+    ID: "{n} baris tidak dikenali",
+    EN: "{n} unrecognized lines"
+  },
+  "calParser.warnMoreLines": {
+    ID: "…dan {n} baris lain.",
+    EN: "…and {n} more lines."
+  },
+  "calParser.overrideLabel": {
+    ID: "Alasan override (opsional)",
+    EN: "Override reason (optional)"
+  },
+  "calParser.overridePlaceholder": {
+    ID: "Kosongkan untuk pakai keterangan per-baris",
+    EN: "Leave empty to use per-line description"
+  },
+  "calParser.btnImporting": { ID: "Mengimport…", EN: "Importing…" },
+  "calParser.btnImportN": {
+    ID: "Import {n} tanggal",
+    EN: "Import {n} dates"
+  },
+  "calParser.statTotal": { ID: "Total parsed:", EN: "Total parsed:" },
+  "calParser.statActive": { ID: "Aktif:", EN: "Active:" },
+  "calParser.statNew": { ID: "Baru:", EN: "New:" },
+  "calParser.statUpdate": { ID: "Update existing:", EN: "Update existing:" },
+  "calParser.statExcluded": { ID: "Dikecualikan:", EN: "Excluded:" },
+  "calParser.colInclude": { ID: "Sertakan", EN: "Include" },
+  "calParser.colDate": { ID: "Tanggal", EN: "Date" },
+  "calParser.colDay": { ID: "Hari", EN: "Day" },
+  "calParser.colReason": { ID: "Alasan", EN: "Reason" },
+  "calParser.colStatus": { ID: "Status", EN: "Status" },
+  "calParser.colLine": { ID: "Baris", EN: "Line" },
+  "calParser.badgeSame": { ID: "sama", EN: "same" },
+  "calParser.badgeOverride": { ID: "override", EN: "override" },
+  "calParser.badgeNew": { ID: "baru", EN: "new" },
+  "calParser.readOnly": {
+    ID: "Hanya admin/operator yang bisa mengimport kalender pendidikan.",
+    EN: "Only admin/operator can import the education calendar."
+  },
+  "calParser.storedHeader": {
+    ID: "Non-operasional tersimpan · {n} tanggal",
+    EN: "Stored non-operational · {n} dates"
+  },
+  "calParser.emptyStored": {
+    ID: "Belum ada hari non-operasional tersimpan.",
+    EN: "No non-operational days stored yet."
+  },
+  "calParser.colAksi": { ID: "Aksi", EN: "Action" },
+  "calParser.btnHapus": { ID: "Hapus", EN: "Delete" },
+  "calParser.confirmDelete": {
+    ID: "Hapus non-operasional tanggal {date}?",
+    EN: "Delete non-operational date {date}?"
+  },
+  "calParser.msgImported": {
+    ID: "Berhasil import {n} tanggal ({new} baru · {update} update).",
+    EN: "Successfully imported {n} dates ({new} new · {update} updates)."
+  },
+  "calParser.msgDeleted": {
+    ID: "Tanggal {date} dihapus dari non-operasional.",
+    EN: "Date {date} removed from non-operational."
+  },
 
   // ---------------- Menu Master (/menu) ----------------
   "menu.title": { ID: "Master Menu · BOM", EN: "Menu Master · BOM" },
@@ -590,6 +694,314 @@ export const LANG_KEYS = {
   "suppliers.kpiRejectedSub": { ID: "skor < 70", EN: "score < 70" },
   "suppliers.kpiReadiness": { ID: "Onboarding Readiness", EN: "Onboarding Readiness" },
   "suppliers.kpiReadinessSub": { ID: "{done}/{total} done · {overdue} overdue", EN: "{done}/{total} done · {overdue} overdue" },
+  "suppliers.cardsTitle": { ID: "Vendor Cards · Signed + Awaiting", EN: "Vendor Cards · Signed + Awaiting" },
+  "suppliers.cardsHint": {
+    ID: "Klik kartu untuk rincian, harga, sertifikasi & histori transaksi.",
+    EN: "Click a card for details, pricing, certifications & transaction history."
+  },
+  "suppliers.cardScore": { ID: "Score", EN: "Score" },
+  "suppliers.cardPic": { ID: "PIC", EN: "PIC" },
+  "suppliers.cardTel": { ID: "Tel", EN: "Tel" },
+  "suppliers.cardEmail": { ID: "Email", EN: "Email" },
+  "suppliers.cardCommodity": { ID: "Komoditas · {n} item", EN: "Commodities · {n} items" },
+  "suppliers.cardInvoices": { ID: "{n} invoice", EN: "{n} invoices" },
+  "suppliers.cardDetail": { ID: "Rincian", EN: "Details" },
+  "suppliers.rejectedTitle": { ID: "❌ Supplier Rejected", EN: "❌ Rejected Suppliers" },
+  "suppliers.tableTitle": { ID: "Tabel Lengkap · {n} Supplier", EN: "Full Table · {n} Suppliers" },
+  "suppliers.colId": { ID: "ID", EN: "ID" },
+  "suppliers.colName": { ID: "Nama", EN: "Name" },
+  "suppliers.colType": { ID: "Tipe", EN: "Type" },
+  "suppliers.colKomoditas": { ID: "Komoditas", EN: "Commodities" },
+  "suppliers.colItems": { ID: "Items", EN: "Items" },
+  "suppliers.colScore": { ID: "Skor", EN: "Score" },
+  "suppliers.colStatus": { ID: "Status", EN: "Status" },
+  "suppliers.colSpend": { ID: "Belanja", EN: "Spend" },
+  "suppliers.statusSigned": { ID: "signed", EN: "signed" },
+  "suppliers.statusAwaiting": { ID: "awaiting", EN: "awaiting" },
+  "suppliers.statusDraft": { ID: "draft", EN: "draft" },
+  "suppliers.statusRejected": { ID: "rejected", EN: "rejected" },
+
+  // ---------------- Supplier Detail (/suppliers/[id]) ----------------
+  "supplierDetail.subPic": { ID: "PIC", EN: "PIC" },
+  "supplierDetail.btnBack": { ID: "← Semua Supplier", EN: "← All Suppliers" },
+  "supplierDetail.btnForecast": { ID: "📅 Forecast 90h", EN: "📅 Forecast 90d" },
+  "supplierDetail.btnLTA": { ID: "📄 Generate LTA", EN: "📄 Generate LTA" },
+  "supplierDetail.kpiTotalScore": { ID: "Total Score", EN: "Total Score" },
+  "supplierDetail.kpiQuality": { ID: "Quality", EN: "Quality" },
+  "supplierDetail.kpiQualitySub": { ID: "{pass} pass · {fail} fail", EN: "{pass} pass · {fail} fail" },
+  "supplierDetail.kpiDelivery": { ID: "Delivery", EN: "Delivery" },
+  "supplierDetail.kpiDeliverySub": { ID: "{n} GRN diterima", EN: "{n} GRN received" },
+  "supplierDetail.kpiCompliance": { ID: "Compliance", EN: "Compliance" },
+  "supplierDetail.kpiComplianceSub": { ID: "{n} NCR kritikal aktif", EN: "{n} critical NCR open" },
+  "supplierDetail.recoRetain": { ID: "RETAIN — performa baik", EN: "RETAIN — good performance" },
+  "supplierDetail.recoImprove": { ID: "IMPROVE — butuh pembinaan", EN: "IMPROVE — needs coaching" },
+  "supplierDetail.recoWarning": { ID: "WARNING — resiko tinggi", EN: "WARNING — high risk" },
+  "supplierDetail.recoReplace": { ID: "REPLACE — exit plan", EN: "REPLACE — exit plan" },
+  "supplierDetail.secScorecard": { ID: "📊 Scorecard Otomatis", EN: "📊 Automatic Scorecard" },
+  "supplierDetail.secScorecardHint": {
+    ID: "Dihitung dari data operasional {start} → {end}. Bobot default: Q 30% · D 25% · P 20% · C 15% · R 10%.",
+    EN: "Computed from operational data {start} → {end}. Default weights: Q 30% · D 25% · P 20% · C 15% · R 10%."
+  },
+  "supplierDetail.scoreQuality": { ID: "Quality", EN: "Quality" },
+  "supplierDetail.scoreDelivery": { ID: "Delivery", EN: "Delivery" },
+  "supplierDetail.scorePrice": { ID: "Price", EN: "Price" },
+  "supplierDetail.scoreCompliance": { ID: "Compliance", EN: "Compliance" },
+  "supplierDetail.scoreResponsiveness": { ID: "Responsiveness", EN: "Responsiveness" },
+  "supplierDetail.badgeGRN": { ID: "GRN: {n}", EN: "GRN: {n}" },
+  "supplierDetail.badgeQCRate": { ID: "QC Pass Rate: {pct}%", EN: "QC Pass Rate: {pct}%" },
+  "supplierDetail.badgeActions": { ID: "Actions: {overdue}/{total} overdue", EN: "Actions: {overdue}/{total} overdue" },
+  "supplierDetail.badgeNCR": { ID: "NCR Kritikal Open: {n}", EN: "Critical NCR Open: {n}" },
+  "supplierDetail.secReval": { ID: "🔁 Re-Evaluasi Periodik", EN: "🔁 Periodic Re-Evaluation" },
+  "supplierDetail.secRevalHint": {
+    ID: "Simpan snapshot skor per periode. Klik 'Hitung & Simpan' untuk merekam evaluasi baru.",
+    EN: "Save scorecard snapshot per period. Click 'Compute & Save' to record a new evaluation."
+  },
+  "supplierDetail.secGallery": { ID: "🖼️ Visual QC Gallery", EN: "🖼️ Visual QC Gallery" },
+  "supplierDetail.secGalleryHint": {
+    ID: "{n} foto dari GRN QC + NCR · 60 terbaru.",
+    EN: "{n} photos from GRN QC + NCR · latest 60."
+  },
+  "supplierDetail.galleryEmptyTitle": { ID: "Belum ada foto QC", EN: "No QC photos yet" },
+  "supplierDetail.galleryEmptyBody": {
+    ID: "Foto akan muncul di sini ketika operator upload photo_url ke QC Check atau NCR.",
+    EN: "Photos will appear here when operators upload photo_url to QC Check or NCR."
+  },
+  "supplierDetail.secItems": { ID: "📦 Komoditas yang Dipasok", EN: "📦 Supplied Commodities" },
+  "supplierDetail.secItemsHint": { ID: "{n} item di-map ke supplier ini.", EN: "{n} items mapped to this supplier." },
+  "supplierDetail.itemsEmpty": { ID: "Belum ada mapping item.", EN: "No item mapping yet." },
+  "supplierDetail.colItem": { ID: "Item", EN: "Item" },
+  "supplierDetail.colMain": { ID: "Main?", EN: "Main?" },
+  "supplierDetail.colPrice": { ID: "Harga (IDR)", EN: "Price (IDR)" },
+  "supplierDetail.colLead": { ID: "Lead Time", EN: "Lead Time" },
+  "supplierDetail.badgeMain": { ID: "utama", EN: "main" },
+  "supplierDetail.badgeAlt": { ID: "alternatif", EN: "alternative" },
+  "supplierDetail.leadDays": { ID: "{n} hari", EN: "{n} days" },
+  "supplierDetail.secCerts": { ID: "📜 Sertifikasi", EN: "📜 Certifications" },
+  "supplierDetail.secCertsHint": { ID: "{n} sertifikat terdaftar.", EN: "{n} certificates registered." },
+  "supplierDetail.certsEmpty": { ID: "Belum ada sertifikat.", EN: "No certificates yet." },
+  "supplierDetail.colCert": { ID: "Sertifikat", EN: "Certificate" },
+  "supplierDetail.colValidUntil": { ID: "Berlaku Sampai", EN: "Valid Until" },
+  "supplierDetail.colStatus": { ID: "Status", EN: "Status" },
+  "supplierDetail.certUnlimited": { ID: "tak terbatas", EN: "unlimited" },
+  "supplierDetail.certExpired": { ID: "kedaluwarsa", EN: "expired" },
+  "supplierDetail.certValid": { ID: "valid", EN: "valid" },
+  "reval.invalidDateRange": { ID: "Rentang tanggal tidak valid.", EN: "Invalid date range." },
+  "reval.saved": { ID: "Tersimpan (#{id}).", EN: "Saved (#{id})." },
+  "reval.lblPeriod": { ID: "Periode", EN: "Period" },
+  "reval.lblFrom": { ID: "Dari", EN: "From" },
+  "reval.lblTo": { ID: "Sampai", EN: "To" },
+  "reval.lblReco": { ID: "Rekomendasi", EN: "Recommendation" },
+  "reval.lblNotes": { ID: "Catatan Evaluator", EN: "Evaluator Notes" },
+  "reval.notesPh": { ID: "Catatan tambahan (opsional)…", EN: "Additional notes (optional)…" },
+  "reval.btnSaving": { ID: "Menyimpan…", EN: "Saving…" },
+  "reval.btnSave": { ID: "Hitung & Simpan Evaluasi", EN: "Compute & Save Evaluation" },
+  "reval.emptyHistory": { ID: "Belum ada riwayat evaluasi untuk supplier ini.", EN: "No evaluation history for this supplier yet." },
+  "reval.recoRetain": { ID: "RETAIN — pertahankan", EN: "RETAIN — retain" },
+  "reval.recoImprove": { ID: "IMPROVE — perbaikan", EN: "IMPROVE — improve" },
+  "reval.recoReplace": { ID: "REPLACE — ganti", EN: "REPLACE — replace" },
+  "reval.recoExit": { ID: "EXIT — putus kontrak", EN: "EXIT — terminate" },
+  "reval.colPeriod": { ID: "Periode", EN: "Period" },
+  "reval.colRange": { ID: "Rentang", EN: "Range" },
+  "reval.colReco": { ID: "Reco", EN: "Reco" },
+  "reval.colEval": { ID: "Evaluasi", EN: "Evaluated" },
+
+  // ---------------- Actions Panel ----------------
+  "actions.title": { ID: "📋 Action Tracker · Onboarding & Follow-up", EN: "📋 Action Tracker · Onboarding & Follow-up" },
+  "actions.totalSuffix": { ID: "· {n} total", EN: "· {n} total" },
+  "actions.filterActive": { ID: "Aktif (non-done)", EN: "Active (non-done)" },
+  "actions.filterAll": { ID: "Semua status", EN: "All statuses" },
+  "actions.filterAllPrio": { ID: "Semua prio", EN: "All priorities" },
+  "actions.statusOpen": { ID: "Open", EN: "Open" },
+  "actions.statusInProgress": { ID: "In Progress", EN: "In Progress" },
+  "actions.statusBlocked": { ID: "Blocked", EN: "Blocked" },
+  "actions.statusDone": { ID: "Done", EN: "Done" },
+  "actions.statusCancelled": { ID: "Cancelled", EN: "Cancelled" },
+  "actions.prioLow": { ID: "Low", EN: "Low" },
+  "actions.prioMedium": { ID: "Medium", EN: "Medium" },
+  "actions.prioHigh": { ID: "High", EN: "High" },
+  "actions.prioCritical": { ID: "Critical", EN: "Critical" },
+  "actions.btnClose": { ID: "× Tutup", EN: "× Close" },
+  "actions.btnAdd": { ID: "+ Action", EN: "+ Action" },
+  "actions.statOverdue": { ID: "Overdue", EN: "Overdue" },
+  "actions.statHighCrit": { ID: "High/Crit Open", EN: "High/Crit Open" },
+  "actions.emptyFilter": { ID: "Tidak ada action sesuai filter.", EN: "No actions match the filter." },
+  "actions.overdueBadge": { ID: "⚠ Overdue", EN: "⚠ Overdue" },
+  "actions.daysLate": { ID: "{n}d telat", EN: "{n}d late" },
+  "actions.today": { ID: "hari ini", EN: "today" },
+  "actions.daysLeft": { ID: "H-{n}", EN: "D-{n}" },
+  "actions.owner": { ID: "owner: {name}", EN: "owner: {name}" },
+  "actions.blocked": { ID: "Blocked:", EN: "Blocked:" },
+  "actions.note": { ID: "Catatan:", EN: "Note:" },
+  "actions.blockedReasonPrompt": { ID: "Alasan blocked:", EN: "Reason for block:" },
+  "actions.quickNote": { ID: "+ catatan", EN: "+ note" },
+  "actions.delete": { ID: "hapus", EN: "delete" },
+  "actions.quickNotePrompt": { ID: "Catatan progress / output:", EN: "Progress / output note:" },
+  "actions.deleteConfirm": { ID: "Hapus action ini? Tindakan ini tidak bisa dibatalkan.", EN: "Delete this action? This cannot be undone." },
+  "actions.errUpdate": { ID: "Gagal update status.", EN: "Failed to update status." },
+  "actions.errNote": { ID: "Gagal simpan catatan.", EN: "Failed to save note." },
+  "actions.errDelete": { ID: "Gagal hapus.", EN: "Failed to delete." },
+  "actions.errSave": { ID: "Gagal simpan.", EN: "Failed to save." },
+  "actions.errTitle": { ID: "Judul wajib.", EN: "Title required." },
+  "actions.newTitle": { ID: "+ Action Baru", EN: "+ New Action" },
+  "actions.phTitle": { ID: "Judul action (wajib)", EN: "Action title (required)" },
+  "actions.phDesc": { ID: "Deskripsi (opsional)", EN: "Description (optional)" },
+  "actions.phSupplierId": { ID: "Supplier ID (cth: SUP-01)", EN: "Supplier ID (e.g., SUP-01)" },
+  "actions.phScope": { ID: "Scope lain (nama supplier / komoditas)", EN: "Other scope (supplier name / commodity)" },
+  "actions.phCategory": { ID: "Kategori (cth: Quality Control)", EN: "Category (e.g., Quality Control)" },
+  "actions.phOwner": { ID: "Owner / PIC", EN: "Owner / PIC" },
+  "actions.srcAdhoc": { ID: "Ad-hoc", EN: "Ad-hoc" },
+  "actions.srcOnboarding": { ID: "Onboarding", EN: "Onboarding" },
+  "actions.srcMom": { ID: "MoM Meeting", EN: "MoM Meeting" },
+  "actions.srcField": { ID: "Field visit", EN: "Field visit" },
+  "actions.srcAudit": { ID: "Audit", EN: "Audit" },
+  "actions.btnSave": { ID: "💾 Simpan", EN: "💾 Save" },
+  "actions.btnCancel": { ID: "Batal", EN: "Cancel" },
+
+  // ---------------- Supplier Detail Modal ----------------
+  "supModal.ariaDetail": { ID: "Rincian {name}", EN: "Details {name}" },
+  "supModal.fullPanel": { ID: "Panel Lengkap →", EN: "Full Panel →" },
+  "supModal.fullPanelTitle": { ID: "Panel lengkap: Re-evaluasi, QC gallery, LTA", EN: "Full panel: Re-evaluation, QC gallery, LTA" },
+  "supModal.closeAria": { ID: "Tutup", EN: "Close" },
+  "supModal.infoTitle": { ID: "🏢 Info Supplier", EN: "🏢 Supplier Info" },
+  "supModal.infoStatus": { ID: "Status:", EN: "Status:" },
+  "supModal.infoScore": { ID: "Score:", EN: "Score:" },
+  "supModal.infoPic": { ID: "PIC:", EN: "PIC:" },
+  "supModal.infoPhone": { ID: "Telepon:", EN: "Phone:" },
+  "supModal.infoEmail": { ID: "Email:", EN: "Email:" },
+  "supModal.infoAddress": { ID: "Alamat:", EN: "Address:" },
+  "supModal.infoNotes": { ID: "Catatan:", EN: "Notes:" },
+  "supModal.ratingTitle": { ID: "⭐ Rating & Sertifikasi", EN: "⭐ Rating & Certifications" },
+  "supModal.ratingScoreText": { ID: "Skor {score} / 100 · {stars}/5 bintang", EN: "Score {score} / 100 · {stars}/5 stars" },
+  "supModal.ratingNotYet": { ID: "Belum dinilai", EN: "Not rated yet" },
+  "supModal.ratingAria": { ID: "Set rating {n} bintang", EN: "Set rating {n} stars" },
+  "supModal.ratingClickToSet": { ID: "Klik untuk set", EN: "Click to set" },
+  "supModal.certsTitle": { ID: "📜 Sertifikasi", EN: "📜 Certifications" },
+  "supModal.certsEmpty": { ID: "Belum ada sertifikasi tercatat.", EN: "No certifications recorded yet." },
+  "supModal.certValidUntil": { ID: "s/d {date}", EN: "until {date}" },
+  "supModal.certExpired": { ID: " · kadaluarsa", EN: " · expired" },
+  "supModal.certDelete": { ID: "Hapus", EN: "Delete" },
+  "supModal.certPhName": { ID: "Nama sertifikat (cth: Halal)", EN: "Certificate name (e.g., Halal)" },
+  "supModal.certPhUntil": { ID: "Berlaku s/d", EN: "Valid until" },
+  "supModal.certBtnAdd": { ID: "+ Sertifikat", EN: "+ Certificate" },
+  "supModal.errSaveRating": { ID: "Gagal simpan rating.", EN: "Failed to save rating." },
+  "supModal.errCertName": { ID: "Nama sertifikat wajib.", EN: "Certificate name required." },
+  "supModal.errSaveCert": { ID: "Gagal simpan sertifikat.", EN: "Failed to save certificate." },
+  "supModal.errDeleteCert": { ID: "Hapus sertifikat ini?", EN: "Delete this certificate?" },
+  "supModal.errDelete": { ID: "Gagal hapus.", EN: "Failed to delete." },
+  "supModal.commodityTitle": { ID: "💰 Daftar Komoditas & Harga", EN: "💰 Commodity & Price List" },
+  "supModal.commodityHint": { ID: "· edit harga inline, tekan 💾 untuk simpan", EN: "· edit price inline, press 💾 to save" },
+  "supModal.commodityEmpty": {
+    ID: "Supplier belum punya komoditas tercatat. Tambahkan di bawah.",
+    EN: "This supplier has no commodities recorded. Add below."
+  },
+  "supModal.colCommodity": { ID: "Komoditas", EN: "Commodity" },
+  "supModal.colUnit": { ID: "Satuan", EN: "Unit" },
+  "supModal.colCurrentPrice": { ID: "Harga Saat Ini", EN: "Current Price" },
+  "supModal.colHistory": { ID: "Histori", EN: "History" },
+  "supModal.colAksi": { ID: "Aksi", EN: "Actions" },
+  "supModal.ariaSavePrice": { ID: "Simpan harga", EN: "Save price" },
+  "supModal.ariaRemoveItem": { ID: "Hapus komoditas", EN: "Remove commodity" },
+  "supModal.errSavePrice": { ID: "Gagal simpan harga.", EN: "Failed to save price." },
+  "supModal.confirmRemoveItem": { ID: "Hapus komoditas {code} dari supplier ini?", EN: "Remove commodity {code} from this supplier?" },
+  "supModal.errChooseItem": { ID: "Pilih komoditas dulu.", EN: "Select a commodity first." },
+  "supModal.errAddItem": { ID: "Gagal tambah.", EN: "Failed to add." },
+  "supModal.addItemTitle": { ID: "+ Tambah Komoditas Baru", EN: "+ Add New Commodity" },
+  "supModal.allCategories": { ID: "Semua kategori", EN: "All categories" },
+  "supModal.chooseCommodity": { ID: "— pilih komoditas —", EN: "— choose commodity —" },
+  "supModal.phPriceIdr": { ID: "Harga IDR", EN: "Price IDR" },
+  "supModal.btnAdd": { ID: "+ Tambah", EN: "+ Add" },
+  "supModal.actionsTitle": { ID: "📋 Action Items · {name}", EN: "📋 Action Items · {name}" },
+  "supModal.txTitle": { ID: "📋 Histori Transaksi", EN: "📋 Transaction History" },
+  "supModal.txHint": { ID: "· 20 terakhir", EN: "· last 20" },
+  "supModal.txEmpty": { ID: "Belum ada transaksi.", EN: "No transactions yet." },
+  "supModal.txColDate": { ID: "Tanggal", EN: "Date" },
+  "supModal.txColType": { ID: "Tipe", EN: "Type" },
+  "supModal.txColNumber": { ID: "Nomor", EN: "Number" },
+  "supModal.txColAmount": { ID: "Nilai", EN: "Amount" },
+  "supModal.txColStatus": { ID: "Status", EN: "Status" },
+
+  // ---------------- Calendar (/calendar) ----------------
+  "calendar.title": { ID: "Kalender Menu", EN: "Menu Calendar" },
+  "calendar.subtitle": {
+    ID: "{month} · {op} hari operasional · {hol} libur · {nonOp} non-op",
+    EN: "{month} · {op} operating days · {hol} holidays · {nonOp} non-op"
+  },
+  "calendar.unassignedWarn": { ID: "{n} belum di-assign", EN: "{n} not assigned" },
+  "calendar.allAssigned": { ID: "semua assigned", EN: "all assigned" },
+  "calendar.btnBOM": { ID: "🍽️ Lihat BOM", EN: "🍽️ View BOM" },
+  "calendar.prevAria": { ID: "Bulan sebelumnya", EN: "Previous month" },
+  "calendar.nextAria": { ID: "Bulan berikutnya", EN: "Next month" },
+  "calendar.legendMenu": { ID: "Hari Menu", EN: "Menu Day" },
+  "calendar.legendHoliday": { ID: "Libur Nasional", EN: "National Holiday" },
+  "calendar.legendWeekend": { ID: "Weekend", EN: "Weekend" },
+  "calendar.legendNonOp": { ID: "Tidak Operasional", EN: "Non-Operational" },
+  "calendar.legendHint": {
+    ID: "💡 Klik tanggal untuk assign menu / tandai Tidak Operasional",
+    EN: "💡 Click a date to assign menu / mark as Non-Operational"
+  },
+  "calendar.holidaysTitle": { ID: "Libur Nasional Bulan Ini", EN: "National Holidays This Month" },
+  "calendar.holidaysHint": { ID: "Dihitung otomatis sebagai non-operasional.", EN: "Counted automatically as non-operational." },
+
+  // ---------------- Calendar Grid (/calendar) ----------------
+  "calGrid.recipientLabel": { ID: "{n} penerima", EN: "{n} recipients" },
+  "calGrid.clickToAssign": { ID: "klik untuk assign", EN: "click to assign" },
+  "calGrid.readOnlyNote": {
+    ID: "Mode read-only · hanya admin, operator, dan ahli gizi yang bisa mengubah jadwal.",
+    EN: "Read-only mode · only admin, operator, and nutritionist can change the schedule."
+  },
+  "calGrid.errLoadRef": { ID: "Gagal memuat referensi.", EN: "Failed to load reference." },
+  "calGrid.errLoadAtt": { ID: "Gagal memuat kehadiran.", EN: "Failed to load attendance." },
+  "calGrid.errSaveMenu": { ID: "Gagal menyimpan menu.", EN: "Failed to save menu." },
+  "calGrid.errClearAssign": { ID: "Gagal menghapus assignment.", EN: "Failed to clear assignment." },
+  "calGrid.errReasonRequired": { ID: "Alasan non-operasional wajib diisi.", EN: "Non-operational reason is required." },
+  "calGrid.errMarkNonOp": { ID: "Gagal menandai non-operasional.", EN: "Failed to mark non-operational." },
+  "calGrid.errClearNonOp": { ID: "Gagal menghapus non-operasional.", EN: "Failed to clear non-operational." },
+  "calGrid.errSaveAttendance": { ID: "Gagal menyimpan kehadiran.", EN: "Failed to save attendance." },
+  "calGrid.modalTitlePrefix": { ID: "📆 Atur Jadwal Menu", EN: "📆 Set Menu Schedule" },
+  "calGrid.closeAria": { ID: "Tutup", EN: "Close" },
+  "calGrid.step1Title": { ID: "Operasional Hari Ini?", EN: "Operational Today?" },
+  "calGrid.btnYesOp": { ID: "✅ Ya, Operasional", EN: "✅ Yes, Operational" },
+  "calGrid.btnNoOp": { ID: "⛔ Tidak Operasional", EN: "⛔ Not Operational" },
+  "calGrid.scheduled": { ID: "✓ Terjadwal", EN: "✓ Scheduled" },
+  "calGrid.notAssignedWarn": {
+    ID: "⚠ Belum di-assign · pilih menu di bawah",
+    EN: "⚠ Not assigned yet · choose a menu below"
+  },
+  "calGrid.step2Title": { ID: "📋 Pilih Menu ID", EN: "📋 Choose Menu ID" },
+  "calGrid.btnSetMenu": { ID: "Set Menu", EN: "Set Menu" },
+  "calGrid.autoFillHint": {
+    ID: "💡 Memilih Menu ID akan otomatis mengisi kombinasi di bawah.",
+    EN: "💡 Choosing a Menu ID auto-fills the combination below."
+  },
+  "calGrid.step3Title": { ID: "Kombinasi Menu", EN: "Menu Combination" },
+  "calGrid.loadingIngredients": { ID: "Memuat bahan…", EN: "Loading ingredients…" },
+  "calGrid.labelKarbo": { ID: "🍚 Karbohidrat", EN: "🍚 Carbohydrate" },
+  "calGrid.labelProtein": { ID: "🍗 Protein", EN: "🍗 Protein" },
+  "calGrid.labelSayur": { ID: "🥬 Sayur", EN: "🥬 Vegetable" },
+  "calGrid.labelBuah": { ID: "🍌 Buah", EN: "🍌 Fruit" },
+  "calGrid.labelNote": { ID: "Catatan (opsional)", EN: "Note (optional)" },
+  "calGrid.notePlaceholder": {
+    ID: "cth: menu tamu, acara khusus, uji coba menu baru",
+    EN: "e.g. guest menu, special event, new menu trial"
+  },
+  "calGrid.btnSaveCombination": { ID: "Simpan Kombinasi", EN: "Save Combination" },
+  "calGrid.btnSaving": { ID: "Menyimpan…", EN: "Saving…" },
+  "calGrid.btnDeleteAssign": { ID: "Hapus Assignment", EN: "Remove Assignment" },
+  "calGrid.reasonLabel": { ID: "Alasan Non-Operasional", EN: "Non-Operational Reason" },
+  "calGrid.reasonPlaceholder": {
+    ID: "mis. Libur Nasional, UAS, Rapat Guru",
+    EN: "e.g. National Holiday, Finals, Teachers' Meeting"
+  },
+  "calGrid.reasonHint": {
+    ID: "Menandai hari ini sebagai non-op akan menghapus assignment menu jika ada.",
+    EN: "Marking this day as non-op will remove any existing menu assignment."
+  },
+  "calGrid.btnUpdateReason": { ID: "Update Alasan", EN: "Update Reason" },
+  "calGrid.btnMarkNonOp": { ID: "Tandai Non-Op", EN: "Mark Non-Op" },
+  "calGrid.btnMakeOperational": { ID: "Jadikan Operasional Lagi", EN: "Make Operational Again" },
+  "calGrid.defaultNonOpReason": { ID: "Tidak Operasional", EN: "Non-Operational" },
+  "calGrid.titleNonOp": { ID: "Non-Op: {reason}", EN: "Non-Op: {reason}" },
+  "calGrid.noneUsed": { ID: "— Tidak dipakai —", EN: "— Not used —" },
 
   // ---------------- BOM Variance (/menu/variance) ----------------
   "variance.title": { ID: "BOM Variance · Plan vs Actual", EN: "BOM Variance · Plan vs Actual" },
@@ -598,6 +1010,51 @@ export const LANG_KEYS = {
     EN: "Period {start} → {end} · Threshold ±{pct}%"
   },
   "variance.noGRN": { ID: "Belum ada GRN actual dalam periode ini", EN: "No actual GRN in this period yet" },
+  "variance.btnBackMenu": { ID: "← Master Menu", EN: "← Menu Master" },
+  "variance.btnStock": { ID: "📦 Stock →", EN: "📦 Stock →" },
+  "variance.filterFrom": { ID: "Dari", EN: "From" },
+  "variance.filterTo": { ID: "Sampai", EN: "To" },
+  "variance.filterThreshold": { ID: "Threshold (%)", EN: "Threshold (%)" },
+  "variance.filterApply": { ID: "Terapkan", EN: "Apply" },
+  "variance.kpiScope": { ID: "Item dalam scope", EN: "Items in scope" },
+  "variance.kpiScopeSub": {
+    ID: "{over} over · {under} under · {ok} ok",
+    EN: "{over} over · {under} under · {ok} ok"
+  },
+  "variance.kpiPlan": { ID: "Rencana", EN: "Plan" },
+  "variance.kpiPlanSub": { ID: "berat bahan basah", EN: "wet ingredient weight" },
+  "variance.kpiActual": { ID: "Realisasi", EN: "Actual" },
+  "variance.kpiActualSub": { ID: "dari GRN ok/partial", EN: "from ok/partial GRN" },
+  "variance.kpiVariance": { ID: "Variance", EN: "Variance" },
+  "variance.secPerItem": { ID: "📋 Per Item", EN: "📋 Per Item" },
+  "variance.secPerItemHint": {
+    ID: "Plan dihitung dari menu_assign × gramasi tiered × porsi hadir. Actual dari GRN (status ok/partial). Flag OVER/UNDER jika |variance| > {pct}%.",
+    EN: "Plan is computed from menu_assign × tiered grammage × servings attended. Actual from GRN (ok/partial status). Flag OVER/UNDER when |variance| > {pct}%."
+  },
+  "variance.emptyTitle": { ID: "Tidak ada data variance", EN: "No variance data" },
+  "variance.emptyBody": {
+    ID: "Belum ada plan/actual untuk rentang tanggal ini. Pastikan menu_assign sudah ter-generate dan periode meliputi hari kerja.",
+    EN: "No plan/actual data for this date range yet. Make sure menu_assign has been generated and the period covers workdays."
+  },
+  "variance.colFlag": { ID: "Flag", EN: "Flag" },
+  "variance.colPlanKg": { ID: "Plan (kg)", EN: "Plan (kg)" },
+  "variance.colActualKg": { ID: "Actual (kg)", EN: "Actual (kg)" },
+  "variance.colDeltaKg": { ID: "Δ (kg)", EN: "Δ (kg)" },
+  "variance.colDeltaPct": { ID: "Δ (%)", EN: "Δ (%)" },
+  "variance.secPerMenu": { ID: "🍽️ Per Menu", EN: "🍽️ Per Menu" },
+  "variance.secPerMenuHint": {
+    ID: "Breakdown rencana per menu: jumlah hari tersajikan, total porsi, total kg bahan, dan perkiraan cost bahan.",
+    EN: "Plan breakdown per menu: days served, total servings, total ingredient kg, and estimated ingredient cost."
+  },
+  "variance.emptyMenu": { ID: "Belum ada menu aktif dalam rentang tanggal.", EN: "No active menu in the date range." },
+  "variance.colDays": { ID: "Hari", EN: "Days" },
+  "variance.colPorsi": { ID: "Porsi", EN: "Servings" },
+  "variance.colTotalBahan": { ID: "Total Bahan", EN: "Total Ingredient" },
+  "variance.colCostBahan": { ID: "Cost Bahan", EN: "Ingredient Cost" },
+  "variance.footer": {
+    ID: "BOM Variance · basis tiered gramasi 4 age-band · fallback grams_per_porsi · go-live 4 Mei 2026",
+    EN: "BOM Variance · tiered 4-age-band grammage · grams_per_porsi fallback · go-live 4 May 2026"
+  },
 
   // ---------------- Supplier Forecast (/supplier/forecast) ----------------
   "supForecast.incompleteTitle": { ID: "Profil supplier belum lengkap", EN: "Supplier profile incomplete" },

@@ -21,6 +21,8 @@ import {
   THead
 } from "@/components/ui";
 import { RevalPanel } from "./reval-panel";
+import { t, ti } from "@/lib/i18n";
+import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +49,7 @@ export default async function SupplierDetailPage({
   searchParams
 }: Props) {
   const supabase = createClient();
+  const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -96,12 +99,12 @@ export default async function SupplierDetailPage({
 
   const recoLabel =
     Number(scorecard.total_score) >= 85
-      ? "RETAIN — performa baik"
+      ? t("supplierDetail.recoRetain", lang)
       : Number(scorecard.total_score) >= 70
-        ? "IMPROVE — butuh pembinaan"
+        ? t("supplierDetail.recoImprove", lang)
         : Number(scorecard.total_score) >= 55
-          ? "WARNING — resiko tinggi"
-          : "REPLACE — exit plan";
+          ? t("supplierDetail.recoWarning", lang)
+          : t("supplierDetail.recoReplace", lang);
 
   return (
     <div>
@@ -123,7 +126,7 @@ export default async function SupplierDetailPage({
                   {sup.status}
                 </span>
               )}
-              {sup.pic && <span className="ml-2">PIC: {sup.pic}</span>}
+              {sup.pic && <span className="ml-2">{t("supplierDetail.subPic", lang)}: {sup.pic}</span>}
               {sup.phone && (
                 <span className="ml-2 font-mono text-[11px]">{sup.phone}</span>
               )}
@@ -132,21 +135,21 @@ export default async function SupplierDetailPage({
           actions={
             <>
               <LinkButton href="/suppliers" variant="secondary" size="sm">
-                ← Semua Supplier
+                {t("supplierDetail.btnBack", lang)}
               </LinkButton>
               <LinkButton
                 href={`/supplier/forecast?supplier_id=${encodeURIComponent(id)}`}
                 variant="secondary"
                 size="sm"
               >
-                📅 Forecast 90h
+                {t("supplierDetail.btnForecast", lang)}
               </LinkButton>
               <LinkButton
                 href={`/api/suppliers/${id}/lta?start=${start}&end=${end}`}
                 variant="primary"
                 size="sm"
               >
-                📄 Generate LTA
+                {t("supplierDetail.btnLTA", lang)}
               </LinkButton>
             </>
           }
@@ -154,71 +157,71 @@ export default async function SupplierDetailPage({
 
         <KpiGrid>
           <KpiTile
-            label="Total Score"
+            label={t("supplierDetail.kpiTotalScore", lang)}
             value={Number(scorecard.total_score).toFixed(1)}
             sub={recoLabel}
             tone={recoTone}
           />
           <KpiTile
-            label="Quality"
+            label={t("supplierDetail.kpiQuality", lang)}
             value={`${Number(scorecard.quality_score).toFixed(0)}/100`}
-            sub={`${scorecard.qc_pass} pass · ${scorecard.qc_fail} fail`}
+            sub={ti("supplierDetail.kpiQualitySub", lang, { pass: scorecard.qc_pass, fail: scorecard.qc_fail })}
           />
           <KpiTile
-            label="Delivery"
+            label={t("supplierDetail.kpiDelivery", lang)}
             value={`${Number(scorecard.delivery_score).toFixed(0)}/100`}
-            sub={`${scorecard.grn_count} GRN diterima`}
+            sub={ti("supplierDetail.kpiDeliverySub", lang, { n: scorecard.grn_count })}
           />
           <KpiTile
-            label="Compliance"
+            label={t("supplierDetail.kpiCompliance", lang)}
             value={`${Number(scorecard.compliance_score).toFixed(0)}/100`}
-            sub={`${scorecard.ncr_critical_open} NCR kritikal aktif`}
+            sub={ti("supplierDetail.kpiComplianceSub", lang, { n: scorecard.ncr_critical_open })}
             tone={scorecard.ncr_critical_open > 0 ? "bad" : "default"}
           />
         </KpiGrid>
 
         <Section
-          title="📊 Scorecard Otomatis"
-          hint={`Dihitung dari data operasional ${start} → ${end}. Bobot default: Q 30% · D 25% · P 20% · C 15% · R 10%.`}
+          title={t("supplierDetail.secScorecard", lang)}
+          hint={ti("supplierDetail.secScorecardHint", lang, { start, end })}
         >
           <div className="grid gap-3 md:grid-cols-5">
-            <ScoreBar label="Quality" val={scorecard.quality_score} />
-            <ScoreBar label="Delivery" val={scorecard.delivery_score} />
-            <ScoreBar label="Price" val={scorecard.price_score} />
-            <ScoreBar label="Compliance" val={scorecard.compliance_score} />
+            <ScoreBar label={t("supplierDetail.scoreQuality", lang)} val={scorecard.quality_score} />
+            <ScoreBar label={t("supplierDetail.scoreDelivery", lang)} val={scorecard.delivery_score} />
+            <ScoreBar label={t("supplierDetail.scorePrice", lang)} val={scorecard.price_score} />
+            <ScoreBar label={t("supplierDetail.scoreCompliance", lang)} val={scorecard.compliance_score} />
             <ScoreBar
-              label="Responsiveness"
+              label={t("supplierDetail.scoreResponsiveness", lang)}
               val={scorecard.responsiveness_score}
             />
           </div>
           <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-ink2">
             <Badge tone="info">
-              GRN: {scorecard.grn_count}
+              {ti("supplierDetail.badgeGRN", lang, { n: scorecard.grn_count })}
             </Badge>
             <Badge tone={scorecard.qc_fail > 0 ? "warn" : "ok"}>
-              QC Pass Rate:{" "}
-              {scorecard.qc_pass + scorecard.qc_fail > 0
-                ? (
-                    (scorecard.qc_pass /
-                      (scorecard.qc_pass + scorecard.qc_fail)) *
-                    100
-                  ).toFixed(0)
-                : "—"}
-              %
+              {ti("supplierDetail.badgeQCRate", lang, {
+                pct:
+                  scorecard.qc_pass + scorecard.qc_fail > 0
+                    ? (
+                        (scorecard.qc_pass /
+                          (scorecard.qc_pass + scorecard.qc_fail)) *
+                        100
+                      ).toFixed(0)
+                    : "—"
+              })}
             </Badge>
             <Badge tone={scorecard.actions_overdue > 0 ? "warn" : "ok"}>
-              Actions: {scorecard.actions_overdue}/{scorecard.actions_total}{" "}
-              overdue
+              {ti("supplierDetail.badgeActions", lang, { overdue: scorecard.actions_overdue, total: scorecard.actions_total })}
             </Badge>
             <Badge tone={scorecard.ncr_critical_open > 0 ? "bad" : "ok"}>
-              NCR Kritikal Open: {scorecard.ncr_critical_open}
+              {ti("supplierDetail.badgeNCR", lang, { n: scorecard.ncr_critical_open })}
             </Badge>
           </div>
         </Section>
 
         <Section
-          title="🔁 Re-Evaluasi Periodik"
-          hint="Simpan snapshot skor per periode. Klik 'Hitung & Simpan' untuk merekam evaluasi baru."
+          title={t("supplierDetail.secReval", lang)}
+          hint={t("supplierDetail.secRevalHint", lang)}
         >
           <RevalPanel
             supplierId={id}
@@ -230,14 +233,14 @@ export default async function SupplierDetailPage({
         </Section>
 
         <Section
-          title="🖼️ Visual QC Gallery"
-          hint={`${gallery.length} foto dari GRN QC + NCR · 60 terbaru.`}
+          title={t("supplierDetail.secGallery", lang)}
+          hint={ti("supplierDetail.secGalleryHint", lang, { n: gallery.length })}
         >
           {gallery.length === 0 ? (
             <EmptyState
               icon="📷"
-              title="Belum ada foto QC"
-              message="Foto akan muncul di sini ketika operator upload photo_url ke QC Check atau NCR."
+              title={t("supplierDetail.galleryEmptyTitle", lang)}
+              message={t("supplierDetail.galleryEmptyBody", lang)}
             />
           ) : (
             <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -275,7 +278,9 @@ export default async function SupplierDetailPage({
                           : g.result.toUpperCase()}
                       </span>
                       <span className="text-[10px] text-ink2/70">
-                        {new Date(g.captured_at).toLocaleDateString("id-ID")}
+                        {new Date(g.captured_at).toLocaleDateString(
+                          lang === "EN" ? "en-US" : "id-ID"
+                        )}
                       </span>
                     </div>
                     <div className="mt-1 truncate text-[11px] font-mono text-ink2">
@@ -297,19 +302,19 @@ export default async function SupplierDetailPage({
         </Section>
 
         <Section
-          title="📦 Komoditas yang Dipasok"
-          hint={`${supItems.length} item di-map ke supplier ini.`}
+          title={t("supplierDetail.secItems", lang)}
+          hint={ti("supplierDetail.secItemsHint", lang, { n: supItems.length })}
         >
           {supItems.length === 0 ? (
-            <EmptyState message="Belum ada mapping item." />
+            <EmptyState message={t("supplierDetail.itemsEmpty", lang)} />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">Item</th>
-                  <th className="py-2 pr-3">Main?</th>
-                  <th className="py-2 pr-3 text-right">Harga (IDR)</th>
-                  <th className="py-2 pr-3 text-right">Lead Time</th>
+                  <th className="py-2 pr-3">{t("supplierDetail.colItem", lang)}</th>
+                  <th className="py-2 pr-3">{t("supplierDetail.colMain", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("supplierDetail.colPrice", lang)}</th>
+                  <th className="py-2 pr-3 text-right">{t("supplierDetail.colLead", lang)}</th>
                 </THead>
                 <tbody>
                   {supItems.map((si) => (
@@ -322,9 +327,9 @@ export default async function SupplierDetailPage({
                       </td>
                       <td className="py-2 pr-3">
                         {si.is_main ? (
-                          <Badge tone="ok">utama</Badge>
+                          <Badge tone="ok">{t("supplierDetail.badgeMain", lang)}</Badge>
                         ) : (
-                          <Badge tone="muted">alternatif</Badge>
+                          <Badge tone="muted">{t("supplierDetail.badgeAlt", lang)}</Badge>
                         )}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs">
@@ -334,7 +339,7 @@ export default async function SupplierDetailPage({
                       </td>
                       <td className="py-2 pr-3 text-right font-mono text-xs">
                         {si.lead_time_days != null
-                          ? `${si.lead_time_days} hari`
+                          ? ti("supplierDetail.leadDays", lang, { n: si.lead_time_days })
                           : "—"}
                       </td>
                     </tr>
@@ -346,18 +351,18 @@ export default async function SupplierDetailPage({
         </Section>
 
         <Section
-          title="📜 Sertifikasi"
-          hint={`${certs.length} sertifikat terdaftar.`}
+          title={t("supplierDetail.secCerts", lang)}
+          hint={ti("supplierDetail.secCertsHint", lang, { n: certs.length })}
         >
           {certs.length === 0 ? (
-            <EmptyState message="Belum ada sertifikat." />
+            <EmptyState message={t("supplierDetail.certsEmpty", lang)} />
           ) : (
             <TableWrap>
               <table className="w-full text-sm">
                 <THead>
-                  <th className="py-2 pr-3">Sertifikat</th>
-                  <th className="py-2 pr-3">Berlaku Sampai</th>
-                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">{t("supplierDetail.colCert", lang)}</th>
+                  <th className="py-2 pr-3">{t("supplierDetail.colValidUntil", lang)}</th>
+                  <th className="py-2 pr-3">{t("supplierDetail.colStatus", lang)}</th>
                 </THead>
                 <tbody>
                   {certs.map((c) => {
@@ -374,11 +379,11 @@ export default async function SupplierDetailPage({
                         </td>
                         <td className="py-2 pr-3">
                           {c.valid_until == null ? (
-                            <Badge tone="muted">tak terbatas</Badge>
+                            <Badge tone="muted">{t("supplierDetail.certUnlimited", lang)}</Badge>
                           ) : expired ? (
-                            <Badge tone="bad">kedaluwarsa</Badge>
+                            <Badge tone="bad">{t("supplierDetail.certExpired", lang)}</Badge>
                           ) : (
-                            <Badge tone="ok">valid</Badge>
+                            <Badge tone="ok">{t("supplierDetail.certValid", lang)}</Badge>
                           )}
                         </td>
                       </tr>
