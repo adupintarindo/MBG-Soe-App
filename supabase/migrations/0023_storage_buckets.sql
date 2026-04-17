@@ -1,5 +1,5 @@
 -- =============================================================================
--- 0019 · Storage Buckets · receipts + supplier_docs + avatars
+-- 0023 · Storage Buckets · receipts + supplier_docs + avatars
 -- -----------------------------------------------------------------------------
 -- Bucket policies pakai storage.foldername(name) → path-prefix untuk per-supplier
 -- isolation. Naming convention:
@@ -107,5 +107,5 @@ create policy "avatars: self write" on storage.objects
   );
 
 -- =============================================================================
--- END 0019
+-- END 0023
 -- =============================================================================
