@@ -312,7 +312,7 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
                   <th className="py-2 pr-3 text-right">{t("variance.colDays", lang)}</th>
                   <th className="py-2 pr-3 text-right">{t("variance.colPorsi", lang)}</th>
                   <th className="py-2 pr-3 text-right">{t("variance.colTotalBahan", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("variance.colCostBahan", lang)}</th>
+                  <th className="py-2 pr-3">{t("variance.colCostBahan", lang)}</th>
                 </THead>
                 <tbody>
                   {byMenu.map((m) => (
@@ -335,7 +335,7 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
                       <td className="py-2 pr-3 text-right font-mono text-xs">
                         {formatKg(m.plan_kg_total, 1)}
                       </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs font-bold text-emerald-800">
+                      <td className="py-2 pr-3 text-left font-mono text-xs font-bold text-emerald-800">
                         {formatIDR(m.plan_cost_idr)}
                       </td>
                     </tr>

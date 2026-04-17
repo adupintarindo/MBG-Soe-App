@@ -6,11 +6,13 @@
 import Link from "next/link";
 import type { ReactNode, HTMLAttributes, AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 
+export { SortableTable, type SortableColumn, type SortDir } from "./sortable-table";
+
 /* ---------- Layout ---------- */
 
 export function PageContainer({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 animate-fade-in">
+    <main className="mx-auto max-w-7xl px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 animate-fade-in">
       {children}
     </main>
   );
@@ -73,59 +75,35 @@ export function Section({
   className = "",
   children,
   noPad = false,
-  banner = false
+  banner: _banner = false
 }: SectionProps) {
-  if (banner) {
-    return (
-      <section
-        className={`mb-6 overflow-hidden rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${className}`}
-      >
-        <header className="flex flex-wrap items-center justify-between gap-3 bg-ink px-6 py-4">
+  void _banner;
+  return (
+    <section
+      className={`mb-6 overflow-hidden rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${className}`}
+    >
+      {(title || actions) && (
+        <header className="relative flex flex-wrap items-center justify-center gap-3 bg-ink px-4 py-1.5 text-center">
           {title && (
-            <h2 className="font-display text-sm font-bold uppercase tracking-[0.12em] text-white sm:text-[13px]">
+            <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
               {title}
             </h2>
           )}
           {actions && (
-            <div className="flex flex-wrap items-center gap-2">{actions}</div>
-          )}
-        </header>
-        <div className={noPad ? "" : "p-5"}>
-          {hint && (
-            <p className="mb-4 text-[13px] leading-relaxed text-ink2/70">
-              {hint}
-            </p>
-          )}
-          {children}
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section
-      className={`mb-6 rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${noPad ? "" : "p-5"} ${className}`}
-    >
-      {(title || hint || actions) && (
-        <header className={`flex flex-wrap items-center justify-between gap-3 ${noPad ? "px-5 pt-5" : "mb-4"}`}>
-          <div className="min-w-0">
-            {title && (
-              <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.08em] text-ink">
-                {title}
-              </h2>
-            )}
-            {hint && (
-              <p className="mt-1 text-[11.5px] leading-relaxed text-ink2/70">
-                {hint}
-              </p>
-            )}
-          </div>
-          {actions && (
-            <div className="flex flex-wrap items-center gap-2">{actions}</div>
+            <div className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-wrap items-center gap-2">
+              {actions}
+            </div>
           )}
         </header>
       )}
-      {children}
+      <div className={noPad ? "" : "p-5"}>
+        {hint && (
+          <p className="mb-4 text-[12px] leading-relaxed text-ink2/70">
+            {hint}
+          </p>
+        )}
+        {children}
+      </div>
     </section>
   );
 }
@@ -338,7 +316,7 @@ const EMPTY_TONE: Record<NonNullable<EmptyStateProps["tone"]>, string> = {
 export function EmptyState({
   icon = "🗒️",
   title,
-  message = "Belum ada data.",
+  message,
   tone = "neutral"
 }: EmptyStateProps) {
   return (
@@ -348,7 +326,9 @@ export function EmptyState({
       <span className="text-lg leading-none">{icon}</span>
       <div className="min-w-0">
         {title && <div className="font-bold">{title}</div>}
-        <div className={title ? "text-[12px] opacity-80" : ""}>{message}</div>
+        {message != null && (
+          <div className={title ? "text-[12px] opacity-80" : ""}>{message}</div>
+        )}
       </div>
     </div>
   );

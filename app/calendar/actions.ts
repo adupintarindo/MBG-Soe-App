@@ -207,13 +207,14 @@ export async function fetchCalendarReference(): Promise<
       kelas46: number;
       guru: number;
     }[];
+    bom: { menu_id: number; item_code: string }[];
   }>
 > {
   const auth = await requireAuth();
   if (!auth.ok) return { ok: false, error: auth.error };
 
   const supabase = createAdminClient();
-  const [itemsRes, schoolsRes] = await Promise.all([
+  const [itemsRes, schoolsRes, bomRes] = await Promise.all([
     supabase
       .from("items")
       .select("code, name_en, category, active")
@@ -223,10 +224,14 @@ export async function fetchCalendarReference(): Promise<
       .from("schools")
       .select("id, name, level, students, kelas13, kelas46, guru")
       .eq("active", true)
-      .order("id")
+      .order("id"),
+    supabase
+      .from("menu_bom")
+      .select("menu_id, item_code")
   ]);
   if (itemsRes.error) return { ok: false, error: itemsRes.error.message };
   if (schoolsRes.error) return { ok: false, error: schoolsRes.error.message };
+  if (bomRes.error) return { ok: false, error: bomRes.error.message };
   return {
     ok: true,
     data: {
@@ -244,7 +249,8 @@ export async function fetchCalendarReference(): Promise<
         kelas13: number;
         kelas46: number;
         guru: number;
-      }[]
+      }[],
+      bom: (bomRes.data ?? []) as { menu_id: number; item_code: string }[]
     }
   };
 }

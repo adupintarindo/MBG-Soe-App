@@ -381,6 +381,7 @@ export const LANG_KEYS = {
   },
   "stock.catTitle": { ID: "{cat} · {n} item", EN: "{cat} · {n} items" },
   "stock.catTotalValue": { ID: "Total nilai", EN: "Total value" },
+  "stock.masterTitle": { ID: "📦 Master Stok · {n} item", EN: "📦 Stock Master · {n} items" },
   "stock.colHarga": { ID: "Harga", EN: "Price" },
   "stock.colNilai": { ID: "Nilai", EN: "Value" },
   "stock.colVolWeekly": { ID: "Vol Mingguan", EN: "Weekly Vol" },

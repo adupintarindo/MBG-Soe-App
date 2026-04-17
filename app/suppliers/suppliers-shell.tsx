@@ -263,7 +263,7 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
               <th className="w-14 py-2 pr-3 text-right">{t("suppliers.colItems", lang)}</th>
               <th className="w-16 py-2 pr-3 text-right">{t("suppliers.colScore", lang)}</th>
               <th className="w-24 py-2 pr-3">{t("suppliers.colStatus", lang)}</th>
-              <th className="w-32 py-2 pl-3 pr-3 text-right">{t("suppliers.colSpend", lang)}</th>
+              <th className="w-32 py-2 pl-3 pr-3">{t("suppliers.colSpend", lang)}</th>
             </THead>
             <tbody>
               {suppliers.map((s) => {
@@ -328,7 +328,7 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
                         {s.status}
                       </span>
                     </td>
-                    <td className="py-2 pl-3 pr-3 text-right align-middle font-mono text-xs tabular-nums">
+                    <td className="py-2 pl-3 pr-3 text-left align-middle font-mono text-xs tabular-nums">
                       {spend ? (
                         <span className="font-bold text-emerald-800">
                           {formatIDR(spend.total)}

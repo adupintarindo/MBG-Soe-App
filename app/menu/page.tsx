@@ -220,14 +220,9 @@ export default async function MenuMasterPage() {
                         H{menu.cycle_day}
                       </span>
                       <h3 className="text-sm font-black text-ink">
-                        {menu.name}
+                        {lang === "EN" && menu.name_en ? menu.name_en : menu.name}
                       </h3>
                     </div>
-                    {menu.name_en && (
-                      <div className="mt-1 text-[11px] italic text-ink2/70">
-                        {menu.name_en}
-                      </div>
-                    )}
                   </div>
                   <div className="text-right">
                     <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/60">
@@ -264,7 +259,7 @@ export default async function MenuMasterPage() {
                               key={r.item_code}
                               className="border-t border-ink/5"
                             >
-                              <td className="px-2 py-1.5 text-center font-semibold text-ink">
+                              <td className="px-2 py-1.5 text-left font-semibold text-ink">
                                 {r.item_code}
                               </td>
                               <td className="px-2 py-1.5 text-center">
@@ -314,11 +309,13 @@ export default async function MenuMasterPage() {
                     className={`row-hover border-b border-ink/5 ${!it.active ? "opacity-50" : ""}`}
                   >
                     <td className="py-2 pr-3 text-center text-ink2">{i + 1}</td>
-                    <td className="py-2 pr-3 text-center font-semibold">
+                    <td className="py-2 pr-3 text-left font-semibold">
                       {it.code.replace(/^Buah\s*-\s*/i, "")}
                     </td>
                     <td className="py-2 pr-3 text-center">
-                      <CategoryBadge category={it.category} />
+                      <div className="flex justify-center">
+                        <CategoryBadge category={it.category} />
+                      </div>
                     </td>
                     <td className="py-2 pr-3 text-center font-mono text-xs">{it.unit}</td>
                     <td className="py-2 pr-3 text-center font-mono text-xs">

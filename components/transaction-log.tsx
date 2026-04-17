@@ -119,8 +119,8 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
                 <th className="px-3 py-2.5">{t("tx.colDate", lang)}</th>
                 <th className="px-3 py-2.5">{t("tx.colType", lang)}</th>
                 <th className="px-3 py-2.5">{t("tx.colRef", lang)}</th>
-                <th className="px-3 py-2.5">{t("tx.colSupplier", lang)}</th>
-                <th className="px-3 py-2.5">{t("tx.colDescription", lang)}</th>
+                <th className="px-3 py-2.5 text-left">{t("tx.colSupplier", lang)}</th>
+                <th className="px-3 py-2.5 text-left">{t("tx.colDescription", lang)}</th>
                 <th className="px-3 py-2.5">{t("tx.colAmount", lang)}</th>
               </tr>
             </thead>
@@ -143,8 +143,8 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
                   <td className="px-3 py-2 text-center font-mono text-[11px]">
                     {r.ref_no ?? "—"}
                   </td>
-                  <td className="px-3 py-2 text-center">{r.supplier_name ?? "—"}</td>
-                  <td className="px-3 py-2 text-center text-ink2">
+                  <td className="px-3 py-2 text-left">{r.supplier_name ?? "—"}</td>
+                  <td className="px-3 py-2 text-left text-ink2">
                     {r.description ?? "—"}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-left font-mono">

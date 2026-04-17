@@ -224,7 +224,7 @@ export default async function PlanningPage() {
                         className="row-hover border-b border-ink/5"
                       >
                         <td className="py-2 pr-3 text-center text-ink2">{i + 1}</td>
-                        <td className="py-2 pr-3 text-center font-semibold">{code}</td>
+                        <td className="py-2 pr-3 text-left font-semibold">{code}</td>
                         <td className="py-2 pr-3 text-center">
                           <CategoryBadge category={it?.category} size="sm" />
                         </td>
@@ -243,7 +243,7 @@ export default async function PlanningPage() {
                             maximumFractionDigits: 0
                           })}
                         </td>
-                        <td className="py-2 pr-3 text-center font-mono text-xs text-emerald-800">
+                        <td className="py-2 pr-3 text-left font-mono text-xs text-emerald-800">
                           {formatIDR(itemCost.get(code) ?? 0)}
                         </td>
                       </tr>
@@ -277,7 +277,7 @@ export default async function PlanningPage() {
                         { maximumFractionDigits: 0 }
                       )}
                     </td>
-                    <td className="py-2 pr-3 text-right font-mono text-xs font-black text-emerald-800">
+                    <td className="py-2 pr-3 text-left font-mono text-xs font-black text-emerald-800">
                       {formatIDR(
                         sortedItems
                           .slice(0, 30)

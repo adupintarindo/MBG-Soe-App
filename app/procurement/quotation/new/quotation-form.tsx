@@ -331,8 +331,8 @@ export function QuotationForm({
                 <th className="px-3 py-2">{t("qtNew.colItem", lang)}</th>
                 <th className="px-3 py-2 text-right">{t("qtNew.colQty", lang)}</th>
                 <th className="px-3 py-2">{t("qtNew.colUnit", lang)}</th>
-                <th className="px-3 py-2 text-right">{t("qtNew.colPriceSug", lang)}</th>
-                <th className="px-3 py-2 text-right">{t("qtNew.colSubtotal", lang)}</th>
+                <th className="px-3 py-2 text-center">{t("qtNew.colPriceSug", lang)}</th>
+                <th className="px-3 py-2 text-center">{t("qtNew.colSubtotal", lang)}</th>
                 <th className="px-3 py-2">{t("qtNew.colNote", lang)}</th>
                 <th className="px-3 py-2"></th>
               </tr>
@@ -381,7 +381,7 @@ export function QuotationForm({
                         className="w-16 rounded-lg border border-ink/20 bg-white px-2 py-1 text-xs"
                       />
                     </td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-3 py-2 text-left">
                       <input
                         type="number"
                         step="1"
@@ -391,10 +391,10 @@ export function QuotationForm({
                           updateRow(idx, { price_suggested: e.target.value })
                         }
                         placeholder={t("qtNew.phPriceSug", lang)}
-                        className="w-32 rounded-lg border border-ink/20 bg-white px-2 py-1 text-right font-mono text-xs"
+                        className="w-32 rounded-lg border border-ink/20 bg-white px-2 py-1 text-left font-mono text-xs"
                       />
                     </td>
-                    <td className="px-3 py-2 text-right font-mono text-xs font-black">
+                    <td className="px-3 py-2 text-left font-mono text-xs font-black">
                       {sub > 0 ? formatIDR(sub) : "—"}
                     </td>
                     <td className="px-3 py-2">
@@ -425,7 +425,7 @@ export function QuotationForm({
                 <td colSpan={5} className="px-3 py-2 text-right font-black text-ink">
                   {t("qtNew.totalSug", lang)}
                 </td>
-                <td className="px-3 py-2 text-right font-mono font-black text-ink">
+                <td className="px-3 py-2 text-left font-mono font-black text-ink">
                   {formatIDR(total)}
                 </td>
                 <td colSpan={2}></td>

@@ -313,7 +313,7 @@ export default async function SupplierDetailPage({
                 <THead>
                   <th className="py-2 pr-3">{t("supplierDetail.colItem", lang)}</th>
                   <th className="py-2 pr-3">{t("supplierDetail.colMain", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("supplierDetail.colPrice", lang)}</th>
+                  <th className="py-2 pr-3">{t("supplierDetail.colPrice", lang)}</th>
                   <th className="py-2 pr-3 text-right">{t("supplierDetail.colLead", lang)}</th>
                 </THead>
                 <tbody>
@@ -332,7 +332,7 @@ export default async function SupplierDetailPage({
                           <Badge tone="muted">{t("supplierDetail.badgeAlt", lang)}</Badge>
                         )}
                       </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
+                      <td className="py-2 pr-3 text-left font-mono text-xs">
                         {si.price_idr != null
                           ? formatIDR(Number(si.price_idr))
                           : "—"}

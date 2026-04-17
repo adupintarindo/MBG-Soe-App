@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getHoliday } from "@/lib/holidays";
 import { t, ti, MONTHS, DAYS, formatNumber } from "@/lib/i18n";
@@ -54,6 +54,11 @@ interface AttendanceRow {
   school_id: string;
   att_date: string;
   qty: number;
+}
+
+interface BomRow {
+  menu_id: number;
+  item_code: string;
 }
 
 interface Props {
@@ -112,6 +117,7 @@ export function CalendarGrid({
   // Lazy-loaded reference data (fetched the first time user opens any modal)
   const [items, setItems] = useState<ItemRow[] | null>(null);
   const [schools, setSchools] = useState<SchoolRow[] | null>(null);
+  const [bom, setBom] = useState<BomRow[] | null>(null);
   const [refLoading, setRefLoading] = useState(false);
   const [refError, setRefError] = useState<string | null>(null);
 
@@ -134,7 +140,7 @@ export function CalendarGrid({
   }
 
   async function ensureReference() {
-    if (items && schools) return;
+    if (items && schools && bom) return;
     setRefLoading(true);
     setRefError(null);
     try {
@@ -142,6 +148,7 @@ export function CalendarGrid({
       if (!res.ok || !res.data) throw new Error(res.error ?? t("calGrid.errLoadRef", lang));
       if (!items) setItems(res.data.items);
       if (!schools) setSchools(res.data.schools);
+      if (!bom) setBom(res.data.bom);
     } catch (e) {
       setRefError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -405,6 +412,7 @@ export function CalendarGrid({
           menus={menus}
           items={items}
           schools={schools}
+          bom={bom}
           refLoading={refLoading}
           refError={refError}
           attForDate={attForDate}
@@ -438,6 +446,7 @@ interface EditProps {
   menus: MenuRow[];
   items: ItemRow[] | null;
   schools: SchoolRow[] | null;
+  bom: BomRow[] | null;
   refLoading: boolean;
   refError: string | null;
   attForDate: AttendanceRow[] | null;
@@ -461,6 +470,7 @@ function EditModal({
   menus,
   items,
   schools,
+  bom,
   refLoading,
   refError,
   attForDate,
@@ -513,6 +523,48 @@ function EditModal({
     }
     return groups;
   }, [safeItems]);
+
+  // menu_id → default { karbo, protein, sayur, buah } item_code from menu_bom
+  const menuBuckets = useMemo(() => {
+    const result = new Map<
+      number,
+      { karbo: string; protein: string; sayur: string; buah: string }
+    >();
+    if (!bom || safeItems.length === 0) return result;
+    const catByCode = new Map<string, string>();
+    for (const it of safeItems) catByCode.set(it.code, it.category);
+    for (const b of bom) {
+      const cat = catByCode.get(b.item_code);
+      if (!cat) continue;
+      const bucket = CAT_BUCKET[cat];
+      if (!bucket) continue;
+      const entry = result.get(b.menu_id) ?? {
+        karbo: "",
+        protein: "",
+        sayur: "",
+        buah: ""
+      };
+      if (!entry[bucket]) entry[bucket] = b.item_code;
+      result.set(b.menu_id, entry);
+    }
+    return result;
+  }, [bom, safeItems]);
+
+  // Auto-fill kombinasi whenever user picks a different menu id.
+  useEffect(() => {
+    const b = menuBuckets.get(selectedMenuId);
+    if (b) {
+      setKarbo(b.karbo);
+      setProtein(b.protein);
+      setSayur(b.sayur);
+      setBuah(b.buah);
+    } else if (menuBuckets.size > 0) {
+      setKarbo("");
+      setProtein("");
+      setSayur("");
+      setBuah("");
+    }
+  }, [selectedMenuId, menuBuckets]);
 
   async function handleMarkOperational() {
     if (nonOp) await onClearNonOp(iso);

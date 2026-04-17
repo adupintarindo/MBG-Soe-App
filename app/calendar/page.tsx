@@ -214,9 +214,6 @@ export default async function CalendarPage({
               {canWrite && unassigned > 0 && (
                 <AutoAssignButton year={year} month={month} unassigned={unassigned} />
               )}
-              <LinkButton href="/menu" variant="secondary" size="sm">
-                {t("calendar.btnBOM", lang)}
-              </LinkButton>
             </div>
           }
         />

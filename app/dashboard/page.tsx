@@ -5,6 +5,7 @@ import { Nav } from "@/components/nav";
 import { TransactionLog, type TxRow } from "@/components/transaction-log";
 import {
   Badge,
+  CategoryBadge,
   EmptyState,
   KpiGrid,
   KpiTile,
@@ -203,10 +204,9 @@ export default async function DashboardPage() {
     return `${monShort} ${y.slice(2)}`;
   };
   const displayCode = (code: string) => code.replace(/^Buah\s*-\s*/i, "");
-  const commodityCategory = (name: string) => {
+  const commodityCategory = (name: string): string => {
     const n = name.toLowerCase();
-    if (n.startsWith("beras") || n.includes("nasi"))
-      return { dot: "bg-amber-500", label: t("dashboard.commodityCarbo", lang) };
+    if (n.startsWith("beras") || n.includes("nasi")) return "BERAS";
     if (
       n.startsWith("buah") ||
       n.includes("pisang") ||
@@ -214,21 +214,58 @@ export default async function DashboardPage() {
       n.includes("melon") ||
       n.includes("semangka") ||
       n.includes("jeruk") ||
-      n.includes("apel")
+      n.includes("apel") ||
+      n.includes("anggur") ||
+      n.includes("mangga")
     )
-      return { dot: "bg-fuchsia-500", label: t("dashboard.commodityFruit", lang) };
+      return "BUAH";
+    if (n.includes("tempe") || n.includes("tahu") || n.includes("kacang"))
+      return "NABATI";
     if (
       n.includes("ayam") ||
       n.includes("ikan") ||
       n.includes("telur") ||
       n.includes("daging") ||
-      n.includes("tempe") ||
-      n.includes("tahu")
+      n.includes("sapi")
     )
-      return { dot: "bg-sky-500", label: t("dashboard.commodityProtein", lang) };
-    if (n.includes("minyak") || n.includes("gula") || n.includes("garam"))
-      return { dot: "bg-violet-500", label: t("dashboard.commoditySeasoning", lang) };
-    return { dot: "bg-emerald-500", label: t("dashboard.commodityVeg", lang) };
+      return "HEWANI";
+    if (
+      n.includes("sawi") ||
+      n.includes("kangkung") ||
+      n.includes("bayam") ||
+      n.includes("selada") ||
+      n.includes("daun")
+    )
+      return "SAYUR_HIJAU";
+    if (
+      n.includes("cabai") ||
+      n.includes("cabe") ||
+      n.includes("jahe") ||
+      n.includes("kunyit") ||
+      n.includes("lengkuas") ||
+      n.includes("serai") ||
+      n.includes("merica") ||
+      n.includes("ketumbar") ||
+      n.includes("rempah")
+    )
+      return "REMPAH";
+    if (
+      n.includes("bawang") ||
+      n.includes("kemiri")
+    )
+      return "BUMBU";
+    if (
+      n.includes("minyak") ||
+      n.includes("gula") ||
+      n.includes("garam") ||
+      n.includes("kecap") ||
+      n.includes("tepung") ||
+      n.includes("saus")
+    )
+      return "SEMBAKO";
+    if (n.includes("kentang") || n.includes("ubi") || n.includes("singkong"))
+      return "UMBI";
+    return "SAYUR";
   };
 
   // status today (used by KPI tile below; status chip lives in <Nav>)
@@ -395,6 +432,7 @@ export default async function DashboardPage() {
                 <THead>
                   <th className="w-10 py-2 pl-2 pr-3 text-center">{t("dashboard.tblNo", lang)}</th>
                   <th className="py-2 pr-3">{t("dashboard.tblCommodity", lang)}</th>
+                  <th className="py-2 pr-3">{t("common.category", lang)}</th>
                   {months.map((m) => (
                     <th key={m} className="py-2 pr-3 text-right">
                       {monthLabel(m)}
@@ -432,17 +470,11 @@ export default async function DashboardPage() {
                             {i + 1}
                           </span>
                         </td>
-                        <td className="py-2 pr-3">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-2 w-2 shrink-0 rounded-full ${cat.dot}`}
-                              aria-hidden
-                            />
-                            <span className="font-semibold">{displayCode(code)}</span>
-                            <span className="hidden text-[10px] font-medium uppercase tracking-wider text-ink2/60 md:inline">
-                              {cat.label}
-                            </span>
-                          </div>
+                        <td className="py-2 pr-3 text-left font-semibold">
+                          {displayCode(code)}
+                        </td>
+                        <td className="py-2 pr-3 text-left">
+                          <CategoryBadge category={cat} size="sm" />
                         </td>
                         {months.map((m) => {
                           const v = matrix[code][m] ?? 0;
