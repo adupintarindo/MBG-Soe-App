@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { UserRole } from "@/lib/roles";
 import { canInvite, canWriteMenu, canWriteStock } from "@/lib/roles";
 import { type Lang, type LangKey, t, DAYS, MONTHS } from "@/lib/i18n";
@@ -126,50 +126,31 @@ function isActive(href: string, current: string): boolean {
   return current === href || current.startsWith(href + "/");
 }
 
-// Cached clock snapshot. Must be idempotent for useSyncExternalStore —
-// returning Date.now() directly causes React to see a fresh value on
-// every render/commit check and silently bail out, leaving the chips
-// stuck on the server snapshot.
-let cachedNowMs = 0;
-
-const NOW_SUBSCRIBE = (cb: () => void) => {
-  cachedNowMs = Date.now();
-  // Kick an immediate post-hydration update so chips populate
-  // without waiting a full second for the first tick.
-  const kick = setTimeout(cb, 0);
-  const id = setInterval(() => {
-    cachedNowMs = Date.now();
-    cb();
-  }, 1000);
-  return () => {
-    clearTimeout(kick);
-    clearInterval(id);
-  };
-};
-const NOW_CLIENT = () => cachedNowMs;
-const NOW_SERVER = () => 0;
-
 export function Nav({ email, role, fullName, menuToday }: NavProps) {
   const pathname = usePathname() ?? "";
   const { theme, setTheme, lang, setLang } = usePrefs();
   const [hash, setHash] = useState("");
+  // Use a lazy initializer so we always have a concrete Date — no null
+  // flash, no dependency on useEffect firing. The SSR output will use
+  // server time; client overwrites on mount via the interval below.
+  // Hydration-mismatch warnings on the text are silenced with
+  // suppressHydrationWarning at the render sites.
+  const [now, setNow] = useState<Date>(() => new Date());
   const [scrolled, setScrolled] = useState(false);
   const tabsRef = useRef<HTMLDivElement | null>(null);
 
-  // Ticks every second on client, returns 0 on server. Using
-  // useSyncExternalStore avoids effect-scheduling edge cases (bfcache
-  // restore, hot reload) where the clock could stay stuck on null.
-  const nowMs = useSyncExternalStore(NOW_SUBSCRIBE, NOW_CLIENT, NOW_SERVER);
-  const now: Date | null = nowMs > 0 ? new Date(nowMs) : null;
-
   useEffect(() => {
+    setNow(new Date());
     setHash(window.location.hash);
+
+    const tick = setInterval(() => setNow(new Date()), 1000);
     const onHash = () => setHash(window.location.hash);
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener("hashchange", onHash);
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => {
+      clearInterval(tick);
       window.removeEventListener("hashchange", onHash);
       window.removeEventListener("scroll", onScroll);
     };

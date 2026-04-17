@@ -22,7 +22,6 @@ export function PopulateControls({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-  const [clearOpen, setClearOpen] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [msgTone, setMsgTone] = useState<"ok" | "bad">("ok");
 

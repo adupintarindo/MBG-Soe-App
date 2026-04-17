@@ -371,61 +371,7 @@ export default async function ProcurementPage() {
           {quotations.length === 0 ? (
             <EmptyState message={t("procurement.qtEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">No.</th>
-                  <th className="py-2 pr-3">{t("common.date", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
-                  <th className="py-2 pr-3">{t("procurement.colNeeded", lang)}</th>
-                  <th className="py-2 pr-3">{t("procurement.colValidUntil", lang)}</th>
-                  <th className="py-2 pr-3">{t("procurement.colAmount", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.status", lang)}</th>
-                  <th className="py-2 pr-3">{t("procurement.colPO", lang)}</th>
-                  <th className="py-2 pr-3"></th>
-                </THead>
-                <tbody>
-                  {quotations.map((q) => (
-                    <tr key={q.no} className="row-hover border-b border-ink/5">
-                      <td className="py-2 pr-3 font-mono text-xs font-black">
-                        {q.no}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">{q.quote_date}</td>
-                      <td className="py-2 pr-3 text-xs">
-                        {supMap.get(q.supplier_id) ?? q.supplier_id}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">
-                        {q.need_date ?? "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">
-                        {q.valid_until ?? "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-left font-mono text-xs font-black">
-                        {formatIDR(Number(q.total))}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${QT_STATUS_COLOR[q.status] ?? QT_STATUS_COLOR.draft}`}
-                        >
-                          {q.status}
-                        </span>
-                      </td>
-                      <td className="py-2 pr-3 font-mono text-xs">
-                        {q.converted_po_no ?? "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-right">
-                        <Link
-                          href={`/procurement/quotation/${encodeURIComponent(q.no)}`}
-                          className="text-[11px] font-bold text-accent-strong hover:underline"
-                        >
-                          {t("common.detail", lang)} →
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <QtTable rows={quotations} supplierNames={supplierNameMap} />
           )}
         </Section>
 
@@ -433,56 +379,12 @@ export default async function ProcurementPage() {
           {pos.length === 0 ? (
             <EmptyState message={t("procurement.poEmpty", lang)} />
           ) : (
-            <TableWrap>
-              <table className="w-full text-sm">
-                <THead>
-                  <th className="py-2 pr-3">No.</th>
-                  <th className="py-2 pr-3">{t("common.date", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.supplier", lang)}</th>
-                  <th className="py-2 pr-3">{t("common.delivery", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("procurement.colItems", lang)}</th>
-                  <th className="py-2 pr-3 text-right">{t("procurement.colTotalQty", lang)}</th>
-                  <th className="py-2 pr-3">{t("procurement.colAmount", lang)}</th>
-                  <th className="py-2 pr-3">TOP</th>
-                  <th className="py-2 pr-3">{t("common.status", lang)}</th>
-                </THead>
-                <tbody>
-                  {pos.map((p) => (
-                    <tr key={p.no} className="row-hover border-b border-ink/5">
-                      <td className="py-2 pr-3 font-mono text-xs font-black">
-                        {p.no}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">{p.po_date}</td>
-                      <td className="py-2 pr-3 text-xs">
-                        {supMap.get(p.supplier_id) ?? p.supplier_id}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">
-                        {p.delivery_date ?? "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {rowCountByPO.get(p.no) ?? 0}
-                      </td>
-                      <td className="py-2 pr-3 text-right font-mono text-xs">
-                        {formatNumber(qtyByPO.get(p.no) ?? 0, lang, {
-                          maximumFractionDigits: 1
-                        })}
-                      </td>
-                      <td className="py-2 pr-3 text-left font-mono text-xs font-black">
-                        {formatIDR(Number(p.total))}
-                      </td>
-                      <td className="py-2 pr-3 text-xs">{p.top ?? "—"}</td>
-                      <td className="py-2 pr-3">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${PO_STATUS_COLOR[p.status] ?? PO_STATUS_COLOR.draft}`}
-                        >
-                          {p.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
+            <PoTable
+              rows={pos}
+              supplierNames={supplierNameMap}
+              rowCountByPO={rowCountByPORecord}
+              qtyByPO={qtyByPORecord}
+            />
           )}
         </Section>
 
