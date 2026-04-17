@@ -4,18 +4,21 @@ import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { formatIDR } from "@/lib/engine";
 import {
-  CategoryBadge,
   EmptyState,
   KpiGrid,
   KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
-import { t, ti, formatNumber } from "@/lib/i18n";
+import {
+  BomTable,
+  CommodityTable,
+  type BomTableRow,
+  type CommodityRow
+} from "@/components/menu-tables";
+import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -241,41 +244,19 @@ export default async function MenuMasterPage() {
                   <EmptyState message={t("menu.bomEmpty", lang)} />
                 ) : (
                   <div className="overflow-hidden rounded-xl bg-white ring-1 ring-ink/5">
-                    <table className="w-full text-xs">
-                      <thead className="bg-paper text-[10px] font-bold uppercase tracking-wide text-ink2">
-                        <tr>
-                          <th className="px-2 py-2 text-center">{t("common.item", lang)}</th>
-                          <th className="px-2 py-2 text-center">{t("menu.colKat", lang)}</th>
-                          <th className="px-2 py-2 text-center" title={t("menu.titleSmall", lang)}>{t("menu.colSmall", lang)}</th>
-                          <th className="px-2 py-2 text-center" title={t("menu.titleLarge", lang)}>{t("menu.colLarge", lang)}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((r) => {
-                          const it = itemByCode.get(r.item_code);
-                          const cat = it?.category ?? "LAIN";
-                          return (
-                            <tr
-                              key={r.item_code}
-                              className="border-t border-ink/5"
-                            >
-                              <td className="px-2 py-1.5 text-left font-semibold text-ink">
-                                {r.item_code}
-                              </td>
-                              <td className="px-2 py-1.5 text-center">
-                                <CategoryBadge category={cat} size="sm" />
-                              </td>
-                              <td className="px-2 py-1.5 text-center font-mono text-ink">
-                                {r.tiered ? r.kecil.toFixed(1) : r.grams.toFixed(1)}
-                              </td>
-                              <td className="px-2 py-1.5 text-center font-mono font-black text-ink">
-                                {r.tiered ? r.besar.toFixed(1) : r.grams.toFixed(1)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <BomTable
+                      lang={lang}
+                      rows={rows.map((r): BomTableRow => {
+                        const it = itemByCode.get(r.item_code);
+                        return {
+                          item_code: r.item_code,
+                          category: it?.category ?? "LAIN",
+                          small: r.tiered ? r.kecil : r.grams,
+                          large: r.tiered ? r.besar : r.grams,
+                          tiered: r.tiered
+                        };
+                      })}
+                    />
                     <div
                       className="border-t border-ink/5 bg-paper px-2 py-1 text-[9px] text-ink2/70"
                       dangerouslySetInnerHTML={{ __html: t("menu.gramasiNote", lang) }}
