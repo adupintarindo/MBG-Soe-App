@@ -5,7 +5,6 @@ import { formatIDR } from "@/lib/engine";
 import type { SupplierAction } from "@/lib/engine";
 import { Section, TableWrap, THead } from "@/components/ui";
 import { SupplierDetailModal } from "./supplier-detail-modal";
-import { ActionsPanel } from "./actions-panel";
 import type {
   SupplierRow,
   SupItemLink,
@@ -95,19 +94,6 @@ export function SuppliersShell({
 
   return (
     <>
-      <Section
-        title="Onboarding & Follow-up Tracker"
-        hint="Action items dari meeting onboarding supplier · update status untuk sync readiness."
-      >
-        <ActionsPanel
-          actions={actions}
-          canWrite={canWriteActions}
-          isSupplierRole={isSupplierRole}
-          supplierId={isSupplierRole ? currentSupplierId : null}
-          title="Semua Action · lintas supplier"
-        />
-      </Section>
-
       <Section
         title="Vendor Cards · Signed + Awaiting"
         hint="Klik kartu untuk rincian, harga, sertifikasi & histori transaksi."

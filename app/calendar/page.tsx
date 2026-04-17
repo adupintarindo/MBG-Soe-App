@@ -5,6 +5,7 @@ import { Nav } from "@/components/nav";
 import { toISODate } from "@/lib/engine";
 import { getHoliday, holidaysInRange } from "@/lib/holidays";
 import { CalendarGrid } from "./calendar-grid";
+import { AutoAssignButton } from "./auto-assign-button";
 import {
   LinkButton,
   PageContainer,
@@ -46,25 +47,9 @@ interface NonOpRow {
   op_date: string;
   reason: string;
 }
-interface ItemLite {
-  code: string;
-  name_en: string | null;
-  category: string;
-  active: boolean;
-}
-interface SchoolLite {
-  id: string;
-  name: string;
-  level: string;
-  students: number;
-  kelas13: number;
-  kelas46: number;
-  guru: number;
-}
-interface AttendanceRow {
-  school_id: string;
-  att_date: string;
-  qty: number;
+interface SchoolTotalRow {
+  students: number | null;
+  guru: number | null;
 }
 
 function parseMonthParam(s: string | undefined): { year: number; month: number } {
@@ -120,10 +105,6 @@ export default async function CalendarPage({
 }) {
   const supabase = createClient();
 
-  const profile = await getSessionProfile();
-  if (!profile) redirect("/login");
-  if (!profile.active) redirect("/dashboard");
-
   const sp = (await Promise.resolve(searchParams)) ?? {};
   const { year, month } = parseMonthParam(sp.month);
   const matrix = buildMonthMatrix(year, month);
@@ -134,7 +115,10 @@ export default async function CalendarPage({
   const todayIso = toISODate(today);
   const currentMonthKey = fmtMonthKey(today.getFullYear(), today.getMonth() + 1);
 
-  const [menusRes, assignRes, nonOpRes, itemsRes, schoolsRes, attRes] = await Promise.all([
+  // Kick off auth + 4 thin queries in parallel. Items, full school rows,
+  // and attendance are lazy-loaded by the client modal on demand.
+  const [profile, menusRes, assignRes, nonOpRes, schoolsTotalRes] = await Promise.all([
+    getSessionProfile(),
     supabase
       .from("menus")
       .select("id, name, name_en, cycle_day")
@@ -150,81 +134,25 @@ export default async function CalendarPage({
       .gte("op_date", start)
       .lte("op_date", end),
     supabase
-      .from("items")
-      .select("code, name_en, category, active")
-      .eq("active", true)
-      .order("code"),
-    supabase
       .from("schools")
-      .select("id, name, level, students, kelas13, kelas46, guru")
+      .select("students, guru")
       .eq("active", true)
-      .order("id"),
-    supabase
-      .from("school_attendance")
-      .select("school_id, att_date, qty")
-      .gte("att_date", start)
-      .lte("att_date", end)
   ]);
 
+  if (!profile) redirect("/login");
+  if (!profile.active) redirect("/dashboard");
+
   const menus = (menusRes.data ?? []) as MenuLite[];
-  let assigns = (assignRes.data ?? []) as AssignRow[];
+  const assigns = (assignRes.data ?? []) as AssignRow[];
   const nonOps = (nonOpRes.data ?? []) as NonOpRow[];
-  const items = (itemsRes.data ?? []) as ItemLite[];
-  const schools = (schoolsRes.data ?? []) as SchoolLite[];
-  const attendance = (attRes.data ?? []) as AttendanceRow[];
-  const recipientCount = schools.reduce(
+  const schoolsTotal = (schoolsTotalRes.data ?? []) as SchoolTotalRow[];
+  const recipientCount = schoolsTotal.reduce(
     (sum, s) => sum + (Number(s.students) || 0) + (Number(s.guru) || 0),
     0
   );
 
   const assignByDate = new Map(assigns.map((a) => [a.assign_date, a]));
   const nonOpByDate = new Map(nonOps.map((n) => [n.op_date, n]));
-
-  // Auto-assign M1..Mn rolling kalau bulan ini belum disentuh sama sekali.
-  // Override manual tetap menang karena hanya jalan saat assigns kosong.
-  const assignsInThisMonth = assigns.filter((a) => {
-    const [y, mo] = a.assign_date.split("-").map(Number);
-    return y === year && mo === month;
-  });
-  if (
-    WRITE_ROLES.has(profile.role) &&
-    menus.length > 0 &&
-    assignsInThisMonth.length === 0
-  ) {
-    const autoRows: { assign_date: string; menu_id: number; note: null }[] = [];
-    let opIdx = 0;
-    for (const week of matrix) {
-      for (const d of week) {
-        if (d.getMonth() + 1 !== month) continue;
-        const iso = toISODate(d);
-        const dow = d.getDay();
-        if (dow === 0 || dow === 6) continue;
-        if (getHoliday(iso)) continue;
-        if (nonOpByDate.has(iso)) continue;
-        autoRows.push({
-          assign_date: iso,
-          menu_id: menus[opIdx % menus.length].id,
-          note: null
-        });
-        opIdx++;
-      }
-    }
-    if (autoRows.length > 0) {
-      const { error: upsertErr } = await supabase
-        .from("menu_assign")
-        .upsert(autoRows as never, { onConflict: "assign_date" });
-      if (!upsertErr) {
-        for (const r of autoRows) {
-          assignByDate.set(r.assign_date, {
-            assign_date: r.assign_date,
-            menu_id: r.menu_id,
-            note: null
-          });
-        }
-        assigns = Array.from(assignByDate.values());
-      }
-    }
-  }
 
   let opDays = 0;
   let nonOpDays = 0;
@@ -261,6 +189,7 @@ export default async function CalendarPage({
 
   const monthLabel = `${MONTH_LONG_ID[month - 1]} ${year}`;
   const isCurrentMonth = fmtMonthKey(year, month) === currentMonthKey;
+  const canWrite = WRITE_ROLES.has(profile.role);
 
   return (
     <div>
@@ -290,9 +219,14 @@ export default async function CalendarPage({
             </>
           }
           actions={
-            <LinkButton href="/menu" variant="secondary" size="sm">
-              🍽️ Lihat BOM
-            </LinkButton>
+            <div className="flex flex-wrap items-center gap-2">
+              {canWrite && unassigned > 0 && (
+                <AutoAssignButton year={year} month={month} unassigned={unassigned} />
+              )}
+              <LinkButton href="/menu" variant="secondary" size="sm">
+                🍽️ Lihat BOM
+              </LinkButton>
+            </div>
           }
         />
 
@@ -354,13 +288,10 @@ export default async function CalendarPage({
               monthMonth={month}
               todayIso={todayIso}
               menus={menus}
-              items={items}
               initialAssigns={assigns}
               initialNonOps={nonOps}
-              schools={schools}
-              initialAttendance={attendance}
               recipientCount={recipientCount}
-              canWrite={WRITE_ROLES.has(profile.role)}
+              canWrite={canWrite}
             />
           </div>
 
@@ -408,6 +339,25 @@ export default async function CalendarPage({
             </div>
           </Section>
         )}
+
+        <Section
+          title={`${menus.length} Menu Siklus`}
+          hint="Daftar menu yang siap di-assign ke kalender."
+        >
+          <div className="flex flex-wrap gap-2">
+            {menus.map((m) => (
+              <span
+                key={m.id}
+                className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-ink ring-1 ring-ink/10"
+              >
+                <span className="rounded bg-gradient-to-b from-blue-800 to-blue-700 px-1.5 py-0.5 font-mono text-[10px] font-black text-white">
+                  M{m.id}
+                </span>
+                {m.name}
+              </span>
+            ))}
+          </div>
+        </Section>
       </PageContainer>
     </div>
   );
