@@ -2,10 +2,23 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/nav";
 import { SOPS, type SOP } from "@/lib/sops";
+import {
+  Badge,
+  KpiGrid,
+  KpiTile,
+  PageContainer,
+  PageHeader,
+  Section
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-const CAT_COLOR: Record<SOP["category"], string> = {
+const CAT_BADGE: Record<SOP["category"], "info" | "ok"> = {
+  OPERASIONAL: "info",
+  HIGIENE: "ok"
+};
+
+const CAT_RING: Record<SOP["category"], string> = {
   OPERASIONAL: "bg-sky-50 text-sky-900 ring-sky-200",
   HIGIENE: "bg-emerald-50 text-emerald-900 ring-emerald-200"
 };
@@ -32,6 +45,11 @@ export default async function SopPage() {
     grouped.set(s.category, list);
   }
 
+  const opCount = grouped.get("OPERASIONAL")?.length ?? 0;
+  const hyCount = grouped.get("HIGIENE")?.length ?? 0;
+  const totalSteps = SOPS.reduce((s, sop) => s + sop.steps.length, 0);
+  const totalRisks = SOPS.reduce((s, sop) => s + sop.risks.length, 0);
+
   return (
     <div>
       <Nav
@@ -40,39 +58,71 @@ export default async function SopPage() {
         fullName={profile.full_name}
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-xl font-black text-ink">📘 Standard Operating Procedure</h1>
-          <p className="text-sm text-ink2/80">
-            {SOPS.length} SOP · {grouped.get("OPERASIONAL")?.length ?? 0} operasional ·{" "}
-            {grouped.get("HIGIENE")?.length ?? 0} higiene · referensi WHO/CODEX/BPOM/Permenkes
-          </p>
-        </div>
+      <PageContainer>
+        <PageHeader
+          icon="📘"
+          title="Standard Operating Procedure"
+          subtitle={`Manual SOP SPPG · referensi WHO / CODEX / BPOM / Permenkes`}
+          actions={
+            <>
+              <Badge tone="info">{opCount} Operasional</Badge>
+              <Badge tone="ok">{hyCount} Higiene</Badge>
+            </>
+          }
+        />
 
-        {/* Table of contents */}
-        <section className="mb-6 rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            Daftar Isi
-          </h2>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <KpiGrid>
+          <KpiTile
+            icon="📘"
+            label="Total SOP"
+            value={SOPS.length.toString()}
+            sub="dokumen aktif"
+          />
+          <KpiTile
+            icon="🛠️"
+            label="Operasional"
+            value={opCount.toString()}
+            tone="info"
+            sub="alur kerja produksi"
+          />
+          <KpiTile
+            icon="🧼"
+            label="Higiene"
+            value={hyCount.toString()}
+            tone="ok"
+            sub="food safety"
+          />
+          <KpiTile
+            icon="📋"
+            label="Total Langkah"
+            value={totalSteps.toString()}
+            sub={`${totalRisks} risiko terdokumentasi`}
+          />
+        </KpiGrid>
+
+        <Section title="📑 Daftar Isi" hint="Klik untuk loncat ke SOP terkait.">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {(["OPERASIONAL", "HIGIENE"] as const).map((cat) => (
               <div key={cat}>
-                <div
-                  className={`mb-2 inline-block rounded-full px-3 py-1 text-[11px] font-bold ring-1 ${CAT_COLOR[cat]}`}
-                >
-                  {cat} · {grouped.get(cat)?.length ?? 0} SOP
+                <div className="mb-2">
+                  <Badge tone={CAT_BADGE[cat]}>
+                    {cat} · {grouped.get(cat)?.length ?? 0} SOP
+                  </Badge>
                 </div>
                 <ol className="space-y-1 text-sm">
                   {(grouped.get(cat) ?? []).map((s) => (
                     <li key={s.id}>
                       <a
                         href={`#${s.id}`}
-                        className="flex justify-between gap-2 text-ink2 hover:text-ink"
+                        className="flex gap-2 rounded-lg px-2 py-1 text-ink2 transition hover:bg-paper hover:text-ink"
                       >
-                        <span className="font-mono text-[11px] text-ink2/60">
+                        <span className="font-mono text-[11px] font-bold text-ink2/60">
                           {s.id}
                         </span>
                         <span className="flex-1">{s.title}</span>
+                        <span className="text-[10px] font-bold text-ink2/40">
+                          {s.steps.length}↓
+                        </span>
                       </a>
                     </li>
                   ))}
@@ -80,17 +130,16 @@ export default async function SopPage() {
               </div>
             ))}
           </div>
-        </section>
+        </Section>
 
-        {/* SOP cards — collapsed by default, click to expand */}
-        <section className="space-y-3">
+        <div className="mb-6 space-y-3">
           {SOPS.map((s) => (
             <details
               key={s.id}
               id={s.id}
-              className="group scroll-mt-20 rounded-2xl bg-white shadow-card open:shadow-cardlg"
+              className="group scroll-mt-20 rounded-2xl bg-white shadow-card transition open:shadow-cardlg"
             >
-              <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 rounded-2xl px-6 py-4 hover:bg-paper/60">
+              <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 rounded-2xl px-5 py-4 hover:bg-paper/60">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink/5 text-xs font-black text-ink2 transition group-open:rotate-90">
                     ›
@@ -99,7 +148,7 @@ export default async function SopPage() {
                     {s.id}
                   </span>
                   <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_COLOR[s.category]}`}
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_RING[s.category]}`}
                   >
                     {s.category}
                   </span>
@@ -107,22 +156,23 @@ export default async function SopPage() {
                     {s.title}
                   </h3>
                 </div>
-                <div className="flex shrink-0 items-center gap-3 text-[10px] font-semibold text-ink2/70">
-                  <span className="rounded-full bg-ink/5 px-2 py-0.5">
-                    {s.steps.length} langkah
+                <div className="flex shrink-0 items-center gap-2 text-[10px] font-semibold text-ink2/70">
+                  <Badge tone="neutral">{s.steps.length} langkah</Badge>
+                  <Badge tone="bad">{s.risks.length} risiko</Badge>
+                  <span className="hidden md:inline text-ink2/60">
+                    {s.ref}
                   </span>
-                  <span className="hidden md:inline">Ref: {s.ref}</span>
                 </div>
               </summary>
 
-              <div className="border-t border-ink/5 px-6 py-5">
+              <div className="border-t border-ink/5 px-5 py-5">
                 <div className="mb-3 md:hidden">
                   <div className="text-[10px] font-semibold text-ink2/70">
                     Ref: {s.ref}
                   </div>
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-4 rounded-xl bg-paper px-4 py-3 ring-1 ring-ink/5">
                   <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
                     Scope
                   </div>
@@ -140,14 +190,14 @@ export default async function SopPage() {
                           <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ink text-[10px] font-black text-white">
                             {i + 1}
                           </span>
-                          <span>{step}</span>
+                          <span className="text-ink2">{step}</span>
                         </li>
                       ))}
                     </ol>
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-                      Risiko Utama
+                      Risiko Utama ({s.risks.length})
                     </div>
                     <ul className="mt-2 space-y-1 text-xs">
                       {s.risks.map((r, i) => (
@@ -164,13 +214,13 @@ export default async function SopPage() {
               </div>
             </details>
           ))}
-        </section>
+        </div>
 
         <p className="mt-8 text-center text-[11px] text-ink2/60">
           SOP Manual · SPPG Nunumeu · Disusun IFSR × FFI untuk WFP × Pemkab TTS ·
           Revisi terakhir 2026-04
         </p>
-      </main>
+      </PageContainer>
     </div>
   );
 }

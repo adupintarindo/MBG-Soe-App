@@ -3,6 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/nav";
 import { toISODate } from "@/lib/engine";
 import { CalendarGrid } from "./calendar-grid";
+import {
+  Badge,
+  LinkButton,
+  PageContainer,
+  PageHeader,
+  Section,
+  TableWrap,
+  THead
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +55,28 @@ const MENU_HUE = [
   "bg-green-100 text-green-900"
 ];
 
+interface MenuLite {
+  id: number;
+  name: string;
+  name_en: string | null;
+  cycle_day: number;
+}
+interface AssignRow {
+  assign_date: string;
+  menu_id: number;
+  note: string | null;
+}
+interface NonOpRow {
+  op_date: string;
+  reason: string;
+}
+interface ItemLite {
+  code: string;
+  name_en: string | null;
+  category: string;
+  active: boolean;
+}
+
 export default async function CalendarPage() {
   const supabase = createClient();
 
@@ -88,10 +119,10 @@ export default async function CalendarPage() {
       .order("code")
   ]);
 
-  const menus = menusRes.data ?? [];
-  const assigns = assignRes.data ?? [];
-  const nonOps = nonOpRes.data ?? [];
-  const items = itemsRes.data ?? [];
+  const menus = (menusRes.data ?? []) as MenuLite[];
+  const assigns = (assignRes.data ?? []) as AssignRow[];
+  const nonOps = (nonOpRes.data ?? []) as NonOpRow[];
+  const items = (itemsRes.data ?? []) as ItemLite[];
 
   const menuById = new Map(menus.map((m) => [m.id, m]));
   const assignByDate = new Map(assigns.map((a) => [a.assign_date, a]));
@@ -99,7 +130,6 @@ export default async function CalendarPage() {
 
   const todayStr = toISODate(today);
 
-  // Stats for current range
   let opDays = 0;
   let nonOpDays = 0;
   let unassigned = 0;
@@ -125,28 +155,36 @@ export default async function CalendarPage() {
         fullName={profile.full_name}
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-black text-ink">📅 Kalender Menu</h1>
-            <p className="text-sm text-ink2/80">
+      <PageContainer>
+        <PageHeader
+          icon="📅"
+          title="Kalender Menu"
+          subtitle={
+            <>
               10 minggu ke depan · {opDays} hari operasional · {nonOpDays}{" "}
-              non-op · {unassigned > 0 ? `${unassigned} belum di-assign` : "semua assigned"}
-            </p>
-          </div>
-          <a
-            href="/menu"
-            className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-ink shadow-card hover:bg-paper"
-          >
-            🍽️ Lihat BOM →
-          </a>
-        </div>
+              non-op ·{" "}
+              {unassigned > 0 ? (
+                <span className="font-bold text-red-700">
+                  {unassigned} belum di-assign
+                </span>
+              ) : (
+                <span className="font-bold text-emerald-700">
+                  semua assigned
+                </span>
+              )}
+            </>
+          }
+          actions={
+            <LinkButton href="/menu" variant="secondary" size="sm">
+              🍽️ Lihat BOM
+            </LinkButton>
+          }
+        />
 
-        {/* Menu legend */}
-        <section className="mb-4 rounded-2xl bg-white p-4 shadow-card">
-          <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-ink2">
-            Legend · {menus.length} Menu Siklus
-          </div>
+        <Section
+          title={`Legend · ${menus.length} Menu Siklus`}
+          hint="Klik tanggal pada grid untuk assign/tandai non-op (khusus admin/operator/ahli gizi)."
+        >
           <div className="flex flex-wrap gap-2">
             {menus.map((m, i) => (
               <span
@@ -158,43 +196,38 @@ export default async function CalendarPage() {
               </span>
             ))}
           </div>
-        </section>
+        </Section>
 
-        {/* Calendar grid */}
-        <section className="rounded-2xl bg-white p-4 shadow-card">
-          <div className="mb-2 grid grid-cols-7 gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2/70">
-            {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
-              <div key={d} className="text-center">
-                {d}
-              </div>
-            ))}
+        <Section noPad className="overflow-hidden">
+          <div className="p-4">
+            <div className="mb-2 grid grid-cols-7 gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2/70">
+              {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
+                <div key={d} className="text-center">
+                  {d}
+                </div>
+              ))}
+            </div>
+            <CalendarGrid
+              matrix={matrix.map((week) => week.map((d) => toISODate(d)))}
+              todayIso={todayStr}
+              menus={menus}
+              items={items}
+              initialAssigns={assigns}
+              initialNonOps={nonOps}
+              canWrite={WRITE_ROLES.has(profile.role)}
+            />
           </div>
-          <CalendarGrid
-            matrix={matrix.map((week) => week.map((d) => toISODate(d)))}
-            todayIso={todayStr}
-            menus={menus}
-            items={items}
-            initialAssigns={assigns}
-            initialNonOps={nonOps}
-            canWrite={WRITE_ROLES.has(profile.role)}
-          />
-        </section>
+        </Section>
 
-        {/* Upcoming list */}
-        <section className="mt-6 rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            14 Hari Ke Depan · Rencana Menu
-          </h2>
-          <div className="overflow-x-auto">
+        <Section title="14 Hari Ke Depan · Rencana Menu">
+          <TableWrap>
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
-                  <th className="py-2">Tanggal</th>
-                  <th className="py-2">Hari</th>
-                  <th className="py-2">Menu / Status</th>
-                  <th className="py-2">Catatan</th>
-                </tr>
-              </thead>
+              <THead>
+                <th className="py-2 pr-3">Tanggal</th>
+                <th className="py-2 pr-3">Hari</th>
+                <th className="py-2 pr-3">Menu / Status</th>
+                <th className="py-2 pr-3">Catatan</th>
+              </THead>
               <tbody>
                 {Array.from({ length: 14 }).map((_, i) => {
                   const d = new Date(today);
@@ -205,35 +238,39 @@ export default async function CalendarPage() {
                   const nonOp = nonOpByDate.get(iso);
                   const menu = assign ? menuById.get(assign.menu_id) : null;
                   return (
-                    <tr key={iso} className="border-b border-ink/5">
-                      <td className="py-2 font-mono text-xs">
+                    <tr
+                      key={iso}
+                      className="row-hover border-b border-ink/5"
+                    >
+                      <td className="py-2 pr-3 font-mono text-xs">
                         {d.toLocaleDateString("id-ID", {
                           day: "2-digit",
                           month: "short",
                           year: "numeric"
                         })}
                       </td>
-                      <td className="py-2 text-xs">
+                      <td className="py-2 pr-3 text-xs">
                         {d.toLocaleDateString("id-ID", { weekday: "long" })}
                       </td>
-                      <td className="py-2">
+                      <td className="py-2 pr-3">
                         {isWknd ? (
-                          <span className="text-ink2/50">Weekend</span>
+                          <Badge tone="muted">Weekend</Badge>
                         ) : nonOp ? (
-                          <span className="font-semibold text-amber-700">
+                          <Badge tone="warn">
                             🚫 Non-Op · {nonOp.reason}
-                          </span>
+                          </Badge>
                         ) : menu ? (
-                          <span className="font-semibold">
-                            H{menu.cycle_day} — {menu.name}
+                          <span className="font-semibold text-ink">
+                            <span className="font-mono text-[11px] text-ink2/70">
+                              H{menu.cycle_day}
+                            </span>{" "}
+                            {menu.name}
                           </span>
                         ) : (
-                          <span className="font-semibold text-red-700">
-                            ⚠ Belum di-assign
-                          </span>
+                          <Badge tone="bad">⚠ Belum di-assign</Badge>
                         )}
                       </td>
-                      <td className="py-2 text-xs text-ink2/70">
+                      <td className="py-2 pr-3 text-xs text-ink2/70">
                         {assign?.note || nonOp?.reason || "—"}
                       </td>
                     </tr>
@@ -241,9 +278,9 @@ export default async function CalendarPage() {
                 })}
               </tbody>
             </table>
-          </div>
-        </section>
-      </main>
+          </TableWrap>
+        </Section>
+      </PageContainer>
     </div>
   );
 }

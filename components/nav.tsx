@@ -336,12 +336,23 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
               />
             ))}
             {canInvite(role) && (
-              <TabPillMobile
-                href="/admin/invite"
-                label={t("tabAdmin", lang)}
-                icon="🛡️"
-                active={current.startsWith("/admin")}
-              />
+              <>
+                <TabPillMobile
+                  href="/admin/data"
+                  label={t("tabData", lang)}
+                  icon="🗃️"
+                  active={current.startsWith("/admin/data")}
+                />
+                <TabPillMobile
+                  href="/admin/invite"
+                  label={t("tabAdmin", lang)}
+                  icon="🛡️"
+                  active={
+                    current.startsWith("/admin") &&
+                    !current.startsWith("/admin/data")
+                  }
+                />
+              </>
             )}
           </div>
 
@@ -357,12 +368,23 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
               />
             ))}
             {canInvite(role) && (
-              <TabButton
-                href="/admin/invite"
-                label={t("tabAdmin", lang)}
-                icon="🛡️"
-                active={current.startsWith("/admin")}
-              />
+              <>
+                <TabButton
+                  href="/admin/data"
+                  label={t("tabData", lang)}
+                  icon="🗃️"
+                  active={current.startsWith("/admin/data")}
+                />
+                <TabButton
+                  href="/admin/invite"
+                  label={t("tabAdmin", lang)}
+                  icon="🛡️"
+                  active={
+                    current.startsWith("/admin") &&
+                    !current.startsWith("/admin/data")
+                  }
+                />
+              </>
             )}
           </div>
         </nav>

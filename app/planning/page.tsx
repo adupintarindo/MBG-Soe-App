@@ -12,8 +12,26 @@ import {
   type DailyPlan,
   type UpcomingShortage
 } from "@/lib/engine";
+import {
+  Badge,
+  EmptyState,
+  KpiGrid,
+  KpiTile,
+  PageContainer,
+  PageHeader,
+  Section,
+  TableWrap,
+  THead
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
+
+interface ItemLite {
+  code: string;
+  unit: string;
+  category: string;
+  price_idr: number | string;
+}
 
 export default async function PlanningPage() {
   const supabase = createClient();
@@ -42,7 +60,7 @@ export default async function PlanningPage() {
     supabase.from("items").select("code, unit, category, price_idr")
   ]);
 
-  const items = itemsRes.data ?? [];
+  const items = (itemsRes.data ?? []) as ItemLite[];
   const itemByCode = new Map(items.map((i) => [i.code, i]));
 
   // Monthly matrix
@@ -96,47 +114,43 @@ export default async function PlanningPage() {
         fullName={profile.full_name}
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-xl font-black text-ink">📈 Rencana Kebutuhan Bahan</h1>
-          <p className="text-sm text-ink2/80">
-            Proyeksi 6 bulan berdasarkan menu assignment × porsi efektif × BOM
-          </p>
-        </div>
+      <PageContainer>
+        <PageHeader
+          icon="📈"
+          title="Rencana Kebutuhan Bahan"
+          subtitle="Proyeksi 6 bulan berdasarkan menu assignment × porsi efektif × BOM"
+        />
 
-        {/* KPI row */}
-        <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <KPI
+        <KpiGrid>
+          <KpiTile
             icon="📅"
             label="Hari Operasional"
             value={`${opDays} / ${daily.length}`}
             sub="30 hari ke depan"
           />
-          <KPI
+          <KpiTile
             icon="🍽️"
             label="Total Porsi"
             value={totalPorsi.toLocaleString("id-ID")}
             sub="akumulasi horizon"
           />
-          <KPI
+          <KpiTile
             icon="⚖️"
             label="Total Kebutuhan"
             value={formatKg(totalKg, 0)}
             sub="bahan basah"
           />
-          <KPI
+          <KpiTile
             icon="💰"
             label="Estimasi Belanja"
             value={formatIDR(grandTotalCost)}
+            tone="ok"
+            size="md"
             sub="6 bulan ke depan"
           />
-        </section>
+        </KpiGrid>
 
-        {/* Category pie (as bars) */}
-        <section className="mb-6 rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            Distribusi Kebutuhan per Kategori (6 bulan)
-          </h2>
+        <Section title="Distribusi Kebutuhan per Kategori (6 bulan)" accent="info">
           <div className="space-y-2">
             {[...catTotals.entries()]
               .sort((a, b) => b[1] - a[1])
@@ -152,7 +166,7 @@ export default async function PlanningPage() {
                     </div>
                     <div className="mt-1 h-2 overflow-hidden rounded-full bg-ink/5">
                       <div
-                        className="h-full bg-ink"
+                        className="h-full bg-primary-gradient transition-all"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -160,60 +174,58 @@ export default async function PlanningPage() {
                 );
               })}
           </div>
-        </section>
+        </Section>
 
-        {/* Monthly matrix */}
-        <section className="mb-6 rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            Matriks Kebutuhan · {months.length} Bulan · {sortedItems.length} komoditas
-          </h2>
+        <Section
+          title={`Matriks Kebutuhan · ${months.length} Bulan · ${sortedItems.length} komoditas`}
+          hint="Top 30 komoditas, urut dari volume terbesar."
+        >
           {sortedItems.length === 0 ? (
-            <div className="rounded-xl bg-ink/5 p-4 text-sm text-ink2">
-              Belum ada data kebutuhan.
-            </div>
+            <EmptyState message="Belum ada data kebutuhan." />
           ) : (
-            <div className="overflow-x-auto">
+            <TableWrap>
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
-                    <th className="py-2">#</th>
-                    <th className="py-2">Komoditas</th>
-                    <th className="py-2">Kategori</th>
-                    {months.map((m) => (
-                      <th key={m} className="py-2 text-right">
-                        {monthLabel(m)}
-                      </th>
-                    ))}
-                    <th className="py-2 text-right">Total kg</th>
-                    <th className="py-2 text-right">Est. Biaya</th>
-                  </tr>
-                </thead>
+                <THead>
+                  <th className="py-2 pr-3">#</th>
+                  <th className="py-2 pr-3">Komoditas</th>
+                  <th className="py-2 pr-3">Kategori</th>
+                  {months.map((m) => (
+                    <th key={m} className="py-2 pr-3 text-right">
+                      {monthLabel(m)}
+                    </th>
+                  ))}
+                  <th className="py-2 pr-3 text-right">Total kg</th>
+                  <th className="py-2 pr-3 text-right">Est. Biaya</th>
+                </THead>
                 <tbody>
                   {sortedItems.slice(0, 30).map(([code, total], i) => {
                     const it = itemByCode.get(code);
                     return (
-                      <tr key={code} className="border-b border-ink/5">
-                        <td className="py-2 text-ink2">{i + 1}</td>
-                        <td className="py-2 font-semibold">{code}</td>
-                        <td className="py-2 text-[10px] font-bold text-ink2/70">
+                      <tr
+                        key={code}
+                        className="row-hover border-b border-ink/5"
+                      >
+                        <td className="py-2 pr-3 text-ink2">{i + 1}</td>
+                        <td className="py-2 pr-3 font-semibold">{code}</td>
+                        <td className="py-2 pr-3 text-[10px] font-bold text-ink2/70">
                           {it?.category}
                         </td>
                         {months.map((m) => (
                           <td
                             key={m}
-                            className="py-2 text-right font-mono text-xs"
+                            className="py-2 pr-3 text-right font-mono text-xs"
                           >
                             {(matrix[code][m] ?? 0).toLocaleString("id-ID", {
                               maximumFractionDigits: 1
                             })}
                           </td>
                         ))}
-                        <td className="py-2 text-right font-mono text-xs font-black">
+                        <td className="py-2 pr-3 text-right font-mono text-xs font-black">
                           {total.toLocaleString("id-ID", {
                             maximumFractionDigits: 0
                           })}
                         </td>
-                        <td className="py-2 text-right font-mono text-xs text-emerald-800">
+                        <td className="py-2 pr-3 text-right font-mono text-xs text-emerald-800">
                           {formatIDR(itemCost.get(code) ?? 0)}
                         </td>
                       </tr>
@@ -222,7 +234,7 @@ export default async function PlanningPage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-ink/20 bg-paper">
-                    <td colSpan={3} className="py-2 font-black">
+                    <td colSpan={3} className="py-2 pr-3 font-black">
                       TOTAL (TOP 30)
                     </td>
                     {months.map((m) => {
@@ -232,7 +244,7 @@ export default async function PlanningPage() {
                       return (
                         <td
                           key={m}
-                          className="py-2 text-right font-mono text-xs font-black"
+                          className="py-2 pr-3 text-right font-mono text-xs font-black"
                         >
                           {col.toLocaleString("id-ID", {
                             maximumFractionDigits: 0
@@ -240,13 +252,13 @@ export default async function PlanningPage() {
                         </td>
                       );
                     })}
-                    <td className="py-2 text-right font-mono text-xs font-black">
+                    <td className="py-2 pr-3 text-right font-mono text-xs font-black">
                       {sortedItems
                         .slice(0, 30)
                         .reduce((s, [, q]) => s + q, 0)
                         .toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                     </td>
-                    <td className="py-2 text-right font-mono text-xs font-black text-emerald-800">
+                    <td className="py-2 pr-3 text-right font-mono text-xs font-black text-emerald-800">
                       {formatIDR(
                         sortedItems
                           .slice(0, 30)
@@ -256,80 +268,74 @@ export default async function PlanningPage() {
                   </tr>
                 </tfoot>
               </table>
-            </div>
+            </TableWrap>
           )}
-        </section>
+        </Section>
 
-        {/* 30-day daily planning */}
-        <section className="mb-6 rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            30 Hari ke Depan · Planning Harian
-          </h2>
-          <div className="overflow-x-auto">
+        <Section title="30 Hari ke Depan · Planning Harian">
+          <TableWrap>
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-ink/10 text-left text-[11px] font-bold uppercase tracking-wide text-ink2">
-                  <th className="py-2">Tanggal</th>
-                  <th className="py-2">Menu</th>
-                  <th className="py-2 text-right">Porsi</th>
-                  <th className="py-2 text-right">Porsi Eff</th>
-                  <th className="py-2 text-right">Kebutuhan</th>
-                  <th className="py-2 text-right">Short</th>
-                  <th className="py-2">Status</th>
-                </tr>
-              </thead>
+              <THead>
+                <th className="py-2 pr-3">Tanggal</th>
+                <th className="py-2 pr-3">Menu</th>
+                <th className="py-2 pr-3 text-right">Porsi</th>
+                <th className="py-2 pr-3 text-right">Porsi Eff</th>
+                <th className="py-2 pr-3 text-right">Kebutuhan</th>
+                <th className="py-2 pr-3 text-right">Short</th>
+                <th className="py-2 pr-3">Status</th>
+              </THead>
               <tbody>
                 {daily.map((p) => (
-                  <tr key={p.op_date} className="border-b border-ink/5">
-                    <td className="py-2 font-mono text-xs">{p.op_date}</td>
-                    <td className="py-2 text-xs">
+                  <tr
+                    key={p.op_date}
+                    className="row-hover border-b border-ink/5"
+                  >
+                    <td className="py-2 pr-3 font-mono text-xs">{p.op_date}</td>
+                    <td className="py-2 pr-3 text-xs">
                       {p.menu_name ?? (
                         <span className="text-ink2/60">—</span>
                       )}
                     </td>
-                    <td className="py-2 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 text-right font-mono text-xs">
                       {p.porsi_total.toLocaleString("id-ID")}
                     </td>
-                    <td className="py-2 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 text-right font-mono text-xs">
                       {Number(p.porsi_eff).toLocaleString("id-ID", {
                         maximumFractionDigits: 1
                       })}
                     </td>
-                    <td className="py-2 text-right font-mono text-xs">
+                    <td className="py-2 pr-3 text-right font-mono text-xs">
                       {formatKg(Number(p.total_kg), 1)}
                     </td>
                     <td
-                      className={`py-2 text-right font-mono text-xs font-black ${p.short_items > 0 ? "text-red-700" : "text-emerald-700"}`}
+                      className={`py-2 pr-3 text-right font-mono text-xs font-black ${p.short_items > 0 ? "text-red-700" : "text-emerald-700"}`}
                     >
                       {p.short_items}
                     </td>
-                    <td className="py-2 text-xs">
+                    <td className="py-2 pr-3">
                       {p.operasional ? (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-800">
-                          OP
-                        </span>
+                        <Badge tone="ok">OP</Badge>
                       ) : (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                          NON-OP
-                        </span>
+                        <Badge tone="warn">NON-OP</Badge>
                       )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </section>
+          </TableWrap>
+        </Section>
 
-        {/* Shortage forecast */}
-        <section className="rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            🔭 Forecast Shortage · 30 Hari
-          </h2>
+        <Section
+          title="🔭 Forecast Shortage · 30 Hari"
+          accent={upcoming.length > 0 ? "warn" : "ok"}
+        >
           {upcoming.length === 0 ? (
-            <div className="rounded-xl bg-green-50 p-4 text-sm text-green-900 ring-1 ring-green-200">
-              ✅ Tidak ada shortage terdeteksi.
-            </div>
+            <EmptyState
+              icon="✅"
+              tone="ok"
+              message="Tidak ada shortage terdeteksi."
+            />
           ) : (
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
               {upcoming.map((u) => (
@@ -352,31 +358,8 @@ export default async function PlanningPage() {
               ))}
             </div>
           )}
-        </section>
-      </main>
-    </div>
-  );
-}
-
-function KPI({
-  icon,
-  label,
-  value,
-  sub
-}: {
-  icon: string;
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white p-4 shadow-card">
-      <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-ink2/80">
-        <span>{icon}</span>
-        <span>{label}</span>
-      </div>
-      <div className="text-2xl font-black text-ink">{value}</div>
-      <div className="mt-1 text-[11px] font-semibold text-ink2/70">{sub}</div>
+        </Section>
+      </PageContainer>
     </div>
   );
 }

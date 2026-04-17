@@ -60,10 +60,38 @@ export default async function MenuMasterPage() {
     supabase.from("supplier_items").select("supplier_id, item_code, is_main")
   ]);
 
-  const menus = menusRes.data ?? [];
-  const bom = bomRes.data ?? [];
-  const items = itemsRes.data ?? [];
-  const supItems = supItemsRes.data ?? [];
+  interface ItemRow {
+    code: string;
+    name_en: string | null;
+    unit: string;
+    category: string;
+    price_idr: number | string;
+    vol_weekly: number | string;
+    active: boolean;
+  }
+  interface MenuRow {
+    id: number;
+    name: string;
+    name_en: string | null;
+    cycle_day: number;
+    active: boolean;
+    notes?: string | null;
+  }
+  interface BomRow {
+    menu_id: number;
+    item_code: string;
+    grams_per_porsi: number | string;
+  }
+  interface SupItemRow {
+    supplier_id: string;
+    item_code: string;
+    is_main: boolean;
+  }
+
+  const menus = (menusRes.data ?? []) as MenuRow[];
+  const bom = (bomRes.data ?? []) as BomRow[];
+  const items = (itemsRes.data ?? []) as ItemRow[];
+  const supItems = (supItemsRes.data ?? []) as SupItemRow[];
 
   const itemByCode = new Map(items.map((i) => [i.code, i]));
 

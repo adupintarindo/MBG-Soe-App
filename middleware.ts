@@ -30,50 +30,8 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
-  const protectedPrefixes = [
-    "/dashboard",
-    "/admin",
-    "/planner",
-    "/stock",
-    "/suppliers",
-    "/menu",
-    "/schools",
-    "/calendar",
-    "/planning",
-    "/procurement",
-    "/sop",
-    "/docgen"
-  ];
-  const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p));
-
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // /admin/* extra gate — only role=admin may enter
-  if (pathname.startsWith("/admin") && user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, active")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (!profile || profile.role !== "admin" || !profile.active) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      url.searchParams.set("err", "admin_only");
-      return NextResponse.redirect(url);
-    }
-  }
-
+  // Auth gate disabled — dashboard terbuka langsung tanpa login
+  void supabase;
   return response;
 }
 

@@ -2,8 +2,43 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Nav } from "@/components/nav";
 import { formatIDR } from "@/lib/engine";
+import {
+  Badge,
+  EmptyState,
+  KpiGrid,
+  KpiTile,
+  PageContainer,
+  PageHeader,
+  Section
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
+
+interface PoLite {
+  no: string;
+  po_date: string;
+  supplier_id: string;
+  total: number | string;
+  status: string;
+}
+interface GrnLite {
+  no: string;
+  po_no: string | null;
+  grn_date: string;
+  status: string;
+}
+interface InvLite {
+  no: string;
+  po_no: string | null;
+  inv_date: string;
+  supplier_id: string;
+  total: number | string;
+  status: string;
+}
+interface SupplierLite {
+  id: string;
+  name: string;
+}
 
 export default async function DocGenPage() {
   const supabase = createClient();
@@ -39,10 +74,10 @@ export default async function DocGenPage() {
     supabase.from("suppliers").select("id, name")
   ]);
 
-  const pos = posRes.data ?? [];
-  const grns = grnsRes.data ?? [];
-  const invoices = invRes.data ?? [];
-  const suppliers = suppliersRes.data ?? [];
+  const pos = (posRes.data ?? []) as PoLite[];
+  const grns = (grnsRes.data ?? []) as GrnLite[];
+  const invoices = (invRes.data ?? []) as InvLite[];
+  const suppliers = (suppliersRes.data ?? []) as SupplierLite[];
   const supMap = new Map(suppliers.map((s) => [s.id, s.name]));
 
   return (
@@ -53,44 +88,44 @@ export default async function DocGenPage() {
         fullName={profile.full_name}
       />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-xl font-black text-ink">📄 Document Generator</h1>
-          <p className="text-sm text-ink2/80">
-            Preview & print dokumen resmi SPPG · PO · GRN · Invoice · Berita Acara
-          </p>
-        </div>
+      <PageContainer>
+        <PageHeader
+          icon="📄"
+          title="Document Generator"
+          subtitle="Preview & print dokumen resmi SPPG · PO · GRN · Invoice · Berita Acara"
+        />
 
-        <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <TemplateCard
+        <KpiGrid>
+          <KpiTile
             icon="📝"
             label="Purchase Order"
-            count={pos.length}
-            hint="Order ke supplier"
+            value={pos.length.toString()}
+            sub="Order ke supplier"
           />
-          <TemplateCard
+          <KpiTile
             icon="📦"
             label="GRN"
-            count={grns.length}
-            hint="Berita Acara Terima"
+            value={grns.length.toString()}
+            sub="Berita Acara Terima"
           />
-          <TemplateCard
+          <KpiTile
             icon="💰"
             label="Invoice"
-            count={invoices.length}
-            hint="Tagihan supplier"
+            value={invoices.length.toString()}
+            sub="Tagihan supplier"
           />
-          <TemplateCard
+          <KpiTile
             icon="🧾"
             label="Kontrak LTA"
-            count={suppliers.length}
-            hint="Long-Term Agreement"
+            value={suppliers.length.toString()}
+            sub="Long-Term Agreement"
           />
-        </section>
+        </KpiGrid>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <DocList
             title="Purchase Orders"
+            icon="📝"
             docs={pos.map((p) => ({
               no: p.no,
               date: p.po_date,
@@ -102,6 +137,7 @@ export default async function DocGenPage() {
           />
           <DocList
             title="Goods Receipt Notes"
+            icon="📦"
             docs={grns.map((g) => ({
               no: g.no,
               date: g.grn_date,
@@ -113,6 +149,7 @@ export default async function DocGenPage() {
           />
           <DocList
             title="Invoice"
+            icon="💰"
             docs={invoices.map((i) => ({
               no: i.no,
               date: i.inv_date,
@@ -124,10 +161,10 @@ export default async function DocGenPage() {
           />
         </div>
 
-        <section className="mt-6 rounded-2xl bg-white p-5 shadow-card">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-            📋 Template Statis (PDF)
-          </h2>
+        <Section
+          title="📋 Template Statis"
+          hint="Template cetakan belum tersedia di sini — kontak admin untuk mendapatkan file master."
+        >
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <TemplateItem
               title="Form Inspeksi Harian"
@@ -142,42 +179,15 @@ export default async function DocGenPage() {
               desc="Evaluasi kuartalan supplier (skor 0-100)."
             />
           </div>
-          <p className="mt-3 text-[11px] text-ink2/60">
-            Template cetakan belum tersedia di sini — kontak admin untuk
-            mendapatkan file master.
-          </p>
-        </section>
-      </main>
-    </div>
-  );
-}
-
-function TemplateCard({
-  icon,
-  label,
-  count,
-  hint
-}: {
-  icon: string;
-  label: string;
-  count: number;
-  hint: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white p-4 shadow-card">
-      <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-ink2/80">
-        <span>{icon}</span>
-        <span>{label}</span>
-      </div>
-      <div className="text-2xl font-black text-ink">{count}</div>
-      <div className="mt-1 text-[11px] font-semibold text-ink2/70">{hint}</div>
+        </Section>
+      </PageContainer>
     </div>
   );
 }
 
 function TemplateItem({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="rounded-xl bg-paper p-3 ring-1 ring-ink/5">
+    <div className="rounded-xl bg-paper p-3 ring-1 ring-ink/5 transition hover:shadow-card">
       <div className="text-sm font-bold text-ink">{title}</div>
       <div className="mt-1 text-[11px] text-ink2/70">{desc}</div>
     </div>
@@ -186,9 +196,11 @@ function TemplateItem({ title, desc }: { title: string; desc: string }) {
 
 function DocList({
   title,
+  icon,
   docs
 }: {
   title: string;
+  icon: string;
   docs: {
     no: string;
     date: string;
@@ -199,30 +211,23 @@ function DocList({
   }[];
 }) {
   return (
-    <section className="rounded-2xl bg-white p-5 shadow-card">
-      <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-ink">
-        {title}
-      </h2>
+    <Section title={`${icon} ${title}`} className="mb-0">
       {docs.length === 0 ? (
-        <div className="rounded-xl bg-ink/5 p-4 text-sm text-ink2">
-          Belum ada dokumen.
-        </div>
+        <EmptyState message="Belum ada dokumen." />
       ) : (
         <ul className="space-y-2 text-sm">
           {docs.map((d) => (
             <li key={d.no}>
               <a
                 href={d.href}
-                className="flex items-center justify-between rounded-xl bg-paper px-3 py-2 ring-1 ring-ink/5 hover:bg-ink/5"
+                className="flex items-center justify-between rounded-xl bg-paper px-3 py-2 ring-1 ring-ink/5 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-card"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-[11px] font-black text-ink">
                       {d.no}
                     </span>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-ink2 ring-1 ring-ink/10">
-                      {d.status}
-                    </span>
+                    <Badge tone="neutral">{d.status}</Badge>
                   </div>
                   <div className="truncate text-[11px] text-ink2/70">
                     {d.date} · {d.sub}
@@ -234,7 +239,7 @@ function DocList({
                       {formatIDR(d.amount)}
                     </div>
                   )}
-                  <div className="text-[11px] font-bold text-ink">
+                  <div className="text-[11px] font-bold text-accent-strong">
                     Print →
                   </div>
                 </div>
@@ -243,6 +248,6 @@ function DocList({
           ))}
         </ul>
       )}
-    </section>
+    </Section>
   );
 }

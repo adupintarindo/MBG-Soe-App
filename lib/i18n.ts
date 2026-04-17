@@ -35,7 +35,8 @@ export const LANG_KEYS = {
   tabQuotation: { ID: "Quotation", EN: "Quotation" },
   tabDocgen: { ID: "Doc Generator", EN: "Doc Generator" },
   tabSOP: { ID: "SOP", EN: "SOP" },
-  tabAdmin: { ID: "Admin", EN: "Admin" }
+  tabAdmin: { ID: "Admin", EN: "Admin" },
+  tabData: { ID: "Data Master", EN: "Master Data" }
 } as const;
 
 export type LangKey = keyof typeof LANG_KEYS;

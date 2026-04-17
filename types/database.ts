@@ -486,6 +486,18 @@ export interface Database {
         Returns: string | null;
       };
       is_admin: { Args: Record<string, never>; Returns: boolean };
+      admin_reset_transactional: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      admin_reset_stock: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      admin_reset_master: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
       monthly_requirements: {
         Args: { p_start: string; p_months?: number };
         Returns: {
