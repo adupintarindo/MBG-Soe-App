@@ -2,6 +2,11 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 
+// Inlined (mirror of lib/supabase/auth.ts) — can't import from auth.ts because
+// it uses react.cache() which isn't available in the Edge runtime.
+const DEV_ADMIN_COOKIE = "mbg-dev-admin";
+const DEV_ADMIN_VALUE = "1";
+
 // Middleware: refresh session cookie on every request + gate /dashboard, /admin, /planner
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -32,8 +37,15 @@ export async function middleware(request: NextRequest) {
 
   // Refresh session cookie (no-op kalau tidak login)
   const {
-    data: { user }
+    data: { user: realUser }
   } = await supabase.auth.getUser();
+
+  // Dev shortcut: admin/admin cookie counts as authenticated in non-prod.
+  const isDevAdmin =
+    process.env.NODE_ENV !== "production" &&
+    request.cookies.get(DEV_ADMIN_COOKIE)?.value === DEV_ADMIN_VALUE;
+
+  const user = realUser ?? (isDevAdmin ? { id: "dev-admin" } : null);
 
   const { pathname, search } = request.nextUrl;
 
