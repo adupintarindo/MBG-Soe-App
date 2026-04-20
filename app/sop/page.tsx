@@ -86,7 +86,6 @@ export default async function SopPage() {
 
       <PageContainer>
         <PageHeader
-          icon="📘"
           title={t("sop.title", lang)}
           subtitle={t("sop.subtitle", lang)}
           actions={

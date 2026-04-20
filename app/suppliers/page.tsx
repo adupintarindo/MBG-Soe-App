@@ -94,7 +94,6 @@ export default async function SuppliersPage() {
 
       <PageContainer>
         <PageHeader
-          icon="🤝"
           title={t("suppliers.title", lang)}
           subtitle={
             <>

@@ -83,7 +83,6 @@ export default async function AdminDataPage() {
 
       <PageContainer>
         <PageHeader
-          icon="🗃️"
           title={t("adminData.title", lang)}
           subtitle={t("adminData.subtitle", lang)}
           actions={

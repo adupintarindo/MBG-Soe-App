@@ -246,7 +246,6 @@ export default async function ProcurementPage() {
 
       <PageContainer>
         <PageHeader
-          icon="🧾"
           title={t("procurement.title", lang)}
           subtitle={
             <>

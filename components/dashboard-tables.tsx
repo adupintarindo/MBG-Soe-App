@@ -364,7 +364,7 @@ export function PlanningTable({
 
   return (
     <SortableTable<PlanRow>
-      tableClassName="text-sm"
+      tableClassName="text-sm tabular-nums"
       rowKey={(r) => r.op_date}
       initialSort={{ key: "date", dir: "asc" }}
       columns={columns}
@@ -380,6 +380,7 @@ export function PlanningTable({
 // ============== Stock alert ==============
 export type StockAlertRow = {
   item_code: string;
+  category: string;
   required: number;
   on_hand: number;
   gap: number;
@@ -399,11 +400,20 @@ export function StockAlertTable({
       label: t("dashboard.tblItem", lang),
       align: "left",
       sortValue: (r) => displayCode(r.item_code),
-      searchValue: (r) => displayCode(r.item_code),
+      searchValue: (r) => `${displayCode(r.item_code)} ${r.category}`,
       exportValue: (r) => displayCode(r.item_code),
       render: (r) => (
         <span className="font-semibold">{displayCode(r.item_code)}</span>
       )
+    },
+    {
+      key: "category",
+      label: t("common.category", lang),
+      align: "left",
+      sortValue: (r) => r.category,
+      searchValue: (r) => r.category,
+      exportValue: (r) => r.category,
+      render: (r) => <CategoryBadge category={r.category} size="sm" />
     },
     {
       key: "req",
@@ -445,7 +455,7 @@ export function StockAlertTable({
 
   return (
     <SortableTable<StockAlertRow>
-      tableClassName="text-sm"
+      tableClassName="text-sm tabular-nums"
       rowKey={(r) => r.item_code}
       initialSort={{ key: "gap", dir: "desc" }}
       columns={columns}
@@ -526,7 +536,7 @@ export function SupplierSpendTable({
 
   return (
     <SortableTable<SupplierSpendRow>
-      tableClassName="text-sm"
+      tableClassName="text-sm tabular-nums"
       rowKey={(r) => r.supplier_id}
       initialSort={{ key: "spend", dir: "desc" }}
       columns={columns}

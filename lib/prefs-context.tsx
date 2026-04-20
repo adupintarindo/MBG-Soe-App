@@ -58,8 +58,11 @@ function applyLang(lang: Lang) {
 
 export function PrefsProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [theme, setThemeState] = useState<Theme>(readInitialTheme);
-  const [lang, setLangState] = useState<Lang>(readInitialLang);
+  // Defaults match server render. The PREFS_INIT_SCRIPT in app/layout.tsx
+  // applies stored prefs to <html> before hydration so visuals stay correct;
+  // state catches up in the useEffect below without breaking hydration.
+  const [theme, setThemeState] = useState<Theme>("light");
+  const [lang, setLangState] = useState<Lang>("ID");
 
   useEffect(() => {
     try {

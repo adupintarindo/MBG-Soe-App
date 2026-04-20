@@ -29,7 +29,6 @@ export default async function NewBudgetPage() {
 
       <PageContainer>
         <PageHeader
-          icon="💰"
           title={t("bud.btnNew", lang)}
           actions={
             <LinkButton href="/budget" variant="secondary" size="sm">

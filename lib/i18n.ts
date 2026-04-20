@@ -11,10 +11,10 @@ type Pair = { ID: string; EN: string };
 export const LANG_KEYS = {
   // ---------------- Brand + Nav (used by components/nav.tsx) ----------------
   appTitle: { ID: "Supply Chain MBG", EN: "MBG Supply Chain" },
-  brandSub: { ID: "SPPG Nunumeu · Kota Soe", EN: "SPPG Nunumeu · Soe City" },
+  brandSub: { ID: "SPPG Nunumeu — Kota Soe", EN: "SPPG Nunumeu — Soe City" },
   brandRegion: {
-    ID: "Timor Tengah Selatan · Nusa Tenggara Timur",
-    EN: "South Central Timor · East Nusa Tenggara"
+    ID: "Timor Tengah Selatan, Nusa Tenggara Timur",
+    EN: "South Central Timor, East Nusa Tenggara"
   },
   statusOperasional: { ID: "Operasional", EN: "Operational" },
   statusOutOfHours: { ID: "Tidak Operasional", EN: "Outside Hours" },
@@ -143,15 +143,15 @@ export const LANG_KEYS = {
     EN: "has signed in, but an administrator has not activated your profile yet. Contact an admin to verify."
   },
   "dashboard.shortageToday": { ID: "{n} shortage hari ini", EN: "{n} shortages today" },
-  "dashboard.kpiStudents": { ID: "Siswa (Total)", EN: "Students (Total)" },
+  "dashboard.kpiStudents": { ID: "Penerima Manfaat", EN: "Beneficiaries" },
   "dashboard.kpiStudentsSub": { ID: "{n} sekolah aktif", EN: "{n} active schools" },
   "dashboard.kpiSchoolsActive": { ID: "Sekolah Aktif", EN: "Active Schools" },
   "dashboard.kpiSchoolsSub": { ID: "SPPG Nunumeu", EN: "SPPG Nunumeu" },
   "dashboard.kpiMenuToday": { ID: "Menu Hari Ini", EN: "Today's Menu" },
   "dashboard.kpiMenuNotSet": { ID: "Belum ditetapkan", EN: "Not yet set" },
   "dashboard.kpiMenuSub": {
-    ID: "{porsi} porsi · {kg}",
-    EN: "{porsi} servings · {kg}"
+    ID: "{porsi} porsi | {kg}",
+    EN: "{porsi} servings | {kg}"
   },
   "dashboard.kpiSuppliersActive": { ID: "Supplier Aktif", EN: "Active Suppliers" },
   "dashboard.kpiSuppliersSub": { ID: "BUMN + UMKM + Poktan", EN: "SOE + SMEs + Farmer Groups" },
@@ -169,13 +169,13 @@ export const LANG_KEYS = {
     EN: "No requirements data yet"
   },
   "dashboard.volumeEmptyMsg": {
-    ID: "Pastikan menu sudah di-assign ke tanggal di horizon ini.",
-    EN: "Make sure menus have been assigned to dates within this horizon."
+    ID: "Pastikan menu sudah dijadwalkan pada tanggal di periode ini.",
+    EN: "Make sure menus have been scheduled to dates within this period."
   },
   "dashboard.tblNo": { ID: "No.", EN: "No." },
   "dashboard.tblCommodity": { ID: "Komoditas", EN: "Commodity" },
   "dashboard.tblTotalKg": { ID: "Total (kg)", EN: "Total (kg)" },
-  "dashboard.planningTitle": { ID: "10 Hari Ke Depan · Planning", EN: "Next 10 Days · Planning" },
+  "dashboard.planningTitle": { ID: "Planning 10 Hari Ke Depan", EN: "Planning for the Next 10 Days" },
   "dashboard.planningHint": {
     ID: "Prakiraan porsi × menu, tanpa hari non-operasional.",
     EN: "Forecast of servings × menu, excluding non-operational days."
@@ -196,8 +196,8 @@ export const LANG_KEYS = {
     EN: "Daily menu overview, receiving schools, and small/large portion split per date."
   },
   "dashboard.scheduleEmpty": {
-    ID: "Belum ada menu ter-assign di horizon ini.",
-    EN: "No menu has been assigned for this horizon yet."
+    ID: "Belum ada menu terjadwal untuk periode ini.",
+    EN: "No menu scheduled for this period yet."
   },
   "dashboard.tblDayDate": { ID: "Hari, Tanggal", EN: "Day, Date" },
   "dashboard.tblMenuName": { ID: "Nama Menu", EN: "Menu Name" },
@@ -205,9 +205,9 @@ export const LANG_KEYS = {
   "dashboard.tblPorsiKecil": { ID: "Porsi Kecil", EN: "Small Portion" },
   "dashboard.tblPorsiBesar": { ID: "Porsi Besar", EN: "Large Portion" },
   "dashboard.tblPorsiTotal": { ID: "Total Porsi", EN: "Total Portion" },
-  "dashboard.stockAlertTitle": { ID: "Alert Stok · Hari Ini", EN: "Stock Alert · Today" },
+  "dashboard.stockAlertTitle": { ID: "Alert Stok Hari Ini", EN: "Today's Stock Alert" },
   "dashboard.stockAlertHintOk": { ID: "Semua kebutuhan tercover.", EN: "All requirements covered." },
-  "dashboard.stockAlertHintBad": { ID: "{n} item · gap {gap}", EN: "{n} items · gap {gap}" },
+  "dashboard.stockAlertHintBad": { ID: "{n} item | gap {gap}", EN: "{n} items | gap {gap}" },
   "dashboard.stockAlertEmpty": {
     ID: "Tidak ada kekurangan untuk hari ini.",
     EN: "No shortages for today."
@@ -216,40 +216,65 @@ export const LANG_KEYS = {
   "dashboard.tblButuh": { ID: "Butuh", EN: "Needed" },
   "dashboard.tblAda": { ID: "Ada", EN: "On hand" },
   "dashboard.tblKurang": { ID: "Kurang", EN: "Short" },
-  "dashboard.supplierSpendTitle": { ID: "Nilai Belanja Supplier · Bulan Ini", EN: "Supplier Spend · This Month" },
+  "dashboard.supplierSpendTitle": { ID: "Nilai Belanja Supplier Bulan Ini", EN: "Supplier Spend This Month" },
   "dashboard.supplierSpendHint": {
-    ID: "Periode {start} s.d. {end} · {n} supplier bertransaksi",
-    EN: "Period {start} to {end} · {n} suppliers with transactions"
+    ID: "Periode {start} s.d. {end} | {n} supplier bertransaksi",
+    EN: "Period {start} to {end} | {n} suppliers with transactions"
   },
   "dashboard.supplierSpendEmpty": { ID: "Belum ada invoice bulan ini.", EN: "No invoices this month yet." },
   "dashboard.tblType": { ID: "Tipe", EN: "Type" },
   "dashboard.tblInvoice": { ID: "Invoice", EN: "Invoice" },
   "dashboard.tblTotalSpend": { ID: "Total Belanja", EN: "Total Spend" },
-  "dashboard.forecastTitle": { ID: "Peramalan Shortage · 14 Hari Ke Depan", EN: "Shortage Forecast · Next 14 Days" },
+  "dashboard.forecastTitle": { ID: "Peramalan Shortage 14 Hari Ke Depan", EN: "Shortage Forecast Next 14 Days" },
   "dashboard.forecastEmpty": {
-    ID: "Tidak ada shortage terdeteksi di horizon 14 hari.",
-    EN: "No shortages detected over the 14-day horizon."
+    ID: "Tidak ada potensi kekurangan dalam 14 hari ke depan.",
+    EN: "No shortages detected over the next 14 days."
   },
   "dashboard.forecastItemsShort": { ID: "{n} item kurang", EN: "{n} items short" },
   "dashboard.forecastGap": { ID: "gap {value}", EN: "gap {value}" },
   "dashboard.footer": {
-    ID: "Round 6 · Phase 1 · Next.js + Supabase · Go-live SPPG Nunumeu 4 Mei 2026",
-    EN: "Round 6 · Phase 1 · Next.js + Supabase · Go-live SPPG Nunumeu 4 May 2026"
+    ID: "Round 6 | Phase 1 | Next.js + Supabase | Go-live SPPG Nunumeu 4 Mei 2026",
+    EN: "Round 6 | Phase 1 | Next.js + Supabase | Go-live SPPG Nunumeu 4 May 2026"
   },
   "dashboard.commodityCarbo": { ID: "Karbo", EN: "Carbs" },
   "dashboard.commodityFruit": { ID: "Buah", EN: "Fruit" },
   "dashboard.commodityProtein": { ID: "Protein", EN: "Protein" },
   "dashboard.commoditySeasoning": { ID: "Bumbu", EN: "Seasoning" },
   "dashboard.commodityVeg": { ID: "Sayur", EN: "Vegetables" },
+  "dashboard.hppTitle": {
+    ID: "HPP per Porsi Rata-rata Periode",
+    EN: "Cost per Portion Period Average"
+  },
+  "dashboard.hppHint": {
+    ID: "Rata-rata tertimbang {from} s/d {to} | {days} hari aktif",
+    EN: "Weighted average {from} to {to} | {days} active days"
+  },
+  "dashboard.hppFrom": { ID: "Dari", EN: "From" },
+  "dashboard.hppTo": { ID: "Sampai", EN: "To" },
+  "dashboard.hppApply": { ID: "Terapkan", EN: "Apply" },
+  "dashboard.hppPreset7": { ID: "7 Hari", EN: "7 Days" },
+  "dashboard.hppPreset30": { ID: "30 Hari", EN: "30 Days" },
+  "dashboard.hppPresetMonth": { ID: "Bulan Ini", EN: "This Month" },
+  "dashboard.hppAvg": { ID: "Rata-rata HPP", EN: "Average HPP" },
+  "dashboard.hppTotalPorsi": { ID: "Total Porsi", EN: "Total Portions" },
+  "dashboard.hppTotalSpent": { ID: "Total Belanja (PO)", EN: "Total Spend (PO)" },
+  "dashboard.hppEmpty": {
+    ID: "Belum ada data HPP pada periode ini.",
+    EN: "No cost data in this period."
+  },
+  "dashboard.hppColDate": { ID: "Tanggal", EN: "Date" },
+  "dashboard.hppColPorsi": { ID: "Porsi", EN: "Portions" },
+  "dashboard.hppColSpent": { ID: "Belanja (PO)", EN: "Spend (PO)" },
+  "dashboard.hppColHpp": { ID: "HPP / Porsi", EN: "Cost / Portion" },
 
   // ---------------- Procurement (/procurement) ----------------
   "procurement.title": {
-    ID: "Pengadaan · PR · Quotation · PO · GRN · Invoice",
-    EN: "Procurement · PR · Quotation · PO · GRN · Invoice"
+    ID: "Pengadaan",
+    EN: "Procurement"
   },
   "procurement.subtitle": {
-    ID: "{prs} PR · {qts} Quotation · {pos} PO · {grns} GRN · {invs} Invoice · outstanding",
-    EN: "{prs} PR · {qts} Quotation · {pos} PO · {grns} GRN · {invs} Invoice · outstanding"
+    ID: "{prs} PR | {qts} Quotation | {pos} PO | {grns} GRN | {invs} Invoice | outstanding",
+    EN: "{prs} PR | {qts} Quotation | {pos} PO | {grns} GRN | {invs} Invoice | outstanding"
   },
   "procurement.btnNewPR": { ID: "+ Buat PR (split supplier)", EN: "+ New PR (split supplier)" },
   "procurement.btnNewPRshort": { ID: "+ Buat PR", EN: "+ New PR" },
@@ -262,28 +287,28 @@ export const LANG_KEYS = {
   "procurement.kpiOutstanding": { ID: "Outstanding", EN: "Outstanding" },
   "procurement.kpiNCR": { ID: "NCR Aktif", EN: "Active NCR" },
   "procurement.kpiNCRSub": {
-    ID: "{crit} critical · avg resolve {days} hari",
-    EN: "{crit} critical · avg resolve {days} days"
+    ID: "{crit} critical | avg resolve {days} hari",
+    EN: "{crit} critical | avg resolve {days} days"
   },
   "procurement.kpiOK": { ID: "{n} OK", EN: "{n} OK" },
   "procurement.kpiOverdue": { ID: "{n} overdue", EN: "{n} overdue" },
   "procurement.kpiDocuments": { ID: "{n} dokumen", EN: "{n} documents" },
-  "procurement.secPRtitle": { ID: "Purchase Requisitions · Split-Supplier", EN: "Purchase Requisitions · Split-Supplier" },
+  "procurement.secPRtitle": { ID: "Purchase Requisitions (Split-Supplier)", EN: "Purchase Requisitions (Split-Supplier)" },
   "procurement.secPRhint": {
-    ID: "Agregasi kebutuhan tanggal tertentu → alokasi qty absolut ke multiple supplier → auto-generate quotation per supplier.",
-    EN: "Aggregate requirements for a given date → allocate absolute qty to multiple suppliers → auto-generate a quotation per supplier."
+    ID: "Agregasi kebutuhan tanggal tertentu → alokasi qty absolut ke beberapa supplier → otomatis membuat quotation per supplier.",
+    EN: "Aggregate requirements for a given date → allocate absolute qty across several suppliers → automatically create a quotation per supplier."
   },
   "procurement.prEmpty": {
-    ID: "Belum ada PR. Klik 'Buat PR' untuk mulai split kebutuhan ke multiple supplier.",
+    ID: "Belum ada PR. Klik 'Buat PR' untuk mulai membagi kebutuhan ke beberapa supplier.",
     EN: "No PRs yet. Click 'New PR' to start splitting requirements across suppliers."
   },
   "procurement.colPRNo": { ID: "No PR", EN: "PR No." },
   "procurement.colCreated": { ID: "Dibuat", EN: "Created" },
   "procurement.colNeeded": { ID: "Butuh", EN: "Needed" },
-  "procurement.secQTtitle": { ID: "Quotations · RFQ", EN: "Quotations · RFQ" },
+  "procurement.secQTtitle": { ID: "Quotations (RFQ)", EN: "Quotations (RFQ)" },
   "procurement.secQThint": {
-    ID: "Draft harga ke supplier sebelum PO · export .xlsx untuk supplier tanda tangan/edit, lalu convert ke PO.",
-    EN: "Price draft to supplier before PO · export .xlsx for the supplier to sign/edit, then convert to PO."
+    ID: "Draft harga ke supplier sebelum PO | export .xlsx untuk supplier tanda tangan/edit, lalu convert ke PO.",
+    EN: "Price draft to supplier before PO | export .xlsx for the supplier to sign/edit, then convert to PO."
   },
   "procurement.qtEmpty": {
     ID: "Belum ada quotation. Klik 'Buat Baru' untuk mulai.",
@@ -298,12 +323,12 @@ export const LANG_KEYS = {
   "procurement.colItems": { ID: "Items", EN: "Items" },
   "procurement.colTotalQty": { ID: "Total Qty", EN: "Total Qty" },
   "procurement.secGRNtitle": {
-    ID: "📦 GRN · QC Checklist · Non-Conformance",
-    EN: "📦 GRN · QC Checklist · Non-Conformance"
+    ID: "GRN & QC Non-Conformance",
+    EN: "GRN & QC Non-Conformance"
   },
   "procurement.secGRNhint": {
-    ID: "Klik baris untuk buat pemeriksaan QC dari template · NCR dicatat per severity.",
-    EN: "Click a row to create a QC check from a template · NCRs are logged per severity."
+    ID: "Klik baris untuk buat pemeriksaan QC dari template | NCR dicatat per severity.",
+    EN: "Click a row to create a QC check from a template | NCRs are logged per severity."
   },
   "procurement.secINVtitle": { ID: "Invoice", EN: "Invoices" },
   "procurement.secINVhint": { ID: "50 invoice terbaru", EN: "50 latest invoices" },
@@ -312,14 +337,14 @@ export const LANG_KEYS = {
   "procurement.colDueDate": { ID: "Jatuh Tempo", EN: "Due Date" },
   "procurement.secReceiptsTitle": { ID: "Bukti Terima (Foto)", EN: "Delivery Proof (Photos)" },
   "procurement.secReceiptsHint": {
-    ID: "20 terbaru · klik untuk detail di procurement system",
-    EN: "20 latest · click for detail in the procurement system"
+    ID: "20 terbaru | klik untuk detail di procurement system",
+    EN: "20 latest | click for detail in the procurement system"
   },
   "procurement.receiptsEmpty": { ID: "Belum ada foto bukti.", EN: "No proof photos yet." },
   "procurement.noPhoto": { ID: "(tanpa foto)", EN: "(no photo)" },
 
   // ---------------- GRN QC Panel ----------------
-  "grnQc.summary": { ID: "{n} GRN · {qc} dengan QC · {ncr} NCR aktif", EN: "{n} GRNs · {qc} with QC · {ncr} active NCRs" },
+  "grnQc.summary": { ID: "{n} GRN | {qc} dengan QC | {ncr} NCR aktif", EN: "{n} GRNs | {qc} with QC | {ncr} active NCRs" },
   "grnQc.btnNewNcr": { ID: "+ Non-Conformance", EN: "+ Non-Conformance" },
   "grnQc.colGrn": { ID: "GRN", EN: "GRN" },
   "grnQc.colDate": { ID: "Tanggal", EN: "Date" },
@@ -330,7 +355,7 @@ export const LANG_KEYS = {
   "grnQc.colStatus": { ID: "Status", EN: "Status" },
   "grnQc.emptyGrn": { ID: "Belum ada GRN.", EN: "No GRNs yet." },
   "grnQc.linkQc": { ID: "QC →", EN: "QC →" },
-  "grnQc.logTitle": { ID: "Non-Conformance Log · {n} entri", EN: "Non-Conformance Log · {n} entries" },
+  "grnQc.logTitle": { ID: "Non-Conformance Log ({n} entri)", EN: "Non-Conformance Log ({n} entries)" },
   "grnQc.colNcrNo": { ID: "NCR", EN: "NCR" },
   "grnQc.colSeverity": { ID: "Severity", EN: "Severity" },
   "grnQc.colIssue": { ID: "Issue", EN: "Issue" },
@@ -338,7 +363,7 @@ export const LANG_KEYS = {
   "grnQc.promptCa": { ID: "Corrective action (singkat, muncul di log):", EN: "Corrective action (short, shows in the log):" },
   "grnQc.detailHead": { ID: "QC Checklist", EN: "QC Checklist" },
   "grnQc.closeAria": { ID: "Tutup", EN: "Close" },
-  "grnQc.draftTitle": { ID: "Draft Pemeriksaan · {n} checkpoint", EN: "Inspection Draft · {n} checkpoints" },
+  "grnQc.draftTitle": { ID: "Draft Pemeriksaan ({n} checkpoint)", EN: "Inspection Draft ({n} checkpoints)" },
   "grnQc.btnReset": { ID: "Reset", EN: "Reset" },
   "grnQc.phNote": { ID: "catatan", EN: "note" },
   "grnQc.btnSaveDraft": { ID: "Simpan {n} Checkpoint", EN: "Save {n} Checkpoint(s)" },
@@ -363,8 +388,8 @@ export const LANG_KEYS = {
   // ---------------- Stock (/stock) ----------------
   "stock.title": { ID: "Stok Gudang SPPG", EN: "SPPG Warehouse Stock" },
   "stock.subtitle": {
-    ID: "{sku} SKU · {inStock} ada stok · {empty} kosong",
-    EN: "{sku} SKUs · {inStock} in stock · {empty} empty"
+    ID: "{sku} SKU | {inStock} ada stok | {empty} kosong",
+    EN: "{sku} SKUs | {inStock} in stock | {empty} empty"
   },
   "stock.btnProcurement": { ID: "🧾 PO / GRN", EN: "🧾 PO / GRN" },
   "stock.btnVariance": { ID: "📉 BOM Variance", EN: "📉 BOM Variance" },
@@ -378,22 +403,22 @@ export const LANG_KEYS = {
   "stock.kpiShort": { ID: "Kurang Hari Ini", EN: "Short Today" },
   "stock.kpiShortSub": { ID: "vs kebutuhan harian", EN: "vs daily needs" },
   "stock.shortTitle": {
-    ID: "⚠️ {n} Item Kurang untuk Hari Ini",
-    EN: "⚠️ {n} Items Short Today"
+    ID: "{n} Item Kurang untuk Hari Ini",
+    EN: "{n} Items Short Today"
   },
   "stock.shortHint": {
     ID: "Kekurangan dihitung dari kebutuhan BOM hari ini vs on-hand.",
     EN: "Shortages are calculated from today's BOM requirements vs on-hand stock."
   },
-  "stock.catTitle": { ID: "{cat} · {n} item", EN: "{cat} · {n} items" },
+  "stock.catTitle": { ID: "{cat} ({n} item)", EN: "{cat} ({n} items)" },
   "stock.catTotalValue": { ID: "Total nilai", EN: "Total value" },
-  "stock.masterTitle": { ID: "Master Stok · {n} item", EN: "Stock Master · {n} items" },
+  "stock.masterTitle": { ID: "Master Stok ({n} item)", EN: "Stock Master ({n} items)" },
   "stock.colHarga": { ID: "Harga", EN: "Price" },
   "stock.colNilai": { ID: "Nilai", EN: "Value" },
   "stock.colVolWeekly": { ID: "Vol Mingguan", EN: "Weekly Vol" },
   "stock.statusShort": { ID: "Kurang {gap}", EN: "Short {gap}" },
   "stock.statusEmpty": { ID: "Kosong", EN: "Empty" },
-  "stock.statusLow": { ID: "Low · {w}w", EN: "Low · {w}w" },
+  "stock.statusLow": { ID: "Low {w}w", EN: "Low {w}w" },
   "stock.statusOK": { ID: "OK", EN: "OK" },
   "stock.movesTitle": { ID: "50 Pergerakan Stok Terakhir", EN: "Last 50 Stock Movements" },
   "stock.movesEmpty": { ID: "Belum ada pergerakan stok.", EN: "No stock movements yet." },
@@ -421,7 +446,7 @@ export const LANG_KEYS = {
     EN: "FEFO: First Expired, First Out. Consume high-urgency batches first."
   },
   "batch.expiringEmpty": { ID: "Tidak ada batch berisiko kedaluwarsa.", EN: "No batches at risk of expiry." },
-  "batch.allTitle": { ID: "Semua Batch Aktif · {n}", EN: "All Active Batches · {n}" },
+  "batch.allTitle": { ID: "Semua Batch Aktif ({n})", EN: "All Active Batches ({n})" },
   "batch.allEmpty": { ID: "Belum ada batch aktif. Batch otomatis dibuat saat GRN diterima.", EN: "No active batches yet. Batches are auto-created on GRN receipt." },
   "batch.colBatchCode": { ID: "Kode Batch", EN: "Batch Code" },
   "batch.colReceived": { ID: "Diterima", EN: "Received" },
@@ -499,7 +524,7 @@ export const LANG_KEYS = {
   "del.kpiPendingSub": { ID: "status planned", EN: "status planned" },
   "del.todayTitle": { ID: "Manifest Hari Ini", EN: "Today's Manifest" },
   "del.todayEmpty": { ID: "Belum ada pengiriman dibuat.", EN: "No deliveries generated yet." },
-  "del.historyTitle": { ID: "Riwayat Pengiriman · {n} hari", EN: "Delivery History · {n} days" },
+  "del.historyTitle": { ID: "Riwayat Pengiriman ({n} hari)", EN: "Delivery History ({n} days)" },
   "del.btnGenerate": { ID: "+ Generate Manifest Hari Ini", EN: "+ Generate Today's Manifest" },
   "del.btnPOD": { ID: "POD", EN: "POD" },
   "del.statusPlanned": { ID: "Direncanakan", EN: "Planned" },
@@ -517,7 +542,7 @@ export const LANG_KEYS = {
   "del.colTemp": { ID: "Suhu", EN: "Temp" },
   "del.colFulfilment": { ID: "Fulfilment", EN: "Fulfilment" },
   "del.colStops": { ID: "Stop", EN: "Stops" },
-  "del.podTitle": { ID: "Proof of Delivery · {no}", EN: "Proof of Delivery · {no}" },
+  "del.podTitle": { ID: "Proof of Delivery {no}", EN: "Proof of Delivery {no}" },
   "del.podArrival": { ID: "Waktu Tiba", EN: "Arrival Time" },
   "del.podReceiver": { ID: "Nama Penerima", EN: "Receiver Name" },
   "del.podPorsi": { ID: "Porsi Terkirim", EN: "Portions Delivered" },
@@ -640,15 +665,15 @@ export const LANG_KEYS = {
   "planning.kpiOpDays": { ID: "Hari Operasional", EN: "Operational Days" },
   "planning.kpiOpDaysSub": { ID: "30 hari ke depan", EN: "next 30 days" },
   "planning.kpiTotalPorsi": { ID: "Total Porsi", EN: "Total Servings" },
-  "planning.kpiTotalPorsiSub": { ID: "akumulasi horizon", EN: "horizon total" },
+  "planning.kpiTotalPorsiSub": { ID: "akumulasi periode", EN: "period total" },
   "planning.kpiTotalKg": { ID: "Total Kebutuhan", EN: "Total Required" },
   "planning.kpiTotalKgSub": { ID: "bahan basah", EN: "wet ingredients" },
   "planning.kpiEstSpend": { ID: "Estimasi Belanja", EN: "Estimated Spend" },
   "planning.kpiEstSpendSub": { ID: "6 bulan ke depan", EN: "next 6 months" },
   "planning.catDistTitle": { ID: "Distribusi Kebutuhan per Kategori (6 bulan)", EN: "Requirements Distribution by Category (6 months)" },
   "planning.matrixTitle": {
-    ID: "Matriks Kebutuhan · {months} Bulan · {items} komoditas",
-    EN: "Requirements Matrix · {months} Months · {items} commodities"
+    ID: "Matriks Kebutuhan {months} Bulan ({items} komoditas)",
+    EN: "Requirements Matrix {months} Months ({items} commodities)"
   },
   "planning.matrixHint": {
     ID: "Top 30 komoditas, urut dari volume terbesar.",
@@ -658,10 +683,10 @@ export const LANG_KEYS = {
   "planning.colTotalKg": { ID: "Total kg", EN: "Total kg" },
   "planning.colEstCost": { ID: "Est. Biaya", EN: "Est. Cost" },
   "planning.totalTop30": { ID: "TOTAL (TOP 30)", EN: "TOTAL (TOP 30)" },
-  "planning.dailyTitle": { ID: "30 Hari ke Depan · Planning Harian", EN: "Next 30 Days · Daily Planning" },
+  "planning.dailyTitle": { ID: "Planning Harian 30 Hari ke Depan", EN: "Daily Planning for the Next 30 Days" },
   "planning.colPorsiEff": { ID: "Porsi Eff", EN: "Eff. Servings" },
   "planning.badgeOP": { ID: "OP", EN: "OP" },
-  "planning.forecastTitle": { ID: "Forecast Shortage · 30 Hari", EN: "Shortage Forecast · 30 Days" },
+  "planning.forecastTitle": { ID: "Forecast Shortage 30 Hari", EN: "Shortage Forecast 30 Days" },
   "planning.forecastHint": {
     ID: "Proyeksi hari dengan kekurangan stok relatif terhadap rencana BOM.",
     EN: "Projection of days with stock shortages relative to the BOM plan."
@@ -679,17 +704,17 @@ export const LANG_KEYS = {
   "planning.fcTotalItems": { ID: "Total Item Kurang", EN: "Total Items Short" },
   "planning.fcToday": { ID: "Hari ini", EN: "Today" },
   "planning.fcTomorrow": { ID: "Besok", EN: "Tomorrow" },
-  "planning.fcItemsShort": { ID: "{rel} · {n} item kurang", EN: "{rel} · {n} items short" },
+  "planning.fcItemsShort": { ID: "{rel} — {n} item kurang", EN: "{rel} — {n} items short" },
   "planning.fcGap": { ID: "gap", EN: "gap" },
 
   // ---------------- Schools (/schools) ----------------
   "schools.title": { ID: "Sekolah Penerima", EN: "Recipient Schools" },
   "schools.subtitle": {
-    ID: "{n} sekolah aktif · {students} siswa · {teachers} guru · porsi efektif",
-    EN: "{n} active schools · {students} students · {teachers} teachers · effective servings"
+    ID: "{n} sekolah aktif | {students} siswa | {teachers} guru | porsi efektif",
+    EN: "{n} active schools | {students} students | {teachers} teachers | effective servings"
   },
   "schools.studentsSuffix": { ID: "siswa", EN: "students" },
-  "schools.rosterTitle": { ID: "Roster Sekolah · Breakdown Porsi", EN: "School Roster · Servings Breakdown" },
+  "schools.rosterTitle": { ID: "Roster Sekolah (Breakdown Porsi)", EN: "School Roster (Servings Breakdown)" },
   "schools.rosterHint": {
     ID: "Porsi efektif menentukan volume BOM harian — Kecil (0.7) untuk PAUD/TK + SD kelas 1–3, Besar (1.0) untuk SD kelas 4–6 ke atas.",
     EN: "Effective servings drive daily BOM volume — Small (0.7) for PAUD/TK + SD grades 1–3, Large (1.0) for SD grades 4–6 and above."
@@ -704,15 +729,15 @@ export const LANG_KEYS = {
   "schools.colEff": { ID: "Porsi Eff.", EN: "Eff. Servings" },
   "schools.colDistance": { ID: "Jarak (km)", EN: "Distance (km)" },
   "schools.colContact": { ID: "Kontak", EN: "Contact" },
-  "schools.totalLabel": { ID: "TOTAL · {n} sekolah aktif", EN: "TOTAL · {n} active schools" },
+  "schools.totalLabel": { ID: "TOTAL ({n} sekolah aktif)", EN: "TOTAL ({n} active schools)" },
   "schools.footnote": {
     ID: "Porsi Efektif = (Kecil × 0.7) + (Besar × 1.0) + (Guru × 1.0). Kecil mencakup PAUD/TK dan SD kelas 1–3. Besar mencakup SD kelas 4–6, SMP, SMA, SMK.",
     EN: "Effective Servings = (Small × 0.7) + (Large × 1.0) + (Teachers × 1.0). Small covers PAUD/TK and SD grades 1–3. Large covers SD grades 4–6, SMP, SMA, SMK."
   },
   "schools.footnoteLabel": { ID: "Porsi Efektif", EN: "Effective Servings" },
   "schools.attTitle": {
-    ID: "Perkiraan Kehadiran Siswa · 7 Hari Ke Depan",
-    EN: "Expected Student Attendance · Next 7 Days"
+    ID: "Perkiraan Kehadiran Siswa 7 Hari Ke Depan",
+    EN: "Expected Student Attendance Next 7 Days"
   },
   "schools.attHint": {
     ID: "Isi angka kehadiran per sekolah per tanggal. SD dipecah jadi Porsi Kecil (kelas 1–3) dan Porsi Besar (kelas 4–6) karena bobot porsi BOM-nya berbeda. Default = kapasitas penuh.",
@@ -723,12 +748,12 @@ export const LANG_KEYS = {
   "schools.attEst85": { ID: "Estimasi 85%", EN: "85% Estimate" },
   "schools.attSave": { ID: "Simpan Perkiraan", EN: "Save Estimate" },
   "schools.attSaving": { ID: "Menyimpan…", EN: "Saving…" },
-  "schools.attSavedMsg": { ID: "Tersimpan · {n} baris", EN: "Saved · {n} rows" },
+  "schools.attSavedMsg": { ID: "Tersimpan ({n} baris)", EN: "Saved ({n} rows)" },
   "schools.attColSekolah": { ID: "Sekolah", EN: "School" },
   "schools.attColPorsi": { ID: "Porsi", EN: "Servings" },
   "schools.attColKapasitas": { ID: "Kapasitas", EN: "Capacity" },
-  "schools.attGroupKecil": { ID: "Porsi Kecil · kelas 1–3", EN: "Small Servings · grades 1–3" },
-  "schools.attGroupBesar": { ID: "Porsi Besar · kelas 4–6", EN: "Large Servings · grades 4–6" },
+  "schools.attGroupKecil": { ID: "Porsi Kecil — kelas 1–3", EN: "Small Servings — grades 1–3" },
+  "schools.attGroupBesar": { ID: "Porsi Besar — kelas 4–6", EN: "Large Servings — grades 4–6" },
   "schools.attFootnote": {
     ID: "SD ditampilkan 2 baris karena bobot porsi BOM beda — Kecil ×0.7 (kelas 1–3) & Besar ×1.0 (kelas 4–6). Saat disimpan, kedua angka dijumlahkan kembali jadi 1 entri per sekolah per tanggal. Akhir pekan ditandai kuning. Nilai <b class='text-ink'>&lt; kapasitas</b> akan memproporsionalkan kebutuhan bahan untuk tanggal tsb.",
     EN: "SD is shown in 2 rows because BOM serving weights differ — Small ×0.7 (grades 1–3) & Large ×1.0 (grades 4–6). On save, both values are summed back into one entry per school per date. Weekends are highlighted in yellow. A value <b class='text-ink'>&lt; capacity</b> will proportionally reduce ingredient requirements for that date."
@@ -746,11 +771,11 @@ export const LANG_KEYS = {
   "calParser.btnExample": { ID: "Pakai contoh", EN: "Use example" },
   "calParser.btnReset": { ID: "Reset", EN: "Reset" },
   "calParser.errNoParsed": {
-    ID: "Tidak ada baris yang bisa di-parse menjadi tanggal.",
-    EN: "No lines could be parsed into dates."
+    ID: "Tidak ada baris yang bisa dibaca sebagai tanggal.",
+    EN: "No lines could be read as dates."
   },
   "calParser.errNoEntries": {
-    ID: "Tidak ada entri yang akan di-import.",
+    ID: "Tidak ada entri yang akan diimpor.",
     EN: "No entries to import."
   },
   "calParser.warnUnrecognized": {
@@ -793,8 +818,8 @@ export const LANG_KEYS = {
     EN: "Only admin/operator can import the education calendar."
   },
   "calParser.storedHeader": {
-    ID: "Non-operasional tersimpan · {n} tanggal",
-    EN: "Stored non-operational · {n} dates"
+    ID: "Non-operasional tersimpan ({n} tanggal)",
+    EN: "Stored non-operational ({n} dates)"
   },
   "calParser.emptyStored": {
     ID: "Belum ada hari non-operasional tersimpan.",
@@ -807,8 +832,8 @@ export const LANG_KEYS = {
     EN: "Delete non-operational date {date}?"
   },
   "calParser.msgImported": {
-    ID: "Berhasil import {n} tanggal ({new} baru · {update} update).",
-    EN: "Successfully imported {n} dates ({new} new · {update} updates)."
+    ID: "Berhasil import {n} tanggal ({new} baru, {update} update).",
+    EN: "Successfully imported {n} dates ({new} new, {update} updates)."
   },
   "calParser.msgDeleted": {
     ID: "Tanggal {date} dihapus dari non-operasional.",
@@ -816,10 +841,10 @@ export const LANG_KEYS = {
   },
 
   // ---------------- Menu Master (/menu) ----------------
-  "menu.title": { ID: "Master Menu · BOM", EN: "Menu Master · BOM" },
+  "menu.title": { ID: "Master Menu & BOM", EN: "Menu Master & BOM" },
   "menu.subtitle": {
-    ID: "Siklus {n} hari · {items} komoditas · {bom} entri BOM · 2 porsi (Kecil 3-9 th / Besar 10 th+)",
-    EN: "{n}-day cycle · {items} commodities · {bom} BOM entries · 2 serving sizes (Small 3-9 y / Large 10 y+)"
+    ID: "Siklus {n} hari | {items} komoditas | {bom} entri BOM | 2 porsi (Kecil 3-9 th / Besar 10 th+)",
+    EN: "{n}-day cycle | {items} commodities | {bom} BOM entries | 2 serving sizes (Small 3-9 y / Large 10 y+)"
   },
   "menu.btnCalendar": { ID: "📅 Kalender Menu", EN: "📅 Menu Calendar" },
   "menu.btnVariance": { ID: "📉 BOM Variance", EN: "📉 BOM Variance" },
@@ -832,7 +857,7 @@ export const LANG_KEYS = {
   "menu.kpiAvgCostSub": { ID: "harga bahan saja", EN: "ingredient price only" },
   "menu.kpiCommodity": { ID: "Komoditas", EN: "Commodities" },
   "menu.kpiCommoditySub": { ID: "{n} kategori", EN: "{n} categories" },
-  "menu.cycleTitle": { ID: "{n} Siklus Menu · BOM per Porsi", EN: "{n}-Cycle Menu · BOM per Serving" },
+  "menu.cycleTitle": { ID: "Siklus Menu ({n} hari) — BOM per Porsi", EN: "{n}-Day Menu Cycle — BOM per Serving" },
   "menu.cycleHint": {
     ID: "Tiap kartu menampilkan Bill of Materials per porsi (gram bahan basah).",
     EN: "Each card shows the Bill of Materials per serving (grams of wet ingredient)."
@@ -844,34 +869,34 @@ export const LANG_KEYS = {
   "menu.titleSmall": { ID: "PAUD + SD 1-3 (3-9 th)", EN: "PAUD + SD 1-3 (3-9 y)" },
   "menu.titleLarge": { ID: "SD 4-6 + SMP/SMA + Guru (10 th+)", EN: "SD 4-6 + SMP/SMA + Teachers (10 y+)" },
   "menu.gramasiNote": {
-    ID: "Gramasi: <b>Kecil</b> = PAUD + SD 1-3 (3-9 th) · <b>Besar</b> = SD 4-6 + SMP/SMA + Guru (10 th+)",
-    EN: "Grammage: <b>Small</b> = PAUD + SD 1-3 (3-9 y) · <b>Large</b> = SD 4-6 + SMP/SMA + Teachers (10 y+)"
+    ID: "Gramasi: <b>Kecil</b> = PAUD + SD 1-3 (3-9 th); <b>Besar</b> = SD 4-6 + SMP/SMA + Guru (10 th+)",
+    EN: "Grammage: <b>Small</b> = PAUD + SD 1-3 (3-9 y); <b>Large</b> = SD 4-6 + SMP/SMA + Teachers (10 y+)"
   },
-  "menu.commodityTitle": { ID: "Master Komoditas · {n} item", EN: "Commodity Master · {n} items" },
+  "menu.commodityTitle": { ID: "Master Komoditas ({n} item)", EN: "Commodity Master ({n} items)" },
   "menu.commodityHint": {
-    ID: "Harga referensi · Volume mingguan · Sumber supplier",
-    EN: "Reference price · Weekly volume · Supplier sources"
+    ID: "Harga referensi | Volume mingguan | Sumber supplier",
+    EN: "Reference price | Weekly volume | Supplier sources"
   },
   "menu.colPrice": { ID: "Harga (IDR)", EN: "Price (IDR)" },
   "menu.totalLabel": { ID: "Total", EN: "Total" },
   "menu.perPorsi": { ID: "/porsi", EN: "/serving" },
   "menu.footer": {
-    ID: "Master Menu · Bill of Materials · Data siklus {n} hari — revisi per Go-Live 4 Mei 2026",
-    EN: "Menu Master · Bill of Materials · {n}-day cycle data — revised as of Go-Live 4 May 2026"
+    ID: "Master Menu | Bill of Materials | Data siklus {n} hari — revisi per Go-Live 4 Mei 2026",
+    EN: "Menu Master | Bill of Materials | {n}-day cycle data — revised as of Go-Live 4 May 2026"
   },
 
   // ---------------- Calendar (/calendar) - block A (unique keys; duplicates kept in block B below) ----------------
   "calendar.subtitleOp": {
-    ID: "{label} · {op} hari operasional · {hol} libur · {nonop} non-op",
-    EN: "{label} · {op} operational days · {hol} holidays · {nonop} non-op"
+    ID: "{label} | {op} hari operasional | {hol} libur | {nonop} non-op",
+    EN: "{label} | {op} operational days | {hol} holidays | {nonop} non-op"
   },
-  "calendar.notAssigned": { ID: "{n} belum di-assign", EN: "{n} unassigned" },
+  "calendar.notAssigned": { ID: "{n} belum dijadwalkan", EN: "{n} unassigned" },
   "calendar.btnLihatBOM": { ID: "🍽️ Lihat BOM", EN: "🍽️ View BOM" },
   "calendar.aria.prevMonth": { ID: "Bulan sebelumnya", EN: "Previous month" },
   "calendar.aria.nextMonth": { ID: "Bulan berikutnya", EN: "Next month" },
   "calendar.autoAssign": { ID: "Auto-assign {n} hari", EN: "Auto-assign {n} days" },
   "calendar.autoAssigning": { ID: "Menjalankan auto-assign…", EN: "Running auto-assign…" },
-  "calendar.autoAssignDone": { ID: "Selesai · {n} hari di-assign", EN: "Done · {n} days assigned" },
+  "calendar.autoAssignDone": { ID: "Selesai — {n} hari dijadwalkan", EN: "Done — {n} days assigned" },
   "calendar.autoAssignFail": { ID: "Gagal: {msg}", EN: "Failed: {msg}" },
   "calendar.saveCombo": { ID: "Simpan Kombinasi", EN: "Save Combination" },
   "calendar.deleteAssign": { ID: "Hapus Assignment", EN: "Delete Assignment" },
@@ -881,7 +906,7 @@ export const LANG_KEYS = {
   "calendar.noteLabel": { ID: "Catatan", EN: "Note" },
   "calendar.chooseMenu": { ID: "Pilih menu", EN: "Choose menu" },
   "calendar.inheritedFrom": { ID: "Mewarisi dari hari sebelumnya", EN: "Inherited from previous day" },
-  "calendar.assigned": { ID: "Di-assign", EN: "Assigned" },
+  "calendar.assigned": { ID: "Terjadwal", EN: "Assigned" },
   "calendar.holiday": { ID: "Libur", EN: "Holiday" },
   "calendar.weekend": { ID: "Weekend", EN: "Weekend" },
   "calendar.nonOp": { ID: "Non-OP", EN: "Non-OP" },
@@ -901,8 +926,8 @@ export const LANG_KEYS = {
   // ---------------- SOP (/sop) ----------------
   "sop.title": { ID: "Standard Operating Procedure", EN: "Standard Operating Procedure" },
   "sop.subtitle": {
-    ID: "Manual SOP SPPG · referensi WHO / CODEX / BPOM / Permenkes · 90 hari eksekusi",
-    EN: "SPPG SOP manual · WHO / CODEX / BPOM / Permenkes references · 90-day execution"
+    ID: "Manual SOP SPPG | referensi WHO / CODEX / BPOM / Permenkes | 90 hari eksekusi",
+    EN: "SPPG SOP manual | WHO / CODEX / BPOM / Permenkes references | 90-day execution"
   },
   "sop.kpiTotal": { ID: "Total SOP", EN: "Total SOPs" },
   "sop.kpiExec": { ID: "Eksekusi 90 hari", EN: "90-day Executions" },
@@ -914,12 +939,12 @@ export const LANG_KEYS = {
   "sop.badgeHg": { ID: "{n} Higiene", EN: "{n} Hygiene" },
   "sop.catOp": { ID: "OPERASIONAL", EN: "OPERATIONAL" },
   "sop.catHg": { ID: "HIGIENE", EN: "HYGIENE" },
-  "sop.catCount": { ID: "{cat} · {n} SOP", EN: "{cat} · {n} SOPs" },
-  "sop.kpiTotalSub": { ID: "{exec} sudah dieksekusi · {rest} belum", EN: "{exec} executed · {rest} pending" },
+  "sop.catCount": { ID: "{cat} ({n} SOP)", EN: "{cat} ({n} SOP)s" },
+  "sop.kpiTotalSub": { ID: "{exec} sudah dieksekusi | {rest} belum", EN: "{exec} executed | {rest} pending" },
   "sop.kpiExecSub": { ID: "entry compliance log", EN: "compliance log entries" },
   "sop.kpiAvgSub": { ID: "rata-rata centang langkah", EN: "average step completion" },
-  "sop.kpiRiskSub": { ID: "{steps} langkah total · {risks} risiko master", EN: "{steps} total steps · {risks} master risks" },
-  "sop.footer": { ID: "SOP Manual · SPPG Nunumeu · Disusun IFSR × FFI untuk WFP × Pemkab TTS · Revisi terakhir 2026-04", EN: "SOP Manual · SPPG Nunumeu · Prepared by IFSR × FFI for WFP × TTS Regency · Last revised 2026-04" },
+  "sop.kpiRiskSub": { ID: "{steps} langkah total | {risks} risiko master", EN: "{steps} total steps | {risks} master risks" },
+  "sop.footer": { ID: "SOP Manual | SPPG Nunumeu | Disusun IFSR × FFI untuk WFP × Pemkab TTS | Revisi terakhir 2026-04", EN: "SOP Manual | SPPG Nunumeu | Prepared by IFSR × FFI for WFP × TTS Regency | Last revised 2026-04" },
   "sop.badgeSteps": { ID: "{n} langkah", EN: "{n} steps" },
   "sop.badgeRisks": { ID: "{n} risiko", EN: "{n} risks" },
   "sop.badgeNotExec": { ID: "belum dieksekusi", EN: "not yet executed" },
@@ -939,11 +964,11 @@ export const LANG_KEYS = {
   "sop.mdRefLabel": { ID: "**Referensi:**", EN: "**Reference:**" },
   "sop.mdStepsHeading": { ID: "Langkah", EN: "Steps" },
   "sop.mdRisksHeading": { ID: "Risiko Utama", EN: "Main Risks" },
-  "sop.mdFooter": { ID: "SPPG Nunumeu · IFSR × FFI untuk WFP × Pemkab TTS · {date}", EN: "SPPG Nunumeu · IFSR × FFI for WFP × TTS Regency · {date}" },
+  "sop.mdFooter": { ID: "SPPG Nunumeu | IFSR × FFI untuk WFP × Pemkab TTS | {date}", EN: "SPPG Nunumeu | IFSR × FFI for WFP × TTS Regency | {date}" },
   "sop.htmlPrinted": { ID: "Dicetak", EN: "Printed" },
   // Sop run form
   "sopRun.secLabel": { ID: "Catat Eksekusi SOP", EN: "Log SOP Execution" },
-  "sopRun.secHeading": { ID: "Checklist compliance · simpan sebagai audit trail", EN: "Compliance checklist · save as audit trail" },
+  "sopRun.secHeading": { ID: "Checklist compliance — simpan sebagai audit trail", EN: "Compliance checklist — save as audit trail" },
   "sopRun.dateLabel": { ID: "Tanggal Eksekusi", EN: "Execution Date" },
   "sopRun.btnCheckAll": { ID: "Centang semua", EN: "Check all" },
   "sopRun.btnReset": { ID: "Reset", EN: "Reset" },
@@ -954,7 +979,7 @@ export const LANG_KEYS = {
   "sopRun.btnSave": { ID: "Simpan Eksekusi", EN: "Save Execution" },
   "sopRun.btnSaving": { ID: "Menyimpan…", EN: "Saving…" },
   "sopRun.errDate": { ID: "Tanggal eksekusi wajib diisi.", EN: "Execution date is required." },
-  "sopRun.okSaved": { ID: "Tercatat (#{id}) · completion {pct}%.", EN: "Recorded (#{id}) · completion {pct}%." },
+  "sopRun.okSaved": { ID: "Tercatat (#{id}) — completion {pct}%.", EN: "Recorded (#{id}) — completion {pct}%." },
   "sopRun.noWrite": { ID: "Hanya admin/operator/ahli gizi yang boleh mencatat eksekusi SOP. Tampilan di bawah tetap bisa dilihat sebagai riwayat compliance.", EN: "Only admin/operator/nutritionist roles can log SOP executions. The view below remains available as compliance history." },
   "sopRun.historyLabel": { ID: "Riwayat Eksekusi", EN: "Execution History" },
   "sopRun.historyCount": { ID: "{n} entri terakhir", EN: "{n} recent entries" },
@@ -964,7 +989,7 @@ export const LANG_KEYS = {
   "sopRun.badgeRiskCount": { ID: "⚠ {n} risiko", EN: "⚠ {n} risks" },
 
   // ---------------- Admin Data (/admin/data) ----------------
-  "adminData.title": { ID: "Admin · Data Master", EN: "Admin · Master Data" },
+  "adminData.title": { ID: "Admin Data Master", EN: "Admin Master Data" },
   "adminData.subtitle": {
     ID: "Tambah, edit, atau reset data master & transaksi. Hanya admin yang punya akses ke modul ini.",
     EN: "Add, edit, or reset master & transaction data. Only admins can access this module."
@@ -992,12 +1017,12 @@ export const LANG_KEYS = {
   "adminData.tileTransactions": { ID: "Transactions", EN: "Transactions" },
   "adminData.resetTxTitle": { ID: "Reset Transaksi", EN: "Reset Transactions" },
   "adminData.resetTxHint": { ID: "Hapus semua dokumen procurement & ledger. Master data tetap aman.", EN: "Delete all procurement & ledger documents. Master data stays safe." },
-  "adminData.resetTxAffects": { ID: "PO, GRN, Invoice, Receipt, Stock Moves, Transactions · Stock di-set ke 0", EN: "PO, GRN, Invoice, Receipt, Stock Moves, Transactions · Stock set to 0" },
+  "adminData.resetTxAffects": { ID: "PO, GRN, Invoice, Receipt, Stock Moves, Transactions — stok diatur ke 0", EN: "PO, GRN, Invoice, Receipt, Stock Moves, Transactions — stock set to 0" },
   "adminData.resetTxKeeps": { ID: "Items, Menu + BOM, Suppliers, Schools, Settings, Profiles, Invites", EN: "Items, Menu + BOM, Suppliers, Schools, Settings, Profiles, Invites" },
   "adminData.resetTxWord": { ID: "RESET TRANSAKSI", EN: "RESET TRANSACTIONS" },
   "adminData.resetStockTitle": { ID: "Reset Stok", EN: "Reset Stock" },
   "adminData.resetStockHint": { ID: "Set stok semua item ke 0 dengan log opening move. Dokumen procurement tetap.", EN: "Set all item stock to 0 with an opening-move log. Procurement documents remain." },
-  "adminData.resetStockAffects": { ID: "Stock.qty (semua item ke 0) · log via stock_moves (reason=opening)", EN: "Stock.qty (all items to 0) · logged via stock_moves (reason=opening)" },
+  "adminData.resetStockAffects": { ID: "Stock.qty (semua item ke 0) — log via stock_moves (reason=opening)", EN: "Stock.qty (all items to 0) — logged via stock_moves (reason=opening)" },
   "adminData.resetStockKeeps": { ID: "PO, GRN, Invoice, Transactions, master data", EN: "PO, GRN, Invoice, Transactions, master data" },
   "adminData.resetStockWord": { ID: "RESET STOK", EN: "RESET STOCK" },
   "adminData.resetMasterTitle": { ID: "Reset Master Data", EN: "Reset Master Data" },
@@ -1013,7 +1038,7 @@ export const LANG_KEYS = {
   "adminData.btnRun": { ID: "Jalankan {title} →", EN: "Run {title} →" },
   "adminData.armedReady": { ID: "siap dijalankan", EN: "ready to run" },
   "adminData.armedMismatch": { ID: "konfirmasi belum cocok", EN: "confirmation does not match" },
-  "adminData.okMsg": { ID: "{title} berhasil. Snapshot data ter-update.", EN: "{title} succeeded. Data snapshot updated." },
+  "adminData.okMsg": { ID: "{title} berhasil. Data diperbarui.", EN: "{title} succeeded. Data updated." },
   "adminData.errTitle": { ID: "Gagal", EN: "Failed" },
   // items panel
   "adminItems.title": { ID: "Bahan Makanan (items)", EN: "Food Items" },
@@ -1055,7 +1080,7 @@ export const LANG_KEYS = {
   "adminItems.confirmDel": { ID: "Hapus bahan \"{code}\"? Tidak bisa dihapus jika dipakai BOM/PO.", EN: "Delete item \"{code}\"? Cannot be deleted if used in BOM/PO." },
   // menus panel
   "adminMenus.title": { ID: "Menu (siklus)", EN: "Menu (cycle)" },
-  "adminMenus.hint": { ID: "Master menu siklus 10 hari (ADJUSTED WFP × IFSR × FFI). BOM (gramasi tiered P/SD₁₃/SD₄₆/S+) di-edit lewat migrasi SQL atau halaman Master Menu.", EN: "10-day cycle menu master (ADJUSTED WFP × IFSR × FFI). BOM (tiered gramming P/SD₁₃/SD₄₆/S+) is edited via SQL migration or Menu Master page." },
+  "adminMenus.hint": { ID: "Master menu siklus 10 hari (ADJUSTED WFP × IFSR × FFI). BOM (gramasi tiered P/SD₁₃/SD₄₆/S+) diubah lewat migrasi SQL atau halaman Master Menu.", EN: "10-day cycle menu master (ADJUSTED WFP × IFSR × FFI). BOM (tiered gramming P/SD₁₃/SD₄₆/S+) is edited via SQL migration or Menu Master page." },
   "adminMenus.btnAdd": { ID: "+ Tambah Menu", EN: "+ Add Menu" },
   "adminMenus.btnCancelAdd": { ID: "× Batal Tambah", EN: "× Cancel Add" },
   "adminMenus.fldId": { ID: "ID (1..n, unik)", EN: "ID (1..n, unique)" },
@@ -1072,7 +1097,7 @@ export const LANG_KEYS = {
   "adminMenus.btnSaving": { ID: "Menyimpan…", EN: "Saving…" },
   "adminMenus.errIdNumeric": { ID: "ID menu wajib angka >= 1.", EN: "Menu ID must be a number >= 1." },
   "adminMenus.errNameReq": { ID: "Nama menu wajib diisi.", EN: "Menu name is required." },
-  "adminMenus.confirmDel": { ID: "Hapus menu M{id}? BOM otomatis ikut terhapus (cascade). Tidak bisa dihapus jika sudah di-assign ke tanggal.", EN: "Delete menu M{id}? BOM will cascade-delete. Cannot be deleted if already assigned to a date." },
+  "adminMenus.confirmDel": { ID: "Hapus menu M{id}? BOM ikut terhapus otomatis. Tidak bisa dihapus jika menu sudah terjadwal di tanggal tertentu.", EN: "Delete menu M{id}? BOM will be deleted automatically. Cannot be deleted if the menu is already scheduled to any date." },
   "adminMenus.searchLabel": { ID: "Cari nama / ID", EN: "Search name / ID" },
   "adminMenus.searchPh": { ID: "ketik untuk filter…", EN: "type to filter…" },
   "adminMenus.filteredOf": { ID: "{shown} dari {total}", EN: "{shown} of {total}" },
@@ -1181,7 +1206,7 @@ export const LANG_KEYS = {
   "adminSch.required": { ID: "wajib", EN: "required" },
 
   // ---------------- Admin Invite (/admin/invite) ----------------
-  "adminInvite.title": { ID: "Admin · Undang Pengguna", EN: "Admin · Invite Users" },
+  "adminInvite.title": { ID: "Admin Undang Pengguna", EN: "Admin Invite Users" },
   "adminInvite.subtitle": {
     ID: "Buat undangan peran (Admin/Operator/Ahli Gizi/Supplier/Observer). Undangan berlaku 7 hari dan diklaim lewat magic-link pada email yang sama.",
     EN: "Create role-based invitations (Admin/Operator/Nutritionist/Supplier/Observer). Invitations are valid for 7 days and claimed via a magic-link sent to the same email."
@@ -1190,7 +1215,7 @@ export const LANG_KEYS = {
   "adminInvite.countUsed": { ID: "{n} digunakan", EN: "{n} used" },
   "adminInvite.countExpired": { ID: "{n} kadaluarsa", EN: "{n} expired" },
   "adminInvite.recentTitle": { ID: "Undangan Terkini", EN: "Recent Invitations" },
-  "adminInvite.recentHint": { ID: "20 undangan terbaru · urut dari paling baru", EN: "20 latest invitations · sorted by most recent" },
+  "adminInvite.recentHint": { ID: "20 undangan terbaru | urut dari paling baru", EN: "20 latest invitations | sorted by most recent" },
   "adminInvite.emptyTitle": { ID: "Belum ada undangan", EN: "No invitations yet" },
   "adminInvite.emptyBody": { ID: "Buat undangan pertama Anda lewat form di atas.", EN: "Create your first invitation with the form above." },
   "adminInvite.colEmail": { ID: "Email", EN: "Email" },
@@ -1212,7 +1237,7 @@ export const LANG_KEYS = {
   "adminInvite.optPickSup": { ID: "— pilih supplier —", EN: "— choose supplier —" },
   "adminInvite.btnSend": { ID: "Buat Undangan →", EN: "Create Invitation →" },
   "adminInvite.btnSending": { ID: "Mengirim…", EN: "Sending…" },
-  "adminInvite.badge7Days": { ID: "Berlaku 7 hari · sekali klaim", EN: "Valid 7 days · one-time claim" },
+  "adminInvite.badge7Days": { ID: "Berlaku 7 hari, sekali klaim", EN: "Valid 7 days, one-time claim" },
   "adminInvite.okTitle": { ID: "Undangan dibuat", EN: "Invitation created" },
   "adminInvite.okMsg": { ID: "Undangan dibuat untuk {email}. Minta user login via magic link di halaman /login — sistem akan cocokkan email dengan undangan ini.", EN: "Invitation created for {email}. Ask the user to log in via magic link on the /login page — the system will match the email with this invitation." },
   "adminInvite.tokenLabel": { ID: "Token", EN: "Token" },
@@ -1231,8 +1256,8 @@ export const LANG_KEYS = {
   // ---------------- Suppliers (/suppliers) ----------------
   "suppliers.title": { ID: "Supplier & Vendor Matrix", EN: "Supplier & Vendor Matrix" },
   "suppliers.subtitle": {
-    ID: "{n} supplier · {signed} signed · {awaiting} awaiting · {rejected} rejected · rata-rata skor",
-    EN: "{n} suppliers · {signed} signed · {awaiting} awaiting · {rejected} rejected · avg score"
+    ID: "{n} supplier | {signed} signed | {awaiting} awaiting | {rejected} rejected | rata-rata skor",
+    EN: "{n} suppliers | {signed} signed | {awaiting} awaiting | {rejected} rejected | avg score"
   },
   "suppliers.kpiSigned": { ID: "Signed LTA", EN: "Signed LTA" },
   "suppliers.kpiSignedSub": { ID: "siap operasional", EN: "ready to operate" },
@@ -1241,8 +1266,8 @@ export const LANG_KEYS = {
   "suppliers.kpiRejected": { ID: "Rejected", EN: "Rejected" },
   "suppliers.kpiRejectedSub": { ID: "skor < 70", EN: "score < 70" },
   "suppliers.kpiReadiness": { ID: "Onboarding Readiness", EN: "Onboarding Readiness" },
-  "suppliers.kpiReadinessSub": { ID: "{done}/{total} done · {overdue} overdue", EN: "{done}/{total} done · {overdue} overdue" },
-  "suppliers.cardsTitle": { ID: "Vendor Cards · Signed + Awaiting", EN: "Vendor Cards · Signed + Awaiting" },
+  "suppliers.kpiReadinessSub": { ID: "{done}/{total} done | {overdue} overdue", EN: "{done}/{total} done | {overdue} overdue" },
+  "suppliers.cardsTitle": { ID: "Vendor Cards (Signed + Awaiting)", EN: "Vendor Cards (Signed + Awaiting)" },
   "suppliers.cardsHint": {
     ID: "Klik kartu untuk rincian, harga, sertifikasi & histori transaksi.",
     EN: "Click a card for details, pricing, certifications & transaction history."
@@ -1251,14 +1276,14 @@ export const LANG_KEYS = {
   "suppliers.cardPic": { ID: "PIC", EN: "PIC" },
   "suppliers.cardTel": { ID: "Tel", EN: "Tel" },
   "suppliers.cardEmail": { ID: "Email", EN: "Email" },
-  "suppliers.cardCommodity": { ID: "Komoditas · {n} item", EN: "Commodities · {n} items" },
+  "suppliers.cardCommodity": { ID: "Komoditas ({n} item)", EN: "Commodities ({n} items)" },
   "suppliers.cardInvoices": { ID: "{n} invoice", EN: "{n} invoices" },
   "suppliers.cardDetail": { ID: "Rincian", EN: "Details" },
   "suppliers.cardQuickView": { ID: "Quick view", EN: "Quick view" },
-  "suppliers.actionsTitle": { ID: "Action Tracker · Semua Supplier", EN: "Action Tracker · All Suppliers" },
+  "suppliers.actionsTitle": { ID: "Action Tracker Semua Supplier", EN: "Action Tracker for All Suppliers" },
   "suppliers.actionsHint": { ID: "Tugas onboarding, MoM, field visit & audit lintas supplier.", EN: "Onboarding, MoM, field visit & audit tasks across suppliers." },
   "suppliers.rejectedTitle": { ID: "Supplier Rejected", EN: "Rejected Suppliers" },
-  "suppliers.tableTitle": { ID: "Tabel Lengkap · {n} Supplier", EN: "Full Table · {n} Suppliers" },
+  "suppliers.tableTitle": { ID: "Tabel Lengkap ({n} Supplier)", EN: "Full Table ({n} Suppliers)" },
   "suppliers.colId": { ID: "ID", EN: "ID" },
   "suppliers.colName": { ID: "Nama", EN: "Name" },
   "suppliers.colType": { ID: "Tipe", EN: "Type" },
@@ -1302,7 +1327,7 @@ export const LANG_KEYS = {
   "supplierDetail.btnLTA": { ID: "📄 Generate LTA", EN: "📄 Generate LTA" },
   "supplierDetail.kpiTotalScore": { ID: "Total Score", EN: "Total Score" },
   "supplierDetail.kpiQuality": { ID: "Quality", EN: "Quality" },
-  "supplierDetail.kpiQualitySub": { ID: "{pass} pass · {fail} fail", EN: "{pass} pass · {fail} fail" },
+  "supplierDetail.kpiQualitySub": { ID: "{pass} pass | {fail} fail", EN: "{pass} pass | {fail} fail" },
   "supplierDetail.kpiDelivery": { ID: "Delivery", EN: "Delivery" },
   "supplierDetail.kpiDeliverySub": { ID: "{n} GRN diterima", EN: "{n} GRN received" },
   "supplierDetail.kpiCompliance": { ID: "Compliance", EN: "Compliance" },
@@ -1313,8 +1338,8 @@ export const LANG_KEYS = {
   "supplierDetail.recoReplace": { ID: "REPLACE — exit plan", EN: "REPLACE — exit plan" },
   "supplierDetail.secScorecard": { ID: "Scorecard Otomatis", EN: "Automatic Scorecard" },
   "supplierDetail.secScorecardHint": {
-    ID: "Dihitung dari data operasional {start} → {end}. Bobot default: Q 30% · D 25% · P 20% · C 15% · R 10%.",
-    EN: "Computed from operational data {start} → {end}. Default weights: Q 30% · D 25% · P 20% · C 15% · R 10%."
+    ID: "Dihitung dari data operasional {start} → {end}. Bobot default: Q 30% | D 25% | P 20% | C 15% | R 10%.",
+    EN: "Computed from operational data {start} → {end}. Default weights: Q 30% | D 25% | P 20% | C 15% | R 10%."
   },
   "supplierDetail.scoreQuality": { ID: "Quality", EN: "Quality" },
   "supplierDetail.scoreDelivery": { ID: "Delivery", EN: "Delivery" },
@@ -1325,15 +1350,15 @@ export const LANG_KEYS = {
   "supplierDetail.badgeQCRate": { ID: "QC Pass Rate: {pct}%", EN: "QC Pass Rate: {pct}%" },
   "supplierDetail.badgeActions": { ID: "Actions: {overdue}/{total} overdue", EN: "Actions: {overdue}/{total} overdue" },
   "supplierDetail.badgeNCR": { ID: "NCR Kritikal Open: {n}", EN: "Critical NCR Open: {n}" },
-  "supplierDetail.secReval": { ID: "🔁 Re-Evaluasi Periodik", EN: "🔁 Periodic Re-Evaluation" },
+  "supplierDetail.secReval": { ID: "Re-Evaluasi Periodik", EN: "Periodic Re-Evaluation" },
   "supplierDetail.secRevalHint": {
     ID: "Simpan snapshot skor per periode. Klik 'Hitung & Simpan' untuk merekam evaluasi baru.",
     EN: "Save scorecard snapshot per period. Click 'Compute & Save' to record a new evaluation."
   },
-  "supplierDetail.secGallery": { ID: "🖼️ Visual QC Gallery", EN: "🖼️ Visual QC Gallery" },
+  "supplierDetail.secGallery": { ID: "Visual QC Gallery", EN: "Visual QC Gallery" },
   "supplierDetail.secGalleryHint": {
-    ID: "{n} foto dari GRN QC + NCR · 60 terbaru.",
-    EN: "{n} photos from GRN QC + NCR · latest 60."
+    ID: "{n} foto dari GRN QC + NCR | 60 terbaru.",
+    EN: "{n} photos from GRN QC + NCR | latest 60."
   },
   "supplierDetail.galleryEmptyTitle": { ID: "Belum ada foto QC", EN: "No QC photos yet" },
   "supplierDetail.galleryEmptyBody": {
@@ -1341,7 +1366,7 @@ export const LANG_KEYS = {
     EN: "Photos will appear here when operators upload photo_url to QC Check or NCR."
   },
   "supplierDetail.secItems": { ID: "Komoditas yang Dipasok", EN: "Supplied Commodities" },
-  "supplierDetail.secItemsHint": { ID: "{n} item di-map ke supplier ini.", EN: "{n} items mapped to this supplier." },
+  "supplierDetail.secItemsHint": { ID: "{n} item terhubung ke supplier ini.", EN: "{n} items mapped to this supplier." },
   "supplierDetail.itemsEmpty": { ID: "Belum ada mapping item.", EN: "No item mapping yet." },
   "supplierDetail.colItem": { ID: "Item", EN: "Item" },
   "supplierDetail.colMain": { ID: "Main?", EN: "Main?" },
@@ -1380,8 +1405,8 @@ export const LANG_KEYS = {
   "reval.colEval": { ID: "Evaluasi", EN: "Evaluated" },
 
   // ---------------- Actions Panel ----------------
-  "actions.title": { ID: "Action Tracker · Onboarding & Follow-up", EN: "Action Tracker · Onboarding & Follow-up" },
-  "actions.totalSuffix": { ID: "· {n} total", EN: "· {n} total" },
+  "actions.title": { ID: "Action Tracker (Onboarding & Follow-up)", EN: "Action Tracker (Onboarding & Follow-up)" },
+  "actions.totalSuffix": { ID: "({n} total)", EN: "({n} total)" },
   "actions.filterActive": { ID: "Aktif (non-done)", EN: "Active (non-done)" },
   "actions.filterAll": { ID: "Semua status", EN: "All statuses" },
   "actions.filterAllPrio": { ID: "Semua prio", EN: "All priorities" },
@@ -1444,15 +1469,15 @@ export const LANG_KEYS = {
   "supModal.infoEmail": { ID: "Email:", EN: "Email:" },
   "supModal.infoAddress": { ID: "Alamat:", EN: "Address:" },
   "supModal.infoNotes": { ID: "Catatan:", EN: "Notes:" },
-  "supModal.ratingTitle": { ID: "⭐ Rating & Sertifikasi", EN: "⭐ Rating & Certifications" },
-  "supModal.ratingScoreText": { ID: "Skor {score} / 100 · {stars}/5 bintang", EN: "Score {score} / 100 · {stars}/5 stars" },
+  "supModal.ratingTitle": { ID: "Rating & Sertifikasi", EN: "Rating & Certifications" },
+  "supModal.ratingScoreText": { ID: "Skor {score}/100 ({stars}/5 bintang)", EN: "Score {score}/100 ({stars}/5 stars)" },
   "supModal.ratingNotYet": { ID: "Belum dinilai", EN: "Not rated yet" },
   "supModal.ratingAria": { ID: "Set rating {n} bintang", EN: "Set rating {n} stars" },
   "supModal.ratingClickToSet": { ID: "Klik untuk set", EN: "Click to set" },
   "supModal.certsTitle": { ID: "Sertifikasi", EN: "Certifications" },
   "supModal.certsEmpty": { ID: "Belum ada sertifikasi tercatat.", EN: "No certifications recorded yet." },
   "supModal.certValidUntil": { ID: "s/d {date}", EN: "until {date}" },
-  "supModal.certExpired": { ID: " · kadaluarsa", EN: " · expired" },
+  "supModal.certExpired": { ID: " (kadaluarsa)", EN: " (expired)" },
   "supModal.certDelete": { ID: "Hapus", EN: "Delete" },
   "supModal.certPhName": { ID: "Nama sertifikat (cth: Halal)", EN: "Certificate name (e.g., Halal)" },
   "supModal.certPhUntil": { ID: "Berlaku s/d", EN: "Valid until" },
@@ -1463,7 +1488,7 @@ export const LANG_KEYS = {
   "supModal.errDeleteCert": { ID: "Hapus sertifikat ini?", EN: "Delete this certificate?" },
   "supModal.errDelete": { ID: "Gagal hapus.", EN: "Failed to delete." },
   "supModal.commodityTitle": { ID: "Daftar Komoditas & Harga", EN: "Commodity & Price List" },
-  "supModal.commodityHint": { ID: "· edit harga inline, tekan 💾 untuk simpan", EN: "· edit price inline, press 💾 to save" },
+  "supModal.commodityHint": { ID: "edit harga inline, tekan 💾 untuk simpan", EN: "edit price inline, press 💾 to save" },
   "supModal.commodityEmpty": {
     ID: "Supplier belum punya komoditas tercatat. Tambahkan di bawah.",
     EN: "This supplier has no commodities recorded. Add below."
@@ -1484,9 +1509,9 @@ export const LANG_KEYS = {
   "supModal.chooseCommodity": { ID: "— pilih komoditas —", EN: "— choose commodity —" },
   "supModal.phPriceIdr": { ID: "Harga IDR", EN: "Price IDR" },
   "supModal.btnAdd": { ID: "+ Tambah", EN: "+ Add" },
-  "supModal.actionsTitle": { ID: "Action Items · {name}", EN: "Action Items · {name}" },
+  "supModal.actionsTitle": { ID: "Action Items — {name}", EN: "Action Items — {name}" },
   "supModal.txTitle": { ID: "Histori Transaksi", EN: "Transaction History" },
-  "supModal.txHint": { ID: "· 20 terakhir", EN: "· last 20" },
+  "supModal.txHint": { ID: "20 terakhir", EN: "last 20" },
   "supModal.txEmpty": { ID: "Belum ada transaksi.", EN: "No transactions yet." },
   "supModal.txColDate": { ID: "Tanggal", EN: "Date" },
   "supModal.txColType": { ID: "Tipe", EN: "Type" },
@@ -1497,10 +1522,10 @@ export const LANG_KEYS = {
   // ---------------- Calendar (/calendar) ----------------
   "calendar.title": { ID: "Kalender Menu", EN: "Menu Calendar" },
   "calendar.subtitle": {
-    ID: "{month} · {op} hari operasional · {hol} libur · {nonOp} non-op",
-    EN: "{month} · {op} operating days · {hol} holidays · {nonOp} non-op"
+    ID: "{month} | {op} hari operasional | {hol} libur | {nonOp} non-op",
+    EN: "{month} | {op} operating days | {hol} holidays | {nonOp} non-op"
   },
-  "calendar.unassignedWarn": { ID: "{n} belum di-assign", EN: "{n} not assigned" },
+  "calendar.unassignedWarn": { ID: "{n} belum dijadwalkan", EN: "{n} not assigned" },
   "calendar.allAssigned": { ID: "semua assigned", EN: "all assigned" },
   "calendar.btnBOM": { ID: "🍽️ Lihat BOM", EN: "🍽️ View BOM" },
   "calendar.prevAria": { ID: "Bulan sebelumnya", EN: "Previous month" },
@@ -1510,8 +1535,8 @@ export const LANG_KEYS = {
   "calendar.legendWeekend": { ID: "Weekend", EN: "Weekend" },
   "calendar.legendNonOp": { ID: "Tidak Operasional", EN: "Non-Operational" },
   "calendar.legendHint": {
-    ID: "💡 Klik tanggal untuk assign menu / tandai Tidak Operasional",
-    EN: "💡 Click a date to assign menu / mark as Non-Operational"
+    ID: "Klik tanggal untuk assign menu / tandai Tidak Operasional",
+    EN: "Click a date to assign menu / mark as Non-Operational"
   },
   "calendar.holidaysTitle": { ID: "Libur Nasional Bulan Ini", EN: "National Holidays This Month" },
   "calendar.holidaysHint": { ID: "Dihitung otomatis sebagai non-operasional.", EN: "Counted automatically as non-operational." },
@@ -1520,8 +1545,8 @@ export const LANG_KEYS = {
   "calGrid.recipientLabel": { ID: "{n} penerima", EN: "{n} recipients" },
   "calGrid.clickToAssign": { ID: "klik untuk assign", EN: "click to assign" },
   "calGrid.readOnlyNote": {
-    ID: "Mode read-only · hanya admin, operator, dan ahli gizi yang bisa mengubah jadwal.",
-    EN: "Read-only mode · only admin, operator, and nutritionist can change the schedule."
+    ID: "Mode read-only — hanya admin, operator, dan ahli gizi yang bisa mengubah jadwal.",
+    EN: "Read-only mode — only admin, operator, and nutritionist can change the schedule."
   },
   "calGrid.errLoadRef": { ID: "Gagal memuat referensi.", EN: "Failed to load reference." },
   "calGrid.errLoadAtt": { ID: "Gagal memuat kehadiran.", EN: "Failed to load attendance." },
@@ -1538,14 +1563,14 @@ export const LANG_KEYS = {
   "calGrid.btnNoOp": { ID: "⛔ Tidak Operasional", EN: "⛔ Not Operational" },
   "calGrid.scheduled": { ID: "✓ Terjadwal", EN: "✓ Scheduled" },
   "calGrid.notAssignedWarn": {
-    ID: "⚠ Belum di-assign · pilih menu di bawah",
-    EN: "⚠ Not assigned yet · choose a menu below"
+    ID: "⚠ Belum dijadwalkan — pilih menu di bawah",
+    EN: "⚠ Not scheduled yet — choose a menu below"
   },
   "calGrid.step2Title": { ID: "Pilih Menu ID", EN: "Choose Menu ID" },
   "calGrid.btnSetMenu": { ID: "Set Menu", EN: "Set Menu" },
   "calGrid.autoFillHint": {
-    ID: "💡 Memilih Menu ID akan otomatis mengisi kombinasi di bawah.",
-    EN: "💡 Choosing a Menu ID auto-fills the combination below."
+    ID: "Memilih Menu ID akan otomatis mengisi kombinasi di bawah.",
+    EN: "Choosing a Menu ID auto-fills the combination below."
   },
   "calGrid.step3Title": { ID: "Kombinasi Menu", EN: "Menu Combination" },
   "calGrid.loadingIngredients": { ID: "Memuat bahan…", EN: "Loading ingredients…" },
@@ -1583,13 +1608,13 @@ export const LANG_KEYS = {
   "autoAssign.running": { ID: "Menjalankan…", EN: "Running…" },
   "autoAssign.btn": { ID: "⚡ Auto-assign {n} hari", EN: "⚡ Auto-assign {n} days" },
   "autoAssign.alreadyComplete": { ID: "Sudah lengkap.", EN: "Already complete." },
-  "autoAssign.assigned": { ID: "{n} hari di-assign.", EN: "{n} days assigned." },
+  "autoAssign.assigned": { ID: "{n} hari dijadwalkan.", EN: "{n} days assigned." },
 
   // ---------------- Price List (/price-list) ----------------
   "priceList.title": { ID: "Weekly Price List", EN: "Weekly Price List" },
   "priceList.subtitleWithPeriod": {
-    ID: "Benchmarking harga mingguan Rp/kg · {period}",
-    EN: "Weekly price benchmarking IDR/kg · {period}"
+    ID: "Benchmarking harga mingguan Rp/kg | {period}",
+    EN: "Weekly price benchmarking IDR/kg | {period}"
   },
   "priceList.subtitle": {
     ID: "Benchmarking harga mingguan Rp/kg",
@@ -1605,8 +1630,8 @@ export const LANG_KEYS = {
   },
   "priceList.migrationRun": { ID: "Jalankan", EN: "Run" },
   "priceList.shellTitle": {
-    ID: "Weekly Price List · Benchmarking Supplier",
-    EN: "Weekly Price List · Supplier Benchmarking"
+    ID: "Weekly Price List — Benchmarking Supplier",
+    EN: "Weekly Price List — Supplier Benchmarking"
   },
   "priceList.allCommodities": { ID: "Semua komoditas", EN: "All commodities" },
   "priceList.hint": {
@@ -1629,7 +1654,7 @@ export const LANG_KEYS = {
   "priceList.summaryRows": { ID: "baris", EN: "rows" },
   "priceList.summaryFilled": { ID: "sel terisi", EN: "cells filled" },
   "priceList.weeksCount": { ID: "📅 {n} minggu × 6 komoditas", EN: "📅 {n} weeks × 6 commodities" },
-  "priceList.legend": { ID: "🟢 termurah · 🔴 termahal per baris", EN: "🟢 cheapest · 🔴 most expensive per row" },
+  "priceList.legend": { ID: "🟢 termurah | 🔴 termahal per baris", EN: "🟢 cheapest | 🔴 most expensive per row" },
   "priceList.readOnly": {
     ID: "Read-only — peran Anda tidak punya akses edit.",
     EN: "Read-only — your role does not have edit access."
@@ -1638,8 +1663,8 @@ export const LANG_KEYS = {
   // ---------------- DocGen (/docgen) ----------------
   "docgen.title": { ID: "Document Generator", EN: "Document Generator" },
   "docgen.subtitle": {
-    ID: "Preview & print dokumen resmi SPPG · PO · GRN · Invoice · Berita Acara",
-    EN: "Preview & print official SPPG documents · PO · GRN · Invoice · Receipt Notes"
+    ID: "Preview & print dokumen resmi SPPG | PO | GRN | Invoice | Berita Acara",
+    EN: "Preview & print official SPPG documents | PO | GRN | Invoice | Receipt Notes"
   },
   "docgen.kpiPO": { ID: "Purchase Order", EN: "Purchase Order" },
   "docgen.kpiPOSub": { ID: "Order ke supplier", EN: "Orders to suppliers" },
@@ -1705,13 +1730,13 @@ export const LANG_KEYS = {
   "docgen.qcNoteLabel": { ID: "Catatan QC:", EN: "QC Note:" },
   "docgen.billAmount": { ID: "Jumlah Tagihan", EN: "Bill Amount" },
   "docgen.transferHint": {
-    ID: "Harap transfer ke rekening supplier sesuai kontrak LTA · Mata uang IDR",
-    EN: "Please transfer to the supplier account per the LTA contract · Currency IDR"
+    ID: "Harap transfer ke rekening supplier sesuai kontrak LTA | Mata uang IDR",
+    EN: "Please transfer to the supplier account per the LTA contract | Currency IDR"
   },
   "docgen.to": { ID: "Kepada:", EN: "To:" },
   "docgen.orgAddress": {
-    ID: "SPPG Nunumeu · Jl. Nunumeu, Kota Soe, Kabupaten Timor Tengah Selatan, Nusa Tenggara Timur",
-    EN: "SPPG Nunumeu · Nunumeu St., Soe City, South Central Timor Regency, East Nusa Tenggara"
+    ID: "SPPG Nunumeu, Jl. Nunumeu, Kota Soe, Kabupaten Timor Tengah Selatan, Nusa Tenggara Timur",
+    EN: "SPPG Nunumeu, Nunumeu St., Soe City, South Central Timor Regency, East Nusa Tenggara"
   },
   "docgen.letterhead1": { ID: "SPPG Nunumeu — MBG Soe", EN: "SPPG Nunumeu — MBG Soe" },
   "docgen.letterhead2": {
@@ -1719,8 +1744,8 @@ export const LANG_KEYS = {
     EN: "Nunumeu St., Soe City, TTS Regency, East Nusa Tenggara"
   },
   "docgen.letterhead3": {
-    ID: "WFP × IFSR × FFI · 9 sekolah · 2.055 siswa + 105 guru",
-    EN: "WFP × IFSR × FFI · 9 schools · 2,055 students + 105 teachers"
+    ID: "WFP × IFSR × FFI — 9 sekolah, 2.055 siswa + 105 guru",
+    EN: "WFP × IFSR × FFI — 9 schools, 2,055 students + 105 teachers"
   },
   "docgen.printedOn": { ID: "Cetak:", EN: "Printed:" },
   "docgen.signCreatedBy": { ID: "Disusun oleh", EN: "Prepared by" },
@@ -1733,15 +1758,15 @@ export const LANG_KEYS = {
   "docgen.roleSupplier": { ID: "Supplier", EN: "Supplier" },
   "docgen.roleFinance": { ID: "Finance", EN: "Finance" },
   "docgen.footer": {
-    ID: "Dokumen terbit otomatis dari sistem MBG Soe Supply Chain · Auditable via ref #{no} · {who}",
-    EN: "Document auto-generated from MBG Soe Supply Chain · Auditable via ref #{no} · {who}"
+    ID: "Dokumen terbit otomatis dari sistem MBG Soe Supply Chain | Auditable via ref #{no} | {who}",
+    EN: "Document auto-generated from MBG Soe Supply Chain | Auditable via ref #{no} | {who}"
   },
 
   // ---------------- BOM Variance (/menu/variance) ----------------
-  "variance.title": { ID: "BOM Variance · Plan vs Actual", EN: "BOM Variance · Plan vs Actual" },
+  "variance.title": { ID: "BOM Variance — Plan vs Actual", EN: "BOM Variance — Plan vs Actual" },
   "variance.subtitle": {
-    ID: "Periode {start} → {end} · Threshold ±{pct}%",
-    EN: "Period {start} → {end} · Threshold ±{pct}%"
+    ID: "Periode {start} → {end} | Threshold ±{pct}%",
+    EN: "Period {start} → {end} | Threshold ±{pct}%"
   },
   "variance.noGRN": { ID: "Belum ada GRN actual dalam periode ini", EN: "No actual GRN in this period yet" },
   "variance.btnBackMenu": { ID: "← Master Menu", EN: "← Menu Master" },
@@ -1752,8 +1777,8 @@ export const LANG_KEYS = {
   "variance.filterApply": { ID: "Terapkan", EN: "Apply" },
   "variance.kpiScope": { ID: "Item dalam scope", EN: "Items in scope" },
   "variance.kpiScopeSub": {
-    ID: "{over} over · {under} under · {ok} ok",
-    EN: "{over} over · {under} under · {ok} ok"
+    ID: "{over} over | {under} under | {ok} ok",
+    EN: "{over} over | {under} under | {ok} ok"
   },
   "variance.kpiPlan": { ID: "Rencana", EN: "Plan" },
   "variance.kpiPlanSub": { ID: "berat bahan basah", EN: "wet ingredient weight" },
@@ -1767,8 +1792,8 @@ export const LANG_KEYS = {
   },
   "variance.emptyTitle": { ID: "Tidak ada data variance", EN: "No variance data" },
   "variance.emptyBody": {
-    ID: "Belum ada plan/actual untuk rentang tanggal ini. Pastikan menu_assign sudah ter-generate dan periode meliputi hari kerja.",
-    EN: "No plan/actual data for this date range yet. Make sure menu_assign has been generated and the period covers workdays."
+    ID: "Belum ada plan/actual untuk rentang tanggal ini. Pastikan penjadwalan menu sudah dibuat dan periode meliputi hari kerja.",
+    EN: "No plan/actual data for this date range yet. Make sure menu scheduling has been generated and the period covers workdays."
   },
   "variance.colFlag": { ID: "Flag", EN: "Flag" },
   "variance.colPlanKg": { ID: "Plan (kg)", EN: "Plan (kg)" },
@@ -1786,8 +1811,8 @@ export const LANG_KEYS = {
   "variance.colTotalBahan": { ID: "Total Bahan", EN: "Total Ingredient" },
   "variance.colCostBahan": { ID: "Cost Bahan", EN: "Ingredient Cost" },
   "variance.footer": {
-    ID: "BOM Variance · basis tiered gramasi 4 age-band · fallback grams_per_porsi · go-live 4 Mei 2026",
-    EN: "BOM Variance · tiered 4-age-band grammage · grams_per_porsi fallback · go-live 4 May 2026"
+    ID: "BOM Variance | basis tiered gramasi 4 age-band | fallback grams_per_porsi | go-live 4 Mei 2026",
+    EN: "BOM Variance | tiered 4-age-band grammage | grams_per_porsi fallback | go-live 4 May 2026"
   },
 
   // ---------------- Supplier Forecast (/supplier/forecast) ----------------
@@ -1800,28 +1825,28 @@ export const LANG_KEYS = {
   // ---------------- Procurement sub-pages ----------------
   "prNew.title": { ID: "Buat Purchase Requisition", EN: "Create Purchase Requisition" },
   "prNew.subtitle": {
-    ID: "Agregasi kebutuhan tanggal tertentu → split ke multiple supplier (qty absolut) → auto-generate quotation per supplier.",
-    EN: "Aggregate requirements for a given date → split across multiple suppliers (absolute qty) → auto-generate a quotation per supplier."
+    ID: "Agregasi kebutuhan tanggal tertentu → bagi ke beberapa supplier (qty absolut) → otomatis membuat quotation per supplier.",
+    EN: "Aggregate requirements for a given date → split across several suppliers (absolute qty) → automatically create a quotation per supplier."
   },
   "prNew.fldNeedDate": { ID: "Tanggal Butuh Barang", EN: "Needed By" },
-  "prNew.fldNeedDateHint": { ID: "Sistem auto-fill item & qty dari kebutuhan menu tanggal tsb.", EN: "The system auto-fills items & qty from the menu requirements for that date." },
+  "prNew.fldNeedDateHint": { ID: "Sistem mengisi otomatis item & qty dari kebutuhan menu tanggal tsb.", EN: "The system auto-fills items & qty from the menu requirements for that date." },
   "prNew.fldNotes": { ID: "Catatan (opsional)", EN: "Notes (optional)" },
   "prNew.phNotes": { ID: "mis. butuh untuk minggu 1 Mei", EN: "e.g. needed for week of 1 May" },
   "prNew.helper": {
-    ID: "Setelah PR dibuat, kamu bisa split tiap item ke multiple supplier dengan qty absolut, lalu generate quotation per supplier sekali klik.",
-    EN: "Once a PR is created, you can split each item across multiple suppliers with absolute qty, then generate a quotation per supplier with one click."
+    ID: "Setelah PR dibuat, kamu bisa membagi tiap item ke beberapa supplier dengan qty absolut, lalu membuat quotation per supplier sekali klik.",
+    EN: "Once a PR is created, you can split each item across several suppliers with absolute qty, then create a quotation per supplier in one click."
   },
   "prNew.btnCreate": { ID: "📋 Buat PR & Muat Kebutuhan", EN: "📋 Create PR & Load Requirements" },
   "prNew.creating": { ID: "Membuat…", EN: "Creating…" },
 
   // ---------------- PR Detail (/procurement/requisition/[no]) ----------------
-  "prDetail.title": { ID: "Purchase Requisition · {no}", EN: "Purchase Requisition · {no}" },
-  "prDetail.subNeed": { ID: "· butuh {date}", EN: "· needed {date}" },
-  "prDetail.subItems": { ID: "· {n} item", EN: "· {n} items" },
-  "prDetail.subAlloc": { ID: "· {n} alokasi", EN: "· {n} allocations" },
+  "prDetail.title": { ID: "Purchase Requisition #{no}", EN: "Purchase Requisition #{no}" },
+  "prDetail.subNeed": { ID: "butuh {date}", EN: "needed {date}" },
+  "prDetail.subItems": { ID: "{n} item", EN: "{n} items" },
+  "prDetail.subAlloc": { ID: "{n} alokasi", EN: "{n} allocations" },
   "prDetail.notesTitle": { ID: "Catatan", EN: "Notes" },
   "prDetail.notesHint": { ID: "Dari pembuat PR", EN: "From the PR creator" },
-  "prDetail.splitTitle": { ID: "Split Allocation · {n} item", EN: "Split Allocation · {n} items" },
+  "prDetail.splitTitle": { ID: "Split Allocation ({n} item)", EN: "Split Allocation ({n} items)" },
   "prDetail.splitHint": {
     ID: "Qty absolut per supplier. Gap = qty_total − sum(planned). Kalau supplier balas qty < planned, tambah alokasi baru ke supplier cadangan untuk tutup gap.",
     EN: "Absolute qty per supplier. Gap = qty_total − sum(planned). If a supplier responds with qty < planned, add a new allocation to a backup supplier to close the gap."
@@ -1830,7 +1855,7 @@ export const LANG_KEYS = {
     ID: "PR ini belum punya item. Mungkin tanggal butuh tidak punya menu assigned.",
     EN: "This PR has no items yet. The needed date may not have any menu assigned."
   },
-  "prDetail.qtTitle": { ID: "Quotations · {n}", EN: "Quotations · {n}" },
+  "prDetail.qtTitle": { ID: "Quotations ({n})", EN: "Quotations ({n})" },
   "prDetail.qtHint": {
     ID: "Quotation yang sudah dispawn dari PR ini. Klik detail untuk isi harga final & convert ke PO.",
     EN: "Quotations spawned from this PR. Click detail to fill in final price & convert to PO."
@@ -1873,13 +1898,13 @@ export const LANG_KEYS = {
   "prAlloc.btnDelInline": { ID: "hapus", EN: "delete" },
   "prAlloc.btnOk": { ID: "OK", EN: "OK" },
   "prAlloc.btnCancelInline": { ID: "batal", EN: "cancel" },
-  "prAlloc.locked": { ID: "(terkunci · quotation sudah dispawn)", EN: "(locked · quotation already spawned)" },
+  "prAlloc.locked": { ID: "(terkunci — quotation sudah dispawn)", EN: "(locked — quotation already spawned)" },
   "qtNew.title": { ID: "Buat Quotation Baru", EN: "Create New Quotation" },
   "qtNew.subtitle": {
-    ID: "Draft harga ke supplier · isi manual atau seed dari tanggal menu · export .xlsx untuk ditandatangani supplier.",
-    EN: "Price draft to supplier · fill manually or seed from a menu date · export .xlsx for supplier signature."
+    ID: "Draft harga ke supplier | isi manual atau seed dari tanggal menu | export .xlsx untuk ditandatangani supplier.",
+    EN: "Price draft to supplier | fill manually or seed from a menu date | export .xlsx for supplier signature."
   },
-  "qtNew.step1Title": { ID: "1 · Info Quotation", EN: "1 · Quotation Info" },
+  "qtNew.step1Title": { ID: "1. Info Quotation", EN: "1. Quotation Info" },
   "qtNew.fldSupplier": { ID: "Supplier", EN: "Supplier" },
   "qtNew.optPickSup": { ID: "— Pilih supplier —", EN: "— Pick a supplier —" },
   "qtNew.fldQuoteDate": { ID: "Tanggal Quotation", EN: "Quotation Date" },
@@ -1890,10 +1915,10 @@ export const LANG_KEYS = {
     ID: "mis. terms pengiriman, kontrak referensi",
     EN: "e.g. delivery terms, reference contract"
   },
-  "qtNew.step2Title": { ID: "2 · Seed dari Menu (opsional)", EN: "2 · Seed from Menu (optional)" },
+  "qtNew.step2Title": { ID: "2. Seed dari Menu (opsional)", EN: "2. Seed from Menu (optional)" },
   "qtNew.step2Desc": {
-    ID: "Auto-fill item & qty dari kebutuhan menu tanggal tertentu. Harga saran = last PO price atau fallback harga katalog.",
-    EN: "Auto-fill items & qty from menu demand on a given date. Suggested price = last PO price or fallback catalog price."
+    ID: "Otomatis mengisi item & qty dari kebutuhan menu tanggal tertentu. Harga saran = harga PO terakhir atau harga katalog sebagai cadangan.",
+    EN: "Auto-fills items & qty from menu demand on a given date. Suggested price = last PO price or catalog price as fallback."
   },
   "qtNew.fldMenuDate": { ID: "Tanggal Menu", EN: "Menu Date" },
   "qtNew.btnSeed": { ID: "🌱 Seed dari tanggal ini", EN: "🌱 Seed from this date" },
@@ -1913,7 +1938,7 @@ export const LANG_KEYS = {
     ID: "Quotation {no} dibuat tapi rows gagal: {msg}",
     EN: "Quotation {no} created but rows failed: {msg}"
   },
-  "qtNew.step3Title": { ID: "3 · Item yang Diminta", EN: "3 · Requested Items" },
+  "qtNew.step3Title": { ID: "3. Item yang Diminta", EN: "3. Requested Items" },
   "qtNew.btnAddRow": { ID: "+ Tambah Baris", EN: "+ Add Row" },
   "qtNew.colNo": { ID: "No.", EN: "No." },
   "qtNew.colItem": { ID: "Item", EN: "Item" },
@@ -1934,8 +1959,8 @@ export const LANG_KEYS = {
   "qtNew.btnSaving": { ID: "Menyimpan…", EN: "Saving…" },
 
   // ---------------- Quotation detail ----------------
-  "qtDetail.title": { ID: "Quotation · {no}", EN: "Quotation · {no}" },
-  "qtDetail.subNeed": { ID: "· butuh {date}", EN: "· need {date}" },
+  "qtDetail.title": { ID: "Quotation #{no}", EN: "Quotation #{no}" },
+  "qtDetail.subNeed": { ID: "butuh {date}", EN: "need {date}" },
   "qtDetail.infoTitle": { ID: "Info", EN: "Info" },
   "qtDetail.infoHint": { ID: "Supplier & tanggal", EN: "Supplier & dates" },
   "qtDetail.lblSupplier": { ID: "Supplier", EN: "Supplier" },
@@ -1945,7 +1970,7 @@ export const LANG_KEYS = {
   "qtDetail.dateQuote": { ID: "Quotation: {date}", EN: "Quotation: {date}" },
   "qtDetail.dateValid": { ID: "Valid s/d: {date}", EN: "Valid until: {date}" },
   "qtDetail.dateNeed": { ID: "Butuh: {date}", EN: "Need: {date}" },
-  "qtDetail.itemsTitle": { ID: "Item · {n} baris", EN: "Items · {n} rows" },
+  "qtDetail.itemsTitle": { ID: "Item ({n} baris)", EN: "Items ({n} rows)" },
   "qtDetail.itemsHint": {
     ID: "Qty & harga final (dari supplier) akan overwrite qty & harga saran saat convert ke PO.",
     EN: "Final qty & price (from supplier) will overwrite suggested qty & price when converting to PO."
@@ -1972,7 +1997,7 @@ export const LANG_KEYS = {
     EN: "Convert {no} into a PO? This action cannot be undone."
   },
   "qtActions.convertSuccess": { ID: "✅ Sukses. PO baru: {po}", EN: "✅ Success. New PO: {po}" },
-  "qtActions.convertedLbl": { ID: "✓ Sudah di-convert ke", EN: "✓ Converted to" },
+  "qtActions.convertedLbl": { ID: "✓ Sudah diubah ke", EN: "✓ Converted to" },
   "qtActions.btnMarkSent": { ID: "📤 Tandai Terkirim", EN: "📤 Mark as Sent" },
   "qtActions.btnMarkResponded": { ID: "✍ Tandai Sudah Dibalas", EN: "✍ Mark as Responded" },
   "qtActions.btnAccept": { ID: "✅ Terima", EN: "✅ Accept" },
@@ -2003,26 +2028,26 @@ export const LANG_KEYS = {
     ID: "Supplier belum ditautkan ke item manapun di katalog, atau tidak ada menu assigned/cycle untuk 90 hari ke depan. Hubungi admin SPPG kalau ini tidak sesuai.",
     EN: "The supplier is not linked to any catalog item, or there is no assigned/cycle menu for the next 90 days. Contact the SPPG admin if this seems wrong."
   },
-  "fcst.subPic": { ID: "· PIC: {pic}", EN: "· PIC: {pic}" },
-  "fcst.subHelp": { ID: "· hanya item yang Anda supply", EN: "· only items you supply" },
-  "fcst.tabWeekly": { ID: "Mingguan · {n}", EN: "Weekly · {n}" },
-  "fcst.tabDaily": { ID: "Harian · {n}", EN: "Daily · {n}" },
-  "fcst.tabMonthly": { ID: "Bulanan · {n}", EN: "Monthly · {n}" },
+  "fcst.subPic": { ID: "PIC: {pic}", EN: "PIC: {pic}" },
+  "fcst.subHelp": { ID: "hanya item yang Anda supply", EN: "only items you supply" },
+  "fcst.tabWeekly": { ID: "Mingguan ({n})", EN: "Weekly ({n})" },
+  "fcst.tabDaily": { ID: "Harian ({n})", EN: "Daily ({n})" },
+  "fcst.tabMonthly": { ID: "Bulanan ({n})", EN: "Monthly ({n})" },
   "fcst.meta": {
-    ID: "{items} komoditas · {days} hari · horizon 90 hari",
-    EN: "{items} commodities · {days} days · 90-day horizon"
+    ID: "{items} komoditas | {days} hari | rentang 90 hari",
+    EN: "{items} commodities | {days} days | 90-day range"
   },
   "fcst.export": { ID: "📥 Export .xlsx", EN: "📥 Export .xlsx" },
   "fcst.staffPreview": {
-    ID: "⚠ Staff-preview mode · supplier akan lihat view ini sendiri tanpa harga/data supplier lain.",
-    EN: "⚠ Staff-preview mode · the supplier will see this view themselves, without prices/data from other suppliers."
+    ID: "⚠ Staff-preview mode — supplier akan lihat view ini sendiri tanpa harga/data supplier lain.",
+    EN: "⚠ Staff-preview mode — the supplier will see this view themselves, without prices/data from other suppliers."
   },
   "fcst.badgeAssigned": { ID: "assigned", EN: "assigned" },
   "fcst.badgeCustom": { ID: "custom", EN: "custom" },
   "fcst.badgeCycle": { ID: "cycle (estimasi)", EN: "cycle (estimated)" },
   "fcst.legendTitle": { ID: "Legenda sumber data:", EN: "Data source legend:" },
   "fcst.legendAssigned": {
-    ID: "= menu sudah di-assign operator",
+    ID: "= menu sudah dijadwalkan oleh operator",
     EN: "= menu already assigned by operator"
   },
   "fcst.legendCustom": {
@@ -2042,8 +2067,8 @@ export const LANG_KEYS = {
   "fcst.emptyWeekly": { ID: "Tidak ada data mingguan.", EN: "No weekly data." },
   "fcst.emptyMonthly": { ID: "Tidak ada data bulanan.", EN: "No monthly data." },
   "fcst.monthMeta": {
-    ID: "{items} item · {days} hari operasional",
-    EN: "{items} items · {days} operational days"
+    ID: "{items} item | {days} hari operasional",
+    EN: "{items} items | {days} operational days"
   },
 
   // ---------------- Transaction Log component ----------------

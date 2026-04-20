@@ -166,7 +166,6 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
 
       <PageContainer>
         <PageHeader
-          icon="📋"
           title={`PO ${po.no}`}
           subtitle={
             <span className="inline-flex flex-wrap gap-2 text-[12px]">

@@ -151,7 +151,6 @@ export default async function PrDetailPage({
 
       <PageContainer>
         <PageHeader
-          icon="📋"
           title={ti("prDetail.title", lang, { no: pr.no })}
           subtitle={
             <span className="inline-flex items-center gap-2">

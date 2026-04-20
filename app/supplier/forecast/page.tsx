@@ -61,7 +61,6 @@ export default async function SupplierForecastPage({
           />
           <PageContainer>
             <PageHeader
-              icon="⚠️"
               title={t("fcst.profileIncomplete", lang)}
               subtitle={t("fcst.profileHelp", lang)}
             />
@@ -123,7 +122,6 @@ export default async function SupplierForecastPage({
         />
         <PageContainer>
           <PageHeader
-            icon="📅"
             title={t("fcst.title", lang)}
             subtitle={t("fcst.subtitlePreview", lang)}
             actions={
@@ -183,7 +181,6 @@ export default async function SupplierForecastPage({
 
       <PageContainer>
         <PageHeader
-          icon="📅"
           title={t("fcst.title", lang)}
           subtitle={
             <span className="inline-flex flex-wrap items-center gap-2">

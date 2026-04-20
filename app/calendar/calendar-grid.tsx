@@ -114,6 +114,15 @@ export function CalendarGrid({
   const [nonOpByDate, setNonOpByDate] = useState(
     () => new Map(initialNonOps.map((n) => [n.op_date, n]))
   );
+
+  // Resync local maps when server re-renders with fresh data (bulk
+  // populate/clear via server action + router.refresh()).
+  useEffect(() => {
+    setAssignByDate(new Map(initialAssigns.map((a) => [a.assign_date, a])));
+  }, [initialAssigns]);
+  useEffect(() => {
+    setNonOpByDate(new Map(initialNonOps.map((n) => [n.op_date, n])));
+  }, [initialNonOps]);
   // Lazy-loaded reference data (fetched the first time user opens any modal)
   const [items, setItems] = useState<ItemRow[] | null>(null);
   const [schools, setSchools] = useState<SchoolRow[] | null>(null);

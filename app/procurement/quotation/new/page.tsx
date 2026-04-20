@@ -62,7 +62,6 @@ export default async function NewQuotationPage() {
 
       <PageContainer>
         <PageHeader
-          icon="📄"
           title={t("qtNew.title", lang)}
           subtitle={t("qtNew.subtitle", lang)}
           actions={

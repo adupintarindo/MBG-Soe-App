@@ -67,7 +67,6 @@ export default async function PriceListPage() {
       />
       <PageContainer>
         <PageHeader
-          icon="💹"
           title={t("priceList.title", lang)}
           subtitle={
             activePeriod

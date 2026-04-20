@@ -158,7 +158,6 @@ export default async function MenuMasterPage() {
 
       <PageContainer>
         <PageHeader
-          icon="🍽️"
           title={t("menu.title", lang)}
           subtitle={ti("menu.subtitle", lang, {
             n: menus.length,

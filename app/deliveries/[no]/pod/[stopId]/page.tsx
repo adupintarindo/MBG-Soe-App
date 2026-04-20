@@ -62,7 +62,6 @@ export default async function PODPage({
 
       <PageContainer>
         <PageHeader
-          icon="📝"
           title={ti("del.podTitle", lang, { no: deliveryNo })}
           subtitle={`${schoolName} · Stop #${stop.stop_order}`}
           actions={

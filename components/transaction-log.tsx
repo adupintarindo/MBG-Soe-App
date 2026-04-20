@@ -63,59 +63,42 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
   }
 
   return (
-    <Section
-      title={t("tx.title", lang)}
-      actions={
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs text-white placeholder:text-white/60 [color-scheme:dark]"
-          />
-          <span className="text-white/70">–</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs text-white placeholder:text-white/60 [color-scheme:dark]"
-          />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs text-white"
-          >
-            <option value="" className="text-ink">
-              {t("tx.allTypes", lang)}
-            </option>
-            <option value="po" className="text-ink">
-              {t("tx.typePO", lang)}
-            </option>
-            <option value="grn" className="text-ink">
-              {t("tx.typeGRN", lang)}
-            </option>
-            <option value="invoice" className="text-ink">
-              {t("tx.typeInvoice", lang)}
-            </option>
-            <option value="payment" className="text-ink">
-              {t("tx.typePayment", lang)}
-            </option>
-            <option value="adjustment" className="text-ink">
-              {t("tx.typeAdjustment", lang)}
-            </option>
-            <option value="receipt" className="text-ink">
-              {t("tx.typeReceipt", lang)}
-            </option>
-          </select>
-          <button
-            onClick={reset}
-            className="rounded-lg border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold text-white hover:bg-white/20"
-          >
-            {t("common.reset", lang)}
-          </button>
-        </div>
-      }
-    >
+    <Section title={t("tx.title", lang)}>
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-paper p-3 ring-1 ring-ink/5">
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="rounded-lg bg-white px-2 py-1.5 text-xs text-ink ring-1 ring-ink/10"
+        />
+        <span className="text-ink2/70">–</span>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="rounded-lg bg-white px-2 py-1.5 text-xs text-ink ring-1 ring-ink/10"
+        />
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="rounded-lg bg-white px-2 py-1.5 text-xs text-ink ring-1 ring-ink/10"
+        >
+          <option value="">{t("tx.allTypes", lang)}</option>
+          <option value="po">{t("tx.typePO", lang)}</option>
+          <option value="grn">{t("tx.typeGRN", lang)}</option>
+          <option value="invoice">{t("tx.typeInvoice", lang)}</option>
+          <option value="payment">{t("tx.typePayment", lang)}</option>
+          <option value="adjustment">{t("tx.typeAdjustment", lang)}</option>
+          <option value="receipt">{t("tx.typeReceipt", lang)}</option>
+        </select>
+        <button
+          onClick={reset}
+          className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-ink ring-1 ring-ink/10 hover:bg-ink/5"
+        >
+          {t("common.reset", lang)}
+        </button>
+      </div>
+
       <p className="mb-2 text-[11px] text-ink2/70">
         {ti("tx.nRows", lang, { n: filtered.length })} · {t("tx.totalShown", lang)} {formatIDR(totalAmount)}
       </p>
@@ -191,10 +174,10 @@ function txColumns(lang: "ID" | "EN"): SortableColumn<TxRow>[] {
     {
       key: "amount",
       label: t("tx.colAmount", lang),
-      align: "left",
+      align: "right",
       sortValue: (r) => Number(r.amount ?? 0),
       render: (r) => (
-        <span className="whitespace-nowrap font-mono">
+        <span className="whitespace-nowrap font-mono tabular-nums">
           {r.amount == null ? "—" : formatIDR(Number(r.amount))}
         </span>
       )

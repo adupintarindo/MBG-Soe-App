@@ -87,7 +87,6 @@ export default async function DocGenPage() {
 
       <PageContainer>
         <PageHeader
-          icon="📄"
           title={t("docgen.title", lang)}
           subtitle={t("docgen.subtitle", lang)}
         />

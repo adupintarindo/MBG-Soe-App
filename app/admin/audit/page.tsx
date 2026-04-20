@@ -76,7 +76,6 @@ export default async function AuditPage({
 
       <PageContainer>
         <PageHeader
-          icon="📜"
           title={t("audit.title", lang)}
           subtitle={t("audit.subtitle", lang)}
           actions={

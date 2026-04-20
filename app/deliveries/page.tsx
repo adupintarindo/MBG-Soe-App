@@ -163,7 +163,6 @@ export default async function DeliveriesPage() {
 
       <PageContainer>
         <PageHeader
-          icon="🚚"
           title={t("del.title", lang)}
           subtitle={t("del.subtitle", lang)}
           actions={

@@ -195,7 +195,6 @@ export default async function StockPage() {
 
       <PageContainer>
         <PageHeader
-          icon="📦"
           title={t("stock.title", lang)}
           subtitle={ti("stock.subtitle", lang, {
             sku: items.length,

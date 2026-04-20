@@ -50,7 +50,7 @@ export function PlanningMatrixTable({
     {
       key: "code",
       label: t("common.commodity", lang),
-      align: "center",
+      align: "left",
       sortValue: (r) => r.code,
       render: (r) => <span className="font-semibold">{r.code}</span>
     },

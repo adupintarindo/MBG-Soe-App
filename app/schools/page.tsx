@@ -140,7 +140,6 @@ export default async function SchoolsPage() {
 
       <PageContainer>
         <PageHeader
-          icon="🏫"
           title={t("schools.title", lang)}
           subtitle={
             <>

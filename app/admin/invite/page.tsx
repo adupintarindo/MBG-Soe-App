@@ -61,7 +61,6 @@ export default async function InvitePage() {
 
       <PageContainer>
         <PageHeader
-          icon="🛡️"
           title={t("adminInvite.title", lang)}
           subtitle={t("adminInvite.subtitle", lang)}
           actions={

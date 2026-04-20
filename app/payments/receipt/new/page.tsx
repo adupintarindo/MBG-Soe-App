@@ -31,7 +31,6 @@ export default async function NewReceiptPage() {
 
       <PageContainer>
         <PageHeader
-          icon="💰"
           title={t("pay.receiptFormTitle", lang)}
           actions={
             <LinkButton href="/payments" variant="secondary" size="sm">

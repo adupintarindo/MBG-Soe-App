@@ -102,7 +102,6 @@ export default async function BudgetPage() {
 
       <PageContainer>
         <PageHeader
-          icon="📊"
           title={t("bud.title", lang)}
           subtitle={t("bud.subtitle", lang)}
           actions={

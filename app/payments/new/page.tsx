@@ -97,7 +97,6 @@ export default async function NewPaymentPage() {
 
       <PageContainer>
         <PageHeader
-          icon="💸"
           title={t("pay.formTitle", lang)}
           actions={
             <LinkButton href="/payments" variant="secondary" size="sm">

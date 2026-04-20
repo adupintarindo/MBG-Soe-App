@@ -35,18 +35,32 @@ import {
   topSuppliersBySpend,
   dailyPlanning,
   dashboardKpis,
+  costPerPortionDaily,
   type MonthlyRequirement,
   type TopSupplier,
-  type DailyPlan
+  type DailyPlan,
+  type CostPerPortionRow
 } from "@/lib/engine";
 import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+function isISODate(s: string | undefined): s is string {
+  return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+export default async function DashboardPage({
+  searchParams
+}: {
+  searchParams?:
+    | Promise<{ hpp_from?: string; hpp_to?: string }>
+    | { hpp_from?: string; hpp_to?: string };
+}) {
   const supabase = createClient();
   const lang = getLang();
+
+  const sp = (await Promise.resolve(searchParams)) ?? {};
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -72,6 +86,15 @@ export default async function DashboardPage() {
   );
   const mrStart = monthStart; // 4-month matrix starts this month
 
+  // ---- HPP date range (default last 7 days ending today) ----
+  const sevenAgo = new Date(now);
+  sevenAgo.setDate(sevenAgo.getDate() - 6);
+  const thirtyAgo = new Date(now);
+  thirtyAgo.setDate(thirtyAgo.getDate() - 29);
+  const hppFrom = isISODate(sp.hpp_from) ? sp.hpp_from : toISODate(sevenAgo);
+  const hppTo = isISODate(sp.hpp_to) ? sp.hpp_to : today;
+  const hppPreset30From = toISODate(thirtyAgo);
+
   // ---- parallel fetches ----
   const [
     kpis,
@@ -82,7 +105,8 @@ export default async function DashboardPage() {
     planning,
     txRowsRaw,
     suppliers,
-    attendanceRows
+    attendanceRows,
+    hppRows
   ] = await Promise.all([
     dashboardKpis(supabase).catch(() => ({
       students_total: 0,
@@ -117,7 +141,10 @@ export default async function DashboardPage() {
       .from("school_attendance")
       .select("att_date, school_id, qty")
       .gte("att_date", today)
-      .then((r) => r.data ?? [])
+      .then((r) => r.data ?? []),
+    costPerPortionDaily(supabase, hppFrom, hppTo).catch(
+      () => [] as CostPerPortionRow[]
+    )
   ]);
 
   // ---- portion counts per horizon date ----
@@ -163,6 +190,23 @@ export default async function DashboardPage() {
   // ---- derived ----
   const shortItems = shortages.filter((s) => Number(s.gap) > 0);
   const totalGap = shortItems.reduce((s, x) => s + Number(x.gap || 0), 0);
+
+  // ---- HPP aggregation (weighted average across period) ----
+  const hppSorted = [...hppRows].sort((a, b) =>
+    a.op_date.localeCompare(b.op_date)
+  );
+  const hppTotalPorsi = hppSorted.reduce(
+    (s, r) => s + Number(r.total_porsi || 0),
+    0
+  );
+  const hppTotalSpent = hppSorted.reduce(
+    (s, r) => s + Number(r.spent_po || 0),
+    0
+  );
+  const hppAvg = hppTotalPorsi > 0 ? hppTotalSpent / hppTotalPorsi : 0;
+  const hppActiveDays = hppSorted.filter(
+    (r) => Number(r.total_porsi || 0) > 0
+  ).length;
 
   // Transaction log with supplier names
   const supplierMap = new Map(suppliers.map((s) => [s.id, s.name]));
@@ -321,6 +365,7 @@ export default async function DashboardPage() {
 
   const stockAlertRows: StockAlertRow[] = shortItems.slice(0, 10).map((s) => ({
     item_code: s.item_code,
+    category: commodityCategory(s.item_code),
     required: Number(s.required),
     on_hand: Number(s.on_hand),
     gap: Number(s.gap),
@@ -384,11 +429,143 @@ export default async function DashboardPage() {
           />
         </KpiGrid>
 
+        {/* HPP / Cost per Portion · period picker */}
+        <Section title={t("dashboard.hppTitle", lang)}>
+          <div className="p-4">
+            <form
+              method="get"
+              className="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-ink/10"
+            >
+              <label className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2">
+                {t("dashboard.hppFrom", lang)}
+                <input
+                  type="date"
+                  name="hpp_from"
+                  defaultValue={hppFrom}
+                  max={hppTo}
+                  className="rounded-md bg-white px-2 py-1.5 font-mono text-xs font-semibold text-ink ring-1 ring-ink/15 focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2">
+                {t("dashboard.hppTo", lang)}
+                <input
+                  type="date"
+                  name="hpp_to"
+                  defaultValue={hppTo}
+                  min={hppFrom}
+                  className="rounded-md bg-white px-2 py-1.5 font-mono text-xs font-semibold text-ink ring-1 ring-ink/15 focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </label>
+              <div className="flex flex-wrap items-center gap-1">
+                <a
+                  href="/dashboard"
+                  className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-ink2 ring-1 ring-ink/10 transition hover:bg-primary hover:text-white"
+                >
+                  {t("dashboard.hppPreset7", lang)}
+                </a>
+                <a
+                  href={`/dashboard?hpp_from=${hppPreset30From}&hpp_to=${today}`}
+                  className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-ink2 ring-1 ring-ink/10 transition hover:bg-primary hover:text-white"
+                >
+                  {t("dashboard.hppPreset30", lang)}
+                </a>
+                <a
+                  href={`/dashboard?hpp_from=${monthStart}&hpp_to=${today}`}
+                  className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-ink2 ring-1 ring-ink/10 transition hover:bg-primary hover:text-white"
+                >
+                  {t("dashboard.hppPresetMonth", lang)}
+                </a>
+              </div>
+              <button
+                type="submit"
+                className="rounded-md bg-primary px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white transition hover:brightness-110"
+              >
+                {t("dashboard.hppApply", lang)}
+              </button>
+            </form>
+
+            {hppTotalPorsi === 0 ? (
+              <EmptyState message={t("dashboard.hppEmpty", lang)} />
+            ) : (
+              <>
+                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <KpiTile
+                  icon="💵"
+                  label={t("dashboard.hppAvg", lang)}
+                  value={formatIDR(Math.round(hppAvg))}
+                  palette="emerald"
+                  size="sm"
+                />
+                <KpiTile
+                  icon="🍛"
+                  label={t("dashboard.hppTotalPorsi", lang)}
+                  value={formatNumber(hppTotalPorsi, lang)}
+                  palette="blue"
+                  size="sm"
+                />
+                <KpiTile
+                  icon="🧾"
+                  label={t("dashboard.hppTotalSpent", lang)}
+                  value={formatIDR(hppTotalSpent)}
+                  palette="amber"
+                  size="sm"
+                />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-ink/10 text-left text-[10px] uppercase tracking-wide text-ink2">
+                      <th className="py-2 pr-3 font-bold">
+                        {t("dashboard.hppColDate", lang)}
+                      </th>
+                      <th className="py-2 pr-3 text-right font-bold">
+                        {t("dashboard.hppColPorsi", lang)}
+                      </th>
+                      <th className="py-2 pr-3 text-right font-bold">
+                        {t("dashboard.hppColSpent", lang)}
+                      </th>
+                      <th className="py-2 text-right font-bold">
+                        {t("dashboard.hppColHpp", lang)}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hppSorted.map((r) => {
+                      const porsi = Number(r.total_porsi || 0);
+                      const spent = Number(r.spent_po || 0);
+                      const cpp = porsi > 0 ? spent / porsi : 0;
+                      return (
+                        <tr
+                          key={r.op_date}
+                          className="border-b border-ink/5 last:border-0"
+                        >
+                          <td className="py-2 pr-3 font-mono text-[11px]">
+                            {r.op_date}
+                          </td>
+                          <td className="py-2 pr-3 text-right font-mono">
+                            {formatNumber(porsi, lang)}
+                          </td>
+                          <td className="py-2 pr-3 text-right font-mono">
+                            {formatIDR(spent)}
+                          </td>
+                          <td className="py-2 text-right font-mono font-black">
+                            {porsi > 0 ? formatIDR(Math.round(cpp)) : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              </>
+            )}
+          </div>
+        </Section>
+
         {/* Menu & Portion Schedule · 10 days */}
         <Section
           banner
           title={t("dashboard.scheduleTitle", lang)}
-          hint={t("dashboard.scheduleHint", lang)}
         >
           {planning.length === 0 ? (
             <EmptyState message={t("dashboard.scheduleEmpty", lang)} />
@@ -403,7 +580,6 @@ export default async function DashboardPage() {
         {/* 4-month requirements matrix */}
         <Section
           title={t("dashboard.volumeTitle", lang)}
-          hint={t("dashboard.volumeHint", lang)}
           accent="ok"
         >
           {topItems.length === 0 ? (
@@ -425,7 +601,6 @@ export default async function DashboardPage() {
         <div className="mb-6 grid grid-cols-1 gap-6">
           <Section
             title={t("dashboard.planningTitle", lang)}
-            hint={t("dashboard.planningHint", lang)}
             className="mb-0"
           >
             {planning.length === 0 ? (
@@ -437,14 +612,6 @@ export default async function DashboardPage() {
 
           <Section
             title={t("dashboard.stockAlertTitle", lang)}
-            hint={
-              shortItems.length > 0
-                ? ti("dashboard.stockAlertHintBad", lang, {
-                    n: shortItems.length,
-                    gap: formatKg(totalGap)
-                  })
-                : t("dashboard.stockAlertHintOk", lang)
-            }
             accent={shortItems.length > 0 ? "bad" : "ok"}
             className="mb-0"
           >
@@ -461,14 +628,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Nilai belanja semua supplier bertransaksi */}
-        <Section
-          title={t("dashboard.supplierSpendTitle", lang)}
-          hint={ti("dashboard.supplierSpendHint", lang, {
-            start: monthStart,
-            end: today,
-            n: topSup.length
-          })}
-        >
+        <Section title={t("dashboard.supplierSpendTitle", lang)}>
           {topSup.length === 0 ? (
             <EmptyState message={t("dashboard.supplierSpendEmpty", lang)} />
           ) : (

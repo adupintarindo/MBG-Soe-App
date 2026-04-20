@@ -119,7 +119,6 @@ export default async function SupplierDetailPage({
 
       <PageContainer>
         <PageHeader
-          icon="🏪"
           title={sup.name}
           subtitle={
             <>

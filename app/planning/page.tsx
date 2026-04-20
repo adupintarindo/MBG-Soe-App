@@ -157,7 +157,6 @@ export default async function PlanningPage() {
 
       <PageContainer>
         <PageHeader
-          icon="📈"
           title={t("planning.title", lang)}
           subtitle={t("planning.subtitle", lang)}
         />

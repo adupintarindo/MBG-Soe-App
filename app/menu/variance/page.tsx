@@ -92,7 +92,6 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
 
       <PageContainer>
         <PageHeader
-          icon="📉"
           title={t("variance.title", lang)}
           subtitle={
             <>

@@ -70,7 +70,6 @@ export default async function InvoiceUploadPage() {
 
       <PageContainer>
         <PageHeader
-          icon="📄"
           title={t("sup.uploadTitle", lang)}
           subtitle={
             lang === "EN"

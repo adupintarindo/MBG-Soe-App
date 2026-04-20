@@ -31,7 +31,6 @@ export default async function NewRequisitionPage() {
 
       <PageContainer>
         <PageHeader
-          icon="📋"
           title={t("prNew.title", lang)}
           subtitle={t("prNew.subtitle", lang)}
           actions={

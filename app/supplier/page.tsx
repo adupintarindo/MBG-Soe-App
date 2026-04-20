@@ -50,7 +50,6 @@ export default async function SupplierPage() {
         />
         <PageContainer>
           <PageHeader
-            icon="⚠️"
             title={t("fcst.profileIncomplete", lang)}
             subtitle={t("fcst.profileHelp", lang)}
           />
@@ -121,7 +120,6 @@ export default async function SupplierPage() {
 
       <PageContainer>
         <PageHeader
-          icon="🏢"
           title={isSupplier ? "Portal Supplier" : "Monitoring Supplier"}
           subtitle={
             isSupplier

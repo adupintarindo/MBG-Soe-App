@@ -503,14 +503,14 @@ function TabTile({
       data-active={active}
       aria-current={active ? "page" : undefined}
       title={label}
-      className={`group relative flex flex-col items-center justify-center gap-2 rounded-2xl px-3 py-3 text-center transition sm:gap-3 sm:py-4 ${
+      className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-2xl px-3 py-2 text-center transition sm:gap-2 sm:py-2.5 ${
         active
           ? "bg-primary-gradient text-white shadow-cardlg ring-1 ring-gold/40 dark:bg-primary-gradient-dark"
           : "bg-paper/70 text-primary ring-1 ring-primary/10 hover:-translate-y-0.5 hover:bg-white hover:shadow-card dark:bg-d-surface-2/60 dark:text-d-text dark:ring-d-border/30 dark:hover:bg-d-surface-2"
       }`}
     >
       <span
-        className={`flex h-11 w-11 items-center justify-center rounded-2xl text-xl transition sm:h-14 sm:w-14 sm:text-2xl ${
+        className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg transition sm:h-10 sm:w-10 sm:text-xl ${
           active
             ? "bg-white/15 ring-1 ring-white/25"
             : "bg-white shadow-card ring-1 ring-primary/5 dark:bg-d-surface dark:ring-d-border/40 dark:shadow-card-dark"
@@ -519,13 +519,13 @@ function TabTile({
       >
         {icon}
       </span>
-      <span className="text-[11px] font-bold leading-tight sm:text-[12.5px]">
+      <span className="text-[11px] font-bold leading-tight sm:text-[12px]">
         {label}
       </span>
       {active && (
         <span
           aria-hidden
-          className="absolute inset-x-5 bottom-2 h-0.5 rounded-full bg-gold"
+          className="absolute inset-x-5 bottom-1 h-0.5 rounded-full bg-gold"
         />
       )}
     </Link>

@@ -125,7 +125,6 @@ export default async function QuotationDetailPage({
 
       <PageContainer>
         <PageHeader
-          icon="📄"
           title={ti("qtDetail.title", lang, { no: qt.no })}
           subtitle={
             <span className="inline-flex items-center gap-2">
