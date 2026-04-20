@@ -1,8 +1,8 @@
 "use client";
 
-import { Badge, CategoryBadge } from "@/components/ui";
+import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { formatIDR, formatKg } from "@/lib/engine";
+import { formatKg } from "@/lib/engine";
 import { t, formatNumber, type Lang } from "@/lib/i18n";
 
 export type VarianceRow = {
@@ -56,7 +56,11 @@ export function VariancePerItemTable({
       key: "cat",
       label: t("common.category", lang),
       sortValue: (r) => r.category,
-      render: (r) => <CategoryBadge category={r.category} />
+      render: (r) => (
+        <div className="flex justify-center">
+          <CategoryBadge category={r.category} />
+        </div>
+      )
     },
     {
       key: "plan",
@@ -203,9 +207,10 @@ export function VarianceByMenuTable({
       align: "left",
       sortValue: (r) => r.plan_cost_idr,
       render: (r) => (
-        <span className="font-mono text-xs font-bold text-emerald-800">
-          {formatIDR(r.plan_cost_idr)}
-        </span>
+        <IDR
+          value={r.plan_cost_idr}
+          className="text-xs font-bold text-emerald-800"
+        />
       )
     }
   ];

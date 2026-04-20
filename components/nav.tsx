@@ -75,22 +75,33 @@ const TABS: TabCard[] = [
     show: (r) => canWriteStock(r) || r === "viewer" || r === "ahli_gizi"
   },
   { href: "/schools", labelKey: "tabSchools", icon: "🏫", group: "run", show: () => true },
-  {
-    href: "/deliveries",
-    labelKey: "tabDeliveries",
-    icon: "🚚",
-    group: "run",
-    show: (r) =>
-      r === "admin" || r === "operator" || r === "viewer" || r === "ahli_gizi"
-  },
 
   // Finance — cost per portion & budget
   {
-    href: "/budget",
-    labelKey: "tabBudget",
+    href: "/keuangan",
+    labelKey: "tabKeuangan",
     icon: "💰",
     group: "run",
     show: (r) => r === "admin" || r === "operator" || r === "viewer"
+  },
+
+  // Personalia — tim SPPG, gaji, insentif
+  {
+    href: "/personalia",
+    labelKey: "tabPersonalia",
+    icon: "👥",
+    group: "run",
+    show: (r) => r === "admin" || r === "operator" || r === "viewer"
+  },
+
+  // Dokumen BGN — QC sampel, uji organoleptik, generator Lampiran
+  {
+    href: "/dokumen-bgn",
+    labelKey: "tabDokumenBgn",
+    icon: "📄",
+    group: "audit",
+    show: (r) =>
+      r === "admin" || r === "operator" || r === "viewer" || r === "ahli_gizi"
   },
 
   // Supplier portal (only visible to supplier role)
@@ -270,6 +281,16 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
         (current.startsWith("/supplier/") &&
           !current.startsWith("/supplier/forecast"))
       );
+    }
+    // /keuangan, /personalia, /dokumen-bgn are tab-based pages — treat subpaths as active
+    if (tab.href === "/keuangan") {
+      return current === "/keuangan" || current.startsWith("/keuangan");
+    }
+    if (tab.href === "/personalia") {
+      return current === "/personalia" || current.startsWith("/personalia");
+    }
+    if (tab.href === "/dokumen-bgn") {
+      return current === "/dokumen-bgn" || current.startsWith("/dokumen-bgn");
     }
     return isActive(tab.href, current);
   };

@@ -1,8 +1,7 @@
 "use client";
 
-import { Badge, CategoryBadge } from "@/components/ui";
+import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { formatIDR } from "@/lib/engine";
 import { t, ti, formatNumber, type Lang, type LangKey } from "@/lib/i18n";
 
 const REASON_KEY: Record<string, LangKey> = {
@@ -156,20 +155,16 @@ export function StockMasterTable({
     {
       key: "price",
       label: t("stock.colHarga", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.price_idr,
-      render: (r) => (
-        <span className="font-mono text-xs">{formatIDR(r.price_idr)}</span>
-      )
+      render: (r) => <IDR value={r.price_idr} className="text-xs" />
     },
     {
       key: "value",
       label: t("stock.colNilai", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.value,
-      render: (r) => (
-        <span className="font-mono text-xs">{formatIDR(r.value)}</span>
-      )
+      render: (r) => <IDR value={r.value} className="text-xs" />
     },
     {
       key: "weekly",

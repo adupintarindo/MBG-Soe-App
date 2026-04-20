@@ -12,7 +12,9 @@ import {
   SchoolsRosterTable,
   type SchoolRosterRow
 } from "./schools-roster-table";
-import { t, ti, formatNumber } from "@/lib/i18n";
+import { GenerateManifestButton } from "@/app/deliveries/generate-manifest";
+import { toISODate } from "@/lib/engine";
+import { t, formatNumber } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -140,19 +142,10 @@ export default async function SchoolsPage() {
 
       <PageContainer>
         <PageHeader
-          title={t("schools.title", lang)}
-          subtitle={
-            <>
-              {ti("schools.subtitle", lang, {
-                n: totals.schools,
-                students: formatNumber(totals.students, lang),
-                teachers: formatNumber(totals.guru, lang)
-              })}{" "}
-              <b className="text-ink">{formatNumber(totals.eff, lang)}</b>
-            </>
+          actions={
+            canEdit ? <GenerateManifestButton date={toISODate(new Date())} /> : null
           }
         />
-
         {/* Summary by level */}
         <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
           {["PAUD/TK", "SD", "SMP", "SMA", "SMK"].map((lvl) => {

@@ -86,8 +86,6 @@ export default async function SopPage() {
 
       <PageContainer>
         <PageHeader
-          title={t("sop.title", lang)}
-          subtitle={t("sop.subtitle", lang)}
           actions={
             <>
               <Badge tone="info">{ti("sop.badgeOp", lang, { n: opCount })}</Badge>

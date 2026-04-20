@@ -102,8 +102,6 @@ export default async function BudgetPage() {
 
       <PageContainer>
         <PageHeader
-          title={t("bud.title", lang)}
-          subtitle={t("bud.subtitle", lang)}
           actions={
             canWrite ? (
               <LinkButton href="/budget/new" variant="primary" size="sm">

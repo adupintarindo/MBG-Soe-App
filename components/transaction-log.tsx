@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { formatIDR } from "@/lib/engine";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { Section } from "@/components/ui";
+import { IDR, Section } from "@/components/ui";
 
 export type TxRow = {
   id: number;
@@ -100,7 +99,7 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
       </div>
 
       <p className="mb-2 text-[11px] text-ink2/70">
-        {ti("tx.nRows", lang, { n: filtered.length })} · {t("tx.totalShown", lang)} {formatIDR(totalAmount)}
+        {ti("tx.nRows", lang, { n: filtered.length })}
       </p>
 
       {filtered.length === 0 ? (
@@ -116,6 +115,19 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
             columns={txColumns(lang)}
             rows={filtered}
             searchable
+            footer={
+              <tr className="border-t-2 border-ink/30 bg-slate-50 font-black">
+                <td
+                  colSpan={5}
+                  className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-ink"
+                >
+                  {t("tx.grandTotal", lang)}
+                </td>
+                <td className="px-3 py-2 text-left">
+                  <IDR value={totalAmount} />
+                </td>
+              </tr>
+            }
           />
         </div>
       )}
@@ -174,13 +186,14 @@ function txColumns(lang: "ID" | "EN"): SortableColumn<TxRow>[] {
     {
       key: "amount",
       label: t("tx.colAmount", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => Number(r.amount ?? 0),
-      render: (r) => (
-        <span className="whitespace-nowrap font-mono tabular-nums">
-          {r.amount == null ? "—" : formatIDR(Number(r.amount))}
-        </span>
-      )
+      render: (r) =>
+        r.amount == null ? (
+          <span className="text-ink2/40">—</span>
+        ) : (
+          <IDR value={Number(r.amount)} />
+        )
     }
   ];
 }

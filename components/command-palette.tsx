@@ -92,13 +92,6 @@ const STATIC_ROUTES: Array<{
     keywords: "school sekolah attendance"
   },
   {
-    title: "Pengiriman",
-    subtitle: "Manifest + POD",
-    url: "/deliveries",
-    icon: "🚚",
-    keywords: "delivery pengiriman manifest pod"
-  },
-  {
     title: "Pembayaran",
     subtitle: "AP + cashflow",
     url: "/payments",

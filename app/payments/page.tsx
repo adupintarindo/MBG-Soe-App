@@ -108,8 +108,6 @@ export default async function PaymentsPage() {
 
       <PageContainer>
         <PageHeader
-          title={t("pay.title", lang)}
-          subtitle={t("pay.subtitle", lang)}
           actions={
             canWrite ? (
               <>

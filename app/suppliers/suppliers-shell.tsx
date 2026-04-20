@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
-import { formatIDR, type SupplierAction } from "@/lib/engine";
-import { Section } from "@/components/ui";
+import { type SupplierAction } from "@/lib/engine";
+import { IDR, Section } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { SupplierDetailModal } from "./supplier-detail-modal";
-import { ActionsPanel } from "./actions-panel";
 import type {
   SupplierRow,
   SupItemLink,
@@ -583,9 +582,7 @@ export function SuppliersShell({
               render: (s) => {
                 const sp = spendBySup.get(s.id);
                 return sp ? (
-                  <span className="font-mono text-xs font-bold tabular-nums text-emerald-800">
-                    {formatIDR(sp.total)}
-                  </span>
+                  <IDR value={sp.total} className="text-xs font-bold text-emerald-800" />
                 ) : (
                   <span className="text-ink2/40">—</span>
                 );
@@ -603,18 +600,6 @@ export function SuppliersShell({
             />
           );
         })()}
-      </Section>
-
-      <Section
-        title={t("suppliers.actionsTitle", lang)}
-        hint={t("suppliers.actionsHint", lang)}
-      >
-        <ActionsPanel
-          actions={actions}
-          supplierId={null}
-          canWrite={canWriteActions}
-          isSupplierRole={isSupplierRole}
-        />
       </Section>
 
       {modalError && (
@@ -840,9 +825,10 @@ function SupplierCard({
             </svg>
             {ti("suppliers.cardInvoices", lang, { n: spend.count })}
           </span>
-          <span className="font-mono font-black text-emerald-800">
-            {formatIDR(spend.total)}
-          </span>
+          <IDR
+            value={spend.total}
+            className="w-auto flex-none gap-1.5 font-black text-emerald-800"
+          />
         </div>
       )}
 

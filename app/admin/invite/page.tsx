@@ -61,8 +61,6 @@ export default async function InvitePage() {
 
       <PageContainer>
         <PageHeader
-          title={t("adminInvite.title", lang)}
-          subtitle={t("adminInvite.subtitle", lang)}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone="info">{ti("adminInvite.countActive", lang, { n: counts.active })}</Badge>

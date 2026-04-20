@@ -9,7 +9,6 @@ import {
   KpiGrid,
   KpiTile,
   PageContainer,
-  PageHeader,
   Section
 } from "@/components/ui";
 import { t } from "@/lib/i18n";
@@ -86,11 +85,6 @@ export default async function DocGenPage() {
       />
 
       <PageContainer>
-        <PageHeader
-          title={t("docgen.title", lang)}
-          subtitle={t("docgen.subtitle", lang)}
-        />
-
         <KpiGrid>
           <KpiTile
             icon="📝"

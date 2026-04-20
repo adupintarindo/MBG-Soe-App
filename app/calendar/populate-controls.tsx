@@ -41,6 +41,13 @@ export function PopulateControls({
   );
   const [overwrite, setOverwrite] = useState(true);
 
+  // Reset form state + status message saat user pindah bulan
+  useEffect(() => {
+    setStartDate(firstDay);
+    setStartMenuId(sortedMenus[0]?.id ?? 0);
+    setMsg(null);
+  }, [year, month, firstDay, sortedMenus]);
+
   // Lock body scroll while any modal open + ESC closes
   useEffect(() => {
     const anyOpen = open || clearOpen;

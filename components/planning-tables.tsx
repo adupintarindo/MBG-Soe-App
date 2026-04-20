@@ -1,8 +1,8 @@
 "use client";
 
-import { Badge, CategoryBadge } from "@/components/ui";
+import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { formatIDR, formatKg } from "@/lib/engine";
+import { formatKg } from "@/lib/engine";
 import { t, formatNumber, type Lang } from "@/lib/i18n";
 
 export type PlanningMatrixRow = {
@@ -79,12 +79,10 @@ export function PlanningMatrixTable({
     {
       key: "cost",
       label: t("planning.colEstCost", lang),
-      align: "center",
+      align: "left",
       sortValue: (r) => r.cost,
       render: (r) => (
-        <span className="font-mono text-xs text-emerald-800">
-          {formatIDR(r.cost)}
-        </span>
+        <IDR value={r.cost} className="text-xs text-emerald-800" />
       )
     }
   ];
@@ -112,8 +110,8 @@ export function PlanningMatrixTable({
       <td className="py-2 px-3 text-center font-mono text-xs font-black">
         {formatNumber(totalKg, lang, { maximumFractionDigits: 0 })}
       </td>
-      <td className="py-2 px-3 text-center font-mono text-xs font-black text-emerald-800">
-        {formatIDR(totalCost)}
+      <td className="py-2 px-3 text-left font-mono text-xs font-black text-emerald-800">
+        <IDR value={totalCost} className="text-xs font-black" />
       </td>
     </tr>
   );

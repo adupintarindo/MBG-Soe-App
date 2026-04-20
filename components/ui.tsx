@@ -20,25 +20,35 @@ export function PageContainer({ children }: { children: ReactNode }) {
 
 interface PageHeaderProps {
   icon?: string;
-  title: string;
+  title?: string;
   subtitle?: ReactNode;
   actions?: ReactNode;
 }
 
 export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) {
+  const hasText = !!title || !!subtitle;
+  if (!hasText && !actions) return null;
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-      <div className="min-w-0">
-        <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-crisp text-ink sm:text-[1.75rem]">
-          {icon && <span className="shrink-0 text-2xl leading-none">{icon}</span>}
-          <span className="truncate">{title}</span>
-        </h1>
-        {subtitle && (
-          <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink2/80">
-            {subtitle}
-          </p>
-        )}
-      </div>
+    <div
+      className={`mb-6 flex flex-wrap items-end gap-3 ${hasText ? "justify-between" : "justify-end"}`}
+    >
+      {hasText && (
+        <div className="min-w-0">
+          {title && (
+            <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-crisp text-ink sm:text-[1.75rem]">
+              {icon && (
+                <span className="shrink-0 text-2xl leading-none">{icon}</span>
+              )}
+              <span className="truncate">{title}</span>
+            </h1>
+          )}
+          {subtitle && (
+            <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink2/80">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      )}
       {actions && (
         <div className="flex flex-wrap items-center gap-2">{actions}</div>
       )}
@@ -449,6 +459,35 @@ export function Select(
 }
 
 /* ---------- Table primitives (compose with native <table>) ---------- */
+
+/**
+ * IDR — currency cell renderer that splits "Rp" prefix and the numeric value
+ * into a flex layout so "Rp" stacks vertically (left) while digits align
+ * to the right edge across rows. Use inside table cells where column align
+ * is "left" (so the flex container can span full cell width via w-full).
+ */
+export function IDR({
+  value,
+  className = "",
+  prefixClassName = "text-ink2/60"
+}: {
+  value: number | null | undefined;
+  className?: string;
+  prefixClassName?: string;
+}) {
+  if (value == null || Number.isNaN(Number(value))) {
+    return <span className={`text-ink2/40 ${className}`}>—</span>;
+  }
+  const n = Number(value);
+  const abs = Math.abs(n).toLocaleString("id-ID", { maximumFractionDigits: 0 });
+  const sign = n < 0 ? "-" : "";
+  return (
+    <span className={`flex w-full items-baseline justify-between gap-2 font-mono tabular-nums ${className}`}>
+      <span className={prefixClassName}>Rp</span>
+      <span>{sign}{abs}</span>
+    </span>
+  );
+}
 
 export function TableWrap({ children }: { children: ReactNode }) {
   return (

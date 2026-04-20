@@ -10,10 +10,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
-import { PageContainer, PageHeader } from "@/components/ui";
+import { PageContainer } from "@/components/ui";
 import { PriceListShell } from "./price-list-shell";
 import type { PriceListMatrixRow, PricePeriod, PriceWeek } from "./types";
-import { t, ti } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -66,15 +66,6 @@ export default async function PriceListPage() {
         menuToday={null}
       />
       <PageContainer>
-        <PageHeader
-          title={t("priceList.title", lang)}
-          subtitle={
-            activePeriod
-              ? ti("priceList.subtitleWithPeriod", lang, { period: activePeriod.name })
-              : t("priceList.subtitle", lang)
-          }
-        />
-
         {periodsRes.error && (
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <strong>{t("priceList.migrationWarn", lang)}</strong>{" "}

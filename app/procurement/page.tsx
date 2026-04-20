@@ -225,7 +225,6 @@ export default async function ProcurementPage() {
 
   const poCount = pos.length;
   const grnCount = grns.length;
-  const invCount = invoices.length;
   const poTotal = pos.reduce((s, p) => s + Number(p.total), 0);
   const invTotal = invoices.reduce((s, i) => s + Number(i.total), 0);
   const invPaid = invoices
@@ -246,19 +245,6 @@ export default async function ProcurementPage() {
 
       <PageContainer>
         <PageHeader
-          title={t("procurement.title", lang)}
-          subtitle={
-            <>
-              {ti("procurement.subtitle", lang, {
-                prs: prs.length,
-                qts: quotations.length,
-                pos: poCount,
-                grns: grnCount,
-                invs: invCount
-              })}{" "}
-              <b className="text-red-700">{formatIDR(invOutstanding)}</b>
-            </>
-          }
           actions={
             canWrite ? (
               <div className="flex flex-wrap items-center gap-2">

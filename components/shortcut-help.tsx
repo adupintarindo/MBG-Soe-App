@@ -58,7 +58,6 @@ export function ShortcutHelp() {
           p: "/procurement",
           s: "/stock",
           x: "/schools",
-          l: "/deliveries",
           b: "/budget",
           o: "/sop"
         };
@@ -119,7 +118,6 @@ export function ShortcutHelp() {
         { keys: ["g", "p"], label: "Pengadaan" },
         { keys: ["g", "s"], label: "Stok" },
         { keys: ["g", "x"], label: "Sekolah" },
-        { keys: ["g", "l"], label: "Pengiriman" },
         { keys: ["g", "b"], label: "Budget" },
         { keys: ["g", "o"], label: "SOP" }
       ]

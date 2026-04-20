@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatIDR } from "@/lib/engine";
 import type { SupplierAction } from "@/lib/engine";
-import { Badge, Button, Input, Select } from "@/components/ui";
+import { Badge, Button, IDR, Input, Select } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { ActionsPanel } from "./actions-panel";
 import { t, ti } from "@/lib/i18n";
@@ -794,13 +793,14 @@ function TransactionPanel({ rows }: { rows: TxRow[] }) {
     {
       key: "total",
       label: t("supModal.txColAmount", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.total ?? 0,
-      render: (r) => (
-        <span className="font-mono text-[12px] font-black">
-          {r.total != null ? formatIDR(r.total) : "—"}
-        </span>
-      )
+      render: (r) =>
+        r.total != null ? (
+          <IDR value={r.total} className="text-[12px] font-black" />
+        ) : (
+          <span className="text-ink2/40">—</span>
+        )
     },
     {
       key: "status",

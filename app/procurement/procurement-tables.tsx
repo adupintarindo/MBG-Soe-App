@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatIDR } from "@/lib/engine";
+import { IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { t, formatNumber } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
@@ -190,7 +190,14 @@ export function QtTable({
       label: t("common.supplier", lang),
       align: "left",
       sortValue: (r) => supName(r.supplier_id),
-      render: (r) => <span className="text-xs">{supName(r.supplier_id)}</span>
+      render: (r) => (
+        <Link
+          href={`/suppliers/${r.supplier_id}`}
+          className="text-xs font-semibold hover:text-accent-strong hover:underline"
+        >
+          {supName(r.supplier_id)}
+        </Link>
+      )
     },
     {
       key: "need",
@@ -207,13 +214,11 @@ export function QtTable({
     {
       key: "total",
       label: t("procurement.colAmount", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => Number(r.total),
       exportValue: (r) => Number(r.total),
       render: (r) => (
-        <span className="font-mono text-xs font-black">
-          {formatIDR(Number(r.total))}
-        </span>
+        <IDR value={Number(r.total)} className="text-xs font-black" />
       )
     },
     {
@@ -254,6 +259,8 @@ export function QtTable({
     }
   ];
 
+  const totalQt = rows.reduce((s, r) => s + Number(r.total ?? 0), 0);
+
   return (
     <SortableTable<QtRow>
       columns={columns}
@@ -265,6 +272,20 @@ export function QtTable({
       exportFileName="quotations"
       exportSheetName="Quotations"
       initialSort={{ key: "date", dir: "desc" }}
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td
+            colSpan={5}
+            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+          >
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR value={totalQt} className="text-xs font-black text-ink" />
+          </td>
+          <td colSpan={3}></td>
+        </tr>
+      }
     />
   );
 }
@@ -301,7 +322,14 @@ export function PoTable({
       label: t("common.supplier", lang),
       align: "left",
       sortValue: (r) => supName(r.supplier_id),
-      render: (r) => <span className="text-xs">{supName(r.supplier_id)}</span>
+      render: (r) => (
+        <Link
+          href={`/suppliers/${r.supplier_id}`}
+          className="text-xs font-semibold hover:text-accent-strong hover:underline"
+        >
+          {supName(r.supplier_id)}
+        </Link>
+      )
     },
     {
       key: "delivery",
@@ -332,13 +360,11 @@ export function PoTable({
     {
       key: "total",
       label: t("procurement.colAmount", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => Number(r.total),
       exportValue: (r) => Number(r.total),
       render: (r) => (
-        <span className="font-mono text-xs font-black">
-          {formatIDR(Number(r.total))}
-        </span>
+        <IDR value={Number(r.total)} className="text-xs font-black" />
       )
     },
     {
@@ -363,6 +389,10 @@ export function PoTable({
     }
   ];
 
+  const totalItems = rows.reduce((s, r) => s + (rowCountByPO[r.no] ?? 0), 0);
+  const totalQty = rows.reduce((s, r) => s + (qtyByPO[r.no] ?? 0), 0);
+  const totalPo = rows.reduce((s, r) => s + Number(r.total ?? 0), 0);
+
   return (
     <SortableTable<PoRow>
       columns={columns}
@@ -374,6 +404,26 @@ export function PoTable({
       exportFileName="purchase-orders"
       exportSheetName="POs"
       initialSort={{ key: "date", dir: "desc" }}
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td
+            colSpan={4}
+            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+          >
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+            {formatNumber(totalItems, lang)}
+          </td>
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+            {formatNumber(totalQty, lang, { maximumFractionDigits: 1 })}
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR value={totalPo} className="text-xs font-black text-ink" />
+          </td>
+          <td colSpan={2}></td>
+        </tr>
+      }
     />
   );
 }
@@ -406,7 +456,14 @@ export function InvoiceTable({
       label: t("common.supplier", lang),
       align: "left",
       sortValue: (r) => supName(r.supplier_id),
-      render: (r) => <span className="text-xs">{supName(r.supplier_id)}</span>
+      render: (r) => (
+        <Link
+          href={`/suppliers/${r.supplier_id}`}
+          className="text-xs font-semibold hover:text-accent-strong hover:underline"
+        >
+          {supName(r.supplier_id)}
+        </Link>
+      )
     },
     {
       key: "po",
@@ -419,13 +476,11 @@ export function InvoiceTable({
     {
       key: "total",
       label: t("common.total", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => Number(r.total),
       exportValue: (r) => Number(r.total),
       render: (r) => (
-        <span className="font-mono text-xs font-black">
-          {formatIDR(Number(r.total))}
-        </span>
+        <IDR value={Number(r.total)} className="text-xs font-black" />
       )
     },
     {
@@ -450,6 +505,8 @@ export function InvoiceTable({
     }
   ];
 
+  const totalInv = rows.reduce((s, r) => s + Number(r.total ?? 0), 0);
+
   return (
     <SortableTable<InvoiceRow>
       columns={columns}
@@ -461,6 +518,20 @@ export function InvoiceTable({
       exportFileName="invoices"
       exportSheetName="Invoices"
       initialSort={{ key: "date", dir: "desc" }}
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td
+            colSpan={4}
+            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+          >
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR value={totalInv} className="text-xs font-black text-ink" />
+          </td>
+          <td colSpan={2}></td>
+        </tr>
+      }
     />
   );
 }
@@ -496,7 +567,14 @@ export function PrQuotationsTable({
       label: t("prDetail.colSupplier", lang),
       align: "left",
       sortValue: (r) => supName(r.supplier_id),
-      render: (r) => <span className="text-xs">{supName(r.supplier_id)}</span>
+      render: (r) => (
+        <Link
+          href={`/suppliers/${r.supplier_id}`}
+          className="text-xs font-semibold hover:text-accent-strong hover:underline"
+        >
+          {supName(r.supplier_id)}
+        </Link>
+      )
     },
     {
       key: "status",
@@ -547,6 +625,8 @@ export function PrQuotationsTable({
       )
     }
   ];
+  const totalPrQt = rows.reduce((s, r) => s + Number(r.total ?? 0), 0);
+
   return (
     <SortableTable<PrQuotationRow>
       columns={columns}
@@ -554,6 +634,20 @@ export function PrQuotationsTable({
       rowKey={(r) => r.no}
       variant="dark"
       initialSort={{ key: "no", dir: "asc" }}
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td
+            colSpan={3}
+            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+          >
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+            {formatNumber(totalPrQt, lang)}
+          </td>
+          <td colSpan={2}></td>
+        </tr>
+      }
     />
   );
 }
@@ -622,11 +716,12 @@ export function QuotationRowsTable({
       label: t("qtDetail.colSuggest", lang),
       align: "left",
       sortValue: (r) => r.price_suggested ?? 0,
-      render: (r) => (
-        <span className="font-mono text-xs text-ink2">
-          {r.price_suggested != null ? formatIDR(r.price_suggested) : "—"}
-        </span>
-      )
+      render: (r) =>
+        r.price_suggested != null ? (
+          <IDR value={r.price_suggested} className="text-xs text-ink2" />
+        ) : (
+          <span className="text-ink2/40">—</span>
+        )
     },
     {
       key: "qtyFinal",
@@ -646,11 +741,12 @@ export function QuotationRowsTable({
       label: t("qtDetail.colFinalPrice", lang),
       align: "left",
       sortValue: (r) => r.price_quoted ?? 0,
-      render: (r) => (
-        <span className="font-mono text-xs font-black text-emerald-800">
-          {r.price_quoted != null ? formatIDR(r.price_quoted) : "—"}
-        </span>
-      )
+      render: (r) =>
+        r.price_quoted != null ? (
+          <IDR value={r.price_quoted} className="text-xs font-black text-emerald-800" />
+        ) : (
+          <span className="text-ink2/40">—</span>
+        )
     },
     {
       key: "subtotal",
@@ -658,11 +754,7 @@ export function QuotationRowsTable({
       align: "left",
       sortValue: (r) => r.subtotal,
       exportValue: (r) => r.subtotal,
-      render: (r) => (
-        <span className="font-mono text-xs font-black">
-          {formatIDR(r.subtotal)}
-        </span>
-      )
+      render: (r) => <IDR value={r.subtotal} className="text-xs font-black" />
     },
     {
       key: "note",
@@ -685,8 +777,8 @@ export function QuotationRowsTable({
           <td colSpan={7} className="py-2 pr-3 text-right font-black">
             {totalLabel}
           </td>
-          <td className="py-2 pr-3 text-left font-mono font-black text-ink">
-            {formatIDR(total)}
+          <td className="py-2 pr-3 font-black text-ink">
+            <IDR value={total} className="font-black" />
           </td>
           <td></td>
         </tr>

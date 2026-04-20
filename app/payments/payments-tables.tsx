@@ -1,8 +1,8 @@
 "use client";
 
-import { Badge } from "@/components/ui";
+import Link from "next/link";
+import { Badge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { formatIDR } from "@/lib/engine";
 import { t, type Lang } from "@/lib/i18n";
 import type {
   OutstandingBySupplier,
@@ -64,10 +64,13 @@ export function OutstandingTable({
       align: "left",
       sortValue: (r) => r.supplier_name,
       render: (r) => (
-        <div>
-          <div className="font-semibold">{r.supplier_name}</div>
+        <Link
+          href={`/suppliers/${r.supplier_id}`}
+          className="block hover:text-accent-strong"
+        >
+          <div className="font-semibold hover:underline">{r.supplier_name}</div>
           <div className="font-mono text-[10px] text-ink2/60">{r.supplier_id}</div>
-        </div>
+        </Link>
       )
     },
     {
@@ -82,32 +85,26 @@ export function OutstandingTable({
     {
       key: "total",
       label: t("common.total", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.invoice_total,
-      render: (r) => (
-        <span className="font-mono text-xs">{formatIDR(r.invoice_total)}</span>
-      )
+      render: (r) => <IDR value={r.invoice_total} className="text-xs" />
     },
     {
       key: "paid",
       label: t("pay.colPaid", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.paid_total,
       render: (r) => (
-        <span className="font-mono text-xs text-emerald-700">
-          {formatIDR(r.paid_total)}
-        </span>
+        <IDR value={r.paid_total} className="text-xs text-emerald-700" />
       )
     },
     {
       key: "out",
       label: t("pay.colOutstanding", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.outstanding,
       render: (r) => (
-        <span className="font-mono text-xs font-black text-red-700">
-          {formatIDR(r.outstanding)}
-        </span>
+        <IDR value={r.outstanding} className="text-xs font-black text-red-700" />
       )
     },
     {
@@ -135,6 +132,11 @@ export function OutstandingTable({
     }
   ];
 
+  const totalCount = rows.reduce((s, r) => s + r.invoice_count, 0);
+  const totalInvoice = rows.reduce((s, r) => s + Number(r.invoice_total ?? 0), 0);
+  const totalPaid = rows.reduce((s, r) => s + Number(r.paid_total ?? 0), 0);
+  const totalOutstanding = rows.reduce((s, r) => s + Number(r.outstanding ?? 0), 0);
+
   return (
     <SortableTable<OutstandingBySupplier>
       tableClassName="text-sm"
@@ -142,6 +144,32 @@ export function OutstandingTable({
       initialSort={{ key: "out", dir: "desc" }}
       columns={columns}
       rows={rows}
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink">
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+            {totalCount}
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR value={totalInvoice} className="text-xs font-black text-ink" />
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR
+              value={totalPaid}
+              className="text-xs font-black text-emerald-700"
+            />
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR
+              value={totalOutstanding}
+              className="text-xs font-black text-red-700"
+            />
+          </td>
+          <td></td>
+        </tr>
+      }
     />
   );
 }
@@ -164,56 +192,50 @@ export function CashflowTable({
     {
       key: "in",
       label: t("pay.colIn", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.cash_in,
-      render: (r) => (
-        <span className="font-mono text-xs text-emerald-700">
-          {formatIDR(r.cash_in)}
-        </span>
-      )
+      render: (r) => <IDR value={r.cash_in} className="text-xs text-emerald-700" />
     },
     {
       key: "out",
       label: t("pay.colOut", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.cash_out,
-      render: (r) => (
-        <span className="font-mono text-xs text-red-700">
-          {formatIDR(r.cash_out)}
-        </span>
-      )
+      render: (r) => <IDR value={r.cash_out} className="text-xs text-red-700" />
     },
     {
       key: "net",
       label: t("pay.colNet", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.net,
       render: (r) => (
-        <span
-          className={`font-mono text-xs font-black ${
+        <IDR
+          value={r.net}
+          className={`text-xs font-black ${
             r.net >= 0 ? "text-emerald-700" : "text-red-700"
           }`}
-        >
-          {formatIDR(r.net)}
-        </span>
+        />
       )
     },
     {
       key: "cum",
       label: t("pay.colCumulative", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.cumulative,
       render: (r) => (
-        <span
-          className={`font-mono text-xs ${
+        <IDR
+          value={r.cumulative}
+          className={`text-xs ${
             r.cumulative >= 0 ? "text-ink" : "text-red-700"
           }`}
-        >
-          {formatIDR(r.cumulative)}
-        </span>
+        />
       )
     }
   ];
+
+  const totalIn = rows.reduce((s, r) => s + Number(r.cash_in ?? 0), 0);
+  const totalOut = rows.reduce((s, r) => s + Number(r.cash_out ?? 0), 0);
+  const totalNet = totalIn - totalOut;
 
   return (
     <SortableTable<EngineCashflowRow>
@@ -222,6 +244,31 @@ export function CashflowTable({
       initialSort={{ key: "period", dir: "desc" }}
       columns={columns}
       rows={rows}
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink">
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR
+              value={totalIn}
+              className="text-xs font-black text-emerald-700"
+            />
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR value={totalOut} className="text-xs font-black text-red-700" />
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR
+              value={totalNet}
+              className={`text-xs font-black ${
+                totalNet >= 0 ? "text-emerald-700" : "text-red-700"
+              }`}
+            />
+          </td>
+          <td></td>
+        </tr>
+      }
     />
   );
 }
@@ -264,20 +311,24 @@ export function PaymentsTable({
       label: t("common.supplier", lang),
       align: "left",
       sortValue: (r) => r.supplier_id ?? "",
-      render: (r) => (
-        <span className="text-xs">{r.supplier_id ?? "—"}</span>
-      )
+      render: (r) =>
+        r.supplier_id ? (
+          <Link
+            href={`/suppliers/${r.supplier_id}`}
+            className="text-xs font-semibold hover:text-accent-strong hover:underline"
+          >
+            {r.supplier_id}
+          </Link>
+        ) : (
+          <span className="text-xs">—</span>
+        )
     },
     {
       key: "amount",
       label: t("pay.formAmount", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.amount,
-      render: (r) => (
-        <span className="font-mono text-xs font-black">
-          {formatIDR(r.amount)}
-        </span>
-      )
+      render: (r) => <IDR value={r.amount} className="text-xs font-black" />
     },
     {
       key: "method",
@@ -358,12 +409,10 @@ export function ReceiptsTable({
     {
       key: "amount",
       label: t("pay.formAmount", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.amount,
       render: (r) => (
-        <span className="font-mono text-xs font-black text-emerald-700">
-          {formatIDR(r.amount)}
-        </span>
+        <IDR value={r.amount} className="text-xs font-black text-emerald-700" />
       )
     },
     {

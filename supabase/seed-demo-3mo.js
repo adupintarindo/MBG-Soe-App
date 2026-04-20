@@ -59,6 +59,55 @@ function jitter(v, pct = 0.1) {
   return v * (1 + rand(-pct, pct));
 }
 
+// Dummy price fallback per kategori (Rp/kg) kalau items.price_idr = 0
+const DEFAULT_PRICE_BY_CAT = {
+  BERAS: 14000,
+  HEWANI: 55000,
+  NABATI: 18000,
+  SAYUR_HIJAU: 12000,
+  SAYUR: 10000,
+  UMBI: 9000,
+  BUMBU: 35000,
+  REMPAH: 65000,
+  BUAH: 18000,
+  SEMBAKO: 17000,
+  LAIN: 15000
+};
+// Per-item overrides (Rp/kg atau Rp/unit kalau bukan kg)
+const PRICE_OVERRIDE = {
+  "Beras Putih": 14500,
+  "Fortification Rice": 17500,
+  "Ayam Tanpa Tulang": 62000,
+  "Ayam Segar": 45000,
+  "Ikan Tuna": 48000,
+  "Telur Ayam": 2600,
+  "Tahu": 9000,
+  "Tempe": 12000,
+  "Minyak Goreng": 18500,
+  "Bawang Merah": 38000,
+  "Bawang Putih": 42000,
+  "Pisang": 14000,
+  "Pepaya": 9000,
+  "Melon": 16000,
+  "Semangka": 8000,
+  "Wortel": 11000,
+  "Tomat": 14000,
+  "Sawi Putih": 8000,
+  "Sawi Hijau": 9000,
+  "Pakcoi": 10000,
+  "Buncis": 12000,
+  "Labu Parang": 7000,
+  "Kentang": 15000,
+  "Ubi Jalar": 9500
+};
+
+function baseItemPrice(it) {
+  const raw = Number(it.price_idr) || 0;
+  if (raw > 0) return raw;
+  if (PRICE_OVERRIDE[it.code]) return PRICE_OVERRIDE[it.code];
+  return DEFAULT_PRICE_BY_CAT[it.category] || DEFAULT_PRICE_BY_CAT.LAIN;
+}
+
 // Expiry days per kategori
 const EXPIRY_DAYS = {
   BERAS: 180,
@@ -106,8 +155,8 @@ async function main() {
   // --- 1. Load master ---------------------------------------------------
   const [menusRes, bomRes, itemsRes, schoolsRes, supsRes, supItemsRes, nonOpRes] =
     await Promise.all([
-      sb.from("menus").select("id,name,target_porsi").eq("active", true).order("id"),
-      sb.from("menu_bom").select("menu_id,item_code,qty_per_100_porsi"),
+      sb.from("menus").select("id,name").eq("active", true).order("id"),
+      sb.from("menu_bom").select("menu_id,item_code,grams_per_porsi"),
       sb.from("items").select("code,name_en,unit,category,price_idr"),
       sb.from("schools").select("id,students,kelas13,kelas46").eq("active", true),
       sb
@@ -154,11 +203,11 @@ async function main() {
 
   const itemByCode = new Map(items.map((i) => [i.code, i]));
 
-  // BOM index menu_id → item_code → qty_per_100_porsi
+  // BOM index menu_id → item_code → grams_per_porsi
   const bomByMenu = new Map();
   for (const b of bomRows) {
     if (!bomByMenu.has(b.menu_id)) bomByMenu.set(b.menu_id, new Map());
-    bomByMenu.get(b.menu_id).set(b.item_code, Number(b.qty_per_100_porsi));
+    bomByMenu.get(b.menu_id).set(b.item_code, Number(b.grams_per_porsi));
   }
 
   // Supplier → items mapping (fallback: kategori-based)
@@ -244,8 +293,9 @@ async function main() {
       const menuBom = bomByMenu.get(w.menu.id);
       if (!menuBom) continue;
       const porsi = Math.round(jitter(TARGET_PORSI, 0.05));
-      for (const [code, qty100] of menuBom.entries()) {
-        const add = (qty100 * porsi) / 100;
+      for (const [code, gramsPerPorsi] of menuBom.entries()) {
+        // grams × porsi → kg
+        const add = (gramsPerPorsi * porsi) / 1000;
         required.set(code, (required.get(code) || 0) + add);
       }
     }
@@ -266,7 +316,7 @@ async function main() {
         const it = itemByCode.get(ln.code);
         if (!it) return;
         const qty = Math.round(ln.qty * 1000) / 1000;
-        const price = Math.round(jitter(Number(it.price_idr), 0.08) / 100) * 100;
+        const price = Math.round(jitter(baseItemPrice(it), 0.08) / 100) * 100;
         const subtotal = Math.round(qty * price);
         total += subtotal;
         rowsForPo.push({
@@ -344,11 +394,11 @@ async function main() {
         });
         stockMoveRows.push({
           item_code: r.item_code,
-          qty_delta: received,
-          reason: "grn",
-          ref: grnNo,
-          move_date: deliveryDate,
-          note: `GRN ${grnNo}`
+          delta: received,
+          reason: "receipt",
+          ref_doc: "grn",
+          ref_no: grnNo,
+          note: `GRN ${grnNo} · ${deliveryDate}`
         });
       });
       txRows.push({
@@ -407,7 +457,7 @@ async function main() {
           supplier_id: supId,
           pay_date: payDate,
           amount: Math.round(invTotal),
-          method: pick(["transfer", "transfer", "transfer", "giro", "cash"]),
+          method: pick(["transfer", "transfer", "transfer", "giro", "tunai"]),
           reference: `TRF-${payNo}`,
           note: "Demo seed"
         });
@@ -441,7 +491,7 @@ async function main() {
       vehicle: pick(VEHICLES),
       dispatched_at: dispatchedAt,
       completed_at: completedAt,
-      status: "completed",
+      status: "delivered",
       total_porsi_planned: totalPlanned,
       total_porsi_delivered: totalDelivered,
       note: null
@@ -463,7 +513,7 @@ async function main() {
         temperature_c: Math.round(rand(62, 70) * 10) / 10,
         receiver_name: `Kepala ${s.id}`,
         note: null,
-        status: "completed"
+        status: "delivered"
       });
       // school attendance
       const students = s.students || 0;
@@ -471,9 +521,7 @@ async function main() {
       schoolAttRows.push({
         school_id: s.id,
         att_date: date,
-        students_present: present,
-        students_absent: Math.max(0, students - present),
-        note: null
+        qty: present
       });
     }
     if (deliverySeq > 98) deliverySeq = 1;
@@ -551,7 +599,7 @@ async function refreshStockOnHand(sb, items) {
     .filter((it) => sumByItem.has(it.code))
     .map((it) => ({
       item_code: it.code,
-      on_hand: Math.round(sumByItem.get(it.code) * 1000) / 1000
+      qty: Math.round(sumByItem.get(it.code) * 1000) / 1000
     }));
   if (stockRows.length === 0) return;
   await upsertBatches(sb, "stock", stockRows, "item_code");

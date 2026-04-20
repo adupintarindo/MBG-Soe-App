@@ -1,8 +1,7 @@
 "use client";
 
-import { Badge } from "@/components/ui";
+import { Badge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { formatIDR } from "@/lib/engine";
 import { t, ti, type Lang } from "@/lib/i18n";
 
 export type SupplierItemRow = {
@@ -43,11 +42,12 @@ export function SupplierItemsTable({
       label: t("supplierDetail.colPrice", lang),
       align: "left",
       sortValue: (r) => r.price_idr ?? 0,
-      render: (r) => (
-        <span className="font-mono text-xs">
-          {r.price_idr != null ? formatIDR(Number(r.price_idr)) : "—"}
-        </span>
-      )
+      render: (r) =>
+        r.price_idr != null ? (
+          <IDR value={Number(r.price_idr)} className="text-xs" />
+        ) : (
+          <span className="text-ink2/40">—</span>
+        )
     },
     {
       key: "lead",

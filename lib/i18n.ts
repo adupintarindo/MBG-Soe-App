@@ -39,6 +39,9 @@ export const LANG_KEYS = {
   tabAdmin: { ID: "Admin", EN: "Admin" },
   tabForecast: { ID: "Forecast 90h", EN: "Forecast 90d" },
   tabSupplierPortal: { ID: "Portal", EN: "Portal" },
+  tabKeuangan: { ID: "Keuangan", EN: "Finance" },
+  tabPersonalia: { ID: "Personalia", EN: "Personnel" },
+  tabDokumenBgn: { ID: "Dokumen BGN", EN: "BGN Forms" },
   navMainAria: { ID: "Modul utama", EN: "Main modules" },
 
   // ---------------- Common words ----------------
@@ -62,6 +65,7 @@ export const LANG_KEYS = {
   "common.unit": { ID: "Unit", EN: "Unit" },
   "common.qty": { ID: "Qty", EN: "Qty" },
   "common.total": { ID: "Total", EN: "Total" },
+  "common.grandTotal": { ID: "GRAND TOTAL", EN: "GRAND TOTAL" },
   "common.supplier": { ID: "Supplier", EN: "Supplier" },
   "common.category": { ID: "Kategori", EN: "Category" },
   "common.name": { ID: "Nama", EN: "Name" },
@@ -187,6 +191,9 @@ export const LANG_KEYS = {
   "dashboard.tblKebutuhan": { ID: "Kebutuhan", EN: "Required" },
   "dashboard.tblShort": { ID: "Short", EN: "Short" },
   "dashboard.badgeNonOp": { ID: "NON-OP", EN: "NON-OP" },
+  "dashboard.badgeOp": { ID: "OPERASIONAL", EN: "OPERATIONAL" },
+  "dashboard.badgeNonOpLong": { ID: "NON-OPERASIONAL", EN: "NON-OPERATIONAL" },
+  "dashboard.tblStatus": { ID: "Status", EN: "Status" },
   "dashboard.scheduleTitle": {
     ID: "Jadwal Menu dan Porsi",
     EN: "Menu and Portion Schedule"
@@ -1527,6 +1534,13 @@ export const LANG_KEYS = {
   },
   "calendar.unassignedWarn": { ID: "{n} belum dijadwalkan", EN: "{n} not assigned" },
   "calendar.allAssigned": { ID: "semua assigned", EN: "all assigned" },
+  "calendar.statOp": { ID: "hari operasional", EN: "operating days" },
+  "calendar.statHoliday": { ID: "libur", EN: "holidays" },
+  "calendar.statNonOp": { ID: "non-op", EN: "non-op" },
+  "calendar.headerHint": {
+    ID: "Jadwal rotasi menu harian MBG.",
+    EN: "Daily MBG menu rotation schedule."
+  },
   "calendar.btnBOM": { ID: "🍽️ Lihat BOM", EN: "🍽️ View BOM" },
   "calendar.prevAria": { ID: "Bulan sebelumnya", EN: "Previous month" },
   "calendar.nextAria": { ID: "Bulan berikutnya", EN: "Next month" },
@@ -2088,6 +2102,7 @@ export const LANG_KEYS = {
   "tx.colAmount": { ID: "Nilai", EN: "Amount" },
   "tx.colDescription": { ID: "Keterangan", EN: "Description" },
   "tx.totalShown": { ID: "Total ditampilkan", EN: "Total shown" },
+  "tx.grandTotal": { ID: "GRAND TOTAL", EN: "GRAND TOTAL" },
   "tx.nRows": { ID: "{n} baris", EN: "{n} rows" },
   "tx.empty": { ID: "Belum ada transaksi yang cocok.", EN: "No matching transactions." }
 } as const satisfies Record<string, Pair>;
@@ -2095,7 +2110,14 @@ export const LANG_KEYS = {
 export type LangKey = keyof typeof LANG_KEYS;
 
 export function t(key: LangKey, lang: Lang): string {
-  return LANG_KEYS[key][lang];
+  const entry = LANG_KEYS[key];
+  if (!entry) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(`[i18n] Missing key: ${String(key)}`);
+    }
+    return String(key);
+  }
+  return entry[lang] ?? entry.ID ?? String(key);
 }
 
 /**

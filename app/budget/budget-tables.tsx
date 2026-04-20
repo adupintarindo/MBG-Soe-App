@@ -1,8 +1,7 @@
 "use client";
 
-import { Badge } from "@/components/ui";
+import { Badge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { formatIDR } from "@/lib/engine";
 import { t, type Lang } from "@/lib/i18n";
 import type { BudgetBurnRow, CostPerPortionRow } from "@/lib/engine";
 
@@ -34,40 +33,30 @@ export function BurnTable({
     {
       key: "budget",
       label: t("bud.colAmount", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.budget_total,
-      render: (r) => (
-        <span className="font-mono text-xs">{formatIDR(r.budget_total)}</span>
-      )
+      render: (r) => <IDR value={r.budget_total} className="text-xs" />
     },
     {
       key: "po",
       label: t("bud.colSpentPO", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.spent_po,
-      render: (r) => (
-        <span className="font-mono text-xs text-ink2">{formatIDR(r.spent_po)}</span>
-      )
+      render: (r) => <IDR value={r.spent_po} className="text-xs text-ink2" />
     },
     {
       key: "inv",
       label: t("bud.colSpentInv", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.spent_invoice,
-      render: (r) => (
-        <span className="font-mono text-xs">{formatIDR(r.spent_invoice)}</span>
-      )
+      render: (r) => <IDR value={r.spent_invoice} className="text-xs" />
     },
     {
       key: "paid",
       label: t("bud.colSpentPaid", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.spent_paid,
-      render: (r) => (
-        <span className="font-mono text-xs text-red-700">
-          {formatIDR(r.spent_paid)}
-        </span>
-      )
+      render: (r) => <IDR value={r.spent_paid} className="text-xs text-red-700" />
     },
     {
       key: "burn",
@@ -94,16 +83,15 @@ export function BurnTable({
     {
       key: "remaining",
       label: t("bud.colRemaining", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.remaining,
       render: (r) => (
-        <span
-          className={`font-mono text-xs ${
+        <IDR
+          value={r.remaining}
+          className={`text-xs ${
             r.remaining < 0 ? "text-red-700" : "text-ink"
           }`}
-        >
-          {formatIDR(r.remaining)}
-        </span>
+        />
       )
     }
   ];
@@ -146,45 +134,43 @@ export function CPPTable({
     {
       key: "po",
       label: t("bud.colSpentPO", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.spent_po,
-      render: (r) => (
-        <span className="font-mono text-xs">{formatIDR(r.spent_po)}</span>
-      )
+      render: (r) => <IDR value={r.spent_po} className="text-xs" />
     },
     {
       key: "cpp",
       label: t("bud.colCPP", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.cost_per_portion ?? 0,
       render: (r) => {
         const cpp = Number(r.cost_per_portion ?? 0);
         const target = Number(r.target ?? 0);
         return (
-          <span
-            className={`font-mono text-xs font-black ${
-              r.cost_per_portion == null
-                ? "text-ink2/60"
-                : target > 0 && cpp > target
-                  ? "text-red-700"
-                  : "text-emerald-700"
-            }`}
-          >
-            {r.cost_per_portion == null ? "—" : formatIDR(cpp)}
-          </span>
+          r.cost_per_portion == null ? (
+            <span className="font-mono text-xs text-ink2/60">—</span>
+          ) : (
+            <IDR
+              value={cpp}
+              className={`text-xs font-black ${
+                target > 0 && cpp > target ? "text-red-700" : "text-emerald-700"
+              }`}
+            />
+          )
         );
       }
     },
     {
       key: "target",
       label: "Target",
-      align: "right",
+      align: "left",
       sortValue: (r) => r.target ?? 0,
-      render: (r) => (
-        <span className="font-mono text-[11px] text-ink2">
-          {r.target != null ? formatIDR(Number(r.target)) : "—"}
-        </span>
-      )
+      render: (r) =>
+        r.target != null ? (
+          <IDR value={Number(r.target)} className="text-[11px] text-ink2" />
+        ) : (
+          <span className="text-ink2/40 text-[11px]">—</span>
+        )
     },
     {
       key: "status",
@@ -261,26 +247,21 @@ export function BudgetsTable({
     {
       key: "amount",
       label: t("bud.colAmount", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.amount_idr,
-      render: (r) => (
-        <span className="font-mono text-xs font-black">
-          {formatIDR(r.amount_idr)}
-        </span>
-      )
+      render: (r) => <IDR value={r.amount_idr} className="text-xs font-black" />
     },
     {
       key: "target",
       label: t("bud.colTarget", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.target_cost_per_portion ?? 0,
-      render: (r) => (
-        <span className="font-mono text-[11px]">
-          {r.target_cost_per_portion != null
-            ? formatIDR(r.target_cost_per_portion)
-            : "—"}
-        </span>
-      )
+      render: (r) =>
+        r.target_cost_per_portion != null ? (
+          <IDR value={r.target_cost_per_portion} className="text-[11px]" />
+        ) : (
+          <span className="text-ink2/40 text-[11px]">—</span>
+        )
     },
     {
       key: "note",

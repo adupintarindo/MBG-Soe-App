@@ -9,8 +9,7 @@ import { Nav } from "@/components/nav";
 import {
   KpiGrid,
   KpiTile,
-  PageContainer,
-  PageHeader
+  PageContainer
 } from "@/components/ui";
 import { SuppliersShell } from "./suppliers-shell";
 import type {
@@ -18,7 +17,7 @@ import type {
   SupItemLink,
   InvoiceTx
 } from "./types";
-import { t, ti, formatNumber } from "@/lib/i18n";
+import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -79,10 +78,6 @@ export default async function SuppliersPage() {
   const signed = suppliers.filter((s) => s.status === "signed").length;
   const awaiting = suppliers.filter((s) => s.status === "awaiting").length;
   const rejected = suppliers.filter((s) => s.status === "rejected").length;
-  const scored = suppliers.filter((s) => Number(s.score) > 0);
-  const avgScore =
-    scored.reduce((sum, s) => sum + Number(s.score), 0) /
-    Math.max(1, scored.length);
 
   return (
     <div>
@@ -93,21 +88,6 @@ export default async function SuppliersPage() {
       />
 
       <PageContainer>
-        <PageHeader
-          title={t("suppliers.title", lang)}
-          subtitle={
-            <>
-              {ti("suppliers.subtitle", lang, {
-                n: suppliers.length,
-                signed,
-                awaiting,
-                rejected
-              })}{" "}
-              <b className="text-ink">{avgScore.toFixed(1)}</b>
-            </>
-          }
-        />
-
         <KpiGrid>
           <KpiTile
             icon="✅"

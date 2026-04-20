@@ -136,7 +136,6 @@ export default async function MenuMasterPage() {
 
   const categories = Array.from(new Set(items.map((i) => i.category))).sort();
   const totalItems = items.length;
-  const totalBOM = bom.length;
   const avgGrams =
     menuStats.length > 0
       ? Math.round(
@@ -158,12 +157,6 @@ export default async function MenuMasterPage() {
 
       <PageContainer>
         <PageHeader
-          title={t("menu.title", lang)}
-          subtitle={ti("menu.subtitle", lang, {
-            n: menus.length,
-            items: totalItems,
-            bom: totalBOM
-          })}
           actions={
             <>
               <LinkButton href="/calendar" variant="secondary" size="sm">

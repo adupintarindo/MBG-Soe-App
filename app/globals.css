@@ -85,22 +85,7 @@ h1, h2, h3, h4, h5, h6,
 h1, h2 { letter-spacing: -0.018em; }
 h3, h4 { letter-spacing: -0.014em; }
 
-/* Subtle gradient backdrop on light, keeps WFP institutional feel */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(1100px 700px at 12% -8%, rgba(29, 78, 137, 0.08), transparent 60%),
-    radial-gradient(900px 600px at 100% 0%, rgba(201, 162, 39, 0.06), transparent 55%);
-  pointer-events: none;
-}
-html.dark body::before {
-  background:
-    radial-gradient(1100px 700px at 12% -8%, rgba(29, 78, 137, 0.09), transparent 65%),
-    radial-gradient(900px 600px at 100% 0%, rgba(201, 162, 39, 0.04), transparent 60%);
-}
+/* Flat background — decorative gradient backdrop removed per request. */
 
 /* Force sans-serif everywhere — code/kbd/samp/pre use Inter with tabular-nums */
 code,

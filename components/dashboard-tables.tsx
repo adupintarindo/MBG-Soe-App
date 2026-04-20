@@ -1,12 +1,12 @@
 "use client";
 
-import { Badge, CategoryBadge } from "@/components/ui";
+import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import {
   SortableTable,
   type SortableColumn,
   type SortableTableFilter
 } from "@/components/sortable-table";
-import { formatIDR, formatKg } from "@/lib/engine";
+import { formatKg } from "@/lib/engine";
 import { t, formatNumber, type Lang } from "@/lib/i18n";
 
 const displayCode = (code: string) => code.replace(/^Buah\s*-\s*/i, "");
@@ -47,16 +47,27 @@ export function ScheduleTable({
       sortValue: (r) => r.op_date,
       searchValue: (r) => `${r.op_date} ${r.dateLabel}`,
       exportValue: (r) => r.dateLabel,
-      render: (r) => (
-        <div>
-          <div className="font-semibold">{r.dateLabel}</div>
-          {!r.operasional && (
-            <Badge tone="warn" className="mt-1">
-              {t("dashboard.badgeNonOp", lang)}
-            </Badge>
-          )}
-        </div>
-      )
+      render: (r) => <span className="font-semibold">{r.dateLabel}</span>
+    },
+    {
+      key: "status",
+      label: t("dashboard.tblStatus", lang),
+      align: "center",
+      sortValue: (r) => (r.operasional ? 1 : 0),
+      searchValue: (r) =>
+        r.operasional
+          ? t("dashboard.badgeOp", lang)
+          : t("dashboard.badgeNonOpLong", lang),
+      exportValue: (r) =>
+        r.operasional
+          ? t("dashboard.badgeOp", lang)
+          : t("dashboard.badgeNonOpLong", lang),
+      render: (r) =>
+        r.operasional ? (
+          <Badge tone="ok">{t("dashboard.badgeOp", lang)}</Badge>
+        ) : (
+          <Badge tone="bad">{t("dashboard.badgeNonOpLong", lang)}</Badge>
+        )
     },
     {
       key: "menu",
@@ -71,7 +82,7 @@ export function ScheduleTable({
     {
       key: "schools",
       label: t("dashboard.tblSchools", lang),
-      align: "right",
+      align: "center",
       sortValue: (r) => r.schools,
       exportValue: (r) => r.schools,
       render: (r) => (
@@ -83,7 +94,7 @@ export function ScheduleTable({
     {
       key: "kecil",
       label: t("dashboard.tblPorsiKecil", lang),
-      align: "right",
+      align: "center",
       sortValue: (r) => r.kecil,
       exportValue: (r) => r.kecil,
       render: (r) => (
@@ -95,7 +106,7 @@ export function ScheduleTable({
     {
       key: "besar",
       label: t("dashboard.tblPorsiBesar", lang),
-      align: "right",
+      align: "center",
       sortValue: (r) => r.besar,
       exportValue: (r) => r.besar,
       render: (r) => (
@@ -107,7 +118,7 @@ export function ScheduleTable({
     {
       key: "total",
       label: t("dashboard.tblPorsiTotal", lang),
-      align: "right",
+      align: "center",
       sortValue: (r) => r.total,
       exportValue: (r) => r.total,
       render: (r) => (
@@ -117,6 +128,16 @@ export function ScheduleTable({
       )
     }
   ];
+
+  const totals = rows.reduce(
+    (acc, r) => ({
+      schools: acc.schools + r.schools,
+      kecil: acc.kecil + r.kecil,
+      besar: acc.besar + r.besar,
+      total: acc.total + r.total
+    }),
+    { schools: 0, kecil: 0, besar: 0, total: 0 }
+  );
 
   return (
     <SortableTable<ScheduleRow>
@@ -129,6 +150,28 @@ export function ScheduleTable({
       exportable
       exportFileName="menu-schedule"
       exportSheetName="Menu Schedule"
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td
+            colSpan={4}
+            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+          >
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
+            {formatNumber(totals.schools, lang)}
+          </td>
+          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
+            {formatNumber(totals.kecil, lang)}
+          </td>
+          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
+            {formatNumber(totals.besar, lang)}
+          </td>
+          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
+            {formatNumber(totals.total, lang)}
+          </td>
+        </tr>
+      }
     />
   );
 }
@@ -362,6 +405,10 @@ export function PlanningTable({
     }
   ];
 
+  const totalPorsi = rows.reduce((s, r) => s + r.porsi_total, 0);
+  const totalKg = rows.reduce((s, r) => s + Number(r.total_kg ?? 0), 0);
+  const totalShort = rows.reduce((s, r) => s + r.short_items, 0);
+
   return (
     <SortableTable<PlanRow>
       tableClassName="text-sm tabular-nums"
@@ -373,6 +420,29 @@ export function PlanningTable({
       exportable
       exportFileName="planning"
       exportSheetName="Planning"
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td
+            colSpan={2}
+            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+          >
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+            {formatNumber(totalPorsi, lang)}
+          </td>
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+            {formatKg(totalKg, 1)}
+          </td>
+          <td
+            className={`py-2 px-3 text-right font-mono text-xs font-black ${
+              totalShort > 0 ? "text-red-700" : "text-emerald-700"
+            }`}
+          >
+            {totalShort}
+          </td>
+        </tr>
+      }
     />
   );
 }
@@ -453,6 +523,10 @@ export function StockAlertTable({
     }
   ];
 
+  const totalRequired = rows.reduce((s, r) => s + Number(r.required ?? 0), 0);
+  const totalOnHand = rows.reduce((s, r) => s + Number(r.on_hand ?? 0), 0);
+  const totalGap = rows.reduce((s, r) => s + Number(r.gap ?? 0), 0);
+
   return (
     <SortableTable<StockAlertRow>
       tableClassName="text-sm tabular-nums"
@@ -464,6 +538,25 @@ export function StockAlertTable({
       exportable
       exportFileName="stock-alert"
       exportSheetName="Stock Alert"
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td
+            colSpan={2}
+            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+          >
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+            {totalRequired.toFixed(2)}
+          </td>
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+            {totalOnHand.toFixed(2)}
+          </td>
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-red-700">
+            {totalGap.toFixed(2)}
+          </td>
+        </tr>
+      }
     />
   );
 }
@@ -523,16 +616,17 @@ export function SupplierSpendTable({
     {
       key: "spend",
       label: t("dashboard.tblTotalSpend", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.total_spend,
       exportValue: (r) => Number(r.total_spend),
       render: (r) => (
-        <span className="font-mono text-xs font-black">
-          {formatIDR(Number(r.total_spend))}
-        </span>
+        <IDR value={Number(r.total_spend)} className="text-xs font-black" />
       )
     }
   ];
+
+  const totalInvoices = rows.reduce((s, r) => s + r.invoice_count, 0);
+  const totalSpend = rows.reduce((s, r) => s + Number(r.total_spend ?? 0), 0);
 
   return (
     <SortableTable<SupplierSpendRow>
@@ -545,6 +639,22 @@ export function SupplierSpendTable({
       exportable
       exportFileName="supplier-spend"
       exportSheetName="Supplier Spend"
+      footer={
+        <tr className="border-t-2 border-ink/30 bg-slate-50">
+          <td
+            colSpan={3}
+            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+          >
+            {t("common.grandTotal", lang)}
+          </td>
+          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
+            {formatNumber(totalInvoices, lang)}
+          </td>
+          <td className="py-2 px-3 text-left">
+            <IDR value={totalSpend} className="text-xs font-black text-ink" />
+          </td>
+        </tr>
+      }
     />
   );
 }

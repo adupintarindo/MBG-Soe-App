@@ -18,7 +18,6 @@ import {
   KpiGrid,
   KpiTile,
   PageContainer,
-  PageHeader,
   Section
 } from "@/components/ui";
 import {
@@ -98,13 +97,6 @@ export default async function PlanningPage() {
   const totalPorsi = daily.reduce((s, d) => s + d.porsi_total, 0);
   const totalKg = daily.reduce((s, d) => s + Number(d.total_kg), 0);
 
-  // Category aggregation
-  const catTotals = new Map<string, number>();
-  for (const [code, qty] of itemTotals) {
-    const cat = itemByCode.get(code)?.category ?? "LAIN";
-    catTotals.set(cat, (catTotals.get(cat) ?? 0) + qty);
-  }
-
   // Forecast shortage derivations
   const upcomingPeakGap = upcoming.reduce(
     (m, u) => Math.max(m, Number(u.total_gap_kg) || 0),
@@ -156,11 +148,6 @@ export default async function PlanningPage() {
       />
 
       <PageContainer>
-        <PageHeader
-          title={t("planning.title", lang)}
-          subtitle={t("planning.subtitle", lang)}
-        />
-
         <KpiGrid>
           <KpiTile
             icon="📅"
@@ -189,32 +176,6 @@ export default async function PlanningPage() {
             sub={t("planning.kpiEstSpendSub", lang)}
           />
         </KpiGrid>
-
-        <Section title={t("planning.catDistTitle", lang)} accent="info">
-          <div className="space-y-2">
-            {[...catTotals.entries()]
-              .sort((a, b) => b[1] - a[1])
-              .map(([cat, qty]) => {
-                const pct = grandTotalKg > 0 ? (qty / grandTotalKg) * 100 : 0;
-                return (
-                  <div key={cat}>
-                    <div className="flex justify-between text-xs">
-                      <span className="font-bold text-ink">{cat}</span>
-                      <span className="font-mono text-ink2">
-                        {formatKg(qty, 0)} · {pct.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="mt-1 h-2 overflow-hidden rounded-full bg-ink/5">
-                      <div
-                        className="h-full bg-primary-gradient transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </Section>
 
         <Section
           title={ti("planning.matrixTitle", lang, {

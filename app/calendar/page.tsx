@@ -192,22 +192,7 @@ export default async function CalendarPage({
                 <span className="truncate">{t("calendar.title", lang)}</span>
               </h1>
               <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink2/80">
-                {ti("calendar.subtitle", lang, {
-                  month: monthLabel,
-                  op: opDays,
-                  hol: holDays,
-                  nonOp: nonOpDays
-                })}{" "}
-                ·{" "}
-                {unassigned > 0 ? (
-                  <span className="font-bold text-red-700">
-                    {ti("calendar.unassignedWarn", lang, { n: unassigned })}
-                  </span>
-                ) : (
-                  <span className="font-bold text-emerald-700">
-                    {t("calendar.allAssigned", lang)}
-                  </span>
-                )}
+                {t("calendar.headerHint", lang)}
               </p>
             </div>
           </div>
@@ -243,6 +228,33 @@ export default async function CalendarPage({
                 <PopulateControls year={year} month={month} menus={menus} />
               )}
             </div>
+          </div>
+
+          {/* Stats strip: hari operasional · libur · non-op · assignment status */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-ink/10 bg-paper/40 px-5 py-2.5 text-[11px] font-bold">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-blue-900 ring-1 ring-blue-200">
+              <span className="font-black tabular-nums">{opDays}</span>
+              <span className="opacity-80">{t("calendar.statOp", lang)}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-1 text-rose-900 ring-1 ring-rose-200">
+              <span className="font-black tabular-nums">{holDays}</span>
+              <span className="opacity-80">{t("calendar.statHoliday", lang)}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-orange-900 ring-1 ring-orange-200">
+              <span className="font-black tabular-nums">{nonOpDays}</span>
+              <span className="opacity-80">{t("calendar.statNonOp", lang)}</span>
+            </span>
+            <span className="ml-auto">
+              {unassigned > 0 ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-red-800 ring-1 ring-red-200">
+                  {ti("calendar.unassignedWarn", lang, { n: unassigned })}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-800 ring-1 ring-emerald-200">
+                  ✓ {t("calendar.allAssigned", lang)}
+                </span>
+              )}
+            </span>
           </div>
 
           {/* Day-of-week header */}

@@ -83,8 +83,6 @@ export default async function AdminDataPage() {
 
       <PageContainer>
         <PageHeader
-          title={t("adminData.title", lang)}
-          subtitle={t("adminData.subtitle", lang)}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone="info">{ti("adminData.countItems", lang, { n: counts.items })}</Badge>

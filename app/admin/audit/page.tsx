@@ -76,8 +76,6 @@ export default async function AuditPage({
 
       <PageContainer>
         <PageHeader
-          title={t("audit.title", lang)}
-          subtitle={t("audit.subtitle", lang)}
           actions={
             <LinkButton href="/admin/data" variant="secondary" size="sm">
               {t("tabData", lang)}

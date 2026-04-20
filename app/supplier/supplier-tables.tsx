@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Badge } from "@/components/ui";
+import { Badge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { formatIDR } from "@/lib/engine";
 import { t, type Lang, type LangKey } from "@/lib/i18n";
 import type {
   SupplierPoInboxRow,
@@ -103,13 +102,9 @@ export function SupplierInboxTable({
     {
       key: "total",
       label: t("common.total", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => Number(r.total),
-      render: (r) => (
-        <span className="font-mono text-xs font-bold">
-          {formatIDR(Number(r.total))}
-        </span>
-      )
+      render: (r) => <IDR value={Number(r.total)} className="text-xs font-bold" />
     },
     {
       key: "po_status",
@@ -246,38 +241,31 @@ export function SupplierPaymentTable({
     {
       key: "total",
       label: t("common.total", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => Number(r.total),
-      render: (r) => (
-        <span className="font-mono text-xs">
-          {formatIDR(Number(r.total))}
-        </span>
-      )
+      render: (r) => <IDR value={Number(r.total)} className="text-xs" />
     },
     {
       key: "paid",
       label: lang === "EN" ? "Paid" : "Terbayar",
-      align: "right",
+      align: "left",
       sortValue: (r) => Number(r.paid),
       render: (r) => (
-        <span className="font-mono text-xs text-emerald-700">
-          {formatIDR(Number(r.paid))}
-        </span>
+        <IDR value={Number(r.paid)} className="text-xs text-emerald-700" />
       )
     },
     {
       key: "outstanding",
       label: lang === "EN" ? "Outstanding" : "Sisa",
-      align: "right",
+      align: "left",
       sortValue: (r) => Number(r.outstanding),
       render: (r) => (
-        <span
-          className={`font-mono text-xs font-black ${
+        <IDR
+          value={Number(r.outstanding)}
+          className={`text-xs font-black ${
             Number(r.outstanding) > 0 ? "text-red-700" : "text-ink2/60"
           }`}
-        >
-          {formatIDR(Number(r.outstanding))}
-        </span>
+        />
       )
     },
     {
@@ -368,13 +356,9 @@ export function SupplierUploadsTable({
     {
       key: "total",
       label: t("common.total", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.total,
-      render: (r) => (
-        <span className="font-mono text-xs font-bold">
-          {formatIDR(r.total)}
-        </span>
-      )
+      render: (r) => <IDR value={r.total} className="text-xs font-bold" />
     },
     {
       key: "status",

@@ -195,12 +195,6 @@ export default async function StockPage() {
 
       <PageContainer>
         <PageHeader
-          title={t("stock.title", lang)}
-          subtitle={ti("stock.subtitle", lang, {
-            sku: items.length,
-            inStock: items.length - emptyItems,
-            empty: emptyItems
-          })}
           actions={
             <>
               <LinkButton href="/procurement" variant="secondary" size="sm">

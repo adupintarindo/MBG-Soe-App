@@ -35,32 +35,18 @@ import {
   topSuppliersBySpend,
   dailyPlanning,
   dashboardKpis,
-  costPerPortionDaily,
   type MonthlyRequirement,
   type TopSupplier,
-  type DailyPlan,
-  type CostPerPortionRow
+  type DailyPlan
 } from "@/lib/engine";
 import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-function isISODate(s: string | undefined): s is string {
-  return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
-}
-
-export default async function DashboardPage({
-  searchParams
-}: {
-  searchParams?:
-    | Promise<{ hpp_from?: string; hpp_to?: string }>
-    | { hpp_from?: string; hpp_to?: string };
-}) {
+export default async function DashboardPage() {
   const supabase = createClient();
   const lang = getLang();
-
-  const sp = (await Promise.resolve(searchParams)) ?? {};
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -89,11 +75,8 @@ export default async function DashboardPage({
   // ---- HPP date range (default last 7 days ending today) ----
   const sevenAgo = new Date(now);
   sevenAgo.setDate(sevenAgo.getDate() - 6);
-  const thirtyAgo = new Date(now);
-  thirtyAgo.setDate(thirtyAgo.getDate() - 29);
   const hppFrom = isISODate(sp.hpp_from) ? sp.hpp_from : toISODate(sevenAgo);
   const hppTo = isISODate(sp.hpp_to) ? sp.hpp_to : today;
-  const hppPreset30From = toISODate(thirtyAgo);
 
   // ---- parallel fetches ----
   const [
@@ -207,6 +190,16 @@ export default async function DashboardPage({
   const hppActiveDays = hppSorted.filter(
     (r) => Number(r.total_porsi || 0) > 0
   ).length;
+
+  // ---- day-of-week label for date inputs (local time, not UTC) ----
+  const dayNameFromISO = (iso: string): string => {
+    const [y, m, d] = iso.split("-").map(Number);
+    if (!y || !m || !d) return "";
+    const dow = new Date(y, m - 1, d).getDay();
+    return DAYS.long[lang][dow] ?? "";
+  };
+  const hppFromDay = dayNameFromISO(hppFrom);
+  const hppToDay = dayNameFromISO(hppTo);
 
   // Transaction log with supplier names
   const supplierMap = new Map(suppliers.map((s) => [s.id, s.name]));
@@ -431,135 +424,126 @@ export default async function DashboardPage({
 
         {/* HPP / Cost per Portion · period picker */}
         <Section title={t("dashboard.hppTitle", lang)}>
-          <div className="p-4">
-            <form
-              method="get"
-              className="mb-4 flex flex-wrap items-end gap-3 rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-ink/10"
-            >
-              <label className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2">
-                {t("dashboard.hppFrom", lang)}
+          <form
+            method="get"
+            className="mb-3 inline-flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 ring-1 ring-ink/10"
+          >
+            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-ink2">
+              <span>{t("dashboard.hppFrom", lang)}</span>
+              <span className="flex flex-col">
                 <input
                   type="date"
                   name="hpp_from"
                   defaultValue={hppFrom}
                   max={hppTo}
-                  className="rounded-md bg-white px-2 py-1.5 font-mono text-xs font-semibold text-ink ring-1 ring-ink/15 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="rounded-md bg-white px-2 py-1 font-mono text-xs font-semibold text-ink ring-1 ring-ink/15 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-              </label>
-              <label className="flex flex-col gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2">
-                {t("dashboard.hppTo", lang)}
+                <span className="mt-0.5 font-sans text-[10px] font-semibold normal-case tracking-normal text-primary">
+                  {hppFromDay}
+                </span>
+              </span>
+            </label>
+            <span className="text-ink2/50">–</span>
+            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-ink2">
+              <span>{t("dashboard.hppTo", lang)}</span>
+              <span className="flex flex-col">
                 <input
                   type="date"
                   name="hpp_to"
                   defaultValue={hppTo}
                   min={hppFrom}
-                  className="rounded-md bg-white px-2 py-1.5 font-mono text-xs font-semibold text-ink ring-1 ring-ink/15 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="rounded-md bg-white px-2 py-1 font-mono text-xs font-semibold text-ink ring-1 ring-ink/15 focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-              </label>
-              <div className="flex flex-wrap items-center gap-1">
-                <a
-                  href="/dashboard"
-                  className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-ink2 ring-1 ring-ink/10 transition hover:bg-primary hover:text-white"
-                >
-                  {t("dashboard.hppPreset7", lang)}
-                </a>
-                <a
-                  href={`/dashboard?hpp_from=${hppPreset30From}&hpp_to=${today}`}
-                  className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-ink2 ring-1 ring-ink/10 transition hover:bg-primary hover:text-white"
-                >
-                  {t("dashboard.hppPreset30", lang)}
-                </a>
-                <a
-                  href={`/dashboard?hpp_from=${monthStart}&hpp_to=${today}`}
-                  className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-ink2 ring-1 ring-ink/10 transition hover:bg-primary hover:text-white"
-                >
-                  {t("dashboard.hppPresetMonth", lang)}
-                </a>
-              </div>
-              <button
-                type="submit"
-                className="rounded-md bg-primary px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white transition hover:brightness-110"
-              >
-                {t("dashboard.hppApply", lang)}
-              </button>
-            </form>
+                <span className="mt-0.5 font-sans text-[10px] font-semibold normal-case tracking-normal text-primary">
+                  {hppToDay}
+                </span>
+              </span>
+            </label>
+            <button
+              type="submit"
+              className="rounded-md bg-primary px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white transition hover:brightness-110"
+            >
+              {t("dashboard.hppApply", lang)}
+            </button>
+          </form>
 
-            {hppTotalPorsi === 0 ? (
-              <EmptyState message={t("dashboard.hppEmpty", lang)} />
-            ) : (
-              <>
-                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <KpiTile
-                  icon="💵"
-                  label={t("dashboard.hppAvg", lang)}
-                  value={formatIDR(Math.round(hppAvg))}
-                  palette="emerald"
-                  size="sm"
-                />
-                <KpiTile
-                  icon="🍛"
-                  label={t("dashboard.hppTotalPorsi", lang)}
-                  value={formatNumber(hppTotalPorsi, lang)}
-                  palette="blue"
-                  size="sm"
-                />
-                <KpiTile
-                  icon="🧾"
-                  label={t("dashboard.hppTotalSpent", lang)}
-                  value={formatIDR(hppTotalSpent)}
-                  palette="amber"
-                  size="sm"
-                />
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-ink/10 text-left text-[10px] uppercase tracking-wide text-ink2">
-                      <th className="py-2 pr-3 font-bold">
-                        {t("dashboard.hppColDate", lang)}
-                      </th>
-                      <th className="py-2 pr-3 text-right font-bold">
-                        {t("dashboard.hppColPorsi", lang)}
-                      </th>
-                      <th className="py-2 pr-3 text-right font-bold">
-                        {t("dashboard.hppColSpent", lang)}
-                      </th>
-                      <th className="py-2 text-right font-bold">
-                        {t("dashboard.hppColHpp", lang)}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {hppSorted.map((r) => {
-                      const porsi = Number(r.total_porsi || 0);
-                      const spent = Number(r.spent_po || 0);
-                      const cpp = porsi > 0 ? spent / porsi : 0;
-                      return (
-                        <tr
-                          key={r.op_date}
-                          className="border-b border-ink/5 last:border-0"
-                        >
-                          <td className="py-2 pr-3 font-mono text-[11px]">
-                            {r.op_date}
-                          </td>
-                          <td className="py-2 pr-3 text-right font-mono">
-                            {formatNumber(porsi, lang)}
-                          </td>
-                          <td className="py-2 pr-3 text-right font-mono">
-                            {formatIDR(spent)}
-                          </td>
-                          <td className="py-2 text-right font-mono font-black">
-                            {porsi > 0 ? formatIDR(Math.round(cpp)) : "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              </>
-            )}
+          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <KpiTile
+              icon="💵"
+              label={t("dashboard.hppAvg", lang)}
+              value={hppTotalPorsi > 0 ? formatIDR(Math.round(hppAvg)) : "—"}
+              palette="emerald"
+              size="sm"
+            />
+            <KpiTile
+              icon="🍛"
+              label={t("dashboard.hppTotalPorsi", lang)}
+              value={formatNumber(hppTotalPorsi, lang)}
+              palette="blue"
+              size="sm"
+            />
+            <KpiTile
+              icon="🧾"
+              label={t("dashboard.hppTotalSpent", lang)}
+              value={formatIDR(hppTotalSpent)}
+              palette="amber"
+              size="sm"
+            />
           </div>
+
+          {hppTotalPorsi === 0 ? (
+            <div className="flex items-center justify-center gap-2 rounded-lg bg-slate-50 px-4 py-3 text-[12px] text-ink2 ring-1 ring-ink/10">
+              <span>🗒️</span>
+              <span>{t("dashboard.hppEmpty", lang)}</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg ring-1 ring-ink/10">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-ink/10 bg-slate-50 text-left text-[10px] uppercase tracking-wide text-ink2">
+                    <th className="px-3 py-2 font-bold">
+                      {t("dashboard.hppColDate", lang)}
+                    </th>
+                    <th className="px-3 py-2 text-right font-bold">
+                      {t("dashboard.hppColPorsi", lang)}
+                    </th>
+                    <th className="px-3 py-2 text-right font-bold">
+                      {t("dashboard.hppColSpent", lang)}
+                    </th>
+                    <th className="px-3 py-2 text-right font-bold">
+                      {t("dashboard.hppColHpp", lang)}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hppSorted.map((r) => {
+                    const porsi = Number(r.total_porsi || 0);
+                    const spent = Number(r.spent_po || 0);
+                    const cpp = porsi > 0 ? spent / porsi : 0;
+                    return (
+                      <tr
+                        key={r.op_date}
+                        className="border-b border-ink/5 last:border-0"
+                      >
+                        <td className="px-3 py-1.5 font-mono text-[11px]">
+                          {r.op_date}
+                        </td>
+                        <td className="px-3 py-1.5 text-right font-mono">
+                          {formatNumber(porsi, lang)}
+                        </td>
+                        <td className="px-3 py-1.5 text-right font-mono">
+                          {formatIDR(spent)}
+                        </td>
+                        <td className="px-3 py-1.5 text-right font-mono font-black">
+                          {porsi > 0 ? formatIDR(Math.round(cpp)) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Section>
 
         {/* Menu & Portion Schedule · 10 days */}

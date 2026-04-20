@@ -1,8 +1,7 @@
 "use client";
 
-import { CategoryBadge } from "@/components/ui";
+import { CategoryBadge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { formatIDR } from "@/lib/engine";
 import { t, type Lang } from "@/lib/i18n";
 
 export type BomTableRow = {
@@ -34,7 +33,11 @@ export function BomTable({
       key: "cat",
       label: t("menu.colKat", lang),
       sortValue: (r) => r.category,
-      render: (r) => <CategoryBadge category={r.category} size="sm" />
+      render: (r) => (
+        <div className="flex justify-center">
+          <CategoryBadge category={r.category} size="sm" />
+        </div>
+      )
     },
     {
       key: "small",
@@ -123,11 +126,9 @@ export function CommodityTable({
     {
       key: "price",
       label: t("menu.colPrice", lang),
-      align: "right",
+      align: "left",
       sortValue: (r) => r.price_idr,
-      render: (r) => (
-        <span className="font-mono text-xs">{formatIDR(r.price_idr)}</span>
-      )
+      render: (r) => <IDR value={r.price_idr} className="text-xs" />
     },
     {
       key: "vol",
