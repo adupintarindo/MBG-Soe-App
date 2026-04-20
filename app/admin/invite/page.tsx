@@ -4,14 +4,13 @@ import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { InviteForm } from "./invite-form";
 import {
-  Badge,
   EmptyState,
   PageContainer,
   PageHeader,
   Section
 } from "@/components/ui";
 import { InvitesTable, type InviteRow } from "./invites-table";
-import { t, ti } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -41,15 +40,6 @@ export default async function InvitePage() {
 
   const invites = invitesRes.data || [];
   const now = Date.now();
-  const counts = invites.reduce(
-    (acc, inv) => {
-      if (inv.used_at) acc.used += 1;
-      else if (new Date(inv.expires_at).getTime() < now) acc.expired += 1;
-      else acc.active += 1;
-      return acc;
-    },
-    { active: 0, used: 0, expired: 0 }
-  );
 
   return (
     <div>
@@ -60,15 +50,7 @@ export default async function InvitePage() {
       />
 
       <PageContainer>
-        <PageHeader
-          actions={
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info">{ti("adminInvite.countActive", lang, { n: counts.active })}</Badge>
-              <Badge tone="ok">{ti("adminInvite.countUsed", lang, { n: counts.used })}</Badge>
-              <Badge tone="muted">{ti("adminInvite.countExpired", lang, { n: counts.expired })}</Badge>
-            </div>
-          }
-        />
+        <PageHeader />
 
         <InviteForm suppliers={suppliersRes.data || []} />
 
