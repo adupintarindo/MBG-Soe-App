@@ -278,17 +278,18 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
             : "Hasil uji organoleptik per fase: skor warna, aroma, rasa, dan tekstur."
         }
       >
-        {tests.length === 0 ? (
-          <EmptyState message={lang === "EN" ? "No data." : "Belum ada data."} />
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(phaseCount) as OrganolepticPhase[]).map((p) => (
-              <Badge key={p} tone={PHASE_TONE[p]}>
-                {phaseLabel(p)} · {phaseCount[p]}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {isPreview ? (
+            <Badge tone="warn">
+              {lang === "EN" ? "Preview (Dummy)" : "Data Contoh"}
+            </Badge>
+          ) : null}
+          {(Object.keys(phaseCount) as OrganolepticPhase[]).map((p) => (
+            <Badge key={p} tone={PHASE_TONE[p]}>
+              {phaseLabel(p)} · {phaseCount[p]}
+            </Badge>
+          ))}
+        </div>
       </Section>
 
       <Section
@@ -303,27 +304,25 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
             : "Catatan uji sensorik (rupa, aroma, rasa, tekstur) per tahap masak. Sumber Lampiran 26."
         }
         actions={
-          canWrite ? (
-            <LinkButton
-              href="/dokumen-bgn/organoleptik/new"
-              variant="primary"
-              size="sm"
-            >
-              {lang === "EN" ? "+ New Test" : "+ Tambah Uji"}
-            </LinkButton>
-          ) : null
+          <div className="flex items-center gap-2">
+            {isPreview ? (
+              <Badge tone="warn">
+                {lang === "EN" ? "Preview (Dummy)" : "Data Contoh"}
+              </Badge>
+            ) : null}
+            {canWrite ? (
+              <LinkButton
+                href="/dokumen-bgn/organoleptik/new"
+                variant="primary"
+                size="sm"
+              >
+                {lang === "EN" ? "+ New Test" : "+ Tambah Uji"}
+              </LinkButton>
+            ) : null}
+          </div>
         }
       >
-        {tests.length === 0 ? (
-          <EmptyState
-            icon="👅"
-            message={
-              lang === "EN"
-                ? "No organoleptic tests yet."
-                : "Belum ada uji organoleptik."
-            }
-          />
-        ) : (
+        {(
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[13px]">
               <thead className="border-b-2 border-ink/10 font-display text-[11px] uppercase tracking-wide text-ink2/70">
@@ -358,7 +357,7 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {tests.map((t) => {
+                {displayTests.map((t) => {
                   const off = t.officer_id
                     ? staffLookup[t.officer_id]
                     : undefined;
