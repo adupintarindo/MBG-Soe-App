@@ -142,8 +142,17 @@ async function runAssertions(u, sb) {
     );
   }
 
-  // B. Tiap role bisa baca schools (public master)
-  {
+  // B. Staff (admin/operator/ahli_gizi/viewer) bisa baca schools.
+  //    Supplier role DILARANG (migrasi 0029_rls_tighten — privacy WFP).
+  if (u.role === "supplier") {
+    const { data, error } = await sb.from("schools").select("id").limit(3);
+    record(
+      u.role,
+      "supplier CANNOT read schools (0029 tighten)",
+      Boolean(error) || (Array.isArray(data) && data.length === 0),
+      error ? "correctly denied" : `rows=${data?.length ?? 0}`
+    );
+  } else {
     const { data, error } = await sb.from("schools").select("id").limit(3);
     record(
       u.role,
@@ -181,8 +190,9 @@ async function runAssertions(u, sb) {
     );
   }
 
-  // D. ahli_gizi write menu, non-ahli_gizi cannot (except admin)
-  if (u.role === "ahli_gizi" || u.role === "admin") {
+  // D. admin/operator/ahli_gizi bisa upsert menu_assign (per 0002_rls.sql policy
+  //    "menu_assign: op/gz/admin write"). Viewer & supplier tidak boleh.
+  if (["admin", "operator", "ahli_gizi"].includes(u.role)) {
     const { error } = await sb
       .from("menu_assign")
       .upsert(

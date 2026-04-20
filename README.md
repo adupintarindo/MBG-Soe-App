@@ -94,7 +94,7 @@ git clone <repo>
 cd mbg-soe-app
 npm install
 cp .env.local.example .env.local
-# isi NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+# isi NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY
 # dari Supabase dashboard → Project Settings → API
 ```
 
@@ -173,7 +173,7 @@ gh repo create ifsr/mbg-soe-app --private --source=. --push
 - Framework preset: **Next.js** (auto-detected dari `vercel.json`)
 - Environment variables — salin dari `.env.local`:
   - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY` (mark "sensitive")
   - `NEXT_PUBLIC_SITE_URL` → `https://mbg-soe.vercel.app` (domain produksi)
 - Deploy

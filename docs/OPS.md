@@ -20,7 +20,7 @@ Environment variables (SSOT `.env.local` local, Vercel project envs production):
 | Key                               | Scope    | Purpose                                   |
 |-----------------------------------|----------|-------------------------------------------|
 | `NEXT_PUBLIC_SUPABASE_URL`        | public   | Supabase project URL                      |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | public   | Anon client (respects RLS)                |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`   | public   | Anon client (respects RLS)                |
 | `SUPABASE_SERVICE_ROLE_KEY`       | server   | Admin scripts, seed, RLS tests            |
 | `NEXT_PUBLIC_SENTRY_DSN`          | public   | Error forwarding (optional)               |
 | `DEV_ADMIN`                       | server   | `1` hanya di lokal, JANGAN di prod        |
@@ -192,8 +192,8 @@ supabase storage download pod-photos ./backups/storage/pod-photos --recursive
 ```bash
 # 1. Supabase Dashboard → Settings → API → Roll anon + service_role
 # 2. Update Vercel env:
-vercel env rm NEXT_PUBLIC_SUPABASE_ANON_KEY production
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
+vercel env rm NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY production
+vercel env add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY production
 # 3. Redeploy
 ```
 
