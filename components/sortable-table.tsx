@@ -193,7 +193,7 @@ export function SortableTable<T>({
   dense = false,
   searchable = true,
   searchPlaceholder,
-  exportable = false,
+  exportable = true,
   exportFileName = "export",
   exportSheetName = "Sheet1",
   toolbarExtra,

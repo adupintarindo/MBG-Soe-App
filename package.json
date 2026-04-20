@@ -12,7 +12,10 @@
     "db:types": "supabase gen types typescript --local > types/database.ts",
     "db:types:remote": "supabase gen types typescript --project-id ubqxxsmrntdrdamlclus > types/database.ts",
     "db:push": "supabase db push",
-    "db:reset": "supabase db reset"
+    "db:reset": "supabase db reset",
+    "db:seed:demo": "node supabase/seed-demo-3mo.js",
+    "db:seed:demo:reset": "node supabase/seed-demo-3mo.js --reset",
+    "db:test:rls": "node supabase/test-rls.js"
   },
   "dependencies": {
     "@supabase/ssr": "0.5.2",
@@ -20,7 +23,8 @@
     "next": "14.2.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

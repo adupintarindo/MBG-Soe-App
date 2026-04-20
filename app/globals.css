@@ -324,13 +324,51 @@ html.dark table thead th {
 
 /* Print: clean white page, hide chrome */
 @media print {
-  body { background: white !important; }
+  @page {
+    size: A4;
+    margin: 14mm 12mm 16mm 12mm;
+  }
+  html, body {
+    background: white !important;
+    color: #000 !important;
+    font-size: 11pt;
+  }
   body::before { display: none !important; }
-  .no-print { display: none !important; }
+
+  /* Hide app chrome for print: add class="no-print" on elements to suppress */
+  .no-print,
+  header[role="banner"],
+  nav[aria-label="navMainAria"],
+  [aria-label="Main navigation"],
+  .print-hide { display: none !important; }
+
+  /* When a page declares a print-root, hide everything else */
+  body.has-print-area > *:not(.print-area):not(script) { display: none !important; }
+  .print-area { display: block !important; }
+
+  /* Remove rounded cards & shadows to save ink */
   .card, .card-lg, [class*="shadow-card"] {
     box-shadow: none !important;
     border: 1px solid #ddd !important;
   }
+  [class*="rounded-"] { border-radius: 4px !important; }
+  [class*="bg-gradient"] { background: white !important; color: #000 !important; }
+
+  /* Tables: repeat headers across pages */
+  thead { display: table-header-group; }
+  tr, td, th { page-break-inside: avoid; }
+  .print-break { page-break-before: always; }
+  .print-avoid-break { page-break-inside: avoid; }
+
+  /* Links: show URL in print */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #555;
+  }
+
+  /* Cross-out interactive hints */
+  kbd, .kbd-hint { display: none !important; }
 }
 
 /* Reduced motion */
