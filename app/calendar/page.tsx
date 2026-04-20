@@ -6,11 +6,7 @@ import { toISODate } from "@/lib/engine";
 import { getHoliday } from "@/lib/holidays";
 import { CalendarGrid } from "./calendar-grid";
 import { PopulateControls } from "./populate-controls";
-import {
-  InfoBadge,
-  LinkButton,
-  PageContainer
-} from "@/components/ui";
+import { LinkButton, PageContainer } from "@/components/ui";
 import { t, ti, MONTHS, DOW_HEAD } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
@@ -163,8 +159,6 @@ export default async function CalendarPage({
       }
     }
   }
-
-  const holidaysData = holidaysInRange(start, end);
 
   const prevYear = month === 1 ? year - 1 : year;
   const prevMonth = month === 1 ? 12 : month - 1;
