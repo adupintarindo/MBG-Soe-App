@@ -794,11 +794,15 @@ export function VolumeMatrixTable({
     {
       key: "category",
       label: t("common.category", lang),
-      align: "left",
+      align: "center",
       sortValue: (r) => r.category,
       searchValue: (r) => r.category,
       exportValue: (r) => r.category,
-      render: (r) => <CategoryBadge category={r.category} size="sm" />
+      render: (r) => (
+        <div className="flex justify-center">
+          <CategoryBadge category={r.category} size="sm" />
+        </div>
+      )
     },
     {
       key: "unit",
@@ -1047,11 +1051,15 @@ export function StockAlertTable({
     {
       key: "category",
       label: t("common.category", lang),
-      align: "left",
+      align: "center",
       sortValue: (r) => r.category,
       searchValue: (r) => r.category,
       exportValue: (r) => r.category,
-      render: (r) => <CategoryBadge category={r.category} size="sm" />
+      render: (r) => (
+        <div className="flex justify-center">
+          <CategoryBadge category={r.category} size="sm" />
+        </div>
+      )
     },
     {
       key: "req",

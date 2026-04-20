@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
-import { Badge, PageContainer, PageHeader } from "@/components/ui";
+import { PageContainer, PageHeader } from "@/components/ui";
 import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { DataShell, type DataShellTab } from "./data-shell";
-import { t, ti } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -138,16 +138,7 @@ export default async function AdminDataPage({
       />
 
       <PageContainer>
-        <PageHeader
-          actions={
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info">{ti("adminData.countItems", lang, { n: counts.items })}</Badge>
-              <Badge tone="info">{ti("adminData.countMenus", lang, { n: counts.menus })}</Badge>
-              <Badge tone="info">{ti("adminData.countSuppliers", lang, { n: counts.suppliers })}</Badge>
-              <Badge tone="info">{ti("adminData.countSchools", lang, { n: counts.schools })}</Badge>
-            </div>
-          }
-        />
+        <PageHeader />
 
         <PageTabs tabs={tabs} activeId={activeTab} />
 

@@ -269,9 +269,14 @@ export default async function DashboardPage({
   }));
 
   // Pivot monthly requirements: item_code × month → qty_kg
-  const months = Array.from(
-    new Set(monthly.map((r) => r.month.slice(0, 7)))
-  ).sort();
+  // Force fixed 5-month horizon so every month shows even when data is sparse.
+  const months: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, "0");
+    months.push(`${y}-${mo}`);
+  }
   const itemTotals = new Map<string, number>();
   for (const r of monthly) {
     itemTotals.set(
@@ -659,9 +664,9 @@ export default async function DashboardPage({
         <Section
           title={t("dashboard.forecastTitle", lang)}
           hint={t("dashboard.forecastHint", lang)}
-          accent={upcoming.length > 0 ? "warn" : "ok"}
+          accent={upcomingDisplay.length > 0 ? "warn" : "ok"}
         >
-          {upcoming.length === 0 ? (
+          {upcomingDisplay.length === 0 ? (
             <EmptyState
               icon="✅"
               tone="ok"
@@ -669,7 +674,7 @@ export default async function DashboardPage({
             />
           ) : (
             <ul className="grid gap-2 sm:grid-cols-2">
-              {upcoming.map((u) => (
+              {upcomingDisplay.map((u) => (
                 <li
                   key={u.op_date}
                   className="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200"

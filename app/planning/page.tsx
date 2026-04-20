@@ -3,14 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import {
-  dailyPlanning,
   monthlyRequirements,
   upcomingShortages,
   formatKg,
   formatIDR,
   toISODate,
   type MonthlyRequirement,
-  type DailyPlan,
   type UpcomingShortage
 } from "@/lib/engine";
 import {
@@ -22,18 +20,15 @@ import {
 import { PageTabs, type PageTab } from "@/components/page-tabs";
 import {
   PlanningMatrixTable,
-  PlanningDailyTable,
-  type PlanningMatrixRow,
-  type PlanningDailyRow
+  type PlanningMatrixRow
 } from "@/components/planning-tables";
 import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
-import { porsiBreakdown } from "@/lib/bgn";
 
 export const dynamic = "force-dynamic";
 
-type PlanningTabId = "matrix" | "daily" | "forecast";
-const VALID_TABS: readonly PlanningTabId[] = ["matrix", "daily", "forecast"];
+type PlanningTabId = "matrix" | "forecast";
+const VALID_TABS: readonly PlanningTabId[] = ["matrix", "forecast"];
 
 interface SearchParams {
   tab?: string;
@@ -72,12 +67,6 @@ export default async function PlanningPage({
       href: "/planning?tab=matrix"
     },
     {
-      id: "daily",
-      icon: "📅",
-      label: lang === "EN" ? "Daily Planning" : "Planning Harian",
-      href: "/planning?tab=daily"
-    },
-    {
       id: "forecast",
       icon: "⚠️",
       label: lang === "EN" ? "Shortage Forecast" : "Forecast Shortage",
@@ -88,8 +77,7 @@ export default async function PlanningPage({
   const now = new Date();
   const monthStart = toISODate(new Date(now.getFullYear(), now.getMonth(), 1));
 
-  const [daily, monthly, upcoming, itemsRes] = await Promise.all([
-    dailyPlanning(supabase, 30).catch(() => [] as DailyPlan[]),
+  const [monthly, upcoming, itemsRes] = await Promise.all([
     monthlyRequirements(supabase, monthStart, 5).catch(
       () => [] as MonthlyRequirement[]
     ),
@@ -133,10 +121,6 @@ export default async function PlanningPage({
     return `${MONTHS.short[lang][idx]} ${y.slice(2)}`;
   };
 
-  const opDays = daily.filter((d) => d.operasional).length;
-  const totalPorsi = daily.reduce((s, d) => s + d.porsi_total, 0);
-  const totalKg = daily.reduce((s, d) => s + Number(d.total_kg), 0);
-
   // Forecast shortage derivations
   const upcomingPeakGap = upcoming.reduce(
     (m, u) => Math.max(m, Number(u.total_gap_kg) || 0),
@@ -170,65 +154,6 @@ export default async function PlanningPage({
     months.map((m) => [m, monthLabel(m)])
   );
 
-  const porsiByDate = new Map<
-    string,
-    { kecil: number; besar: number; total: number }
-  >();
-  const breakdownByDate = new Map<
-    string,
-    {
-      schools_count: number;
-      students_total: number;
-      pregnant_count: number;
-      toddler_count: number;
-    }
-  >();
-  await Promise.all(
-    daily.map(async (p) => {
-      const [pcRes, bdRes] = await Promise.all([
-        supabase.rpc("porsi_counts", { p_date: p.op_date }),
-        porsiBreakdown(supabase, p.op_date).catch(() => null)
-      ]);
-      const row = (pcRes.data ?? [])[0] as
-        | { besar: number; kecil: number; total: number }
-        | undefined;
-      if (row) {
-        porsiByDate.set(p.op_date, {
-          kecil: Number(row.kecil ?? 0),
-          besar: Number(row.besar ?? 0),
-          total: Number(row.total ?? 0)
-        });
-      }
-      if (bdRes) {
-        breakdownByDate.set(p.op_date, {
-          schools_count: bdRes.schools_count,
-          students_total: bdRes.students_total,
-          pregnant_count: bdRes.pregnant_count,
-          toddler_count: bdRes.toddler_count
-        });
-      }
-    })
-  );
-
-  const dailyRows: PlanningDailyRow[] = daily.map((p) => {
-    const porsi = porsiByDate.get(p.op_date);
-    const bd = breakdownByDate.get(p.op_date);
-    return {
-      op_date: p.op_date,
-      menu_name: p.menu_name ?? null,
-      porsi_total: p.porsi_total,
-      porsi_eff: Number(p.porsi_eff),
-      operasional: p.operasional,
-      schools: bd?.schools_count ?? 0,
-      students: bd?.students_total ?? 0,
-      pregnant: bd?.pregnant_count ?? 0,
-      toddler: bd?.toddler_count ?? 0,
-      kecil: porsi?.kecil ?? 0,
-      besar: porsi?.besar ?? 0,
-      total: porsi?.total ?? p.porsi_total
-    };
-  });
-
   return (
     <div>
       <Nav
@@ -260,14 +185,6 @@ export default async function PlanningPage({
                   monthLabels={monthLabels}
                 />
               )}
-            </Section>
-          </>
-        )}
-
-        {activeTab === "daily" && (
-          <>
-            <Section title={t("planning.dailyTitle", lang)} hint={t("planning.dailyHint", lang)}>
-              <PlanningDailyTable lang={lang} rows={dailyRows} />
             </Section>
           </>
         )}

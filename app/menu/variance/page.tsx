@@ -5,14 +5,10 @@ import { Nav } from "@/components/nav";
 import {
   bomVariance,
   bomVarianceByMenu,
-  bomVarianceSummary,
-  formatIDR,
-  formatKg
+  bomVarianceSummary
 } from "@/lib/engine";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
@@ -75,10 +71,6 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
     bomVarianceSummary(supabase, start, end, thresholdPct),
     bomVarianceByMenu(supabase, start, end)
   ]);
-
-  const overRows = rows.filter((r) => r.flag === "OVER");
-  const underRows = rows.filter((r) => r.flag === "UNDER");
-  const okRows = rows.filter((r) => r.flag === "OK");
 
   const hasActual = summary.total_actual_kg > 0;
 
@@ -156,53 +148,6 @@ export default async function BomVariancePage({ searchParams }: PageProps) {
             {t("variance.filterApply", lang)}
           </button>
         </form>
-
-        <KpiGrid>
-          <KpiTile
-            label={t("variance.kpiScope", lang)}
-            value={summary.total_items.toString()}
-            sub={ti("variance.kpiScopeSub", lang, {
-              over: overRows.length,
-              under: underRows.length,
-              ok: okRows.length
-            })}
-          />
-          <KpiTile
-            label={t("variance.kpiPlan", lang)}
-            value={formatKg(summary.total_plan_kg, 1)}
-            sub={t("variance.kpiPlanSub", lang)}
-          />
-          <KpiTile
-            label={t("variance.kpiActual", lang)}
-            value={formatKg(summary.total_actual_kg, 1)}
-            sub={t("variance.kpiActualSub", lang)}
-            tone={hasActual ? "ok" : "default"}
-          />
-          <KpiTile
-            label={t("variance.kpiVariance", lang)}
-            value={
-              summary.total_variance_pct == null
-                ? "—"
-                : `${summary.total_variance_pct > 0 ? "+" : ""}${Number(
-                    summary.total_variance_pct
-                  ).toFixed(1)}%`
-            }
-            sub={
-              summary.total_variance_kg == null
-                ? ""
-                : `${summary.total_variance_kg >= 0 ? "+" : ""}${Number(
-                    summary.total_variance_kg
-                  ).toFixed(1)} kg`
-            }
-            tone={
-              summary.total_variance_pct == null
-                ? "default"
-                : Math.abs(Number(summary.total_variance_pct)) > thresholdPct
-                  ? "bad"
-                  : "ok"
-            }
-          />
-        </KpiGrid>
 
         <Section
           title={t("variance.secPerItem", lang)}

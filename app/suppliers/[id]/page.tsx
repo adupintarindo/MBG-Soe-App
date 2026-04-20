@@ -10,8 +10,6 @@ import {
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
@@ -92,23 +90,6 @@ export default async function SupplierDetailPage({
 
   const canWrite = profile.role === "admin" || profile.role === "operator";
 
-  const recoTone = (() => {
-    const t = Number(scorecard.total_score);
-    if (t >= 85) return "ok" as const;
-    if (t >= 70) return "info" as const;
-    if (t >= 55) return "warn" as const;
-    return "bad" as const;
-  })();
-
-  const recoLabel =
-    Number(scorecard.total_score) >= 85
-      ? t("supplierDetail.recoRetain", lang)
-      : Number(scorecard.total_score) >= 70
-        ? t("supplierDetail.recoImprove", lang)
-        : Number(scorecard.total_score) >= 55
-          ? t("supplierDetail.recoWarning", lang)
-          : t("supplierDetail.recoReplace", lang);
-
   return (
     <div>
       <Nav
@@ -156,31 +137,6 @@ export default async function SupplierDetailPage({
             </>
           }
         />
-
-        <KpiGrid>
-          <KpiTile
-            label={t("supplierDetail.kpiTotalScore", lang)}
-            value={Number(scorecard.total_score).toFixed(1)}
-            sub={recoLabel}
-            tone={recoTone}
-          />
-          <KpiTile
-            label={t("supplierDetail.kpiQuality", lang)}
-            value={`${Number(scorecard.quality_score).toFixed(0)}/100`}
-            sub={ti("supplierDetail.kpiQualitySub", lang, { pass: scorecard.qc_pass, fail: scorecard.qc_fail })}
-          />
-          <KpiTile
-            label={t("supplierDetail.kpiDelivery", lang)}
-            value={`${Number(scorecard.delivery_score).toFixed(0)}/100`}
-            sub={ti("supplierDetail.kpiDeliverySub", lang, { n: scorecard.grn_count })}
-          />
-          <KpiTile
-            label={t("supplierDetail.kpiCompliance", lang)}
-            value={`${Number(scorecard.compliance_score).toFixed(0)}/100`}
-            sub={ti("supplierDetail.kpiComplianceSub", lang, { n: scorecard.ncr_critical_open })}
-            tone={scorecard.ncr_critical_open > 0 ? "bad" : "default"}
-          />
-        </KpiGrid>
 
         <Section
           title={t("supplierDetail.secScorecard", lang)}

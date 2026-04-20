@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
-import { formatIDR, listNcr, ncrSnapshot } from "@/lib/engine";
+import { listNcr, ncrSnapshot } from "@/lib/engine";
 import Link from "next/link";
 import {
   EmptyState,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui";
 import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { GrnQcPanel } from "./grn-qc-panel";
-import { t, ti } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import {
   InvoiceTable,
@@ -266,18 +266,6 @@ export default async function ProcurementPage({
     qtyByPORecord[r.po_no] = (qtyByPORecord[r.po_no] ?? 0) + Number(r.qty);
   }
 
-  const poCount = pos.length;
-  const grnCount = grns.length;
-  const poTotal = pos.reduce((s, p) => s + Number(p.total), 0);
-  const invTotal = invoices.reduce((s, i) => s + Number(i.total), 0);
-  const invPaid = invoices
-    .filter((i) => i.status === "paid")
-    .reduce((s, i) => s + Number(i.total), 0);
-  const invOutstanding = invoices
-    .filter((i) => i.status !== "paid" && i.status !== "cancelled")
-    .reduce((s, i) => s + Number(i.total), 0);
-  const overdueCount = invoices.filter((i) => i.status === "overdue").length;
-
   return (
     <div>
       <Nav
@@ -396,24 +384,6 @@ export default async function ProcurementPage({
 
         {activeTab === "invoice" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="💰"
-                label={t("procurement.kpiInvoicePaid", lang)}
-                value={formatIDR(invPaid)}
-                size="md"
-                tone="ok"
-                sub={ti("procurement.kpiInvoicePaidSub", lang, { total: formatIDR(invTotal) })}
-              />
-              <KpiTile
-                icon="⚠️"
-                label={t("procurement.kpiOutstanding", lang)}
-                value={formatIDR(invOutstanding)}
-                size="md"
-                tone={overdueCount > 0 ? "bad" : "warn"}
-                sub={ti("procurement.kpiOverdue", lang, { n: overdueCount })}
-              />
-            </KpiGrid>
             <Section title={t("procurement.secINVtitle", lang)} hint={t("procurement.secINVhint", lang)}>
               {invoices.length === 0 ? (
                 <EmptyState message={t("procurement.invEmpty", lang)} />

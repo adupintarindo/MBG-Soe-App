@@ -12,7 +12,6 @@ import {
 } from "@/lib/engine";
 import {
   EmptyState,
-  LinkButton,
   PageContainer,
   PageHeader,
   Section
@@ -237,21 +236,7 @@ export default async function StockPage({
       />
 
       <PageContainer>
-        <PageHeader
-          actions={
-            <>
-              <LinkButton href="/procurement" variant="secondary" size="sm">
-                {t("stock.btnProcurement", lang)}
-              </LinkButton>
-              <LinkButton href="/menu/variance" variant="secondary" size="sm">
-                {t("stock.btnVariance", lang)}
-              </LinkButton>
-              <LinkButton href="/planning" variant="primary" size="sm">
-                {t("stock.btnPlanning", lang)}
-              </LinkButton>
-            </>
-          }
-        />
+        <PageHeader />
 
         <PageTabs tabs={tabs} activeId={activeTab} />
 

@@ -4,7 +4,6 @@ import type { UserRole } from "@/lib/roles";
 import type { Lang } from "@/lib/i18n";
 import {
   Badge,
-  EmptyState,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -15,6 +14,147 @@ import {
   type SppgStaff
 } from "@/lib/bgn";
 import { formatDateLong } from "@/lib/engine";
+
+function isoDaysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+const DUMMY_SCHOOLS: Array<{ id: string; name: string }> = [
+  { id: "dm-sch-1", name: "SDN Pasir Putih 01" },
+  { id: "dm-sch-2", name: "SDN Pasir Putih 02" },
+  { id: "dm-sch-3", name: "MI Al-Hidayah" },
+  { id: "dm-sch-4", name: "SDN Mekarsari 03" }
+];
+
+const DUMMY_STAFF: SppgStaff[] = [
+  {
+    id: "dm-staff-1",
+    seq_no: 1,
+    full_name: "Siti Nurhaliza",
+    nik: null,
+    phone: null,
+    email: null,
+    role: "distribusi",
+    role_label: "Petugas Distribusi",
+    bank_name: null,
+    bank_account: null,
+    start_date: null,
+    end_date: null,
+    active: true,
+    gaji_pokok: 0,
+    notes: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: "dm-staff-2",
+    seq_no: 2,
+    full_name: "Budi Santoso",
+    nik: null,
+    phone: null,
+    email: null,
+    role: "distribusi",
+    role_label: "Petugas Distribusi",
+    bank_name: null,
+    bank_account: null,
+    start_date: null,
+    end_date: null,
+    active: true,
+    gaji_pokok: 0,
+    notes: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: "dm-staff-3",
+    seq_no: 3,
+    full_name: "Rini Kartika",
+    nik: null,
+    phone: null,
+    email: null,
+    role: "pengawas_gizi",
+    role_label: "Ahli Gizi",
+    bank_name: null,
+    bank_account: null,
+    start_date: null,
+    end_date: null,
+    active: true,
+    gaji_pokok: 0,
+    notes: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+const DUMMY_LOGS: FoodSampleLog[] = [
+  {
+    id: "dm-log-1",
+    delivery_date: isoDaysAgo(0),
+    delivery_seq: 1,
+    school_id: "dm-sch-1",
+    menu_assign_date: isoDaysAgo(0),
+    officer_id: "dm-staff-1",
+    officer_signature_url: "https://example.com/sig1.png",
+    sample_kept: true,
+    notes: null,
+    created_at: new Date().toISOString(),
+    created_by: null
+  },
+  {
+    id: "dm-log-2",
+    delivery_date: isoDaysAgo(0),
+    delivery_seq: 2,
+    school_id: "dm-sch-2",
+    menu_assign_date: isoDaysAgo(0),
+    officer_id: "dm-staff-2",
+    officer_signature_url: "https://example.com/sig2.png",
+    sample_kept: true,
+    notes: null,
+    created_at: new Date().toISOString(),
+    created_by: null
+  },
+  {
+    id: "dm-log-3",
+    delivery_date: isoDaysAgo(1),
+    delivery_seq: 1,
+    school_id: "dm-sch-3",
+    menu_assign_date: isoDaysAgo(1),
+    officer_id: "dm-staff-1",
+    officer_signature_url: null,
+    sample_kept: true,
+    notes: null,
+    created_at: new Date().toISOString(),
+    created_by: null
+  },
+  {
+    id: "dm-log-4",
+    delivery_date: isoDaysAgo(1),
+    delivery_seq: 2,
+    school_id: "dm-sch-4",
+    menu_assign_date: isoDaysAgo(1),
+    officer_id: "dm-staff-3",
+    officer_signature_url: "https://example.com/sig3.png",
+    sample_kept: false,
+    notes: "Kotak sampel rusak saat transit",
+    created_at: new Date().toISOString(),
+    created_by: null
+  },
+  {
+    id: "dm-log-5",
+    delivery_date: isoDaysAgo(2),
+    delivery_seq: 1,
+    school_id: "dm-sch-1",
+    menu_assign_date: isoDaysAgo(2),
+    officer_id: "dm-staff-2",
+    officer_signature_url: "https://example.com/sig4.png",
+    sample_kept: true,
+    notes: null,
+    created_at: new Date().toISOString(),
+    created_by: null
+  }
+];
 
 type Client = SupabaseClient<Database>;
 
@@ -49,17 +189,13 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
     // migrasi belum di-apply
   }
 
-  const staffLookup = Object.fromEntries(staff.map((s) => [s.id, s]));
-  const schoolLookup = Object.fromEntries(schools.map((s) => [s.id, s]));
+  const isPreview = logs.length === 0;
+  const displayLogs = isPreview ? DUMMY_LOGS : logs;
+  const displayStaff = isPreview ? DUMMY_STAFF : staff;
+  const displaySchools = isPreview ? DUMMY_SCHOOLS : schools;
 
-  const todayIso = today.toISOString().slice(0, 10);
-  const todayLogs = logs.filter((l) => l.delivery_date === todayIso);
-  const sampleKeptCount = logs.filter((l) => l.sample_kept).length;
-  const sampleComplianceRate =
-    logs.length > 0 ? (sampleKeptCount / logs.length) * 100 : 0;
-  const signedCount = logs.filter(
-    (l) => !!l.officer_signature_url
-  ).length;
+  const staffLookup = Object.fromEntries(displayStaff.map((s) => [s.id, s]));
+  const schoolLookup = Object.fromEntries(displaySchools.map((s) => [s.id, s]));
 
   return (
     <>
@@ -75,27 +211,25 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
             : "Sampel makanan yang disimpan 24 jam beserta status segel dan tanda tangan. Sumber Lampiran 30a."
         }
         actions={
-          canWrite ? (
-            <LinkButton
-              href="/dokumen-bgn/sampel/new"
-              variant="primary"
-              size="sm"
-            >
-              {lang === "EN" ? "+ New Entry" : "+ Tambah Log"}
-            </LinkButton>
-          ) : null
+          <div className="flex items-center gap-2">
+            {isPreview ? (
+              <Badge tone="warn">
+                {lang === "EN" ? "Preview (Dummy)" : "Data Contoh"}
+              </Badge>
+            ) : null}
+            {canWrite ? (
+              <LinkButton
+                href="/dokumen-bgn/sampel/new"
+                variant="primary"
+                size="sm"
+              >
+                {lang === "EN" ? "+ New Entry" : "+ Tambah Log"}
+              </LinkButton>
+            ) : null}
+          </div>
         }
       >
-        {logs.length === 0 ? (
-          <EmptyState
-            icon="🧪"
-            message={
-              lang === "EN"
-                ? "No food-sample records yet."
-                : "Belum ada log sampel makanan."
-            }
-          />
-        ) : (
+        {(
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[13px]">
               <thead className="border-b-2 border-ink/10 font-display text-[11px] uppercase tracking-wide text-ink2/70">
@@ -122,7 +256,7 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {logs.map((l) => {
+                {displayLogs.map((l) => {
                   const off = l.officer_id
                     ? staffLookup[l.officer_id]
                     : undefined;
