@@ -196,6 +196,7 @@ export default async function PaymentsPage({
             </KpiGrid>
             <Section
               title={t("pay.outstandingTitle", lang)}
+              hint={t("pay.outstandingHint", lang)}
               accent={outstanding.length > 0 ? "warn" : "default"}
             >
               {outstanding.length === 0 ? (
@@ -235,7 +236,7 @@ export default async function PaymentsPage({
                 sub={t("pay.kpiNetSub", lang)}
               />
             </KpiGrid>
-            <Section title={t("pay.cashflowTitle", lang)}>
+            <Section title={t("pay.cashflowTitle", lang)} hint={t("pay.cashflowHint", lang)}>
               {cashflow.length === 0 ? (
                 <EmptyState message={t("common.noData", lang)} />
               ) : (
@@ -246,7 +247,7 @@ export default async function PaymentsPage({
         )}
 
         {activeTab === "payments" && (
-          <Section title={t("pay.recentTitle", lang)}>
+          <Section title={t("pay.recentTitle", lang)} hint={t("pay.recentHint", lang)}>
             {payments.length === 0 ? (
               <EmptyState message={t("pay.recentEmpty", lang)} />
             ) : (
@@ -268,7 +269,7 @@ export default async function PaymentsPage({
         )}
 
         {activeTab === "receipts" && (
-          <Section title={t("pay.receiptsTitle", lang)}>
+          <Section title={t("pay.receiptsTitle", lang)} hint={t("pay.receiptsHint", lang)}>
             {receipts.length === 0 ? (
               <EmptyState message={t("pay.receiptsEmpty", lang)} />
             ) : (

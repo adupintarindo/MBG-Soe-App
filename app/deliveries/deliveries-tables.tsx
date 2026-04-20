@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { t, type Lang } from "@/lib/i18n";
 import type { DeliverySummaryRow } from "@/lib/engine";
-import { formatDateShort } from "@/lib/engine";
+import { formatDateShort, formatDateLong } from "@/lib/engine";
 
 export type StopRow = {
   id: number;
@@ -230,11 +230,11 @@ export function DeliveryHistoryTable({
   const columns: SortableColumn<DeliveryRow>[] = [
     {
       key: "date",
-      label: t("common.date", lang),
+      label: t("common.dayDate", lang),
       align: "left",
       sortValue: (r) => r.delivery_date,
       render: (r) => (
-        <span className="font-mono text-[11px]">{formatDateShort(r.delivery_date)}</span>
+        <span className="text-[11px] font-semibold">{formatDateLong(r.delivery_date, lang)}</span>
       )
     },
     {

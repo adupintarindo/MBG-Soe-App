@@ -253,6 +253,10 @@ export const LANG_KEYS = {
   "dashboard.tblInvoice": { ID: "Invoice", EN: "Invoice" },
   "dashboard.tblTotalSpend": { ID: "Total Belanja", EN: "Total Spend" },
   "dashboard.forecastTitle": { ID: "Peramalan Shortage 14 Hari Ke Depan", EN: "Shortage Forecast Next 14 Days" },
+  "dashboard.forecastHint": {
+    ID: "Proyeksi hari dengan potensi kekurangan stok 14 hari ke depan, dikelompokkan per tingkat keparahan.",
+    EN: "Projection of days with potential stock shortages over the next 14 days, grouped by severity."
+  },
   "dashboard.forecastEmpty": {
     ID: "Tidak ada potensi kekurangan dalam 14 hari ke depan.",
     EN: "No shortages detected over the next 14 days."
@@ -440,6 +444,10 @@ export const LANG_KEYS = {
   "stock.catTitle": { ID: "{cat} ({n} item)", EN: "{cat} ({n} items)" },
   "stock.catTotalValue": { ID: "Total nilai", EN: "Total value" },
   "stock.masterTitle": { ID: "Master Stok ({n} item)", EN: "Stock Master ({n} items)" },
+  "stock.masterHint": {
+    ID: "Semua item master dengan sisa stok agregat, lead time, dan reorder point.",
+    EN: "All master items with aggregate on-hand stock, lead time, and reorder point."
+  },
   "stock.colHarga": { ID: "Harga", EN: "Price" },
   "stock.colNilai": { ID: "Nilai", EN: "Value" },
   "stock.colVolWeekly": { ID: "Vol Mingguan", EN: "Weekly Vol" },
@@ -448,6 +456,10 @@ export const LANG_KEYS = {
   "stock.statusLow": { ID: "Low {w}w", EN: "Low {w}w" },
   "stock.statusOK": { ID: "OK", EN: "OK" },
   "stock.movesTitle": { ID: "50 Pergerakan Stok Terakhir", EN: "Last 50 Stock Movements" },
+  "stock.movesHint": {
+    ID: "Riwayat transaksi stok terbaru: terima, konsumsi, dan penyesuaian per batch.",
+    EN: "Latest stock transactions: receipts, consumption, and adjustments per batch."
+  },
   "stock.movesEmpty": { ID: "Belum ada pergerakan stok.", EN: "No stock movements yet." },
   "stock.colRef": { ID: "Referensi", EN: "Reference" },
   "stock.reasonReceipt": { ID: "Terima", EN: "Receipt" },
@@ -474,6 +486,10 @@ export const LANG_KEYS = {
   },
   "batch.expiringEmpty": { ID: "Tidak ada batch berisiko kedaluwarsa.", EN: "No batches at risk of expiry." },
   "batch.allTitle": { ID: "Semua Batch Aktif ({n})", EN: "All Active Batches ({n})" },
+  "batch.allHint": {
+    ID: "Semua batch stok aktif dengan sisa qty, tanggal expiry, dan status QC.",
+    EN: "All active stock batches with remaining qty, expiry date, and QC status."
+  },
   "batch.allEmpty": { ID: "Belum ada batch aktif. Batch otomatis dibuat saat GRN diterima.", EN: "No active batches yet. Batches are auto-created on GRN receipt." },
   "batch.colBatchCode": { ID: "Kode Batch", EN: "Batch Code" },
   "batch.colReceived": { ID: "Diterima", EN: "Received" },
@@ -501,11 +517,27 @@ export const LANG_KEYS = {
   "pay.kpiNet": { ID: "Net 30h", EN: "Net 30d" },
   "pay.kpiNetSub": { ID: "masuk − keluar", EN: "in − out" },
   "pay.outstandingTitle": { ID: "Outstanding per Supplier", EN: "Outstanding by Supplier" },
+  "pay.outstandingHint": {
+    ID: "Saldo invoice yang belum lunas per supplier dengan umur piutang terpanjang.",
+    EN: "Unpaid invoice balance per supplier with the longest aging bucket."
+  },
   "pay.outstandingEmpty": { ID: "Semua invoice lunas.", EN: "All invoices paid." },
   "pay.cashflowTitle": { ID: "Cashflow Bulanan", EN: "Monthly Cashflow" },
+  "pay.cashflowHint": {
+    ID: "Arus kas masuk vs keluar per bulan dengan saldo kumulatif.",
+    EN: "Monthly cash in vs out with cumulative balance."
+  },
   "pay.recentTitle": { ID: "Pembayaran Terbaru", EN: "Recent Payments" },
+  "pay.recentHint": {
+    ID: "Pembayaran ke supplier terbaru dengan invoice dan metode bayar.",
+    EN: "Recent supplier payments with invoice reference and payment method."
+  },
   "pay.recentEmpty": { ID: "Belum ada pembayaran tercatat.", EN: "No payments recorded yet." },
   "pay.receiptsTitle": { ID: "Penerimaan Kas", EN: "Cash Receipts" },
+  "pay.receiptsHint": {
+    ID: "Penerimaan dana dari sumber internal (BGN, anggaran daerah, hibah).",
+    EN: "Incoming funds from internal sources (BGN, regional budget, grants)."
+  },
   "pay.receiptsEmpty": { ID: "Belum ada penerimaan kas.", EN: "No cash receipts yet." },
   "pay.btnNewPayment": { ID: "+ Bayar Supplier", EN: "+ Pay Supplier" },
   "pay.btnNewReceipt": { ID: "+ Terima Dana", EN: "+ Record Funding" },
@@ -550,8 +582,16 @@ export const LANG_KEYS = {
   "del.kpiPending": { ID: "Belum Dispatch", EN: "Pending Dispatch" },
   "del.kpiPendingSub": { ID: "status planned", EN: "status planned" },
   "del.todayTitle": { ID: "Manifest Hari Ini", EN: "Today's Manifest" },
+  "del.todayHint": {
+    ID: "Pengiriman hari ini: rute stop, supir, kendaraan, dan status POD.",
+    EN: "Today's deliveries: stop route, driver, vehicle, and POD status."
+  },
   "del.todayEmpty": { ID: "Belum ada pengiriman dibuat.", EN: "No deliveries generated yet." },
   "del.historyTitle": { ID: "Riwayat Pengiriman ({n} hari)", EN: "Delivery History ({n} days)" },
+  "del.historyHint": {
+    ID: "Arsip manifest pengiriman sebelumnya dengan status POD dan catatan lapangan.",
+    EN: "Archive of past delivery manifests with POD status and field notes."
+  },
   "del.btnGenerate": { ID: "+ Generate Manifest Hari Ini", EN: "+ Generate Today's Manifest" },
   "del.btnPOD": { ID: "POD", EN: "POD" },
   "del.statusPlanned": { ID: "Direncanakan", EN: "Planned" },
@@ -597,6 +637,10 @@ export const LANG_KEYS = {
   "audit.filterTo": { ID: "Sampai", EN: "To" },
   "audit.filterApply": { ID: "Terapkan", EN: "Apply" },
   "audit.listTitle": { ID: "Event Log", EN: "Event Log" },
+  "audit.listHint": {
+    ID: "Jejak audit perubahan data: siapa, kapan, tabel mana, dan diff sebelum/sesudah.",
+    EN: "Data change audit trail: who, when, which table, and before/after diff."
+  },
   "audit.empty": { ID: "Tidak ada event yang cocok dengan filter.", EN: "No events match filter." },
   "audit.colTs": { ID: "Waktu", EN: "Time" },
   "audit.colActor": { ID: "User", EN: "User" },
@@ -624,8 +668,20 @@ export const LANG_KEYS = {
   "bud.kpiCPP": { ID: "Biaya per Porsi", EN: "Cost per Portion" },
   "bud.kpiCPPSub": { ID: "30 hari terakhir", EN: "last 30 days" },
   "bud.burnTitle": { ID: "Burn Rate Bulanan", EN: "Monthly Burn Rate" },
+  "bud.burnHint": {
+    ID: "Realisasi belanja vs alokasi anggaran per bulan per sumber dana.",
+    EN: "Realized spend vs budget allocation per month per funding source."
+  },
   "bud.cppTitle": { ID: "Biaya per Porsi Harian", EN: "Daily Cost per Portion" },
+  "bud.cppHint": {
+    ID: "Biaya per porsi per hari operasional, dibandingkan dengan target APBN.",
+    EN: "Cost per portion per operating day, compared against APBN target."
+  },
   "bud.budgetsTitle": { ID: "Master Anggaran", EN: "Budget Master" },
+  "bud.budgetsHint": {
+    ID: "Semua pos anggaran aktif dengan alokasi, realisasi PO/invoice/paid, dan sisa.",
+    EN: "All active budget lines with allocation, PO/invoice/paid realization, and remaining."
+  },
   "bud.btnNew": { ID: "+ Tambah Anggaran", EN: "+ New Budget" },
   "bud.colSource": { ID: "Sumber", EN: "Source" },
   "bud.colAmount": { ID: "Jumlah", EN: "Amount" },
@@ -642,6 +698,10 @@ export const LANG_KEYS = {
 
   // ---------------- Supplier portal expansion (0036) ----------------
   "sup.inboxTitle": { ID: "Kotak Masuk PO", EN: "PO Inbox" },
+  "sup.inboxHint": {
+    ID: "PO yang menunggu keputusan Anda: terima, tolak, atau ajukan perubahan qty/tanggal.",
+    EN: "POs awaiting your decision: accept, reject, or propose qty/date changes."
+  },
   "sup.ackAccepted": { ID: "Diterima", EN: "Accepted" },
   "sup.ackRejected": { ID: "Ditolak", EN: "Rejected" },
   "sup.ackPartial": { ID: "Sebagian", EN: "Partial" },
@@ -652,11 +712,19 @@ export const LANG_KEYS = {
   "sup.ackNote": { ID: "Alasan / catatan", EN: "Reason / note" },
   "sup.ackAltDate": { ID: "Usulan tanggal alternatif", EN: "Alternative delivery date" },
   "sup.uploadTitle": { ID: "Upload Scan Invoice", EN: "Upload Invoice Scan" },
+  "sup.uploadHint": {
+    ID: "Unggah PDF/foto invoice untuk PO yang sudah GRN. Invoice akan masuk antrian verifikasi.",
+    EN: "Upload PDF/photo invoice for POs already GRN'd. Invoice enters verification queue."
+  },
   "sup.uploadFormTotal": { ID: "Total Invoice (Rp)", EN: "Invoice Total (Rp)" },
   "sup.uploadFormInvNo": { ID: "No Invoice Anda", EN: "Your Invoice No" },
   "sup.uploadFormFile": { ID: "URL File (PDF/JPG)", EN: "File URL (PDF/JPG)" },
   "sup.uploadSubmit": { ID: "Upload", EN: "Upload" },
   "sup.paymentStatusTitle": { ID: "Status Pembayaran", EN: "Payment Status" },
+  "sup.paymentStatusHint": {
+    ID: "Status invoice Anda: pending verifikasi, disetujui, paid, atau overdue.",
+    EN: "Your invoice status: pending verification, approved, paid, or overdue."
+  },
   "sup.messagesTitle": { ID: "Pesan untuk PO {po}", EN: "Messages for PO {po}" },
   "sup.messagePlaceholder": { ID: "Tulis pesan...", EN: "Write a message..." },
   "sup.messageSend": { ID: "Kirim", EN: "Send" },
@@ -686,8 +754,8 @@ export const LANG_KEYS = {
   // ---------------- Planning (/planning) ----------------
   "planning.title": { ID: "Rencana Kebutuhan Bahan", EN: "Ingredient Requirements Plan" },
   "planning.subtitle": {
-    ID: "Proyeksi 6 bulan berdasarkan menu assignment × porsi efektif × BOM",
-    EN: "6-month projection based on menu assignment × effective servings × BOM"
+    ID: "Proyeksi 5 bulan berdasarkan menu assignment × porsi efektif × BOM",
+    EN: "5-month projection based on menu assignment × effective servings × BOM"
   },
   "planning.kpiOpDays": { ID: "Hari Operasional", EN: "Operational Days" },
   "planning.kpiOpDaysSub": { ID: "30 hari ke depan", EN: "next 30 days" },
@@ -696,8 +764,8 @@ export const LANG_KEYS = {
   "planning.kpiTotalKg": { ID: "Total Kebutuhan", EN: "Total Required" },
   "planning.kpiTotalKgSub": { ID: "bahan basah", EN: "wet ingredients" },
   "planning.kpiEstSpend": { ID: "Estimasi Belanja", EN: "Estimated Spend" },
-  "planning.kpiEstSpendSub": { ID: "6 bulan ke depan", EN: "next 6 months" },
-  "planning.catDistTitle": { ID: "Distribusi Kebutuhan per Kategori (6 bulan)", EN: "Requirements Distribution by Category (6 months)" },
+  "planning.kpiEstSpendSub": { ID: "5 bulan ke depan", EN: "next 5 months" },
+  "planning.catDistTitle": { ID: "Distribusi Kebutuhan per Kategori (5 bulan)", EN: "Requirements Distribution by Category (5 months)" },
   "planning.matrixTitle": {
     ID: "Matriks Kebutuhan {months} Bulan ({items} komoditas)",
     EN: "Requirements Matrix {months} Months ({items} commodities)"
@@ -711,6 +779,10 @@ export const LANG_KEYS = {
   "planning.colEstCost": { ID: "Est. Biaya", EN: "Est. Cost" },
   "planning.totalTop30": { ID: "TOTAL (TOP 30)", EN: "TOTAL (TOP 30)" },
   "planning.dailyTitle": { ID: "Planning Harian 30 Hari ke Depan", EN: "Daily Planning for the Next 30 Days" },
+  "planning.dailyHint": {
+    ID: "Menu harian per tanggal dengan target porsi, kebutuhan bahan, dan status hari operasional.",
+    EN: "Daily menu per date with portion targets, ingredient needs, and operating day status."
+  },
   "planning.colPorsiEff": { ID: "Porsi Eff", EN: "Eff. Servings" },
   "planning.badgeOP": { ID: "OP", EN: "OP" },
   "planning.forecastTitle": { ID: "Forecast Shortage 30 Hari", EN: "Shortage Forecast 30 Days" },
@@ -938,7 +1010,7 @@ export const LANG_KEYS = {
     EN: "Each card shows the Bill of Materials per serving (grams of wet ingredient)."
   },
   "menu.bomEmpty": { ID: "Belum ada BOM untuk menu ini.", EN: "No BOM for this menu yet." },
-  "menu.colKat": { ID: "Kat", EN: "Cat" },
+  "menu.colKat": { ID: "Kategori", EN: "Category" },
   "menu.colSmall": { ID: "Kecil", EN: "Small" },
   "menu.colLarge": { ID: "Besar", EN: "Large" },
   "menu.titleSmall": { ID: "PAUD + SD 1-3 (3-9 th)", EN: "PAUD + SD 1-3 (3-9 y)" },
@@ -1356,7 +1428,15 @@ export const LANG_KEYS = {
   "suppliers.cardDetail": { ID: "Rincian", EN: "Details" },
   "suppliers.cardQuickView": { ID: "Quick view", EN: "Quick view" },
   "suppliers.rejectedTitle": { ID: "Supplier Rejected", EN: "Rejected Suppliers" },
+  "suppliers.rejectedHint": {
+    ID: "Supplier yang ditolak saat onboarding atau revaluasi. Klik untuk lihat alasan & dokumen.",
+    EN: "Suppliers rejected during onboarding or revaluation. Click for reason & documents."
+  },
   "suppliers.tableTitle": { ID: "Tabel Lengkap ({n} Supplier)", EN: "Full Table ({n} Suppliers)" },
+  "suppliers.tableHint": {
+    ID: "Semua supplier aktif dengan scorecard terkini, status LTA, dan kontrak berjalan.",
+    EN: "All active suppliers with current scorecard, LTA status, and running contracts."
+  },
   "suppliers.colId": { ID: "ID", EN: "ID" },
   "suppliers.colName": { ID: "Nama", EN: "Name" },
   "suppliers.colType": { ID: "Tipe", EN: "Type" },
@@ -1620,6 +1700,10 @@ export const LANG_KEYS = {
   },
   "calendar.holidaysTitle": { ID: "Libur Nasional Bulan Ini", EN: "National Holidays This Month" },
   "calendar.holidaysHint": { ID: "Dihitung otomatis sebagai non-operasional.", EN: "Counted automatically as non-operational." },
+  "calendar.notesTitle": { ID: "Keterangan Hari Libur & Non-Operasional", EN: "Holiday & Non-Operational Notes" },
+  "calendar.notesHolidaySection": { ID: "Libur Nasional", EN: "National Holidays" },
+  "calendar.notesNonOpSection": { ID: "Hari Tidak Operasional", EN: "Non-Operational Days" },
+  "calendar.notesEmpty": { ID: "Tidak ada libur atau hari non-operasional pada bulan ini.", EN: "No holidays or non-operational days this month." },
 
   // ---------------- Calendar Grid (/calendar) ----------------
   "calGrid.recipientLabel": { ID: "{n} penerima", EN: "{n} recipients" },
@@ -2102,6 +2186,10 @@ export const LANG_KEYS = {
   "fcst.backDashboard": { ID: "← Dashboard", EN: "← Dashboard" },
   "fcst.backPickSup": { ID: "← Pilih supplier lain", EN: "← Pick a different supplier" },
   "fcst.pickSupTitle": { ID: "Pilih Supplier", EN: "Pick Supplier" },
+  "fcst.pickSupHint": {
+    ID: "Pilih supplier untuk generate forecast kebutuhan pengadaan berdasarkan kontrak & histori.",
+    EN: "Pick a supplier to generate procurement demand forecast based on contracts & history."
+  },
   "fcst.noActiveSup": { ID: "Belum ada supplier aktif.", EN: "No active suppliers yet." },
   "fcst.noForecastTitle": { ID: "Belum ada forecast", EN: "No forecast yet" },
   "fcst.noForecastMsg": {
@@ -2153,6 +2241,10 @@ export const LANG_KEYS = {
 
   // ---------------- Transaction Log component ----------------
   "tx.title": { ID: "Transaksi Rantai Pasok", EN: "Supply Chain Transactions" },
+  "tx.hint": {
+    ID: "50 transaksi terbaru lintas PO, GRN, invoice, dan pembayaran. Filter tanggal atau tipe untuk persempit.",
+    EN: "Latest 50 transactions across POs, GRNs, invoices, and payments. Filter by date or type to narrow down."
+  },
   "tx.filterDate": { ID: "Filter tanggal:", EN: "Filter date:" },
   "tx.allTypes": { ID: "Semua tipe", EN: "All types" },
   "tx.typePO": { ID: "Purchase Order", EN: "Purchase Order" },

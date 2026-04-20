@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
-import { formatIDR } from "@/lib/engine";
+import { formatIDR, formatDateShort } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
@@ -117,6 +117,11 @@ export default async function DocGenPage() {
             lang={lang}
             title={t("docgen.listPO", lang)}
             icon="📝"
+            hint={
+              lang === "EN"
+                ? "Latest purchase orders available for PDF generation."
+                : "Daftar PO terbaru siap di-generate PDF."
+            }
             docs={pos.map((p) => ({
               no: p.no,
               date: p.po_date,
@@ -130,6 +135,11 @@ export default async function DocGenPage() {
             lang={lang}
             title={t("docgen.listGRN", lang)}
             icon="📦"
+            hint={
+              lang === "EN"
+                ? "Goods receipt notes with QC results. Click to print PDF."
+                : "Berita Acara Penerimaan (GRN) dengan hasil QC. Klik untuk cetak PDF."
+            }
             docs={grns.map((g) => ({
               no: g.no,
               date: g.grn_date,
@@ -143,6 +153,11 @@ export default async function DocGenPage() {
             lang={lang}
             title={t("docgen.listInvoice", lang)}
             icon="💰"
+            hint={
+              lang === "EN"
+                ? "Supplier invoices ready for printable PDF export."
+                : "Invoice supplier yang siap di-cetak PDF."
+            }
             docs={invoices.map((i) => ({
               no: i.no,
               date: i.inv_date,
@@ -161,11 +176,13 @@ export default async function DocGenPage() {
 function DocList({
   title,
   icon,
+  hint,
   docs,
   lang
 }: {
   title: string;
   icon: string;
+  hint: string;
   lang: Lang;
   docs: {
     no: string;
@@ -177,7 +194,7 @@ function DocList({
   }[];
 }) {
   return (
-    <Section title={`${icon} ${title}`} className="mb-0">
+    <Section title={`${icon} ${title}`} hint={hint} className="mb-0">
       {docs.length === 0 ? (
         <EmptyState message={t("docgen.empty", lang)} />
       ) : (
@@ -196,7 +213,7 @@ function DocList({
                     <Badge tone="neutral">{d.status}</Badge>
                   </div>
                   <div className="truncate text-[11px] text-ink2/70">
-                    {d.date} · {d.sub}
+                    {formatDateShort(d.date)} · {d.sub}
                   </div>
                 </div>
                 <div className="text-right">

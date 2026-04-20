@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { UserRole } from "@/lib/roles";
 import type { Lang } from "@/lib/i18n";
-import { formatIDR } from "@/lib/engine";
+import { formatIDR, formatDateLong } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
@@ -83,6 +83,11 @@ export async function KasHarianTab({ supabase, lang, role }: Props) {
 
       <Section
         title={lang === "EN" ? "Daily Cash Log (Lamp. 30b)" : "Kas Harian (Lamp. 30b)"}
+        hint={
+          lang === "EN"
+            ? "Chronological cash-in/out entries for the current period. Source for Lampiran 30b."
+            : "Daftar transaksi kas masuk/keluar periode berjalan. Sumber Lampiran 30b."
+        }
         actions={
           canWrite ? (
             <LinkButton href="/keuangan/kas-harian/new" variant="primary" size="sm">
@@ -106,7 +111,7 @@ export async function KasHarianTab({ supabase, lang, role }: Props) {
               <thead className="border-b-2 border-ink/10 font-display text-[11px] uppercase tracking-wide text-ink2/70">
                 <tr>
                   <th className="px-2 py-2">
-                    {lang === "EN" ? "Date" : "Tanggal"}
+                    {lang === "EN" ? "Day, Date" : "Hari, Tanggal"}
                   </th>
                   <th className="px-2 py-2">
                     {lang === "EN" ? "Category" : "Kategori"}
@@ -126,10 +131,10 @@ export async function KasHarianTab({ supabase, lang, role }: Props) {
               <tbody>
                 {logs.map((r) => (
                   <tr key={r.id} className="border-b border-ink/5">
-                    <td className="px-2 py-2 font-mono text-[12px]">
-                      {r.log_date}
+                    <td className="px-2 py-2 text-[12px] font-semibold">
+                      {formatDateLong(r.log_date, lang)}
                       {r.log_time && (
-                        <span className="ml-1 text-ink2/50">{r.log_time.slice(0, 5)}</span>
+                        <span className="ml-1 font-mono text-ink2/50">{r.log_time.slice(0, 5)}</span>
                       )}
                     </td>
                     <td className="px-2 py-2">

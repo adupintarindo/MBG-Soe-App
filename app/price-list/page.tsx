@@ -16,6 +16,7 @@ import { PriceListShell } from "./price-list-shell";
 import type { PriceListMatrixRow, PricePeriod, PriceWeek } from "./types";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
+import { formatDateShort } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -144,7 +145,14 @@ export default async function PriceListPage({
 
         {activeTab === "history" && (
           historyPeriods.length === 0 ? (
-            <Section title={lang === "EN" ? "Period History" : "Riwayat Periode"}>
+            <Section
+              title={lang === "EN" ? "Period History" : "Riwayat Periode"}
+              hint={
+                lang === "EN"
+                  ? "Archive of price list periods with effective dates and version numbers."
+                  : "Arsip periode price list dengan tanggal berlaku dan nomor versi."
+              }
+            >
               <div className="px-4 py-8 text-center text-sm text-ink2/70">
                 {lang === "EN"
                   ? "No historical periods yet."
@@ -193,8 +201,8 @@ export default async function PriceListPage({
                   {periods.map((p) => (
                     <tr key={p.id} className="border-t border-ink/5">
                       <td className="px-4 py-2 font-mono">{p.id}</td>
-                      <td className="px-4 py-2">{p.start_date}</td>
-                      <td className="px-4 py-2">{p.end_date ?? "—"}</td>
+                      <td className="px-4 py-2">{formatDateShort(p.start_date)}</td>
+                      <td className="px-4 py-2">{p.end_date ? formatDateShort(p.end_date) : "—"}</td>
                       <td className="px-4 py-2">
                         {p.active ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">

@@ -4,7 +4,8 @@
  * and dark-mode adapts everywhere by default.
  */
 import Link from "next/link";
-import type { ReactNode, HTMLAttributes, AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
+import { Children, cloneElement, isValidElement } from "react";
+import type { ReactNode, HTMLAttributes, AnchorHTMLAttributes, ButtonHTMLAttributes, ReactElement } from "react";
 
 export { SortableTable, type SortableColumn, type SortDir } from "./sortable-table";
 
@@ -12,7 +13,7 @@ export { SortableTable, type SortableColumn, type SortDir } from "./sortable-tab
 
 export function PageContainer({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto max-w-7xl px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 animate-fade-in">
+    <main className="mx-auto w-full max-w-7xl px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 animate-fade-in">
       {children}
     </main>
   );
@@ -42,7 +43,7 @@ export function InfoBadge({ children, tone = "light", className = "" }: InfoBadg
       </button>
       <span
         role="tooltip"
-        className="pointer-events-none invisible absolute left-1/2 top-full z-50 mt-2 w-max max-w-[260px] -translate-x-1/2 rounded-lg bg-ink px-3 py-2 text-left text-[11.5px] font-medium normal-case leading-snug tracking-normal text-white/95 opacity-0 shadow-card transition group-hover/info:visible group-hover/info:opacity-100 group-focus-within/info:visible group-focus-within/info:opacity-100"
+        className="pointer-events-none invisible absolute right-0 top-full z-50 mt-2 w-max max-w-[min(320px,calc(100vw-24px))] rounded-lg bg-ink px-3 py-2 text-left text-[11.5px] font-medium normal-case leading-snug tracking-normal text-white/95 opacity-0 shadow-card transition group-hover/info:visible group-hover/info:opacity-100 group-focus-within/info:visible group-focus-within/info:opacity-100"
       >
         {children}
       </span>
@@ -100,10 +101,10 @@ interface SectionProps {
 
 const ACCENT_BORDER: Record<NonNullable<SectionProps["accent"]>, string> = {
   default: "",
-  ok: "border-l-4 border-emerald-500",
-  warn: "border-l-4 border-amber-500",
-  bad: "border-l-4 border-red-500",
-  info: "border-l-4 border-accent-strong"
+  ok: "",
+  warn: "",
+  bad: "",
+  info: ""
 };
 
 export function Section({
@@ -119,19 +120,18 @@ export function Section({
   void _banner;
   return (
     <section
-      className={`mb-6 overflow-hidden rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${className}`}
+      className={`mb-6 rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${className}`}
     >
       {(title || actions || hint) && (
-        <header className="relative flex flex-wrap items-center justify-center gap-3 bg-ink px-4 py-1.5 text-center">
+        <header className="relative z-20 flex flex-wrap items-center justify-center gap-3 rounded-t-2xl bg-ink px-4 py-1.5 text-center">
           {title && (
-            <h2 className="inline-flex items-center gap-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
+            <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
               <span>{title}</span>
-              {hint && <InfoBadge tone="dark">{hint}</InfoBadge>}
             </h2>
           )}
-          {!title && hint && <InfoBadge tone="dark">{hint}</InfoBadge>}
-          {actions && (
+          {(hint || actions) && (
             <div className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-wrap items-center gap-2">
+              {hint && <InfoBadge tone="dark">{hint}</InfoBadge>}
               {actions}
             </div>
           )}
@@ -232,10 +232,29 @@ export function KpiTile({
   );
 }
 
+const KPI_PALETTE_ROTATION: NonNullable<KpiTileProps["palette"]>[] = [
+  "blue",
+  "emerald",
+  "amber",
+  "violet"
+];
+
 export function KpiGrid({ children }: { children: ReactNode }) {
+  let paletteIdx = 0;
+  const decorated = Children.map(children, (child) => {
+    if (!isValidElement(child)) return child;
+    const el = child as ReactElement<Partial<KpiTileProps>>;
+    if (el.type !== KpiTile) return child;
+    if (el.props.palette) return child;
+    const nextPalette = KPI_PALETTE_ROTATION[paletteIdx % KPI_PALETTE_ROTATION.length];
+    paletteIdx += 1;
+    return cloneElement(el, { palette: nextPalette });
+  });
+  const count = Children.count(decorated);
+  const colsMd = count <= 3 ? "md:grid-cols-3" : "md:grid-cols-4";
   return (
-    <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-      {children}
+    <section className={`mb-6 grid grid-cols-2 gap-3 ${colsMd}`}>
+      {decorated}
     </section>
   );
 }

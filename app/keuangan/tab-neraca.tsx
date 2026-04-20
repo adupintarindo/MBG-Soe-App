@@ -159,7 +159,14 @@ export async function NeracaTab({ supabase, lang }: Props) {
       </KpiGrid>
 
       {accounts.length === 0 ? (
-        <Section title={lang === "EN" ? "Trial Balance" : "Neraca (Month-to-Date)"}>
+        <Section
+          title={lang === "EN" ? "Trial Balance" : "Neraca (Month-to-Date)"}
+          hint={
+            lang === "EN"
+              ? "Month-to-date account balances aggregated from journal entries. Debit should equal credit."
+              : "Saldo akun MTD hasil agregat jurnal. Total debit harus sama dengan total kredit."
+          }
+        >
           <EmptyState
             icon="⚖️"
             message={
@@ -181,6 +188,11 @@ export async function NeracaTab({ supabase, lang }: Props) {
                 lang === "EN"
                   ? CATEGORY_LABEL[cat].en
                   : CATEGORY_LABEL[cat].id
+              }
+              hint={
+                lang === "EN"
+                  ? `${list.length} account(s) in ${CATEGORY_LABEL[cat].en}. Subtotal is the normal-balance sum for this category.`
+                  : `${list.length} akun pada kategori ${CATEGORY_LABEL[cat].id}. Subtotal adalah jumlah saldo normal kategori ini.`
               }
             >
               <div className="overflow-x-auto">

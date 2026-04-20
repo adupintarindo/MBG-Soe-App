@@ -137,12 +137,42 @@ const LAMPIRAN_LIST: LampiranDef[] = [
 
 const CATEGORY_LABEL: Record<
   LampiranDef["category"],
-  { id: string; en: string; tone: "info" | "ok" | "warn" | "accent" }
+  {
+    id: string;
+    en: string;
+    tone: "info" | "ok" | "warn" | "accent";
+    hintId: string;
+    hintEn: string;
+  }
 > = {
-  qc: { id: "Pengendalian Mutu", en: "Quality Control", tone: "warn" },
-  finance: { id: "Keuangan", en: "Finance", tone: "info" },
-  hr: { id: "SDM", en: "Human Resources", tone: "accent" },
-  distribution: { id: "Distribusi", en: "Distribution", tone: "ok" }
+  qc: {
+    id: "Pengendalian Mutu",
+    en: "Quality Control",
+    tone: "warn",
+    hintId: "Lampiran terkait QC pangan: uji organoleptik, sampel, segel.",
+    hintEn: "QC-related attachments: organoleptic tests, samples, seals."
+  },
+  finance: {
+    id: "Keuangan",
+    en: "Finance",
+    tone: "info",
+    hintId: "Lampiran keuangan: kas harian, jurnal, kas kecil, buku besar.",
+    hintEn: "Finance attachments: cashbook, journals, petty cash, ledger."
+  },
+  hr: {
+    id: "SDM",
+    en: "Human Resources",
+    tone: "accent",
+    hintId: "Lampiran SDM: daftar tim, absensi, gaji, insentif.",
+    hintEn: "HR attachments: team roster, attendance, payroll, incentives."
+  },
+  distribution: {
+    id: "Distribusi",
+    en: "Distribution",
+    tone: "ok",
+    hintId: "Lampiran distribusi: manifest pengiriman, serah-terima sekolah.",
+    hintEn: "Distribution attachments: delivery manifest, school hand-over."
+  }
 };
 
 export async function GeneratorLampiranTab({ supabase, lang, role }: Props) {
@@ -223,6 +253,7 @@ export async function GeneratorLampiranTab({ supabase, lang, role }: Props) {
           <Section
             key={cat}
             title={`${lang === "EN" ? meta.en : meta.id} · ${list.length}`}
+            hint={lang === "EN" ? meta.hintEn : meta.hintId}
           >
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {list.map((l) => (
@@ -275,6 +306,11 @@ export async function GeneratorLampiranTab({ supabase, lang, role }: Props) {
           lang === "EN"
             ? "Generation History (last 20)"
             : "Riwayat Generate (20 terakhir)"
+        }
+        hint={
+          lang === "EN"
+            ? "Audit trail of lampiran files generated — who ran it, when, and which format."
+            : "Audit trail file lampiran yang dibuat — siapa, kapan, format apa."
         }
       >
         {recentLogs.length === 0 ? (

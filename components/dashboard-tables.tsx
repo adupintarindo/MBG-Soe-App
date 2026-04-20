@@ -869,6 +869,15 @@ export function PlanningTable({
 }) {
   const columns: SortableColumn<PlanRow>[] = [
     {
+      key: "no",
+      label: t("dashboard.tblNo", lang),
+      width: "52px",
+      sortable: false,
+      render: (_r, i) => (
+        <span className="font-mono text-xs text-ink2">{i + 1}</span>
+      )
+    },
+    {
       key: "date",
       label: t("common.dayDate", lang),
       align: "left",
@@ -876,21 +885,33 @@ export function PlanningTable({
       searchValue: (r) => r.op_date,
       exportValue: (r) => formatDateLong(r.op_date, lang),
       render: (r) => (
-        <div>
-          <div className="text-[11px] font-semibold">
-            {formatDateLong(r.op_date, lang)}
-          </div>
-          {!r.operasional && (
-            <Badge tone="warn" className="mt-1">
-              {t("dashboard.badgeNonOp", lang)}
-            </Badge>
-          )}
-        </div>
+        <span className="font-semibold">{formatDateLong(r.op_date, lang)}</span>
       )
     },
     {
+      key: "status",
+      label: t("dashboard.tblStatus", lang),
+      align: "center",
+      sortValue: (r) => (r.operasional ? 1 : 0),
+      searchValue: (r) =>
+        r.operasional
+          ? t("dashboard.badgeOp", lang)
+          : t("dashboard.badgeNonOpLong", lang),
+      exportValue: (r) =>
+        r.operasional
+          ? t("dashboard.badgeOp", lang)
+          : t("dashboard.badgeNonOpLong", lang),
+      exportHint: (r) => (r.operasional ? "status-ok" : "status-bad"),
+      render: (r) =>
+        r.operasional ? (
+          <Badge tone="ok">{t("dashboard.badgeOp", lang)}</Badge>
+        ) : (
+          <Badge tone="bad">{t("dashboard.badgeNonOpLong", lang)}</Badge>
+        )
+    },
+    {
       key: "menu",
-      label: t("dashboard.tblMenu", lang),
+      label: t("dashboard.tblMenuName", lang),
       align: "left",
       sortValue: (r) => r.menu_name ?? "",
       searchValue: (r) => r.menu_name ?? "",
@@ -963,7 +984,7 @@ export function PlanningTable({
       exportSheetName="Planning"
       exportTitle={t("dashboard.planningTitle", lang)}
       exportTotals={{
-        labelColSpan: 2,
+        labelColSpan: 4,
         labelText: t("common.grandTotal", lang),
         values: {
           porsi: totalPorsi,
@@ -974,7 +995,7 @@ export function PlanningTable({
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td
-            colSpan={2}
+            colSpan={4}
             className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white"
           >
             {t("common.grandTotal", lang)}

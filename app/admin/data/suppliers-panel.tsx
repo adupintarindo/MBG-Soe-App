@@ -50,6 +50,18 @@ const SUP_TYPES: SupType[] = [
 ];
 const SUP_STATUSES: SupStatus[] = ["draft", "awaiting", "signed", "rejected"];
 
+const TYPE_COLOR: Record<string, string> = {
+  BUMN: "bg-red-50 text-red-900 ring-red-200",
+  PT: "bg-blue-50 text-blue-900 ring-blue-200",
+  CV: "bg-indigo-50 text-indigo-900 ring-indigo-200",
+  UD: "bg-amber-50 text-amber-900 ring-amber-200",
+  KOPERASI: "bg-emerald-50 text-emerald-900 ring-emerald-200",
+  POKTAN: "bg-lime-50 text-lime-900 ring-lime-200",
+  TOKO: "bg-violet-50 text-violet-900 ring-violet-200",
+  KIOS: "bg-pink-50 text-pink-900 ring-pink-200",
+  INFORMAL: "bg-slate-50 text-slate-900 ring-slate-200"
+};
+
 interface Draft {
   id: string;
   name: string;
@@ -437,7 +449,11 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
                     ))}
                   </Select>
                 ) : (
-                  <Badge tone="accent">{r.type}</Badge>
+                  <span
+                    className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 font-display text-[10.5px] font-bold tracking-[0.02em] ring-1 ${TYPE_COLOR[r.type] ?? TYPE_COLOR.INFORMAL}`}
+                  >
+                    {r.type}
+                  </span>
                 )
             },
             {

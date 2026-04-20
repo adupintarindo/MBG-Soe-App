@@ -116,6 +116,11 @@ export async function AnggaranTab({ supabase, lang, role }: Props) {
 
       <Section
         title={lang === "EN" ? "Budget Master" : "Master Anggaran"}
+        hint={
+          lang === "EN"
+            ? "Approved budget allocations per category for the active period."
+            : "Alokasi anggaran yang disetujui per kategori pada periode berjalan."
+        }
         actions={
           canWrite ? (
             <LinkButton href="/budget/new" variant="primary" size="sm">
@@ -198,6 +203,11 @@ export async function AnggaranTab({ supabase, lang, role }: Props) {
 
       <Section
         title={lang === "EN" ? "Monthly Burn Rate" : "Burn Rate Bulanan"}
+        hint={
+          lang === "EN"
+            ? "Realised spend vs budget per month. Flags overruns before period close."
+            : "Realisasi vs anggaran per bulan. Deteksi overrun sebelum tutup periode."
+        }
       >
         {burn.length === 0 ? (
           <EmptyState

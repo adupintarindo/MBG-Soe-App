@@ -104,7 +104,7 @@ export function PrTable({ rows }: { rows: PrRow[] }) {
       key: "need",
       label: t("procurement.colNeeded", lang),
       sortValue: (r) => r.need_date,
-      render: (r) => <span className="text-xs">{r.need_date}</span>
+      render: (r) => <span className="text-xs">{formatDateLong(r.need_date, lang)}</span>
     },
     {
       key: "status",
@@ -319,6 +319,7 @@ export function PoTable({
     {
       key: "date",
       label: t("common.dayDate", lang),
+      align: "left",
       sortValue: (r) => r.po_date,
       render: (r) => <span className="text-xs">{formatDateLong(r.po_date, lang)}</span>
     },
@@ -340,7 +341,11 @@ export function PoTable({
       key: "delivery",
       label: t("common.delivery", lang),
       sortValue: (r) => r.delivery_date ?? "",
-      render: (r) => <span className="text-xs">{r.delivery_date ?? "—"}</span>
+      render: (r) => (
+        <span className="text-xs">
+          {r.delivery_date ? formatDateLong(r.delivery_date, lang) : "—"}
+        </span>
+      )
     },
     {
       key: "items",
@@ -457,6 +462,7 @@ export function InvoiceTable({
     {
       key: "date",
       label: t("common.dayDate", lang),
+      align: "left",
       sortValue: (r) => r.inv_date,
       render: (r) => <span className="text-xs">{formatDateLong(r.inv_date, lang)}</span>
     },

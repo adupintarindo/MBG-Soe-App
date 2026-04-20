@@ -212,7 +212,7 @@ export default async function SupplierPage({
                 tone={unreadMsgs > 0 ? "warn" : "default"}
               />
             </KpiGrid>
-            <Section title={t("sup.inboxTitle", lang)}>
+            <Section title={t("sup.inboxTitle", lang)} hint={t("sup.inboxHint", lang)}>
               {inbox.length === 0 ? (
                 <EmptyState message={t("common.noData", lang)} />
               ) : (
@@ -234,7 +234,7 @@ export default async function SupplierPage({
                 sub={`${payments.length} invoice`}
               />
             </KpiGrid>
-            <Section title={t("sup.paymentStatusTitle", lang)}>
+            <Section title={t("sup.paymentStatusTitle", lang)} hint={t("sup.paymentStatusHint", lang)}>
               {payments.length === 0 ? (
                 <EmptyState message={t("common.noData", lang)} />
               ) : (
@@ -259,7 +259,7 @@ export default async function SupplierPage({
                 tone={pendingUploads > 0 ? "warn" : "default"}
               />
             </KpiGrid>
-            <Section title={t("sup.uploadTitle", lang)}>
+            <Section title={t("sup.uploadTitle", lang)} hint={t("sup.uploadHint", lang)}>
               {uploads.length === 0 ? (
                 <EmptyState
                   icon="📭"

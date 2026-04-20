@@ -10,6 +10,7 @@ import {
   LinkButton,
   Section
 } from "@/components/ui";
+import { formatDateShort } from "@/lib/engine";
 import {
   listPayrollAttendance,
   listPayrollPeriod,
@@ -129,7 +130,7 @@ export async function AbsensiTab({ supabase, lang, role }: Props) {
           size="md"
           sub={
             latestPeriod
-              ? `${latestPeriod.start_date} → ${latestPeriod.end_date}`
+              ? `${formatDateShort(latestPeriod.start_date)} → ${formatDateShort(latestPeriod.end_date)}`
               : lang === "EN"
                 ? "No period"
                 : "Belum ada"
@@ -165,6 +166,11 @@ export async function AbsensiTab({ supabase, lang, role }: Props) {
           lang === "EN"
             ? `Attendance Summary — ${latestPeriod?.period_label ?? "—"}`
             : `Rekap Absensi — ${latestPeriod?.period_label ?? "—"}`
+        }
+        hint={
+          lang === "EN"
+            ? "Per-staff H/S/I/A/OFF counts + overtime hours for the active period."
+            : "Rekap H/S/I/A/OFF + jam lembur per staff untuk periode aktif."
         }
         actions={
           canWrite && latestPeriod ? (
@@ -255,7 +261,14 @@ export async function AbsensiTab({ supabase, lang, role }: Props) {
         )}
       </Section>
 
-      <Section title={lang === "EN" ? "Legend" : "Keterangan"}>
+      <Section
+        title={lang === "EN" ? "Legend" : "Keterangan"}
+        hint={
+          lang === "EN"
+            ? "Attendance code legend: H present, S sick, I excused, A absent, OFF non-operational."
+            : "Keterangan kode absensi: H hadir, S sakit, I izin, A alpa, OFF non-operasional."
+        }
+      >
         <div className="flex flex-wrap gap-2">
           {(["H", "S", "I", "A", "OFF"] as AttendanceStatus[]).map((s) => (
             <Badge key={s} tone={STATUS_TONE[s]}>

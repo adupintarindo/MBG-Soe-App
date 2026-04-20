@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { toISODate } from "@/lib/engine";
-import { getHoliday } from "@/lib/holidays";
+import { getHoliday, holidaysInRange } from "@/lib/holidays";
 import { CalendarGrid } from "./calendar-grid";
 import { PopulateControls } from "./populate-controls";
 import { LinkButton, PageContainer } from "@/components/ui";
@@ -78,6 +78,64 @@ function buildMonthMatrix(year: number, month: number): Date[][] {
 
 function fmtMonthKey(y: number, m: number): string {
   return `${y}-${String(m).padStart(2, "0")}`;
+}
+
+interface NoteEntry {
+  dateLabel: string;
+  reason: string;
+}
+
+// Group consecutive dates with the same label into ranges like "1–3 Jul".
+// Input: [{date: "2026-07-01", name: "X"}, {date: "2026-07-02", name: "X"}, ...]
+function groupConsecutive(
+  rows: { date: string; name: string }[],
+  lang: "ID" | "EN"
+): NoteEntry[] {
+  const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+  const result: NoteEntry[] = [];
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (
+      j + 1 < sorted.length &&
+      sorted[j + 1].name === sorted[i].name &&
+      isNextDay(sorted[j].date, sorted[j + 1].date)
+    ) {
+      j++;
+    }
+    result.push({
+      dateLabel: formatRange(sorted[i].date, sorted[j].date, lang),
+      reason: sorted[i].name
+    });
+    i = j + 1;
+  }
+  return result;
+}
+
+function isNextDay(a: string, b: string): boolean {
+  const [ay, am, ad] = a.split("-").map(Number);
+  const [by, bm, bd] = b.split("-").map(Number);
+  const da = new Date(ay, am - 1, ad);
+  const db = new Date(by, bm - 1, bd);
+  return Math.round((db.getTime() - da.getTime()) / 86400000) === 1;
+}
+
+function formatRange(startIso: string, endIso: string, lang: "ID" | "EN"): string {
+  const [sy, sm, sd] = startIso.split("-").map(Number);
+  const [ey, em, ed] = endIso.split("-").map(Number);
+  const sMonth = MONTHS.short[lang][sm - 1];
+  const eMonth = MONTHS.short[lang][em - 1];
+  if (startIso === endIso) {
+    return lang === "EN" ? `${sMonth} ${sd}, ${sy}` : `${sd} ${sMonth} ${sy}`;
+  }
+  if (sm === em && sy === ey) {
+    return lang === "EN"
+      ? `${sMonth} ${sd}–${ed}, ${sy}`
+      : `${sd}–${ed} ${sMonth} ${sy}`;
+  }
+  return lang === "EN"
+    ? `${sMonth} ${sd} – ${eMonth} ${ed}, ${ey}`
+    : `${sd} ${sMonth} – ${ed} ${eMonth} ${ey}`;
 }
 
 export default async function CalendarPage({
@@ -169,6 +227,25 @@ export default async function CalendarPage({
 
   const monthLabel = `${MONTHS.long[lang][month - 1]} ${year}`;
   const canWrite = WRITE_ROLES.has(profile.role);
+
+  // Build keterangan lists: holidays + non-op entries that fall within current month.
+  const monthStartIso = `${year}-${String(month).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const monthEndIso = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  const holidayEntries = groupConsecutive(
+    holidaysInRange(monthStartIso, monthEndIso).map((h) => ({
+      date: h.date,
+      name: h.name
+    })),
+    lang
+  );
+  const nonOpEntries = groupConsecutive(
+    nonOps
+      .filter((n) => n.op_date >= monthStartIso && n.op_date <= monthEndIso)
+      .map((n) => ({ date: n.op_date, name: n.reason })),
+    lang
+  );
+  const hasNotes = holidayEntries.length > 0 || nonOpEntries.length > 0;
 
   return (
     <div>
@@ -263,6 +340,55 @@ export default async function CalendarPage({
               recipientCount={recipientCount}
               canWrite={canWrite}
             />
+          </div>
+
+          {/* Keterangan hari libur & non-operasional bulan ini */}
+          <div className="border-t border-ink/10 bg-white px-5 py-4">
+            <div className="mb-2 text-[11px] font-black uppercase tracking-wide text-ink2/70">
+              {t("calendar.notesTitle", lang)}
+            </div>
+            {hasNotes ? (
+              <div className="flex flex-col gap-2.5">
+                {holidayEntries.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                    <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-black text-rose-900 ring-1 ring-rose-200">
+                      <span className="inline-block h-2 w-2 rounded-full bg-rose-300" />
+                      {t("calendar.notesHolidaySection", lang)}
+                    </div>
+                    {holidayEntries.map((h, i) => (
+                      <span
+                        key={`h-${i}`}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-rose-50/60 px-2 py-0.5 text-[11.5px] ring-1 ring-rose-100"
+                      >
+                        <span className="font-mono text-[10.5px] font-bold text-rose-900">{h.dateLabel}</span>
+                        <span className="font-semibold text-ink">{h.reason}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {nonOpEntries.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                    <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-black text-orange-900 ring-1 ring-orange-200">
+                      <span className="inline-block h-2 w-2 rounded-full bg-orange-300" />
+                      {t("calendar.notesNonOpSection", lang)}
+                    </div>
+                    {nonOpEntries.map((n, i) => (
+                      <span
+                        key={`n-${i}`}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-orange-50/60 px-2 py-0.5 text-[11.5px] ring-1 ring-orange-100"
+                      >
+                        <span className="font-mono text-[10.5px] font-bold text-orange-900">{n.dateLabel}</span>
+                        <span className="font-semibold text-ink">{n.reason}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-[12px] text-ink2/60">
+                {t("calendar.notesEmpty", lang)}
+              </p>
+            )}
           </div>
 
           {/* Legend */}

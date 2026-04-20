@@ -64,7 +64,9 @@ export default async function MenuMasterPage({
       .select("code, name_en, unit, category, price_idr, vol_weekly, active")
       .order("category")
       .order("code"),
-    supabase.from("supplier_items").select("supplier_id, item_code, is_main")
+    supabase
+      .from("supplier_items")
+      .select("supplier_id, item_code, is_main, suppliers(id, name)")
   ]);
 
   interface ItemRow {
@@ -97,6 +99,7 @@ export default async function MenuMasterPage({
     supplier_id: string;
     item_code: string;
     is_main: boolean;
+    suppliers: { id: string; name: string } | { id: string; name: string }[] | null;
   }
 
   const menus = (menusRes.data ?? []) as MenuRow[];
@@ -133,10 +136,21 @@ export default async function MenuMasterPage({
   }
   for (const list of bomByMenu.values()) list.sort((a, b) => b.grams - a.grams);
 
-  // Count supplier sources per item
-  const supCountByItem = new Map<string, number>();
+  // Collect supplier sources per item (id + name, main first)
+  type SupLink = { id: string; name: string; is_main: boolean };
+  const suppliersByItem = new Map<string, SupLink[]>();
   for (const s of supItems) {
-    supCountByItem.set(s.item_code, (supCountByItem.get(s.item_code) ?? 0) + 1);
+    const rel = Array.isArray(s.suppliers) ? s.suppliers[0] : s.suppliers;
+    if (!rel) continue;
+    const list = suppliersByItem.get(s.item_code) ?? [];
+    list.push({ id: rel.id, name: rel.name, is_main: s.is_main });
+    suppliersByItem.set(s.item_code, list);
+  }
+  for (const list of suppliersByItem.values()) {
+    list.sort((a, b) => {
+      if (a.is_main !== b.is_main) return a.is_main ? -1 : 1;
+      return a.name.localeCompare(b.name, "id");
+    });
   }
 
   // Compute per-menu totals
@@ -194,28 +208,9 @@ export default async function MenuMasterPage({
 
         {activeTab === "cycle" && (
           <>
-        <KpiGrid>
-          <KpiTile
-            label={t("menu.kpiActive", lang)}
-            value={menus.filter((m) => m.active).length.toString()}
-            sub={ti("menu.kpiActiveSub", lang, { n: menus.length })}
-          />
-          <KpiTile
-            label={t("menu.kpiAvgGram", lang)}
-            value={avgGrams.toString()}
-            sub={t("menu.kpiAvgGramSub", lang)}
-          />
-          <KpiTile
-            label={t("menu.kpiAvgCost", lang)}
-            value={formatIDR(avgCost)}
-            size="md"
-            tone="ok"
-            sub={t("menu.kpiAvgCostSub", lang)}
-          />
-        </KpiGrid>
-
         <Section
           title={ti("menu.cycleTitle", lang, { n: menus.length })}
+          hint={t("menu.cycleHint", lang)}
           noPad
         >
           <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
@@ -269,22 +264,11 @@ export default async function MenuMasterPage({
             ))}
           </div>
         </Section>
-
-        <p className="mt-8 text-center text-[11px] text-ink2/60">
-          {ti("menu.footer", lang, { n: menus.length })}
-        </p>
           </>
         )}
 
         {activeTab === "commodity" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                label={t("menu.kpiCommodity", lang)}
-                value={totalItems.toString()}
-                sub={ti("menu.kpiCommoditySub", lang, { n: categories.length })}
-              />
-            </KpiGrid>
             <Section
               title={ti("menu.commodityTitle", lang, { n: totalItems })}
               hint={t("menu.commodityHint", lang)}
@@ -299,7 +283,7 @@ export default async function MenuMasterPage({
                     unit: it.unit,
                     price_idr: Number(it.price_idr),
                     vol_weekly: Number(it.vol_weekly),
-                    supplier_count: supCountByItem.get(it.code) ?? 0,
+                    suppliers: suppliersByItem.get(it.code) ?? [],
                     active: it.active
                   })
                 )}

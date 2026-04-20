@@ -16,6 +16,7 @@ import {
   type FoodSampleLog,
   type SppgStaff
 } from "@/lib/bgn";
+import { formatDateLong } from "@/lib/engine";
 
 type Client = SupabaseClient<Database>;
 
@@ -109,6 +110,11 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
             ? "Food Sample Log (Lamp. 30a)"
             : "Log Sampel Makanan (Lamp. 30a)"
         }
+        hint={
+          lang === "EN"
+            ? "Retained food samples (kept 24h) with seal status and signatures. Source for Lampiran 30a."
+            : "Sampel makanan yang disimpan 24 jam beserta status segel dan tanda tangan. Sumber Lampiran 30a."
+        }
         actions={
           canWrite ? (
             <LinkButton
@@ -166,8 +172,8 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
                     : undefined;
                   return (
                     <tr key={l.id} className="border-b border-ink/5">
-                      <td className="px-2 py-2 font-mono text-[12px]">
-                        {l.delivery_date}
+                      <td className="px-2 py-2 text-[12px] font-semibold">
+                        {formatDateLong(l.delivery_date, lang)}
                       </td>
                       <td className="px-2 py-2 text-center tabular-nums">
                         #{l.delivery_seq}
@@ -175,8 +181,8 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
                       <td className="px-2 py-2 font-bold">
                         {sch?.name ?? "—"}
                       </td>
-                      <td className="px-2 py-2 font-mono text-[11px] text-ink2/70">
-                        {l.menu_assign_date ?? "—"}
+                      <td className="px-2 py-2 text-[11px] text-ink2/70">
+                        {l.menu_assign_date ? formatDateLong(l.menu_assign_date, lang) : "—"}
                       </td>
                       <td className="px-2 py-2 text-[12px] text-ink2/80">
                         {off?.full_name ?? "—"}

@@ -112,7 +112,7 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
   };
 
   return (
-    <Section title={t("tx.title", lang)}>
+    <Section title={t("tx.title", lang)} hint={t("tx.hint", lang)}>
       {dateRangeFiltered.length === 0 && !rangeActive ? (
         <div className="rounded-xl bg-ink/5 p-4 text-center text-sm text-ink2">
           {t("tx.empty", lang)}
@@ -169,6 +169,7 @@ function txColumns(lang: "ID" | "EN"): SortableColumn<TxRow>[] {
     {
       key: "date",
       label: t("common.dayDate", lang),
+      align: "left",
       sortValue: (r) => r.tx_date,
       render: (r) => (
         <span className="whitespace-nowrap text-[11px] font-semibold">

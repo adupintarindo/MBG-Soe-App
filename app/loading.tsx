@@ -2,7 +2,7 @@ export default function Loading() {
   return (
     <div aria-busy="true" aria-live="polite">
       <div className="border-b border-ink/10 bg-gradient-to-b from-paper to-white">
-        <div className="mx-auto max-w-7xl px-6 pb-3 pt-6">
+        <div className="mx-auto max-w-7xl px-4 pb-3 pt-6 sm:px-6">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
               <div className="h-8 w-64 animate-pulse rounded-lg bg-ink/10" />
@@ -35,7 +35,7 @@ export default function Loading() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-end justify-between gap-3">
           <div className="space-y-2">
             <div className="h-6 w-56 animate-pulse rounded bg-ink/10" />

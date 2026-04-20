@@ -1,20 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
-import { actionReadinessSnapshot } from "@/lib/engine";
 import { Nav } from "@/components/nav";
-import {
-  KpiGrid,
-  KpiTile,
-  PageContainer
-} from "@/components/ui";
+import { PageContainer } from "@/components/ui";
 import { SuppliersShell } from "./suppliers-shell";
 import type {
   SupplierRow,
   SupItemLink,
   InvoiceTx
 } from "./types";
-import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
@@ -80,47 +74,6 @@ export default async function SuppliersPage() {
       />
 
       <PageContainer>
-        <KpiGrid>
-          <KpiTile
-            icon="✅"
-            label={t("suppliers.kpiSigned", lang)}
-            value={signed.toString()}
-            tone="ok"
-            sub={t("suppliers.kpiSignedSub", lang)}
-          />
-          <KpiTile
-            icon="⏳"
-            label={t("suppliers.kpiAwaiting", lang)}
-            value={awaiting.toString()}
-            tone="warn"
-            sub={t("suppliers.kpiAwaitingSub", lang)}
-          />
-          <KpiTile
-            icon="❌"
-            label={t("suppliers.kpiRejected", lang)}
-            value={rejected.toString()}
-            tone={rejected > 0 ? "bad" : "default"}
-            sub={t("suppliers.kpiRejectedSub", lang)}
-          />
-          <KpiTile
-            icon="📋"
-            label={t("suppliers.kpiReadiness", lang)}
-            value={`${readiness.readiness_pct.toFixed(0)}%`}
-            tone={
-              readiness.overdue_cnt > 0
-                ? "bad"
-                : readiness.readiness_pct >= 80
-                  ? "ok"
-                  : "warn"
-            }
-            sub={ti("suppliers.kpiReadinessSub", lang, {
-              done: readiness.done_cnt,
-              total: readiness.total,
-              overdue: readiness.overdue_cnt
-            })}
-          />
-        </KpiGrid>
-
         <SuppliersShell
           suppliers={suppliers}
           supItems={supItems}

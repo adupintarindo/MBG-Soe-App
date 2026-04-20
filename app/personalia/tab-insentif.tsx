@@ -116,6 +116,11 @@ export async function InsentifTab({ supabase, lang, role }: Props) {
             ? "Kader Incentives (Lamp. 29a)"
             : "Insentif Kader (Lamp. 29a) · Senin + Kamis"
         }
+        hint={
+          lang === "EN"
+            ? "Posyandu kader incentives for Monday & Thursday service days. Source for Lampiran 29a."
+            : "Insentif kader posyandu hari Senin & Kamis. Sumber Lampiran 29a."
+        }
         actions={
           canWrite ? (
             <LinkButton
@@ -229,6 +234,11 @@ export async function InsentifTab({ supabase, lang, role }: Props) {
           lang === "EN"
             ? "School PIC Incentives (Lamp. 29b)"
             : "Insentif PIC Sekolah (Lamp. 29b)"
+        }
+        hint={
+          lang === "EN"
+            ? "Per-school PIC incentive ledger. Source for Lampiran 29b."
+            : "Daftar insentif PIC sekolah per lokasi. Sumber Lampiran 29b."
         }
         actions={
           canWrite ? (

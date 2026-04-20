@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { UserRole } from "@/lib/roles";
 import type { Lang } from "@/lib/i18n";
-import { formatIDR } from "@/lib/engine";
+import { formatIDR, formatDateShort, formatDateLong } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
@@ -80,7 +80,7 @@ export async function GajiTab({ supabase, lang, role }: Props) {
           size="md"
           sub={
             latestPeriod
-              ? `${latestPeriod.start_date} → ${latestPeriod.end_date}`
+              ? `${formatDateShort(latestPeriod.start_date)} → ${formatDateShort(latestPeriod.end_date)}`
               : lang === "EN"
                 ? "No period yet"
                 : "Belum ada periode"
@@ -114,6 +114,11 @@ export async function GajiTab({ supabase, lang, role }: Props) {
           lang === "EN"
             ? "Payroll Periods (Lamp. 28)"
             : "Periode Gaji (Lamp. 28)"
+        }
+        hint={
+          lang === "EN"
+            ? "Draft/final/paid payroll periods. Create a period before generating slips."
+            : "Periode gaji draft/final/paid. Buat periode dulu sebelum generate slip."
         }
         actions={
           canWrite ? (
@@ -162,24 +167,16 @@ export async function GajiTab({ supabase, lang, role }: Props) {
                   >
                     <td className="px-2 py-2 font-bold">{p.period_label}</td>
                     <td className="px-2 py-2 font-mono text-[12px] text-ink2/80">
-                      {p.start_date} → {p.end_date}
+                      {formatDateShort(p.start_date)} → {formatDateShort(p.end_date)}
                     </td>
                     <td className="px-2 py-2">
                       <Badge tone={STATUS_TONE[p.status]}>{p.status}</Badge>
                     </td>
                     <td className="px-2 py-2 text-[12px] text-ink2/70">
-                      {p.finalized_at
-                        ? new Date(p.finalized_at).toLocaleDateString(
-                            lang === "EN" ? "en-US" : "id-ID"
-                          )
-                        : "—"}
+                      {p.finalized_at ? formatDateLong(p.finalized_at, lang) : "—"}
                     </td>
                     <td className="px-2 py-2 text-[12px] text-ink2/70">
-                      {p.paid_at
-                        ? new Date(p.paid_at).toLocaleDateString(
-                            lang === "EN" ? "en-US" : "id-ID"
-                          )
-                        : "—"}
+                      {p.paid_at ? formatDateLong(p.paid_at, lang) : "—"}
                     </td>
                   </tr>
                 ))}
@@ -198,6 +195,11 @@ export async function GajiTab({ supabase, lang, role }: Props) {
             : lang === "EN"
               ? "Slips"
               : "Slip Gaji"
+        }
+        hint={
+          lang === "EN"
+            ? "Per-staff payroll slips for the active period: base + overtime − deductions."
+            : "Slip gaji per staf periode aktif: gaji pokok + lembur − potongan."
         }
         actions={
           canWrite && latestPeriod ? (

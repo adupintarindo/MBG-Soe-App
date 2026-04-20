@@ -230,7 +230,14 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
           />
         </KpiGrid>
 
-        <Section title={lang === "EN" ? "Line items" : "Item PO"}>
+        <Section
+          title={lang === "EN" ? "Line items" : "Item PO"}
+          hint={
+            lang === "EN"
+              ? "Items ordered on this PO with qty, unit price, and line total."
+              : "Item yang dipesan di PO ini dengan qty, harga satuan, dan subtotal."
+          }
+        >
           <div className="overflow-x-auto rounded-xl ring-1 ring-ink/10">
             <table className="min-w-full text-sm">
               <thead className="bg-ink2/5 text-[11px] font-bold uppercase text-ink2">
@@ -287,6 +294,11 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
         {canAck && (
           <Section
             title={t("sup.colDecision", lang)}
+            hint={
+              lang === "EN"
+                ? "Acknowledge this PO: accept as-is, reject with reason, or propose partial/alternative delivery."
+                : "Konfirmasi PO: terima penuh, tolak dengan alasan, atau ajukan partial/alternatif pengiriman."
+            }
             accent={ackDecision === "pending" ? "warn" : "default"}
           >
             <AckForm
@@ -300,7 +312,14 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
         )}
 
         {!isSupplier && ack && (
-          <Section title={t("sup.colDecision", lang)}>
+          <Section
+            title={t("sup.colDecision", lang)}
+            hint={
+              lang === "EN"
+                ? "Supplier response to this PO: accepted, rejected, or partial with notes."
+                : "Respons supplier atas PO ini: diterima, ditolak, atau sebagian dengan catatan."
+            }
+          >
             <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
               <div>
                 <div className="text-[11px] font-bold text-ink2">
@@ -354,6 +373,11 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
 
         <Section
           title={`💬 ${t("sup.messagesTitle", lang).replace("{po}", po.no)}`}
+          hint={
+            lang === "EN"
+              ? "Two-way thread between SPPG and supplier tied to this PO. Use for clarifications and updates."
+              : "Utas komunikasi dua arah SPPG↔supplier terikat PO ini. Untuk klarifikasi dan update."
+          }
         >
           <MessageThread
             poNo={po.no}
@@ -364,7 +388,14 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
         </Section>
 
         {(grns.length > 0 || invoices.length > 0) && (
-          <Section title={lang === "EN" ? "Related documents" : "Dokumen Terkait"}>
+          <Section
+            title={lang === "EN" ? "Related documents" : "Dokumen Terkait"}
+            hint={
+              lang === "EN"
+                ? "GRN receipts and invoices linked to this PO."
+                : "Goods Receipt Notes dan invoice yang terhubung dengan PO ini."
+            }
+          >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <div className="mb-2 text-[11px] font-bold text-ink2">

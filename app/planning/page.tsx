@@ -30,6 +30,7 @@ import {
 } from "@/components/planning-tables";
 import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
+import { porsiBreakdown } from "@/lib/bgn";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,7 @@ export default async function PlanningPage({
     {
       id: "matrix",
       icon: "📊",
-      label: lang === "EN" ? "6-Month Matrix" : "Matrix 6-Bulan",
+      label: lang === "EN" ? "5-Month Matrix" : "Matrix 5-Bulan",
       href: "/planning?tab=matrix"
     },
     {
@@ -91,7 +92,7 @@ export default async function PlanningPage({
 
   const [daily, monthly, upcoming, itemsRes] = await Promise.all([
     dailyPlanning(supabase, 30).catch(() => [] as DailyPlan[]),
-    monthlyRequirements(supabase, monthStart, 6).catch(
+    monthlyRequirements(supabase, monthStart, 5).catch(
       () => [] as MonthlyRequirement[]
     ),
     upcomingShortages(supabase, 30).catch(() => [] as UpcomingShortage[]),
@@ -101,10 +102,11 @@ export default async function PlanningPage({
   const items = (itemsRes.data ?? []) as ItemLite[];
   const itemByCode = new Map(items.map((i) => [i.code, i]));
 
-  // Monthly matrix
-  const months = Array.from(
-    new Set(monthly.map((r) => r.month.slice(0, 7)))
-  ).sort();
+  // Monthly matrix — always show 5 consecutive months from monthStart
+  const months = Array.from({ length: 5 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
   const itemTotals = new Map<string, number>();
   const itemCost = new Map<string, number>();
   for (const r of monthly) {
@@ -170,15 +172,64 @@ export default async function PlanningPage({
     months.map((m) => [m, monthLabel(m)])
   );
 
-  const dailyRows: PlanningDailyRow[] = daily.map((p) => ({
-    op_date: p.op_date,
-    menu_name: p.menu_name ?? null,
-    porsi_total: p.porsi_total,
-    porsi_eff: Number(p.porsi_eff),
-    total_kg: Number(p.total_kg),
-    short_items: p.short_items,
-    operasional: p.operasional
-  }));
+  const porsiByDate = new Map<
+    string,
+    { kecil: number; besar: number; total: number }
+  >();
+  const breakdownByDate = new Map<
+    string,
+    {
+      schools_count: number;
+      students_total: number;
+      pregnant_count: number;
+      toddler_count: number;
+    }
+  >();
+  await Promise.all(
+    daily.map(async (p) => {
+      const [pcRes, bdRes] = await Promise.all([
+        supabase.rpc("porsi_counts", { p_date: p.op_date }),
+        porsiBreakdown(supabase, p.op_date).catch(() => null)
+      ]);
+      const row = (pcRes.data ?? [])[0] as
+        | { besar: number; kecil: number; total: number }
+        | undefined;
+      if (row) {
+        porsiByDate.set(p.op_date, {
+          kecil: Number(row.kecil ?? 0),
+          besar: Number(row.besar ?? 0),
+          total: Number(row.total ?? 0)
+        });
+      }
+      if (bdRes) {
+        breakdownByDate.set(p.op_date, {
+          schools_count: bdRes.schools_count,
+          students_total: bdRes.students_total,
+          pregnant_count: bdRes.pregnant_count,
+          toddler_count: bdRes.toddler_count
+        });
+      }
+    })
+  );
+
+  const dailyRows: PlanningDailyRow[] = daily.map((p) => {
+    const porsi = porsiByDate.get(p.op_date);
+    const bd = breakdownByDate.get(p.op_date);
+    return {
+      op_date: p.op_date,
+      menu_name: p.menu_name ?? null,
+      porsi_total: p.porsi_total,
+      porsi_eff: Number(p.porsi_eff),
+      operasional: p.operasional,
+      schools: bd?.schools_count ?? 0,
+      students: bd?.students_total ?? 0,
+      pregnant: bd?.pregnant_count ?? 0,
+      toddler: bd?.toddler_count ?? 0,
+      kecil: porsi?.kecil ?? 0,
+      besar: porsi?.besar ?? 0,
+      total: porsi?.total ?? p.porsi_total
+    };
+  });
 
   return (
     <div>
@@ -194,22 +245,6 @@ export default async function PlanningPage({
 
         {activeTab === "matrix" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="💰"
-                label={t("planning.kpiEstSpend", lang)}
-                value={formatIDR(grandTotalCost)}
-                tone="ok"
-                size="md"
-                sub={t("planning.kpiEstSpendSub", lang)}
-              />
-              <KpiTile
-                icon="⚖️"
-                label={t("planning.kpiTotalKg", lang)}
-                value={formatKg(grandTotalKg, 0)}
-                sub={lang === "EN" ? "across 6 months" : "total 6 bulan"}
-              />
-            </KpiGrid>
             <Section
               title={ti("planning.matrixTitle", lang, {
                 months: months.length,
@@ -253,7 +288,7 @@ export default async function PlanningPage({
                 sub={t("planning.kpiTotalKgSub", lang)}
               />
             </KpiGrid>
-            <Section title={t("planning.dailyTitle", lang)}>
+            <Section title={t("planning.dailyTitle", lang)} hint={t("planning.dailyHint", lang)}>
               <PlanningDailyTable lang={lang} rows={dailyRows} />
             </Section>
           </>
@@ -289,7 +324,7 @@ export default async function PlanningPage({
           ) : (
             <div>
               <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
+                <div className="rounded-xl bg-white px-3 py-2.5 ring-1 ring-amber-200/70">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
                     {t("planning.fcHariTerdampak", lang)}
                   </div>
@@ -300,7 +335,7 @@ export default async function PlanningPage({
                     </span>
                   </div>
                 </div>
-                <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
+                <div className="rounded-xl bg-white px-3 py-2.5 ring-1 ring-amber-200/70">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
                     {t("planning.fcTotalGap", lang)}
                   </div>
@@ -308,7 +343,7 @@ export default async function PlanningPage({
                     {formatKg(upcomingTotalGap)}
                   </div>
                 </div>
-                <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
+                <div className="rounded-xl bg-white px-3 py-2.5 ring-1 ring-amber-200/70">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
                     {t("planning.fcPeak", lang)}
                   </div>
@@ -316,7 +351,7 @@ export default async function PlanningPage({
                     {formatKg(upcomingPeakGap)}
                   </div>
                 </div>
-                <div className="rounded-xl bg-gradient-to-br from-amber-50 to-white px-3 py-2.5 ring-1 ring-amber-200/70">
+                <div className="rounded-xl bg-white px-3 py-2.5 ring-1 ring-amber-200/70">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">
                     {t("planning.fcTotalItems", lang)}
                   </div>
@@ -341,7 +376,7 @@ export default async function PlanningPage({
                       text: "text-red-900",
                       sub: "text-red-700/80",
                       ring: "ring-red-200/80",
-                      bg: "bg-gradient-to-br from-red-50 to-white"
+                      bg: "bg-white"
                     },
                     high: {
                       dot: "bg-amber-500",
@@ -350,7 +385,7 @@ export default async function PlanningPage({
                       text: "text-amber-900",
                       sub: "text-amber-800/80",
                       ring: "ring-amber-200/80",
-                      bg: "bg-gradient-to-br from-amber-50 to-white"
+                      bg: "bg-white"
                     },
                     med: {
                       dot: "bg-yellow-400",
@@ -359,7 +394,7 @@ export default async function PlanningPage({
                       text: "text-yellow-900",
                       sub: "text-yellow-800/80",
                       ring: "ring-yellow-200/80",
-                      bg: "bg-gradient-to-br from-yellow-50 to-white"
+                      bg: "bg-white"
                     }
                   }[tier];
                   const isWknd = d.getDay() === 0 || d.getDay() === 6;

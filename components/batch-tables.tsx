@@ -182,7 +182,9 @@ export function BatchTable({
       label: t("batch.colExpiry", lang),
       sortValue: (r) => r.expiry_date ?? "",
       render: (r) => (
-        <span className="font-mono text-[11px]">{r.expiry_date ?? "—"}</span>
+        <span className="text-[11px]">
+          {r.expiry_date ? formatDateLong(r.expiry_date, lang) : "—"}
+        </span>
       )
     },
     {

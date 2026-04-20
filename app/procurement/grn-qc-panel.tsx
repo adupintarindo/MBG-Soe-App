@@ -92,6 +92,7 @@ function grnColumns({
     {
       key: "date",
       label: t("common.dayDate", lang),
+      align: "left",
       sortValue: (r) => r.grn_date,
       render: (r) => <span className="text-xs">{formatDateLong(r.grn_date, lang)}</span>
     },

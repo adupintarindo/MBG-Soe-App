@@ -78,6 +78,11 @@ export async function PettyCashTab({ supabase, lang, role }: Props) {
 
       <Section
         title={lang === "EN" ? "Petty Cash (Lamp. 30f)" : "Kas Kecil (Lamp. 30f)"}
+        hint={
+          lang === "EN"
+            ? "Small operational disbursements under the petty cash float. Log for Lampiran 30f."
+            : "Pengeluaran operasional kecil dari kas kecil. Log untuk Lampiran 30f."
+        }
         actions={
           canWrite ? (
             <LinkButton href="/keuangan/petty-cash/new" variant="primary" size="sm">
@@ -101,7 +106,7 @@ export async function PettyCashTab({ supabase, lang, role }: Props) {
               <thead className="border-b-2 border-ink/10 font-display text-[11px] uppercase tracking-wide text-ink2/70">
                 <tr>
                   <th className="px-2 py-2">
-                    {lang === "EN" ? "Date" : "Tanggal"}
+                    {lang === "EN" ? "Day, Date" : "Hari, Tanggal"}
                   </th>
                   <th className="px-2 py-2">
                     {lang === "EN" ? "Direction" : "Arah"}
@@ -120,10 +125,10 @@ export async function PettyCashTab({ supabase, lang, role }: Props) {
               <tbody>
                 {txs.map((r) => (
                   <tr key={r.id} className="border-b border-ink/5">
-                    <td className="px-2 py-2 font-mono text-[12px]">
-                      {formatDateShort(r.tx_date)}
+                    <td className="px-2 py-2 text-[12px] font-semibold">
+                      {formatDateLong(r.tx_date, lang)}
                       {r.tx_time && (
-                        <span className="ml-1 text-ink2/50">
+                        <span className="ml-1 font-mono text-ink2/50">
                           {r.tx_time.slice(0, 5)}
                         </span>
                       )}

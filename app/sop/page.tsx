@@ -54,8 +54,6 @@ export default async function SopPage() {
     grouped.set(s.category, list);
   }
 
-  const opCount = grouped.get("OPERASIONAL")?.length ?? 0;
-  const hyCount = grouped.get("HIGIENE")?.length ?? 0;
   const totalSteps = SOPS.reduce((s, sop) => s + sop.steps.length, 0);
   const totalRisks = SOPS.reduce((s, sop) => s + sop.risks.length, 0);
 
@@ -85,14 +83,7 @@ export default async function SopPage() {
       />
 
       <PageContainer>
-        <PageHeader
-          actions={
-            <>
-              <Badge tone="info">{ti("sop.badgeOp", lang, { n: opCount })}</Badge>
-              <Badge tone="ok">{ti("sop.badgeHg", lang, { n: hyCount })}</Badge>
-            </>
-          }
-        />
+        <PageHeader />
 
         <KpiGrid>
           <KpiTile

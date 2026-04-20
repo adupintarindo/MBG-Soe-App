@@ -12,8 +12,6 @@ import {
 } from "@/lib/engine";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
@@ -259,39 +257,6 @@ export default async function StockPage({
 
         {activeTab === "position" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="📦"
-                label={t("stock.kpiSku", lang)}
-                value={items.length.toString()}
-                sub={ti("stock.kpiSkuSub", lang, { n: items.length - emptyItems })}
-              />
-              <KpiTile
-                icon="💰"
-                label={t("stock.kpiValue", lang)}
-                value={formatIDR(totalValue)}
-                size="md"
-                tone="ok"
-                sub={t("stock.kpiValueSub", lang)}
-              />
-              <KpiTile
-                icon="📉"
-                label={t("stock.kpiEmpty", lang)}
-                value={emptyItems.toString()}
-                tone={emptyItems > 0 ? "warn" : "default"}
-                sub={ti("stock.kpiEmptySub", lang, {
-                  pct: ((emptyItems / Math.max(1, items.length)) * 100).toFixed(0)
-                })}
-              />
-              <KpiTile
-                icon="⚠️"
-                label={t("stock.kpiShort", lang)}
-                value={shortCount.toString()}
-                tone={shortCount > 0 ? "bad" : "ok"}
-                sub={t("stock.kpiShortSub", lang)}
-              />
-            </KpiGrid>
-
             {shortCount > 0 && (
               <Section
                 title={ti("stock.shortTitle", lang, { n: shortCount })}
@@ -304,6 +269,7 @@ export default async function StockPage({
 
             <Section
               title={ti("stock.masterTitle", lang, { n: items.length })}
+              hint={t("stock.masterHint", lang)}
               actions={
                 <span className="text-[11px] font-semibold text-ink2/70">
                   {t("stock.catTotalValue", lang)}{" "}
@@ -322,29 +288,6 @@ export default async function StockPage({
 
         {activeTab === "expiry" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="⏰"
-                label={t("batch.kpiExpiring", lang)}
-                value={urgentCount.toString()}
-                tone={urgentCount > 0 ? "warn" : "default"}
-                sub={t("batch.kpiExpiringSub", lang)}
-              />
-              <KpiTile
-                icon="🚫"
-                label={t("batch.kpiExpired", lang)}
-                value={expiredCount.toString()}
-                tone={expiredCount > 0 ? "bad" : "default"}
-                sub={t("batch.kpiExpiredSub", lang)}
-              />
-              <KpiTile
-                icon="⚖️"
-                label={t("batch.kpiQtyAtRisk", lang)}
-                value={qtyAtRisk.toFixed(1)}
-                tone={qtyAtRisk > 0 ? "warn" : "default"}
-                sub={t("batch.kpiQtyAtRiskSub", lang)}
-              />
-            </KpiGrid>
             <Section
               title={ti("batch.expiringTitle", lang, { days: 14 })}
               hint={t("batch.expiringHint", lang)}
@@ -365,15 +308,7 @@ export default async function StockPage({
 
         {activeTab === "ledger" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="📊"
-                label={t("batch.kpiBatchTotal", lang)}
-                value={batchRows.length.toString()}
-                sub={t("batch.kpiBatchTotalSub", lang)}
-              />
-            </KpiGrid>
-            <Section title={ti("batch.allTitle", lang, { n: batchRows.length })}>
+            <Section title={ti("batch.allTitle", lang, { n: batchRows.length })} hint={t("batch.allHint", lang)}>
               {batchRows.length === 0 ? (
                 <EmptyState message={t("batch.allEmpty", lang)} />
               ) : (
@@ -384,7 +319,7 @@ export default async function StockPage({
         )}
 
         {activeTab === "moves" && (
-          <Section title={t("stock.movesTitle", lang)}>
+          <Section title={t("stock.movesTitle", lang)} hint={t("stock.movesHint", lang)}>
             {moves.length === 0 ? (
               <EmptyState message={t("stock.movesEmpty", lang)} />
             ) : (

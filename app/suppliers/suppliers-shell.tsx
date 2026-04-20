@@ -440,7 +440,7 @@ export function SuppliersShell({
       </Section>
 
       {rejected.length > 0 && (
-        <Section title={t("suppliers.rejectedTitle", lang)} accent="bad">
+        <Section title={t("suppliers.rejectedTitle", lang)} hint={t("suppliers.rejectedHint", lang)} accent="bad">
           <div className="space-y-2">
             {rejected.map((s) => (
               <Link
@@ -463,7 +463,7 @@ export function SuppliersShell({
         </Section>
       )}
 
-      <Section title={ti("suppliers.tableTitle", lang, { n: suppliers.length })}>
+      <Section title={ti("suppliers.tableTitle", lang, { n: suppliers.length })} hint={t("suppliers.tableHint", lang)}>
         {(() => {
           const columns: SortableColumn<SupplierRow>[] = [
             {

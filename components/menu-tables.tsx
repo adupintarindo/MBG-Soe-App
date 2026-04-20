@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CategoryBadge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { t, type Lang } from "@/lib/i18n";
@@ -74,6 +75,12 @@ export function BomTable({
   );
 }
 
+export type CommoditySupplier = {
+  id: string;
+  name: string;
+  is_main: boolean;
+};
+
 export type CommodityRow = {
   code: string;
   displayCode: string;
@@ -81,7 +88,7 @@ export type CommodityRow = {
   unit: string;
   price_idr: number;
   vol_weekly: number;
-  supplier_count: number;
+  suppliers: CommoditySupplier[];
   active: boolean;
 };
 
@@ -142,11 +149,34 @@ export function CommodityTable({
     {
       key: "sup",
       label: t("common.supplier", lang),
-      align: "right",
-      sortValue: (r) => r.supplier_count,
-      render: (r) => (
-        <span className="font-mono text-xs">{r.supplier_count}</span>
-      )
+      align: "left",
+      sortValue: (r) => r.suppliers.length,
+      searchValue: (r) => r.suppliers.map((s) => s.name).join(" "),
+      exportValue: (r) =>
+        r.suppliers.length === 0
+          ? ""
+          : r.suppliers.map((s) => s.name).join(", "),
+      render: (r) =>
+        r.suppliers.length === 0 ? (
+          <span className="text-ink2/50">—</span>
+        ) : (
+          <div className="flex flex-wrap justify-start gap-1">
+            {r.suppliers.map((s) => (
+              <Link
+                key={s.id}
+                href={`/suppliers/${s.id}`}
+                title={s.is_main ? `${s.name} (utama)` : s.name}
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold ring-1 transition hover:brightness-95 ${
+                  s.is_main
+                    ? "bg-accent-strong/10 text-accent-strong ring-accent-strong/30"
+                    : "bg-paper text-ink ring-ink/10 hover:bg-ink/[0.04]"
+                }`}
+              >
+                {s.name}
+              </Link>
+            ))}
+          </div>
+        )
     }
   ];
 

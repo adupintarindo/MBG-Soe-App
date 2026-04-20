@@ -215,7 +215,7 @@ export default async function DeliveriesPage() {
           />
         </KpiGrid>
 
-        <Section title={t("del.todayTitle", lang)}>
+        <Section title={t("del.todayTitle", lang)} hint={t("del.todayHint", lang)}>
           {!todayRow ? (
             <EmptyState
               tone="warn"
@@ -233,6 +233,7 @@ export default async function DeliveriesPage() {
 
         <Section
           title={ti("del.historyTitle", lang, { n: deliveryRows.length })}
+          hint={t("del.historyHint", lang)}
         >
           {deliveryRows.length === 0 ? (
             <EmptyState message={t("common.noData", lang)} />

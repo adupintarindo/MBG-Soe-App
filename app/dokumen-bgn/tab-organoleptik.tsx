@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { UserRole } from "@/lib/roles";
 import type { Lang } from "@/lib/i18n";
+import { formatDateLong } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
@@ -144,7 +145,14 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
         />
       </KpiGrid>
 
-      <Section title={lang === "EN" ? "Phase Breakdown" : "Fase Pengujian"}>
+      <Section
+        title={lang === "EN" ? "Phase Breakdown" : "Fase Pengujian"}
+        hint={
+          lang === "EN"
+            ? "Organoleptic test results per phase: color, aroma, taste, and texture scores."
+            : "Hasil uji organoleptik per fase: skor warna, aroma, rasa, dan tekstur."
+        }
+      >
         {tests.length === 0 ? (
           <EmptyState message={lang === "EN" ? "No data." : "Belum ada data."} />
         ) : (
@@ -163,6 +171,11 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
           lang === "EN"
             ? "Organoleptic Test Log (Lamp. 26)"
             : "Log Uji Organoleptik (Lamp. 26)"
+        }
+        hint={
+          lang === "EN"
+            ? "Sensory QC test records (appearance, aroma, taste, texture) per cooking phase. Source for Lampiran 26."
+            : "Catatan uji sensorik (rupa, aroma, rasa, tekstur) per tahap masak. Sumber Lampiran 26."
         }
         actions={
           canWrite ? (
@@ -191,7 +204,7 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
               <thead className="border-b-2 border-ink/10 font-display text-[11px] uppercase tracking-wide text-ink2/70">
                 <tr>
                   <th className="px-2 py-2">
-                    {lang === "EN" ? "Date" : "Tanggal"}
+                    {lang === "EN" ? "Day, Date" : "Hari, Tanggal"}
                   </th>
                   <th className="px-2 py-2">
                     {lang === "EN" ? "Phase" : "Fase"}
@@ -229,8 +242,8 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
                     : undefined;
                   return (
                     <tr key={t.id} className="border-b border-ink/5">
-                      <td className="px-2 py-2 font-mono text-[12px]">
-                        {t.test_date}
+                      <td className="px-2 py-2 text-[12px] font-semibold">
+                        {formatDateLong(t.test_date, lang)}
                       </td>
                       <td className="px-2 py-2">
                         <Badge tone={PHASE_TONE[t.test_phase]}>

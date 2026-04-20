@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import type { UserRole } from "@/lib/roles";
 import type { Lang } from "@/lib/i18n";
-import { formatIDR } from "@/lib/engine";
+import { formatIDR, formatDateLong } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
@@ -101,6 +101,11 @@ export async function BukuBesarTab({ supabase, lang, role }: Props) {
 
       <Section
         title={lang === "EN" ? "Chart of Accounts" : "Chart of Accounts (Bagan Akun)"}
+        hint={
+          lang === "EN"
+            ? "Master list of ledger accounts used across SPPG bookkeeping."
+            : "Daftar induk akun yang dipakai pembukuan SPPG."
+        }
       >
         {accounts.length === 0 ? (
           <EmptyState
@@ -155,6 +160,11 @@ export async function BukuBesarTab({ supabase, lang, role }: Props) {
 
       <Section
         title={lang === "EN" ? "General Ledger (Lamp. 30e)" : "Buku Besar (Lamp. 30e)"}
+        hint={
+          lang === "EN"
+            ? "Double-entry journal log grouped by account. Source for Lampiran 30e."
+            : "Jurnal double-entry per akun. Sumber untuk Lampiran 30e."
+        }
         actions={
           canWrite ? (
             <LinkButton href="/keuangan/buku-besar/new" variant="primary" size="sm">
@@ -175,7 +185,7 @@ export async function BukuBesarTab({ supabase, lang, role }: Props) {
               <thead className="border-b-2 border-ink/10 font-display text-[11px] uppercase tracking-wide text-ink2/70">
                 <tr>
                   <th className="px-2 py-2">
-                    {lang === "EN" ? "Date" : "Tanggal"}
+                    {lang === "EN" ? "Day, Date" : "Hari, Tanggal"}
                   </th>
                   <th className="px-2 py-2">
                     {lang === "EN" ? "Description" : "Keterangan"}
@@ -191,8 +201,8 @@ export async function BukuBesarTab({ supabase, lang, role }: Props) {
               <tbody>
                 {entries.map((e) => (
                   <tr key={e.id} className="border-b border-ink/5">
-                    <td className="px-2 py-2 font-mono text-[12px]">
-                      {e.entry_date}
+                    <td className="px-2 py-2 text-[12px] font-semibold">
+                      {formatDateLong(e.entry_date, lang)}
                     </td>
                     <td className="px-2 py-2 text-ink2/80">
                       {e.description ?? "—"}

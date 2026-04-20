@@ -113,6 +113,11 @@ export async function TimSppgTab({ supabase, lang, role }: Props) {
         title={
           lang === "EN" ? "SPPG Team Roster (Lamp. 27)" : "Daftar Tim SPPG (Lamp. 27)"
         }
+        hint={
+          lang === "EN"
+            ? "Active SPPG personnel with NIK, contact, bank account, and base salary. Source for Lampiran 27."
+            : "Staf SPPG aktif beserta NIK, kontak, rekening, dan gaji pokok. Sumber Lampiran 27."
+        }
         actions={
           canWrite ? (
             <LinkButton href="/personalia/tim/new" variant="primary" size="sm">
@@ -205,7 +210,14 @@ export async function TimSppgTab({ supabase, lang, role }: Props) {
         )}
       </Section>
 
-      <Section title={lang === "EN" ? "Role Breakdown" : "Sebaran Posisi"}>
+      <Section
+        title={lang === "EN" ? "Role Breakdown" : "Sebaran Posisi"}
+        hint={
+          lang === "EN"
+            ? "Headcount distribution by role across the SPPG team."
+            : "Distribusi jumlah staf per posisi di tim SPPG."
+        }
+      >
         {Object.keys(roleCount).length === 0 ? (
           <EmptyState
             message={lang === "EN" ? "No data." : "Belum ada data."}

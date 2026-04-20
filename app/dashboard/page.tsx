@@ -52,9 +52,33 @@ import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+type SearchParams = { from?: string; to?: string; demoStock?: string };
+
+const DEMO_SHORTAGES: import("@/lib/engine").Shortage[] = [
+  { item_code: "Beras Premium", required: 120.5, on_hand: 45.25, gap: 75.25, unit: "kg" },
+  { item_code: "Ayam Karkas", required: 80.0, on_hand: 22.5, gap: 57.5, unit: "kg" },
+  { item_code: "Telur Ayam Ras", required: 60.0, on_hand: 18.75, gap: 41.25, unit: "kg" },
+  { item_code: "Tahu Putih", required: 45.0, on_hand: 12.0, gap: 33.0, unit: "kg" },
+  { item_code: "Wortel Orange", required: 38.5, on_hand: 10.5, gap: 28.0, unit: "kg" },
+  { item_code: "Bayam Hijau", required: 30.0, on_hand: 8.25, gap: 21.75, unit: "kg" },
+  { item_code: "Minyak Goreng Curah", required: 25.0, on_hand: 6.5, gap: 18.5, unit: "liter" },
+  { item_code: "Buah - Pisang Ambon", required: 220.0, on_hand: 165.0, gap: 55.0, unit: "buah" }
+];
+
+function isValidIsoDate(s: string | undefined): s is string {
+  return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+export default async function DashboardPage({
+  searchParams
+}: {
+  searchParams?: Promise<SearchParams> | SearchParams;
+}) {
   const supabase = createClient();
   const lang = getLang();
+  const sp = (searchParams
+    ? await Promise.resolve(searchParams)
+    : {}) as SearchParams;
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -79,6 +103,10 @@ export default async function DashboardPage() {
     new Date(now.getFullYear(), now.getMonth(), 1)
   );
   const mrStart = monthStart; // 4-month matrix starts this month
+
+  // Supplier-spend date range override via URL (?from=&to=)
+  const spendFrom = isValidIsoDate(sp.from) ? sp.from : monthStart;
+  const spendTo = isValidIsoDate(sp.to) ? sp.to : today;
 
   // ---- parallel fetches ----
   const [
@@ -106,10 +134,10 @@ export default async function DashboardPage() {
     })),
     stockShortageForDate(supabase, today).catch(() => []),
     upcomingShortages(supabase, 14).catch(() => []),
-    monthlyRequirements(supabase, mrStart, 4).catch(
+    monthlyRequirements(supabase, mrStart, 5).catch(
       () => [] as MonthlyRequirement[]
     ),
-    topSuppliersBySpend(supabase, monthStart, today, 1000).catch(
+    topSuppliersBySpend(supabase, spendFrom, spendTo, 1000).catch(
       () => [] as TopSupplier[]
     ),
     dailyPlanning(supabase, 10).catch(() => [] as DailyPlan[]),
@@ -207,7 +235,9 @@ export default async function DashboardPage() {
   }
 
   // ---- derived ----
-  const shortItems = shortages.filter((s) => Number(s.gap) > 0);
+  const demoStock = sp.demoStock === "1" || sp.demoStock === "true";
+  const effectiveShortages = demoStock ? DEMO_SHORTAGES : shortages;
+  const shortItems = effectiveShortages.filter((s) => Number(s.gap) > 0);
   const totalGap = shortItems.reduce((s, x) => s + Number(x.gap || 0), 0);
 
   // Transaction log with supplier names
@@ -502,6 +532,7 @@ export default async function DashboardPage() {
         <Section
           banner
           title={t("dashboard.scheduleTitle", lang)}
+          hint={t("dashboard.scheduleHint", lang)}
         >
           {planning.length === 0 ? (
             <EmptyState message={t("dashboard.scheduleEmpty", lang)} />
@@ -516,6 +547,7 @@ export default async function DashboardPage() {
         {/* 4-month requirements matrix */}
         <Section
           title={t("dashboard.volumeTitle", lang)}
+          hint={t("dashboard.volumeHint", lang)}
           accent="ok"
         >
           {topItems.length === 0 ? (
@@ -535,18 +567,15 @@ export default async function DashboardPage() {
 
         <div className="mb-6 grid grid-cols-1 gap-6">
           <Section
-            title={t("dashboard.planningTitle", lang)}
-            className="mb-0"
-          >
-            {planning.length === 0 ? (
-              <EmptyState message={t("dashboard.planningEmpty", lang)} />
-            ) : (
-              <PlanningTable rows={planRows} lang={lang} />
-            )}
-          </Section>
-
-          <Section
             title={t("dashboard.stockAlertTitle", lang)}
+            hint={
+              shortItems.length > 0
+                ? ti("dashboard.stockAlertHintBad", lang, {
+                    n: shortItems.length,
+                    gap: formatKg(totalGap)
+                  })
+                : t("dashboard.stockAlertHintOk", lang)
+            }
             accent={shortItems.length > 0 ? "bad" : "ok"}
             className="mb-0"
           >
@@ -563,7 +592,49 @@ export default async function DashboardPage() {
         </div>
 
         {/* Nilai belanja semua supplier bertransaksi */}
-        <Section title={t("dashboard.supplierSpendTitle", lang)}>
+        <Section
+          title={t("dashboard.supplierSpendTitle", lang)}
+          hint={ti("dashboard.supplierSpendHint", lang, {
+            start: formatDateID(spendFrom),
+            end: formatDateID(spendTo),
+            n: topSup.length
+          })}
+          actions={
+            <form
+              method="GET"
+              className="flex flex-wrap items-center gap-2"
+            >
+              <label className="flex items-center gap-1.5">
+                <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-white/60">
+                  {lang === "EN" ? "From" : "Dari"}
+                </span>
+                <input
+                  type="date"
+                  name="from"
+                  defaultValue={spendFrom}
+                  className="rounded-md border border-ink/10 bg-paper px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+                />
+              </label>
+              <label className="flex items-center gap-1.5">
+                <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-white/60">
+                  {lang === "EN" ? "To" : "Sampai"}
+                </span>
+                <input
+                  type="date"
+                  name="to"
+                  defaultValue={spendTo}
+                  className="rounded-md border border-ink/10 bg-paper px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+                />
+              </label>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-white/15"
+              >
+                {lang === "EN" ? "Apply" : "Terapkan"}
+              </button>
+            </form>
+          }
+        >
           {topSup.length === 0 ? (
             <EmptyState message={t("dashboard.supplierSpendEmpty", lang)} />
           ) : (
@@ -574,6 +645,7 @@ export default async function DashboardPage() {
         {/* 14-day upcoming shortages */}
         <Section
           title={t("dashboard.forecastTitle", lang)}
+          hint={t("dashboard.forecastHint", lang)}
           accent={upcoming.length > 0 ? "warn" : "ok"}
         >
           {upcoming.length === 0 ? (

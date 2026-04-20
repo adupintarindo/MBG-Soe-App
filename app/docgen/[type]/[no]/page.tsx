@@ -217,8 +217,8 @@ export default async function DocDetailPage({ params }: PageProps) {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:text-right">
             <FieldBlock label={t("docgen.fldDocNo", lang)} value={<span className="font-mono text-sm font-black">{po.no}</span>} />
-            <FieldBlock label={t("docgen.fldPODate", lang)} value={po.po_date} />
-            <FieldBlock label={t("docgen.fldDelivery", lang)} value={po.delivery_date ?? "—"} />
+            <FieldBlock label={t("docgen.fldPODate", lang)} value={formatDateShort(po.po_date)} />
+            <FieldBlock label={t("docgen.fldDelivery", lang)} value={po.delivery_date ? formatDateShort(po.delivery_date) : "—"} />
             <FieldBlock label={t("docgen.fldStatus", lang)} value={<StatusPill status={po.status} />} />
             <FieldBlock label={t("docgen.fldTOP", lang)} value={po.top ?? "—"} />
             <FieldBlock label={t("docgen.fldPayment", lang)} value={po.pay_method ?? "—"} />
@@ -340,7 +340,7 @@ export default async function DocDetailPage({ params }: PageProps) {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:text-right">
             <FieldBlock label={t("docgen.fldDocNo", lang)} value={<span className="font-mono text-sm font-black">{grn.no}</span>} />
-            <FieldBlock label={t("docgen.fldReceivedDate", lang)} value={grn.grn_date} />
+            <FieldBlock label={t("docgen.fldReceivedDate", lang)} value={formatDateShort(grn.grn_date)} />
             <FieldBlock label={t("docgen.fldRefPO", lang)} value={grn.po_no ?? "—"} />
             <FieldBlock label={t("docgen.fldQCStatus", lang)} value={<StatusPill status={grn.status} />} />
           </div>
@@ -430,8 +430,8 @@ export default async function DocDetailPage({ params }: PageProps) {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:text-right">
             <FieldBlock label={t("docgen.fldInvNo", lang)} value={<span className="font-mono text-sm font-black">{inv.no}</span>} />
-            <FieldBlock label={t("docgen.fldIssued", lang)} value={inv.inv_date} />
-            <FieldBlock label={t("docgen.fldDue", lang)} value={inv.due_date ?? "—"} />
+            <FieldBlock label={t("docgen.fldIssued", lang)} value={formatDateShort(inv.inv_date)} />
+            <FieldBlock label={t("docgen.fldDue", lang)} value={inv.due_date ? formatDateShort(inv.due_date) : "—"} />
             <FieldBlock label={t("docgen.fldStatus", lang)} value={<StatusPill status={inv.status} />} />
             <FieldBlock label={t("docgen.fldRefPO", lang)} value={inv.po_no ?? "—"} />
           </div>
@@ -505,9 +505,9 @@ export default async function DocDetailPage({ params }: PageProps) {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:text-right">
             <FieldBlock label={t("docgen.fldDocNo", lang)} value={<span className="font-mono text-sm font-black">{qt.no}</span>} />
-            <FieldBlock label={t("docgen.fldQuoteDate", lang)} value={qt.quote_date} />
-            <FieldBlock label={t("docgen.fldValidUntil", lang)} value={qt.valid_until ?? "—"} />
-            <FieldBlock label={t("docgen.fldNeedDate", lang)} value={qt.need_date ?? "—"} />
+            <FieldBlock label={t("docgen.fldQuoteDate", lang)} value={formatDateShort(qt.quote_date)} />
+            <FieldBlock label={t("docgen.fldValidUntil", lang)} value={qt.valid_until ? formatDateShort(qt.valid_until) : "—"} />
+            <FieldBlock label={t("docgen.fldNeedDate", lang)} value={qt.need_date ? formatDateShort(qt.need_date) : "—"} />
             <FieldBlock label={t("docgen.fldStatus", lang)} value={<StatusPill status={qt.status} />} />
           </div>
         </section>
@@ -607,7 +607,7 @@ export default async function DocDetailPage({ params }: PageProps) {
                   <StatusPill status={docStatus} />
                 </div>
                 <div className="font-mono text-[11px] text-ink2/70">
-                  {no} · {docDate}
+                  {no} · {formatDateShort(docDate)}
                 </div>
               </div>
             </div>
