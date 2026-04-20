@@ -11,10 +11,12 @@ import {
   FieldLabel,
   Input,
   Section,
-  Select,
-  TableWrap,
-  THead
+  Select
 } from "@/components/ui";
+import {
+  SortableTable,
+  type SortableColumn
+} from "@/components/sortable-table";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 
@@ -385,209 +387,249 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
       {filtered.length === 0 ? (
         <EmptyState icon="🤝" title={t("adminSup.emptyTitle", lang)} />
       ) : (
-        <TableWrap>
-          <table className="w-full text-sm">
-            <THead>
-              <th className="py-2 pr-3">{t("adminSup.colId", lang)}</th>
-              <th className="py-2 pr-3">{t("adminSup.colName", lang)}</th>
-              <th className="py-2 pr-3">{t("adminSup.colType", lang)}</th>
-              <th className="py-2 pr-3">{t("adminSup.colCommodity", lang)}</th>
-              <th className="py-2 pr-3">{t("adminSup.colPicPhone", lang)}</th>
-              <th className="py-2 pr-3 text-right">{t("adminSup.colScore", lang)}</th>
-              <th className="py-2 pr-3">{t("adminSup.colStatus", lang)}</th>
-              <th className="py-2 pr-3"></th>
-            </THead>
-            <tbody>
-              {filtered.map((r) =>
+        (() => {
+          const columns: SortableColumn<Row>[] = [
+            {
+              key: "id",
+              label: t("adminSup.colId", lang),
+              align: "left",
+              sortValue: (r) => r.id,
+              render: (r) => (
+                <span className="font-mono text-[12px]">{r.id}</span>
+              )
+            },
+            {
+              key: "name",
+              label: t("adminSup.colName", lang),
+              align: "left",
+              sortValue: (r) => r.name,
+              render: (r) =>
                 editId === r.id ? (
-                  <tr
-                    key={r.id}
-                    className="border-b border-ink/5 bg-amber-50/40"
-                  >
-                    <td className="py-2 pr-3 font-mono text-[12px]">{r.id}</td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        value={editDraft.name}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, name: e.target.value })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Select
-                        value={editDraft.type}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            type: e.target.value as SupType
-                          })
-                        }
-                      >
-                        {SUP_TYPES.map((tp) => (
-                          <option key={tp} value={tp}>
-                            {tp}
-                          </option>
-                        ))}
-                      </Select>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        value={editDraft.commodity}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            commodity: e.target.value
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="space-y-1">
-                        <Input
-                          value={editDraft.pic}
-                          onChange={(e) =>
-                            setEditDraft({ ...editDraft, pic: e.target.value })
-                          }
-                          placeholder={t("adminSup.lblPic", lang)}
-                        />
-                        <Input
-                          value={editDraft.phone}
-                          onChange={(e) =>
-                            setEditDraft({
-                              ...editDraft,
-                              phone: e.target.value
-                            })
-                          }
-                          placeholder={t("adminSup.lblPhone", lang)}
-                        />
-                      </div>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        type="number"
-                        value={editDraft.score}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            score: e.target.value
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Select
-                        value={editDraft.status}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            status: e.target.value as SupStatus
-                          })
-                        }
-                      >
-                        {SUP_STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </Select>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="inline-flex items-center gap-1 text-[10px] font-bold text-ink2">
-                          <input
-                            type="checkbox"
-                            checked={editDraft.active}
-                            onChange={(e) =>
-                              setEditDraft({
-                                ...editDraft,
-                                active: e.target.checked
-                              })
-                            }
-                          />
-                          {t("adminSup.lblActive", lang)}
-                        </label>
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          disabled={busy}
-                          onClick={saveEdit}
-                        >
-                          {t("adminSup.btnSaveEdit", lang)}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={busy}
-                          onClick={() => setEditId(null)}
-                        >
-                          {t("adminSup.btnCancelEdit", lang)}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  <Input
+                    value={editDraft.name}
+                    onChange={(e) =>
+                      setEditDraft({ ...editDraft, name: e.target.value })
+                    }
+                  />
                 ) : (
-                  <tr key={r.id} className="row-hover border-b border-ink/5">
-                    <td className="py-2 pr-3 font-mono text-[12px]">{r.id}</td>
-                    <td className="py-2 pr-3 text-ink">{r.name}</td>
-                    <td className="py-2 pr-3">
-                      <Badge tone="accent">{r.type}</Badge>
-                    </td>
-                    <td className="py-2 pr-3 text-[12px] text-ink2">
-                      {r.commodity ?? "—"}
-                    </td>
-                    <td className="py-2 pr-3 text-[12px] text-ink2">
-                      <div>{r.pic ?? "—"}</div>
-                      <div className="font-mono text-[11px]">
-                        {r.phone ?? "—"}
-                      </div>
-                    </td>
-                    <td className="py-2 pr-3 text-right font-mono text-[12px]">
-                      {r.score != null ? r.score : "—"}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Badge
-                        tone={
-                          r.status === "signed"
-                            ? "ok"
-                            : r.status === "awaiting"
-                              ? "warn"
-                              : r.status === "rejected"
-                                ? "bad"
-                                : "muted"
-                        }
-                      >
-                        {r.status}
-                      </Badge>
-                      {!r.active && (
-                        <Badge tone="muted" className="ml-1">
-                          {t("adminSup.tagInactive", lang)}
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => startEdit(r)}
-                        >
-                          {t("adminSup.btnEdit", lang)}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => remove(r.id)}
-                        >
-                          {t("adminSup.btnDelete", lang)}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  <span className="text-ink">{r.name}</span>
                 )
-              )}
-            </tbody>
-          </table>
-        </TableWrap>
+            },
+            {
+              key: "type",
+              label: t("adminSup.colType", lang),
+              sortValue: (r) => r.type,
+              render: (r) =>
+                editId === r.id ? (
+                  <Select
+                    value={editDraft.type}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        type: e.target.value as SupType
+                      })
+                    }
+                  >
+                    {SUP_TYPES.map((tp) => (
+                      <option key={tp} value={tp}>
+                        {tp}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <Badge tone="accent">{r.type}</Badge>
+                )
+            },
+            {
+              key: "commodity",
+              label: t("adminSup.colCommodity", lang),
+              align: "left",
+              sortValue: (r) => r.commodity ?? "",
+              render: (r) =>
+                editId === r.id ? (
+                  <Input
+                    value={editDraft.commodity}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        commodity: e.target.value
+                      })
+                    }
+                  />
+                ) : (
+                  <span className="text-[12px] text-ink2">
+                    {r.commodity ?? "—"}
+                  </span>
+                )
+            },
+            {
+              key: "pic",
+              label: t("adminSup.colPicPhone", lang),
+              align: "left",
+              sortValue: (r) => r.pic ?? "",
+              render: (r) =>
+                editId === r.id ? (
+                  <div className="space-y-1">
+                    <Input
+                      value={editDraft.pic}
+                      onChange={(e) =>
+                        setEditDraft({ ...editDraft, pic: e.target.value })
+                      }
+                      placeholder={t("adminSup.lblPic", lang)}
+                    />
+                    <Input
+                      value={editDraft.phone}
+                      onChange={(e) =>
+                        setEditDraft({
+                          ...editDraft,
+                          phone: e.target.value
+                        })
+                      }
+                      placeholder={t("adminSup.lblPhone", lang)}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-[12px] text-ink2">
+                    <div>{r.pic ?? "—"}</div>
+                    <div className="font-mono text-[11px]">
+                      {r.phone ?? "—"}
+                    </div>
+                  </div>
+                )
+            },
+            {
+              key: "score",
+              label: t("adminSup.colScore", lang),
+              align: "right",
+              sortValue: (r) => r.score ?? 0,
+              render: (r) =>
+                editId === r.id ? (
+                  <Input
+                    type="number"
+                    value={editDraft.score}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        score: e.target.value
+                      })
+                    }
+                  />
+                ) : (
+                  <span className="font-mono text-[12px]">
+                    {r.score != null ? r.score : "—"}
+                  </span>
+                )
+            },
+            {
+              key: "status",
+              label: t("adminSup.colStatus", lang),
+              sortValue: (r) => r.status,
+              render: (r) =>
+                editId === r.id ? (
+                  <Select
+                    value={editDraft.status}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        status: e.target.value as SupStatus
+                      })
+                    }
+                  >
+                    {SUP_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <>
+                    <Badge
+                      tone={
+                        r.status === "signed"
+                          ? "ok"
+                          : r.status === "awaiting"
+                            ? "warn"
+                            : r.status === "rejected"
+                              ? "bad"
+                              : "muted"
+                      }
+                    >
+                      {r.status}
+                    </Badge>
+                    {!r.active && (
+                      <Badge tone="muted" className="ml-1">
+                        {t("adminSup.tagInactive", lang)}
+                      </Badge>
+                    )}
+                  </>
+                )
+            },
+            {
+              key: "actions",
+              label: "",
+              sortable: false,
+              render: (r) =>
+                editId === r.id ? (
+                  <div className="flex flex-col gap-1">
+                    <label className="inline-flex items-center gap-1 text-[10px] font-bold text-ink2">
+                      <input
+                        type="checkbox"
+                        checked={editDraft.active}
+                        onChange={(e) =>
+                          setEditDraft({
+                            ...editDraft,
+                            active: e.target.checked
+                          })
+                        }
+                      />
+                      {t("adminSup.lblActive", lang)}
+                    </label>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      disabled={busy}
+                      onClick={saveEdit}
+                    >
+                      {t("adminSup.btnSaveEdit", lang)}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() => setEditId(null)}
+                    >
+                      {t("adminSup.btnCancelEdit", lang)}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex justify-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => startEdit(r)}
+                    >
+                      {t("adminSup.btnEdit", lang)}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => remove(r.id)}
+                    >
+                      {t("adminSup.btnDelete", lang)}
+                    </Button>
+                  </div>
+                )
+            }
+          ];
+          return (
+            <SortableTable<Row>
+              columns={columns}
+              rows={filtered}
+              rowKey={(r) => r.id}
+              initialSort={{ key: "id", dir: "asc" }}
+            />
+          );
+        })()
       )}
     </Section>
   );

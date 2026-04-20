@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b2e4f"/>
+      <stop offset="1" stop-color="#143a60"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="url(#g)"/>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="120" font-family="system-ui, -apple-system, sans-serif">🍱</text>
+  <text x="50%" y="170" text-anchor="middle" font-size="18" font-weight="800" fill="#f3c96e" font-family="system-ui, sans-serif">MBG Soe</text>
+</svg>

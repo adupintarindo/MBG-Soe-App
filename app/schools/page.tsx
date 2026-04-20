@@ -8,7 +8,6 @@ import {
   Section
 } from "@/components/ui";
 import { SchoolAttendancePanel } from "./attendance-panel";
-import { CalendarParserPanel } from "./calendar-parser-panel";
 import {
   SchoolsRosterTable,
   type SchoolRosterRow
@@ -201,14 +200,6 @@ export default async function SchoolsPage() {
             reason: r.reason
           }))}
           canEdit={canEdit}
-        />
-
-        <CalendarParserPanel
-          canWrite={canEdit}
-          existing={nonOpDays.map((r) => ({
-            op_date: r.op_date,
-            reason: r.reason
-          }))}
         />
 
         <Section

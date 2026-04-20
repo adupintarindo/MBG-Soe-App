@@ -9,7 +9,7 @@ import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-type DocType = "po" | "grn" | "invoice" | "ba";
+type DocType = "po" | "grn" | "invoice" | "ba" | "qt";
 
 function typeTitle(ty: DocType, lang: Lang): string {
   switch (ty) {
@@ -21,6 +21,8 @@ function typeTitle(ty: DocType, lang: Lang): string {
       return t("docgen.typeInvoice", lang);
     case "ba":
       return t("docgen.typeBA", lang);
+    case "qt":
+      return t("docgen.typeQT", lang);
   }
 }
 
@@ -28,7 +30,8 @@ const TYPE_ICON: Record<DocType, string> = {
   po: "📝",
   grn: "📦",
   invoice: "💰",
-  ba: "📄"
+  ba: "📄",
+  qt: "📨"
 };
 
 const STATUS_TONE: Record<string, string> = {
@@ -124,6 +127,27 @@ interface InvoiceRow {
   due_date: string | null;
   status: string;
 }
+interface QtRow {
+  no: string;
+  supplier_id: string;
+  quote_date: string;
+  valid_until: string | null;
+  need_date: string | null;
+  status: string;
+  total: number | string;
+  notes: string | null;
+}
+interface QtLine {
+  line_no: number;
+  item_code: string;
+  qty: number | string;
+  unit: string;
+  price_suggested: number | string | null;
+  price_quoted: number | string | null;
+  qty_quoted: number | string | null;
+  note: string | null;
+  subtotal: number | string;
+}
 
 interface PageProps {
   params: { type: string; no: string };
@@ -133,7 +157,7 @@ export default async function DocDetailPage({ params }: PageProps) {
   const type = params.type as DocType;
   const no = decodeURIComponent(params.no);
 
-  if (!["po", "grn", "invoice", "ba"].includes(type)) notFound();
+  if (!["po", "grn", "invoice", "ba", "qt"].includes(type)) notFound();
 
   const supabase = createClient();
   const lang = getLang();
@@ -431,6 +455,134 @@ export default async function DocDetailPage({ params }: PageProps) {
         </div>
       </>
     );
+  } else if (type === "qt") {
+    const [qtRes, rowsRes, supRes, itemsRes] = await Promise.all([
+      supabase
+        .from("quotations")
+        .select(
+          "no, supplier_id, quote_date, valid_until, need_date, status, total, notes"
+        )
+        .eq("no", no)
+        .maybeSingle(),
+      supabase
+        .from("quotation_rows")
+        .select(
+          "line_no, item_code, qty, unit, price_suggested, price_quoted, qty_quoted, note, subtotal"
+        )
+        .eq("qt_no", no)
+        .order("line_no"),
+      supabase.from("suppliers").select("*"),
+      supabase.from("items").select("code, name_en, category")
+    ]);
+
+    const qt = qtRes.data as QtRow | null;
+    if (!qt) notFound();
+
+    const rows = (rowsRes.data ?? []) as QtLine[];
+    const suppliers = (supRes.data ?? []) as SupplierFull[];
+    const supplier = suppliers.find((s) => s.id === qt.supplier_id);
+    const items = (itemsRes.data ?? []) as ItemMini[];
+    const itemMap = new Map(items.map((i) => [i.code, i]));
+
+    docStatus = qt.status;
+    docDate = qt.quote_date;
+
+    content = (
+      <>
+        <section className="mb-6 grid grid-cols-1 gap-6 border-b-2 border-ink/80 pb-5 sm:grid-cols-2">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-ink2/70">
+              {t("docgen.toSupplier", lang)}
+            </div>
+            <div className="mt-1 text-base font-black text-ink">
+              {supplier?.name ?? qt.supplier_id}
+            </div>
+            <div className="mt-1 text-xs text-ink2">{supplier?.address}</div>
+            <div className="text-xs text-ink2">
+              PIC: {supplier?.pic ?? "—"} · {supplier?.phone ?? "—"}
+            </div>
+            <div className="text-xs font-mono text-ink2">{supplier?.email}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:text-right">
+            <FieldBlock label={t("docgen.fldDocNo", lang)} value={<span className="font-mono text-sm font-black">{qt.no}</span>} />
+            <FieldBlock label={t("docgen.fldQuoteDate", lang)} value={qt.quote_date} />
+            <FieldBlock label={t("docgen.fldValidUntil", lang)} value={qt.valid_until ?? "—"} />
+            <FieldBlock label={t("docgen.fldNeedDate", lang)} value={qt.need_date ?? "—"} />
+            <FieldBlock label={t("docgen.fldStatus", lang)} value={<StatusPill status={qt.status} />} />
+          </div>
+        </section>
+
+        <div className="mb-2 text-xs font-black uppercase tracking-wide text-ink">
+          {ti("docgen.quotationItemTitle", lang, { n: rows.length })}
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b-2 border-ink bg-ink/5">
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colNo", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colItem", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colQty", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colUnit", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colPriceSuggested", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colPriceQuoted", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colQtyQuoted", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wide">{t("docgen.colSubtotal", lang)}</th>
+                <th className="border-x border-ink/20 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wide">{t("docgen.colNote", lang)}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const it = itemMap.get(r.item_code);
+                return (
+                  <tr key={r.line_no} className="border-b border-ink/10 even:bg-paper/40">
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-xs">{r.line_no}</td>
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-xs">
+                      <div className="font-semibold">{it?.name_en ?? r.item_code}</div>
+                      <div className="font-mono text-[10px] text-ink2/70">{r.item_code}</div>
+                    </td>
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-right font-mono text-xs">
+                      {Number(r.qty).toLocaleString(numberLocale(lang), { maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-xs">{r.unit}</td>
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-right font-mono text-xs">
+                      {r.price_suggested != null ? formatIDR(Number(r.price_suggested)) : "—"}
+                    </td>
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-right font-mono text-xs">
+                      {r.price_quoted != null ? formatIDR(Number(r.price_quoted)) : "—"}
+                    </td>
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-right font-mono text-xs">
+                      {r.qty_quoted != null
+                        ? Number(r.qty_quoted).toLocaleString(numberLocale(lang), { maximumFractionDigits: 2 })
+                        : "—"}
+                    </td>
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-right font-mono text-xs font-black">
+                      {formatIDR(Number(r.subtotal))}
+                    </td>
+                    <td className="border-x border-ink/20 px-2 py-1.5 text-[10px] text-ink2/80">{r.note ?? ""}</td>
+                  </tr>
+                );
+              })}
+              <tr className="border-t-2 border-ink bg-ink/10">
+                <td colSpan={7} className="border-x border-ink/20 px-2 py-2 text-right text-xs font-black uppercase tracking-wide">
+                  {t("docgen.totalQuotation", lang)}
+                </td>
+                <td className="border-x border-ink/20 px-2 py-2 text-right font-mono text-sm font-black text-ink">
+                  {formatIDR(Number(qt.total))}
+                </td>
+                <td className="border-x border-ink/20 px-2 py-2" />
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {qt.notes && (
+          <div className="mt-4 rounded-xl bg-paper p-3 text-xs text-ink2 ring-1 ring-ink/5 print:bg-white print:ring-ink/30">
+            <span className="font-black uppercase tracking-wide text-ink2/70">{t("docgen.noteLabel", lang)} </span>
+            {qt.notes}
+          </div>
+        )}
+      </>
+    );
   }
 
   return (
@@ -506,7 +658,7 @@ export default async function DocDetailPage({ params }: PageProps) {
             <SignBlock title={t("docgen.signCreatedBy", lang)} role={t("docgen.roleOperator", lang)} />
             <SignBlock
               title={
-                type === "po"
+                type === "po" || type === "qt"
                   ? t("docgen.signApprovedBy", lang)
                   : type === "grn"
                     ? t("docgen.signReceivedBy", lang)

@@ -6,7 +6,9 @@ import {
   formatIDR,
   stockShortageForDate,
   toISODate,
-  type Shortage
+  expiringBatches,
+  type Shortage,
+  type ExpiringBatch
 } from "@/lib/engine";
 import {
   EmptyState,
@@ -25,6 +27,12 @@ import {
   type StockMasterRow,
   type MoveRow as StockMoveRow
 } from "@/components/stock-tables";
+import {
+  ExpiringBatchTable,
+  BatchTable,
+  type ExpiringBatchRow,
+  type BatchRow
+} from "@/components/batch-tables";
 import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
@@ -64,25 +72,69 @@ export default async function StockPage() {
 
   const today = toISODate(new Date());
 
-  const [stockRes, itemsRes, movesRes, shortages] = await Promise.all([
-    supabase.from("stock").select("item_code, qty, updated_at"),
-    supabase
-      .from("items")
-      .select("code, name_en, unit, category, price_idr, vol_weekly")
-      .order("category")
-      .order("code"),
-    supabase
-      .from("stock_moves")
-      .select("id, item_code, delta, reason, ref_doc, ref_no, note, created_at")
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .limit(50),
-    stockShortageForDate(supabase, today).catch(() => [] as Shortage[])
-  ]);
+  const [stockRes, itemsRes, movesRes, shortages, batchesRes, expiring] =
+    await Promise.all([
+      supabase.from("stock").select("item_code, qty, updated_at"),
+      supabase
+        .from("items")
+        .select("code, name_en, unit, category, price_idr, vol_weekly")
+        .order("category")
+        .order("code"),
+      supabase
+        .from("stock_moves")
+        .select("id, item_code, delta, reason, ref_doc, ref_no, note, created_at")
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(50),
+      stockShortageForDate(supabase, today).catch(() => [] as Shortage[]),
+      supabase
+        .from("stock_batches")
+        .select(
+          "id, item_code, batch_code, grn_no, supplier_id, qty_received, qty_remaining, unit, received_date, expiry_date"
+        )
+        .gt("qty_remaining", 0)
+        .order("expiry_date", { ascending: true, nullsFirst: false })
+        .limit(300),
+      expiringBatches(supabase, 14).catch(() => [] as ExpiringBatch[])
+    ]);
 
   const stock = (stockRes.data ?? []) as StockRow[];
   const items = (itemsRes.data ?? []) as ItemRow[];
   const moves = (movesRes.data ?? []) as MoveRow[];
+  const batches = (batchesRes.data ?? []) as BatchRow[];
+  const expiringRows: ExpiringBatchRow[] = expiring.map((b) => ({
+    id: b.id,
+    item_code: b.item_code,
+    item_name: b.item_name,
+    grn_no: b.grn_no,
+    supplier_id: b.supplier_id,
+    supplier_name: b.supplier_name,
+    qty_remaining: Number(b.qty_remaining),
+    unit: b.unit,
+    expiry_date: b.expiry_date,
+    days_left: Number(b.days_left),
+    status: b.status
+  }));
+  const batchRows: BatchRow[] = batches.map((b) => ({
+    id: b.id,
+    item_code: b.item_code,
+    batch_code: b.batch_code,
+    grn_no: b.grn_no,
+    supplier_id: b.supplier_id,
+    qty_received: Number(b.qty_received),
+    qty_remaining: Number(b.qty_remaining),
+    unit: b.unit,
+    received_date: b.received_date,
+    expiry_date: b.expiry_date
+  }));
+  const expiredCount = expiringRows.filter((r) => r.status === "expired").length;
+  const urgentCount = expiringRows.filter(
+    (r) => r.status === "urgent" || r.status === "soon"
+  ).length;
+  const qtyAtRisk = expiringRows.reduce(
+    (s, r) => s + (r.status !== "expired" ? r.qty_remaining : 0),
+    0
+  );
 
   const stockByCode = new Map(stock.map((s) => [s.item_code, s]));
   const shortByCode = new Map(shortages.map((s) => [s.item_code, s]));
@@ -198,6 +250,36 @@ export default async function StockPage() {
           />
         </KpiGrid>
 
+        <KpiGrid>
+          <KpiTile
+            icon="⏰"
+            label={t("batch.kpiExpiring", lang)}
+            value={urgentCount.toString()}
+            tone={urgentCount > 0 ? "warn" : "default"}
+            sub={t("batch.kpiExpiringSub", lang)}
+          />
+          <KpiTile
+            icon="🚫"
+            label={t("batch.kpiExpired", lang)}
+            value={expiredCount.toString()}
+            tone={expiredCount > 0 ? "bad" : "default"}
+            sub={t("batch.kpiExpiredSub", lang)}
+          />
+          <KpiTile
+            icon="📊"
+            label={t("batch.kpiBatchTotal", lang)}
+            value={batchRows.length.toString()}
+            sub={t("batch.kpiBatchTotalSub", lang)}
+          />
+          <KpiTile
+            icon="⚖️"
+            label={t("batch.kpiQtyAtRisk", lang)}
+            value={qtyAtRisk.toFixed(1)}
+            tone={qtyAtRisk > 0 ? "warn" : "default"}
+            sub={t("batch.kpiQtyAtRiskSub", lang)}
+          />
+        </KpiGrid>
+
         {shortCount > 0 && (
           <Section
             title={ti("stock.shortTitle", lang, { n: shortCount })}
@@ -207,6 +289,22 @@ export default async function StockPage() {
             <StockShortTable lang={lang} rows={shortRows} />
           </Section>
         )}
+
+        <Section
+          title={ti("batch.expiringTitle", lang, { days: 14 })}
+          hint={t("batch.expiringHint", lang)}
+          accent={expiredCount > 0 ? "bad" : urgentCount > 0 ? "warn" : "default"}
+        >
+          {expiringRows.length === 0 ? (
+            <EmptyState
+              tone="ok"
+              icon="✅"
+              message={t("batch.expiringEmpty", lang)}
+            />
+          ) : (
+            <ExpiringBatchTable lang={lang} rows={expiringRows} />
+          )}
+        </Section>
 
         <Section
           title={ti("stock.masterTitle", lang, { n: items.length })}
@@ -221,6 +319,14 @@ export default async function StockPage() {
             <EmptyState message={t("stock.movesEmpty", lang)} />
           ) : (
             <StockMasterTable lang={lang} rows={masterRows} />
+          )}
+        </Section>
+
+        <Section title={ti("batch.allTitle", lang, { n: batchRows.length })}>
+          {batchRows.length === 0 ? (
+            <EmptyState message={t("batch.allEmpty", lang)} />
+          ) : (
+            <BatchTable lang={lang} rows={batchRows} />
           )}
         </Section>
 

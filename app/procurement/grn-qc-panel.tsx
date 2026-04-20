@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, EmptyState, TableWrap, THead } from "@/components/ui";
+import { Badge, EmptyState } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import type {
   GrnQcCheck,
@@ -246,32 +246,21 @@ export function GrnQcPanel({
           <div className="mb-2 text-xs font-bold uppercase tracking-wide text-ink2/70">
             {ti("grnQc.logTitle", lang, { n: ncrs.length })}
           </div>
-          <TableWrap>
-            <table className="w-full text-sm">
-              <THead>
-                <th className="py-2 pr-3">{t("grnQc.colNcrNo", lang)}</th>
-                <th className="py-2 pr-3">{t("grnQc.colGrn", lang)}</th>
-                <th className="py-2 pr-3">{t("grnQc.colSupplier", lang)}</th>
-                <th className="py-2 pr-3">{t("grnQc.colSeverity", lang)}</th>
-                <th className="py-2 pr-3">{t("grnQc.colIssue", lang)}</th>
-                <th className="py-2 pr-3">{t("grnQc.colStatus", lang)}</th>
-                <th className="py-2 pr-3">{t("grnQc.colReported", lang)}</th>
-                <th className="py-2 pr-3"></th>
-              </THead>
-              <tbody>
-                {ncrs.slice(0, 20).map((n) => (
-                  <NcrRow
-                    key={n.id}
-                    n={n}
-                    canWrite={canWrite}
-                    supplierName={
-                      n.supplier_id ? supplierNames[n.supplier_id] : null
-                    }
-                  />
-                ))}
-              </tbody>
-            </table>
-          </TableWrap>
+          <SortableTable<NcrTableRow>
+            columns={ncrColumns({ lang, canWrite })}
+            rows={ncrs.slice(0, 20).map((n) => ({
+              ...n,
+              _supplierName: n.supplier_id
+                ? supplierNames[n.supplier_id] ?? null
+                : null
+            }))}
+            rowKey={(n) => n.id}
+            searchable
+            exportable
+            exportFileName="ncr-log"
+            exportSheetName="NCR"
+            initialSort={{ key: "reported", dir: "desc" }}
+          />
         </div>
       )}
 
@@ -291,14 +280,117 @@ export function GrnQcPanel({
   );
 }
 
-function NcrRow({
+type NcrTableRow = NcrEntry & { _supplierName: string | null };
+
+function ncrColumns({
+  lang,
+  canWrite
+}: {
+  lang: "ID" | "EN";
+  canWrite: boolean;
+}): SortableColumn<NcrTableRow>[] {
+  return [
+    {
+      key: "ncrNo",
+      label: t("grnQc.colNcrNo", lang),
+      align: "left",
+      sortValue: (r) => r.ncr_no ?? `#${r.id}`,
+      render: (r) => (
+        <span className="font-mono text-[11px] font-black">
+          {r.ncr_no ?? `#${r.id}`}
+        </span>
+      )
+    },
+    {
+      key: "grn",
+      label: t("grnQc.colGrn", lang),
+      align: "left",
+      sortValue: (r) => r.grn_no ?? "",
+      render: (r) => (
+        <span className="font-mono text-[11px]">{r.grn_no ?? "—"}</span>
+      )
+    },
+    {
+      key: "supplier",
+      label: t("grnQc.colSupplier", lang),
+      align: "left",
+      sortValue: (r) => r._supplierName ?? r.supplier_id ?? "",
+      render: (r) => (
+        <span className="text-xs">
+          {r._supplierName ?? r.supplier_id ?? "—"}
+        </span>
+      )
+    },
+    {
+      key: "severity",
+      label: t("grnQc.colSeverity", lang),
+      align: "left",
+      sortValue: (r) => r.severity,
+      render: (r) => (
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_TONE[r.severity]}`}
+        >
+          {r.severity}
+        </span>
+      )
+    },
+    {
+      key: "issue",
+      label: t("grnQc.colIssue", lang),
+      align: "left",
+      sortValue: (r) => r.issue,
+      searchValue: (r) => `${r.issue} ${r.corrective_action ?? ""}`,
+      render: (r) => (
+        <div className="text-xs">
+          <div className="line-clamp-2">{r.issue}</div>
+          {r.corrective_action && (
+            <div className="text-[10px] italic text-emerald-700">
+              ✓ {r.corrective_action}
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: "status",
+      label: t("grnQc.colStatus", lang),
+      align: "left",
+      sortValue: (r) => r.status,
+      render: (r) => <NcrStatusCell n={r} canWrite={canWrite} />
+    },
+    {
+      key: "reported",
+      label: t("grnQc.colReported", lang),
+      align: "left",
+      sortValue: (r) => r.reported_at,
+      render: (r) => (
+        <span className="text-[10px] text-ink2">
+          {new Date(r.reported_at).toLocaleDateString(numberLocale(lang))}
+        </span>
+      )
+    },
+    {
+      key: "cost",
+      label: "",
+      align: "right",
+      sortValue: (r) => r.cost_impact_idr ?? 0,
+      exportValue: (r) => r.cost_impact_idr ?? 0,
+      render: (r) =>
+        r.cost_impact_idr && r.cost_impact_idr > 0 ? (
+          <span className="font-mono text-[10px] text-red-700">
+            -{formatNumber(Number(r.cost_impact_idr), lang)}
+          </span>
+        ) : null
+    }
+  ];
+}
+
+function NcrStatusCell({
   n,
-  canWrite,
-  supplierName
+  canWrite
 }: {
   n: NcrEntry;
   canWrite: boolean;
-  supplierName: string | null;
 }) {
   const { lang } = useLang();
   const router = useRouter();
@@ -324,60 +416,27 @@ function NcrRow({
     });
   };
 
+  if (!canWrite) {
+    return (
+      <span
+        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_TONE[n.status]}`}
+      >
+        {n.status}
+      </span>
+    );
+  }
   return (
-    <tr className="row-hover border-b border-ink/5">
-      <td className="py-2 pr-3 font-mono text-[11px] font-black">
-        {n.ncr_no ?? `#${n.id}`}
-      </td>
-      <td className="py-2 pr-3 font-mono text-[11px]">{n.grn_no ?? "—"}</td>
-      <td className="py-2 pr-3 text-xs">{supplierName ?? n.supplier_id ?? "—"}</td>
-      <td className="py-2 pr-3">
-        <span
-          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_TONE[n.severity]}`}
-        >
-          {n.severity}
-        </span>
-      </td>
-      <td className="py-2 pr-3 text-xs">
-        <div className="line-clamp-2">{n.issue}</div>
-        {n.corrective_action && (
-          <div className="text-[10px] italic text-emerald-700">
-            ✓ {n.corrective_action}
-          </div>
-        )}
-      </td>
-      <td className="py-2 pr-3">
-        {canWrite ? (
-          <select
-            disabled={pending}
-            value={n.status}
-            onChange={(e) => setStatus(e.target.value as NcrStatus)}
-            className="rounded-md border border-ink/10 bg-white px-2 py-0.5 text-[10px] font-bold"
-          >
-            <option value="open">open</option>
-            <option value="in_progress">in_progress</option>
-            <option value="resolved">resolved</option>
-            <option value="waived">waived</option>
-          </select>
-        ) : (
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_TONE[n.status]}`}
-          >
-            {n.status}
-          </span>
-        )}
-      </td>
-      <td className="py-2 pr-3 text-[10px] text-ink2">
-        {new Date(n.reported_at).toLocaleDateString(numberLocale(lang))}
-      </td>
-      <td className="py-2 pr-3 text-right">
-        {n.cost_impact_idr && n.cost_impact_idr > 0 && (
-          <span className="font-mono text-[10px] text-red-700">
-            -{formatNumber(Number(n.cost_impact_idr), lang)}
-          </span>
-        )}
-      </td>
-    </tr>
+    <select
+      disabled={pending}
+      value={n.status}
+      onChange={(e) => setStatus(e.target.value as NcrStatus)}
+      className="rounded-md border border-ink/10 bg-white px-2 py-0.5 text-[10px] font-bold"
+    >
+      <option value="open">open</option>
+      <option value="in_progress">in_progress</option>
+      <option value="resolved">resolved</option>
+      <option value="waived">waived</option>
+    </select>
   );
 }
 

@@ -10,10 +10,12 @@ import {
   EmptyState,
   FieldLabel,
   Input,
-  Section,
-  TableWrap,
-  THead
+  Section
 } from "@/components/ui";
+import {
+  SortableTable,
+  type SortableColumn
+} from "@/components/sortable-table";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 
@@ -269,145 +271,172 @@ export function MenusPanel({ initial }: { initial: Row[] }) {
       {filtered.length === 0 ? (
         <EmptyState icon="🍲" title={t("adminMenus.emptyTitle", lang)} />
       ) : (
-        <TableWrap>
-          <table className="w-full text-sm">
-            <THead>
-              <th className="py-2 pr-3">{t("adminMenus.colId", lang)}</th>
-              <th className="py-2 pr-3">{t("adminMenus.colNameID", lang)}</th>
-              <th className="py-2 pr-3">{t("adminMenus.colNameEN", lang)}</th>
-              <th className="py-2 pr-3">{t("adminMenus.colCycle", lang)}</th>
-              <th className="py-2 pr-3">{t("adminMenus.colNotes", lang)}</th>
-              <th className="py-2 pr-3">{t("adminMenus.colActive", lang)}</th>
-              <th className="py-2 pr-3"></th>
-            </THead>
-            <tbody>
-              {filtered.map((r) =>
+        (() => {
+          const columns: SortableColumn<Row>[] = [
+            {
+              key: "id",
+              label: t("adminMenus.colId", lang),
+              align: "left",
+              sortValue: (r) => r.id,
+              render: (r) => (
+                <span className="font-mono text-[12px] text-ink">M{r.id}</span>
+              )
+            },
+            {
+              key: "name",
+              label: t("adminMenus.colNameID", lang),
+              align: "left",
+              sortValue: (r) => (lang === "EN" && r.name_en ? r.name_en : r.name),
+              render: (r) =>
                 editId === r.id ? (
-                  <tr
-                    key={r.id}
-                    className="border-b border-ink/5 bg-amber-50/40"
-                  >
-                    <td className="py-2 pr-3 font-mono text-[12px] text-ink">
-                      M{r.id}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        value={editDraft.name}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, name: e.target.value })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        value={editDraft.name_en}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            name_en: e.target.value
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        type="number"
-                        value={editDraft.cycle_day}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            cycle_day: e.target.value
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        value={editDraft.notes}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, notes: e.target.value })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <input
-                        type="checkbox"
-                        checked={editDraft.active}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            active: e.target.checked
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          disabled={busy}
-                          onClick={saveEdit}
-                        >
-                          {t("adminMenus.btnSaveEdit", lang)}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={busy}
-                          onClick={() => setEditId(null)}
-                        >
-                          {t("adminMenus.btnCancelEdit", lang)}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  <Input
+                    value={editDraft.name}
+                    onChange={(e) =>
+                      setEditDraft({ ...editDraft, name: e.target.value })
+                    }
+                  />
                 ) : (
-                  <tr key={r.id} className="row-hover border-b border-ink/5">
-                    <td className="py-2 pr-3 font-mono text-[12px] text-ink">
-                      M{r.id}
-                    </td>
-                    <td className="py-2 pr-3 text-ink">
-                      {lang === "EN" && r.name_en ? r.name_en : r.name}
-                    </td>
-                    <td className="py-2 pr-3 text-ink2">{r.name_en ?? "—"}</td>
-                    <td className="py-2 pr-3 text-[12px] text-ink2">
-                      {r.cycle_day ?? "—"}
-                    </td>
-                    <td className="py-2 pr-3 text-[12px] text-ink2">
-                      {r.notes ?? "—"}
-                    </td>
-                    <td className="py-2 pr-3">
-                      {r.active ? (
-                        <Badge tone="ok">{t("adminMenus.tagActive", lang)}</Badge>
-                      ) : (
-                        <Badge tone="muted">{t("adminMenus.tagInactive", lang)}</Badge>
-                      )}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => startEdit(r)}
-                        >
-                          {t("adminMenus.btnEdit", lang)}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => remove(r.id)}
-                        >
-                          {t("adminMenus.btnDelete", lang)}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  <span className="text-ink">
+                    {lang === "EN" && r.name_en ? r.name_en : r.name}
+                  </span>
                 )
-              )}
-            </tbody>
-          </table>
-        </TableWrap>
+            },
+            {
+              key: "name_en",
+              label: t("adminMenus.colNameEN", lang),
+              align: "left",
+              sortValue: (r) => r.name_en ?? "",
+              render: (r) =>
+                editId === r.id ? (
+                  <Input
+                    value={editDraft.name_en}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        name_en: e.target.value
+                      })
+                    }
+                  />
+                ) : (
+                  <span className="text-ink2">{r.name_en ?? "—"}</span>
+                )
+            },
+            {
+              key: "cycle_day",
+              label: t("adminMenus.colCycle", lang),
+              sortValue: (r) => r.cycle_day ?? 0,
+              render: (r) =>
+                editId === r.id ? (
+                  <Input
+                    type="number"
+                    value={editDraft.cycle_day}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        cycle_day: e.target.value
+                      })
+                    }
+                  />
+                ) : (
+                  <span className="text-[12px] text-ink2">
+                    {r.cycle_day ?? "—"}
+                  </span>
+                )
+            },
+            {
+              key: "notes",
+              label: t("adminMenus.colNotes", lang),
+              align: "left",
+              sortValue: (r) => r.notes ?? "",
+              render: (r) =>
+                editId === r.id ? (
+                  <Input
+                    value={editDraft.notes}
+                    onChange={(e) =>
+                      setEditDraft({ ...editDraft, notes: e.target.value })
+                    }
+                  />
+                ) : (
+                  <span className="text-[12px] text-ink2">
+                    {r.notes ?? "—"}
+                  </span>
+                )
+            },
+            {
+              key: "active",
+              label: t("adminMenus.colActive", lang),
+              sortValue: (r) => (r.active ? 0 : 1),
+              render: (r) =>
+                editId === r.id ? (
+                  <input
+                    type="checkbox"
+                    checked={editDraft.active}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        active: e.target.checked
+                      })
+                    }
+                  />
+                ) : r.active ? (
+                  <Badge tone="ok">{t("adminMenus.tagActive", lang)}</Badge>
+                ) : (
+                  <Badge tone="muted">{t("adminMenus.tagInactive", lang)}</Badge>
+                )
+            },
+            {
+              key: "actions",
+              label: "",
+              sortable: false,
+              render: (r) =>
+                editId === r.id ? (
+                  <div className="flex justify-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      disabled={busy}
+                      onClick={saveEdit}
+                    >
+                      {t("adminMenus.btnSaveEdit", lang)}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() => setEditId(null)}
+                    >
+                      {t("adminMenus.btnCancelEdit", lang)}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex justify-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => startEdit(r)}
+                    >
+                      {t("adminMenus.btnEdit", lang)}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => remove(r.id)}
+                    >
+                      {t("adminMenus.btnDelete", lang)}
+                    </Button>
+                  </div>
+                )
+            }
+          ];
+          return (
+            <SortableTable<Row>
+              columns={columns}
+              rows={filtered}
+              rowKey={(r) => r.id}
+              initialSort={{ key: "id", dir: "asc" }}
+            />
+          );
+        })()
       )}
     </Section>
   );

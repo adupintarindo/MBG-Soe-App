@@ -1686,6 +1686,456 @@ export type Database = {
           },
         ]
       }
+      stock_batches: {
+        Row: {
+          id: number
+          item_code: string
+          grn_no: string | null
+          supplier_id: string | null
+          batch_code: string | null
+          qty_received: number
+          qty_remaining: number
+          unit: string
+          received_date: string
+          expiry_date: string | null
+          note: string | null
+          created_at: string
+          created_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          item_code: string
+          grn_no?: string | null
+          supplier_id?: string | null
+          batch_code?: string | null
+          qty_received: number
+          qty_remaining: number
+          unit: string
+          received_date: string
+          expiry_date?: string | null
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          item_code?: string
+          grn_no?: string | null
+          supplier_id?: string | null
+          batch_code?: string | null
+          qty_received?: number
+          qty_remaining?: number
+          unit?: string
+          received_date?: string
+          expiry_date?: string | null
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          no: string
+          invoice_no: string | null
+          supplier_id: string | null
+          pay_date: string
+          amount: number
+          method: Database["public"]["Enums"]["payment_method"]
+          reference: string | null
+          bukti_url: string | null
+          note: string | null
+          created_at: string
+          created_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          no: string
+          invoice_no?: string | null
+          supplier_id?: string | null
+          pay_date: string
+          amount: number
+          method?: Database["public"]["Enums"]["payment_method"]
+          reference?: string | null
+          bukti_url?: string | null
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          no?: string
+          invoice_no?: string | null
+          supplier_id?: string | null
+          pay_date?: string
+          amount?: number
+          method?: Database["public"]["Enums"]["payment_method"]
+          reference?: string | null
+          bukti_url?: string | null
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cash_receipts: {
+        Row: {
+          no: string
+          receipt_date: string
+          source: Database["public"]["Enums"]["cash_source"]
+          source_name: string | null
+          amount: number
+          period: string | null
+          reference: string | null
+          bukti_url: string | null
+          note: string | null
+          created_at: string
+          created_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          no: string
+          receipt_date: string
+          source: Database["public"]["Enums"]["cash_source"]
+          source_name?: string | null
+          amount: number
+          period?: string | null
+          reference?: string | null
+          bukti_url?: string | null
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          no?: string
+          receipt_date?: string
+          source?: Database["public"]["Enums"]["cash_source"]
+          source_name?: string | null
+          amount?: number
+          period?: string | null
+          reference?: string | null
+          bukti_url?: string | null
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      deliveries: {
+        Row: {
+          no: string
+          delivery_date: string
+          menu_id: number | null
+          driver_name: string | null
+          vehicle: string | null
+          dispatched_at: string | null
+          completed_at: string | null
+          status: Database["public"]["Enums"]["delivery_status"]
+          total_porsi_planned: number
+          total_porsi_delivered: number
+          note: string | null
+          created_at: string
+          created_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          no: string
+          delivery_date: string
+          menu_id?: number | null
+          driver_name?: string | null
+          vehicle?: string | null
+          dispatched_at?: string | null
+          completed_at?: string | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          total_porsi_planned?: number
+          total_porsi_delivered?: number
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          no?: string
+          delivery_date?: string
+          menu_id?: number | null
+          driver_name?: string | null
+          vehicle?: string | null
+          dispatched_at?: string | null
+          completed_at?: string | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          total_porsi_planned?: number
+          total_porsi_delivered?: number
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_stops: {
+        Row: {
+          id: number
+          delivery_no: string
+          stop_order: number
+          school_id: string
+          porsi_planned: number
+          porsi_delivered: number
+          arrival_at: string | null
+          temperature_c: number | null
+          receiver_name: string | null
+          signature_url: string | null
+          photo_url: string | null
+          note: string | null
+          status: Database["public"]["Enums"]["delivery_status"]
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          delivery_no: string
+          stop_order: number
+          school_id: string
+          porsi_planned?: number
+          porsi_delivered?: number
+          arrival_at?: string | null
+          temperature_c?: number | null
+          receiver_name?: string | null
+          signature_url?: string | null
+          photo_url?: string | null
+          note?: string | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          delivery_no?: string
+          stop_order?: number
+          school_id?: string
+          porsi_planned?: number
+          porsi_delivered?: number
+          arrival_at?: string | null
+          temperature_c?: number | null
+          receiver_name?: string | null
+          signature_url?: string | null
+          photo_url?: string | null
+          note?: string | null
+          status?: Database["public"]["Enums"]["delivery_status"]
+          created_at?: string
+        }
+        Relationships: []
+      }
+      audit_events: {
+        Row: {
+          id: number
+          ts: string
+          actor_id: string | null
+          actor_email: string | null
+          actor_role: Database["public"]["Enums"]["user_role"] | null
+          table_name: string
+          row_pk: string | null
+          action: Database["public"]["Enums"]["audit_action"]
+          diff: Json
+          request_id: string | null
+          user_agent: string | null
+          ip: string | null
+        }
+        Insert: {
+          id?: number
+          ts?: string
+          actor_id?: string | null
+          actor_email?: string | null
+          actor_role?: Database["public"]["Enums"]["user_role"] | null
+          table_name: string
+          row_pk?: string | null
+          action: Database["public"]["Enums"]["audit_action"]
+          diff: Json
+          request_id?: string | null
+          user_agent?: string | null
+          ip?: string | null
+        }
+        Update: {
+          id?: number
+          ts?: string
+          actor_id?: string | null
+          actor_email?: string | null
+          actor_role?: Database["public"]["Enums"]["user_role"] | null
+          table_name?: string
+          row_pk?: string | null
+          action?: Database["public"]["Enums"]["audit_action"]
+          diff?: Json
+          request_id?: string | null
+          user_agent?: string | null
+          ip?: string | null
+        }
+        Relationships: []
+      }
+      budgets: {
+        Row: {
+          id: number
+          period: string
+          source: Database["public"]["Enums"]["cash_source"]
+          source_name: string | null
+          amount_idr: number
+          allocation: Json
+          target_cost_per_portion: number | null
+          note: string | null
+          created_at: string
+          created_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          period: string
+          source: Database["public"]["Enums"]["cash_source"]
+          source_name?: string | null
+          amount_idr: number
+          allocation?: Json
+          target_cost_per_portion?: number | null
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          period?: string
+          source?: Database["public"]["Enums"]["cash_source"]
+          source_name?: string | null
+          amount_idr?: number
+          allocation?: Json
+          target_cost_per_portion?: number | null
+          note?: string | null
+          created_at?: string
+          created_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      po_acknowledgements: {
+        Row: {
+          po_no: string
+          decision: Database["public"]["Enums"]["po_ack_decision"]
+          decided_at: string | null
+          decided_by: string | null
+          supplier_id: string | null
+          note: string | null
+          alt_delivery_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          po_no: string
+          decision?: Database["public"]["Enums"]["po_ack_decision"]
+          decided_at?: string | null
+          decided_by?: string | null
+          supplier_id?: string | null
+          note?: string | null
+          alt_delivery_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          po_no?: string
+          decision?: Database["public"]["Enums"]["po_ack_decision"]
+          decided_at?: string | null
+          decided_by?: string | null
+          supplier_id?: string | null
+          note?: string | null
+          alt_delivery_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      supplier_messages: {
+        Row: {
+          id: number
+          po_no: string | null
+          supplier_id: string
+          sender_id: string | null
+          sender_role: Database["public"]["Enums"]["user_role"] | null
+          body: string
+          attachment_url: string | null
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          po_no?: string | null
+          supplier_id: string
+          sender_id?: string | null
+          sender_role?: Database["public"]["Enums"]["user_role"] | null
+          body: string
+          attachment_url?: string | null
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          po_no?: string | null
+          supplier_id?: string
+          sender_id?: string | null
+          sender_role?: Database["public"]["Enums"]["user_role"] | null
+          body?: string
+          attachment_url?: string | null
+          read_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      invoice_uploads: {
+        Row: {
+          id: number
+          po_no: string | null
+          grn_no: string | null
+          supplier_id: string
+          invoice_no_supplier: string | null
+          total: number
+          file_url: string
+          status: Database["public"]["Enums"]["invoice_upload_status"]
+          approved_invoice_no: string | null
+          rejected_reason: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+        }
+        Insert: {
+          id?: number
+          po_no?: string | null
+          grn_no?: string | null
+          supplier_id: string
+          invoice_no_supplier?: string | null
+          total: number
+          file_url: string
+          status?: Database["public"]["Enums"]["invoice_upload_status"]
+          approved_invoice_no?: string | null
+          rejected_reason?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Update: {
+          id?: number
+          po_no?: string | null
+          grn_no?: string | null
+          supplier_id?: string
+          invoice_no_supplier?: string | null
+          total?: number
+          file_url?: string
+          status?: Database["public"]["Enums"]["invoice_upload_status"]
+          approved_invoice_no?: string | null
+          rejected_reason?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_price_list_matrix: {
@@ -1736,6 +2186,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_stock_on_hand_by_item: {
+        Row: {
+          item_code: string | null
+          unit: string | null
+          qty_batches: number | null
+          qty_aggregate: number | null
+          active_batches: number | null
+          nearest_expiry: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
@@ -2241,13 +2702,189 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      stock_consume_fifo: {
+        Args: {
+          p_item_code: string
+          p_qty: number
+          p_ref_doc?: string
+          p_ref_no?: string | null
+          p_note?: string | null
+        }
+        Returns: {
+          batch_id: number
+          consumed: number
+          remaining_after: number
+        }[]
+      }
+      expiring_batches: {
+        Args: { p_days?: number }
+        Returns: {
+          id: number
+          item_code: string
+          item_name: string | null
+          grn_no: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          qty_remaining: number
+          unit: string
+          expiry_date: string
+          days_left: number
+          status: string
+        }[]
+      }
+      outstanding_by_supplier: {
+        Args: never
+        Returns: {
+          supplier_id: string
+          supplier_name: string
+          invoice_count: number
+          invoice_total: number
+          paid_total: number
+          outstanding: number
+          oldest_due: string | null
+        }[]
+      }
+      monthly_cashflow: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          period: string
+          cash_in: number
+          cash_out: number
+          net: number
+          cumulative: number
+        }[]
+      }
+      payment_summary_by_invoice: {
+        Args: { p_invoice_no: string }
+        Returns: {
+          invoice_no: string
+          invoice_total: number
+          paid: number
+          outstanding: number
+          payment_count: number
+          last_payment_date: string | null
+        }[]
+      }
+      delivery_generate_for_date: {
+        Args: { p_date: string }
+        Returns: string
+      }
+      daily_delivery_summary: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          delivery_date: string
+          delivery_no: string
+          status: string
+          stops_total: number
+          stops_delivered: number
+          porsi_planned: number
+          porsi_delivered: number
+          fulfilment_pct: number | null
+        }[]
+      }
+      list_audit: {
+        Args: {
+          p_table?: string | null
+          p_actor?: string | null
+          p_action?: Database["public"]["Enums"]["audit_action"] | null
+          p_from?: string
+          p_to?: string
+          p_limit?: number
+        }
+        Returns: Database["public"]["Tables"]["audit_events"]["Row"][]
+      }
+      budget_burn: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          period: string
+          budget_total: number
+          spent_po: number
+          spent_invoice: number
+          spent_paid: number
+          burn_pct: number | null
+          remaining: number
+        }[]
+      }
+      cost_per_portion_daily: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          op_date: string
+          total_porsi: number
+          spent_po: number
+          cost_per_portion: number | null
+          target: number | null
+        }[]
+      }
+      supplier_po_inbox: {
+        Args: { p_limit?: number }
+        Returns: {
+          po_no: string
+          po_date: string
+          delivery_date: string | null
+          total: number
+          po_status: Database["public"]["Enums"]["po_status"]
+          ack_decision: Database["public"]["Enums"]["po_ack_decision"]
+          ack_at: string | null
+          grn_status: Database["public"]["Enums"]["grn_status"] | null
+          invoice_status: Database["public"]["Enums"]["invoice_status"] | null
+          unread_msg: number
+        }[]
+      }
+      supplier_payment_status: {
+        Args: never
+        Returns: {
+          invoice_no: string
+          po_no: string | null
+          inv_date: string
+          due_date: string | null
+          total: number
+          paid: number
+          outstanding: number
+          status: Database["public"]["Enums"]["invoice_status"]
+        }[]
+      }
+      global_search: {
+        Args: { p_query: string; p_limit?: number }
+        Returns: {
+          kind: string
+          id: string
+          title: string
+          subtitle: string
+          url: string
+          score: number
+        }[]
+      }
     }
     Enums: {
       action_priority: "low" | "medium" | "high" | "critical"
       action_source: "onboarding" | "mom" | "field" | "audit" | "ad_hoc"
       action_status: "open" | "in_progress" | "blocked" | "done" | "cancelled"
+      audit_action: "INSERT" | "UPDATE" | "DELETE"
+      cash_source:
+        | "dinas"
+        | "wfp"
+        | "ifsr"
+        | "ffi"
+        | "donor_swasta"
+        | "lainnya"
+      delivery_status:
+        | "planned"
+        | "dispatched"
+        | "delivered"
+        | "partial"
+        | "cancelled"
       grn_status: "pending" | "ok" | "partial" | "rejected"
       invoice_status: "issued" | "paid" | "overdue" | "cancelled"
+      invoice_upload_status: "pending" | "approved" | "rejected"
+      payment_method:
+        | "transfer"
+        | "tunai"
+        | "cek"
+        | "giro"
+        | "virtual_account"
+        | "qris"
+        | "lainnya"
+      po_ack_decision: "accepted" | "rejected" | "partial" | "pending"
       item_category:
         | "BERAS"
         | "HEWANI"

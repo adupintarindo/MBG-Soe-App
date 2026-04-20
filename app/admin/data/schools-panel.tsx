@@ -11,10 +11,12 @@ import {
   FieldLabel,
   Input,
   Section,
-  Select,
-  TableWrap,
-  THead
+  Select
 } from "@/components/ui";
+import {
+  SortableTable,
+  type SortableColumn
+} from "@/components/sortable-table";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 
@@ -368,221 +370,260 @@ export function SchoolsPanel({ initial }: { initial: Row[] }) {
       {filtered.length === 0 ? (
         <EmptyState icon="🏫" title={t("adminSch.emptyTitle", lang)} />
       ) : (
-        <TableWrap>
-          <table className="w-full text-sm">
-            <THead>
-              <th className="py-2 pr-3">{t("adminSch.colId", lang)}</th>
-              <th className="py-2 pr-3">{t("adminSch.colName", lang)}</th>
-              <th className="py-2 pr-3">{t("adminSch.colLevel", lang)}</th>
-              <th className="py-2 pr-3 text-right">{t("adminSch.colStudents", lang)}</th>
-              <th className="py-2 pr-3 text-right">{t("adminSch.colGuru", lang)}</th>
-              <th className="py-2 pr-3 text-right">{t("adminSch.colDistance", lang)}</th>
-              <th className="py-2 pr-3">{t("adminSch.colPic", lang)}</th>
-              <th className="py-2 pr-3"></th>
-            </THead>
-            <tbody>
-              {filtered.map((r) =>
+        (() => {
+          const columns: SortableColumn<Row>[] = [
+            {
+              key: "id",
+              label: t("adminSch.colId", lang),
+              align: "left",
+              sortValue: (r) => r.id,
+              render: (r) => (
+                <span className="font-mono text-[12px]">{r.id}</span>
+              )
+            },
+            {
+              key: "name",
+              label: t("adminSch.colName", lang),
+              align: "left",
+              sortValue: (r) => r.name,
+              render: (r) =>
                 editId === r.id ? (
-                  <tr
-                    key={r.id}
-                    className="border-b border-ink/5 bg-amber-50/40"
-                  >
-                    <td className="py-2 pr-3 font-mono text-[12px]">{r.id}</td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        value={editDraft.name}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, name: e.target.value })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Select
-                        value={editDraft.level}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            level: e.target.value as Level
-                          })
-                        }
-                      >
-                        {LEVELS.map((l) => (
-                          <option key={l} value={l}>
-                            {l}
-                          </option>
-                        ))}
-                      </Select>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="grid grid-cols-3 gap-1">
-                        <Input
-                          type="number"
-                          value={editDraft.students}
-                          onChange={(e) =>
-                            setEditDraft({
-                              ...editDraft,
-                              students: e.target.value
-                            })
-                          }
-                        />
-                        <Input
-                          type="number"
-                          value={editDraft.kelas13}
-                          onChange={(e) =>
-                            setEditDraft({
-                              ...editDraft,
-                              kelas13: e.target.value
-                            })
-                          }
-                        />
-                        <Input
-                          type="number"
-                          value={editDraft.kelas46}
-                          onChange={(e) =>
-                            setEditDraft({
-                              ...editDraft,
-                              kelas46: e.target.value
-                            })
-                          }
-                        />
-                      </div>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        type="number"
-                        value={editDraft.guru}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            guru: e.target.value
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={editDraft.distance_km}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            distance_km: e.target.value
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="space-y-1">
-                        <Input
-                          value={editDraft.pic}
-                          onChange={(e) =>
-                            setEditDraft({ ...editDraft, pic: e.target.value })
-                          }
-                          placeholder={t("adminSch.fldPic", lang)}
-                        />
-                        <Input
-                          value={editDraft.phone}
-                          onChange={(e) =>
-                            setEditDraft({
-                              ...editDraft,
-                              phone: e.target.value
-                            })
-                          }
-                          placeholder={t("adminSch.fldPhone", lang)}
-                        />
-                        <Input
-                          value={editDraft.address}
-                          onChange={(e) =>
-                            setEditDraft({
-                              ...editDraft,
-                              address: e.target.value
-                            })
-                          }
-                          placeholder={t("adminSch.phAddress", lang)}
-                        />
-                      </div>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="inline-flex items-center gap-1 text-[10px] font-bold text-ink2">
-                          <input
-                            type="checkbox"
-                            checked={editDraft.active}
-                            onChange={(e) =>
-                              setEditDraft({
-                                ...editDraft,
-                                active: e.target.checked
-                              })
-                            }
-                          />
-                          {t("adminSch.lblActive", lang)}
-                        </label>
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          disabled={busy}
-                          onClick={saveEdit}
-                        >
-                          {t("adminSch.btnSaveEdit", lang)}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={busy}
-                          onClick={() => setEditId(null)}
-                        >
-                          {t("adminSch.btnCancelEdit", lang)}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  <Input
+                    value={editDraft.name}
+                    onChange={(e) =>
+                      setEditDraft({ ...editDraft, name: e.target.value })
+                    }
+                  />
                 ) : (
-                  <tr key={r.id} className="row-hover border-b border-ink/5">
-                    <td className="py-2 pr-3 font-mono text-[12px]">{r.id}</td>
-                    <td className="py-2 pr-3 text-ink">{r.name}</td>
-                    <td className="py-2 pr-3">
-                      <Badge tone="accent">{r.level}</Badge>
-                    </td>
-                    <td className="py-2 pr-3 text-right font-mono text-[12px]">
-                      {r.students} · {r.kelas13} · {r.kelas46}
-                    </td>
-                    <td className="py-2 pr-3 text-right font-mono text-[12px]">
-                      {r.guru}
-                    </td>
-                    <td className="py-2 pr-3 text-right font-mono text-[12px]">
-                      {r.distance_km != null ? `${r.distance_km} km` : "—"}
-                    </td>
-                    <td className="py-2 pr-3 text-[12px] text-ink2">
-                      <div>{r.pic ?? "—"}</div>
-                      <div className="font-mono text-[11px]">
-                        {r.phone ?? "—"}
-                      </div>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => startEdit(r)}
-                        >
-                          {t("adminSch.btnEdit", lang)}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => remove(r.id)}
-                        >
-                          {t("adminSch.btnDelete", lang)}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  <span className="text-ink">{r.name}</span>
                 )
-              )}
-            </tbody>
-          </table>
-        </TableWrap>
+            },
+            {
+              key: "level",
+              label: t("adminSch.colLevel", lang),
+              sortValue: (r) => r.level,
+              render: (r) =>
+                editId === r.id ? (
+                  <Select
+                    value={editDraft.level}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        level: e.target.value as Level
+                      })
+                    }
+                  >
+                    {LEVELS.map((l) => (
+                      <option key={l} value={l}>
+                        {l}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <Badge tone="accent">{r.level}</Badge>
+                )
+            },
+            {
+              key: "students",
+              label: t("adminSch.colStudents", lang),
+              align: "right",
+              sortValue: (r) => r.students,
+              render: (r) =>
+                editId === r.id ? (
+                  <div className="grid grid-cols-3 gap-1">
+                    <Input
+                      type="number"
+                      value={editDraft.students}
+                      onChange={(e) =>
+                        setEditDraft({
+                          ...editDraft,
+                          students: e.target.value
+                        })
+                      }
+                    />
+                    <Input
+                      type="number"
+                      value={editDraft.kelas13}
+                      onChange={(e) =>
+                        setEditDraft({
+                          ...editDraft,
+                          kelas13: e.target.value
+                        })
+                      }
+                    />
+                    <Input
+                      type="number"
+                      value={editDraft.kelas46}
+                      onChange={(e) =>
+                        setEditDraft({
+                          ...editDraft,
+                          kelas46: e.target.value
+                        })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <span className="font-mono text-[12px]">
+                    {r.students} · {r.kelas13} · {r.kelas46}
+                  </span>
+                )
+            },
+            {
+              key: "guru",
+              label: t("adminSch.colGuru", lang),
+              align: "right",
+              sortValue: (r) => r.guru,
+              render: (r) =>
+                editId === r.id ? (
+                  <Input
+                    type="number"
+                    value={editDraft.guru}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        guru: e.target.value
+                      })
+                    }
+                  />
+                ) : (
+                  <span className="font-mono text-[12px]">{r.guru}</span>
+                )
+            },
+            {
+              key: "distance",
+              label: t("adminSch.colDistance", lang),
+              align: "right",
+              sortValue: (r) => r.distance_km ?? 0,
+              render: (r) =>
+                editId === r.id ? (
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={editDraft.distance_km}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        distance_km: e.target.value
+                      })
+                    }
+                  />
+                ) : (
+                  <span className="font-mono text-[12px]">
+                    {r.distance_km != null ? `${r.distance_km} km` : "—"}
+                  </span>
+                )
+            },
+            {
+              key: "pic",
+              label: t("adminSch.colPic", lang),
+              align: "left",
+              sortValue: (r) => r.pic ?? "",
+              render: (r) =>
+                editId === r.id ? (
+                  <div className="space-y-1">
+                    <Input
+                      value={editDraft.pic}
+                      onChange={(e) =>
+                        setEditDraft({ ...editDraft, pic: e.target.value })
+                      }
+                      placeholder={t("adminSch.fldPic", lang)}
+                    />
+                    <Input
+                      value={editDraft.phone}
+                      onChange={(e) =>
+                        setEditDraft({
+                          ...editDraft,
+                          phone: e.target.value
+                        })
+                      }
+                      placeholder={t("adminSch.fldPhone", lang)}
+                    />
+                    <Input
+                      value={editDraft.address}
+                      onChange={(e) =>
+                        setEditDraft({
+                          ...editDraft,
+                          address: e.target.value
+                        })
+                      }
+                      placeholder={t("adminSch.phAddress", lang)}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-[12px] text-ink2">
+                    <div>{r.pic ?? "—"}</div>
+                    <div className="font-mono text-[11px]">
+                      {r.phone ?? "—"}
+                    </div>
+                  </div>
+                )
+            },
+            {
+              key: "actions",
+              label: "",
+              sortable: false,
+              render: (r) =>
+                editId === r.id ? (
+                  <div className="flex flex-col gap-1">
+                    <label className="inline-flex items-center gap-1 text-[10px] font-bold text-ink2">
+                      <input
+                        type="checkbox"
+                        checked={editDraft.active}
+                        onChange={(e) =>
+                          setEditDraft({
+                            ...editDraft,
+                            active: e.target.checked
+                          })
+                        }
+                      />
+                      {t("adminSch.lblActive", lang)}
+                    </label>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      disabled={busy}
+                      onClick={saveEdit}
+                    >
+                      {t("adminSch.btnSaveEdit", lang)}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() => setEditId(null)}
+                    >
+                      {t("adminSch.btnCancelEdit", lang)}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex justify-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => startEdit(r)}
+                    >
+                      {t("adminSch.btnEdit", lang)}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => remove(r.id)}
+                    >
+                      {t("adminSch.btnDelete", lang)}
+                    </Button>
+                  </div>
+                )
+            }
+          ];
+          return (
+            <SortableTable<Row>
+              columns={columns}
+              rows={filtered}
+              rowKey={(r) => r.id}
+              initialSort={{ key: "id", dir: "asc" }}
+            />
+          );
+        })()
       )}
     </Section>
   );

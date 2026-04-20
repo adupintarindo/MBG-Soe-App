@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { PrefsProvider } from "@/lib/prefs-context";
+import { PwaRegistrar } from "@/components/pwa-registrar";
 
 const PREFS_INIT_SCRIPT = `(() => {
   try {
@@ -37,6 +38,16 @@ export const metadata: Metadata = {
   description:
     "Dashboard Rantai Pasok MBG · SPPG Nunumeu, Soe · WFP × IFSR × FFI",
   applicationName: "MBG Soe Supply Chain",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "MBG Soe",
+    statusBarStyle: "default"
+  },
+  icons: {
+    icon: "/icons/icon-192.svg",
+    apple: "/icons/icon-192.svg"
+  },
   authors: [
     { name: "Alfatehan Septianta", url: "https://ifsr.or.id" },
     { name: "IFSR × FFI × WFP" }
@@ -76,7 +87,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-paper text-ink antialiased dark:bg-d-bg dark:text-d-text">
-        <PrefsProvider>{children}</PrefsProvider>
+        <PrefsProvider>
+          {children}
+          <PwaRegistrar />
+        </PrefsProvider>
       </body>
     </html>
   );

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b2e4f"/>
+      <stop offset="1" stop-color="#143a60"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <text x="50%" y="48%" text-anchor="middle" dominant-baseline="central" font-size="320" font-family="system-ui, -apple-system, sans-serif">🍱</text>
+  <text x="50%" y="440" text-anchor="middle" font-size="48" font-weight="800" fill="#f3c96e" font-family="system-ui, sans-serif">MBG Soe</text>
+  <text x="50%" y="480" text-anchor="middle" font-size="22" fill="#f3c96e" font-family="system-ui, sans-serif">Supply Chain</text>
+</svg>

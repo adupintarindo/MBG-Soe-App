@@ -251,6 +251,12 @@ export function VolumeMatrixTable({
     }
   ];
 
+  const categoryFilter: SortableTableFilter<VolumeRow> = {
+    key: "category",
+    label: t("common.filterCategory", lang),
+    getValue: (r) => r.category
+  };
+
   return (
     <SortableTable<VolumeRow>
       tableClassName="text-sm tabular-nums"
@@ -263,6 +269,7 @@ export function VolumeMatrixTable({
       exportable
       exportFileName="volume-matrix"
       exportSheetName="Volume Matrix"
+      filters={[categoryFilter]}
     />
   );
 }

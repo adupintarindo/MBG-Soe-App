@@ -6,6 +6,7 @@ import { formatIDR, type SupplierAction } from "@/lib/engine";
 import { Section } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { SupplierDetailModal } from "./supplier-detail-modal";
+import { ActionsPanel } from "./actions-panel";
 import type {
   SupplierRow,
   SupItemLink,
@@ -68,9 +69,19 @@ interface Props {
   suppliers: SupplierRow[];
   supItems: SupItemLink[];
   invoices: InvoiceTx[];
+  actions: SupplierAction[];
+  canWriteActions: boolean;
+  isSupplierRole: boolean;
 }
 
-export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
+export function SuppliersShell({
+  suppliers,
+  supItems,
+  invoices,
+  actions,
+  canWriteActions,
+  isSupplierRole
+}: Props) {
   const { lang } = useLang();
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
@@ -592,6 +603,18 @@ export function SuppliersShell({ suppliers, supItems, invoices }: Props) {
             />
           );
         })()}
+      </Section>
+
+      <Section
+        title={t("suppliers.actionsTitle", lang)}
+        hint={t("suppliers.actionsHint", lang)}
+      >
+        <ActionsPanel
+          actions={actions}
+          supplierId={null}
+          canWrite={canWriteActions}
+          isSupplierRole={isSupplierRole}
+        />
       </Section>
 
       {modalError && (

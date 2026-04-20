@@ -813,3 +813,330 @@ export function toISODate(d: Date): string {
   const da = String(d.getDate()).padStart(2, "0");
   return `${yr}-${mo}-${da}`;
 }
+
+// ============================================================================
+// 0031..0037 · Batch, payments, deliveries, audit, budget, supplier portal,
+// global search. RPC wrappers.
+// ============================================================================
+
+export interface ExpiringBatch {
+  id: number;
+  item_code: string;
+  item_name: string | null;
+  grn_no: string | null;
+  supplier_id: string | null;
+  supplier_name: string | null;
+  qty_remaining: number;
+  unit: string;
+  expiry_date: string;
+  days_left: number;
+  status: "expired" | "urgent" | "soon" | string;
+}
+
+export async function expiringBatches(
+  supabase: Client,
+  days = 14
+): Promise<ExpiringBatch[]> {
+  const { data, error } = await supabase.rpc("expiring_batches", {
+    p_days: days
+  });
+  if (error) throw error;
+  return (data ?? []) as ExpiringBatch[];
+}
+
+export interface FifoConsumeRow {
+  batch_id: number;
+  consumed: number;
+  remaining_after: number;
+}
+
+export async function stockConsumeFifo(
+  supabase: Client,
+  params: {
+    item_code: string;
+    qty: number;
+    ref_doc?: string;
+    ref_no?: string | null;
+    note?: string | null;
+  }
+): Promise<FifoConsumeRow[]> {
+  const { data, error } = await supabase.rpc("stock_consume_fifo", {
+    p_item_code: params.item_code,
+    p_qty: params.qty,
+    p_ref_doc: params.ref_doc ?? "menu_consumption",
+    p_ref_no: params.ref_no ?? null,
+    p_note: params.note ?? null
+  });
+  if (error) throw error;
+  return (data ?? []) as FifoConsumeRow[];
+}
+
+// ---------- Payments / cashflow ----------
+
+export interface OutstandingBySupplier {
+  supplier_id: string;
+  supplier_name: string;
+  invoice_count: number;
+  invoice_total: number;
+  paid_total: number;
+  outstanding: number;
+  oldest_due: string | null;
+}
+
+export async function outstandingBySupplier(
+  supabase: Client
+): Promise<OutstandingBySupplier[]> {
+  const { data, error } = await supabase.rpc("outstanding_by_supplier");
+  if (error) throw error;
+  return (data ?? []) as OutstandingBySupplier[];
+}
+
+export interface CashflowRow {
+  period: string;
+  cash_in: number;
+  cash_out: number;
+  net: number;
+  cumulative: number;
+}
+
+export async function monthlyCashflow(
+  supabase: Client,
+  from?: string,
+  to?: string
+): Promise<CashflowRow[]> {
+  const args: Record<string, string> = {};
+  if (from) args.p_from = from;
+  if (to) args.p_to = to;
+  const { data, error } = await supabase.rpc("monthly_cashflow", args);
+  if (error) throw error;
+  return (data ?? []) as CashflowRow[];
+}
+
+export interface PaymentSummary {
+  invoice_no: string;
+  invoice_total: number;
+  paid: number;
+  outstanding: number;
+  payment_count: number;
+  last_payment_date: string | null;
+}
+
+export async function paymentSummaryByInvoice(
+  supabase: Client,
+  invoiceNo: string
+): Promise<PaymentSummary | null> {
+  const { data, error } = await supabase.rpc("payment_summary_by_invoice", {
+    p_invoice_no: invoiceNo
+  });
+  if (error) throw error;
+  const row = (data ?? [])[0] as PaymentSummary | undefined;
+  return row ?? null;
+}
+
+// ---------- Deliveries ----------
+
+export interface DeliverySummaryRow {
+  delivery_date: string;
+  delivery_no: string;
+  status: string;
+  stops_total: number;
+  stops_delivered: number;
+  porsi_planned: number;
+  porsi_delivered: number;
+  fulfilment_pct: number | null;
+}
+
+export async function dailyDeliverySummary(
+  supabase: Client,
+  from?: string,
+  to?: string
+): Promise<DeliverySummaryRow[]> {
+  const args: Record<string, string> = {};
+  if (from) args.p_from = from;
+  if (to) args.p_to = to;
+  const { data, error } = await supabase.rpc("daily_delivery_summary", args);
+  if (error) throw error;
+  return (data ?? []) as DeliverySummaryRow[];
+}
+
+export async function deliveryGenerateForDate(
+  supabase: Client,
+  date: string
+): Promise<string> {
+  const { data, error } = await supabase.rpc("delivery_generate_for_date", {
+    p_date: date
+  });
+  if (error) throw error;
+  return (data ?? "") as string;
+}
+
+// ---------- Budget ----------
+
+export interface BudgetBurnRow {
+  period: string;
+  budget_total: number;
+  spent_po: number;
+  spent_invoice: number;
+  spent_paid: number;
+  burn_pct: number | null;
+  remaining: number;
+}
+
+export async function budgetBurn(
+  supabase: Client,
+  from?: string,
+  to?: string
+): Promise<BudgetBurnRow[]> {
+  const args: Record<string, string> = {};
+  if (from) args.p_from = from;
+  if (to) args.p_to = to;
+  const { data, error } = await supabase.rpc("budget_burn", args);
+  if (error) throw error;
+  return (data ?? []) as BudgetBurnRow[];
+}
+
+export interface CostPerPortionRow {
+  op_date: string;
+  total_porsi: number;
+  spent_po: number;
+  cost_per_portion: number | null;
+  target: number | null;
+}
+
+export async function costPerPortionDaily(
+  supabase: Client,
+  from?: string,
+  to?: string
+): Promise<CostPerPortionRow[]> {
+  const args: Record<string, string> = {};
+  if (from) args.p_from = from;
+  if (to) args.p_to = to;
+  const { data, error } = await supabase.rpc("cost_per_portion_daily", args);
+  if (error) throw error;
+  return (data ?? []) as CostPerPortionRow[];
+}
+
+// ---------- Supplier portal ----------
+
+export interface SupplierPoInboxRow {
+  po_no: string;
+  po_date: string;
+  delivery_date: string | null;
+  total: number;
+  po_status: Database["public"]["Enums"]["po_status"];
+  ack_decision: Database["public"]["Enums"]["po_ack_decision"];
+  ack_at: string | null;
+  grn_status: Database["public"]["Enums"]["grn_status"] | null;
+  invoice_status: Database["public"]["Enums"]["invoice_status"] | null;
+  unread_msg: number;
+}
+
+export async function supplierPoInbox(
+  supabase: Client,
+  limit = 30
+): Promise<SupplierPoInboxRow[]> {
+  const { data, error } = await supabase.rpc("supplier_po_inbox", {
+    p_limit: limit
+  });
+  if (error) throw error;
+  return (data ?? []) as SupplierPoInboxRow[];
+}
+
+export interface SupplierPaymentStatusRow {
+  invoice_no: string;
+  po_no: string | null;
+  inv_date: string;
+  due_date: string | null;
+  total: number;
+  paid: number;
+  outstanding: number;
+  status: Database["public"]["Enums"]["invoice_status"];
+}
+
+export async function supplierPaymentStatus(
+  supabase: Client
+): Promise<SupplierPaymentStatusRow[]> {
+  const { data, error } = await supabase.rpc("supplier_payment_status");
+  if (error) throw error;
+  return (data ?? []) as SupplierPaymentStatusRow[];
+}
+
+// ---------- Global search ----------
+
+export interface SearchHit {
+  kind:
+    | "po"
+    | "grn"
+    | "invoice"
+    | "qt"
+    | "pr"
+    | "item"
+    | "supplier"
+    | "menu"
+    | "school"
+    | "delivery"
+    | string;
+  id: string;
+  title: string;
+  subtitle: string;
+  url: string;
+  score: number;
+}
+
+export async function globalSearch(
+  supabase: Client,
+  query: string,
+  limit = 10
+): Promise<SearchHit[]> {
+  if (!query || query.trim().length < 2) return [];
+  const { data, error } = await supabase.rpc("global_search", {
+    p_query: query.trim(),
+    p_limit: limit
+  });
+  if (error) throw error;
+  return (data ?? []) as SearchHit[];
+}
+
+// ---------- Audit ----------
+
+export interface AuditEvent {
+  id: number;
+  ts: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  actor_role: Database["public"]["Enums"]["user_role"] | null;
+  table_name: string;
+  row_pk: string | null;
+  action: "INSERT" | "UPDATE" | "DELETE";
+  diff: {
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
+    changed?: string[];
+  };
+  request_id: string | null;
+  user_agent: string | null;
+  ip: string | null;
+}
+
+export async function listAudit(
+  supabase: Client,
+  filters: {
+    table?: string;
+    actor?: string;
+    action?: "INSERT" | "UPDATE" | "DELETE";
+    from?: string;
+    to?: string;
+    limit?: number;
+  } = {}
+): Promise<AuditEvent[]> {
+  const args: Record<string, unknown> = {};
+  if (filters.table) args.p_table = filters.table;
+  if (filters.actor) args.p_actor = filters.actor;
+  if (filters.action) args.p_action = filters.action;
+  if (filters.from) args.p_from = filters.from;
+  if (filters.to) args.p_to = filters.to;
+  if (filters.limit) args.p_limit = filters.limit;
+  const { data, error } = await supabase.rpc("list_audit", args);
+  if (error) throw error;
+  return (data ?? []) as unknown as AuditEvent[];
+}

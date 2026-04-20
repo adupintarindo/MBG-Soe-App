@@ -7,6 +7,7 @@ import type { UserRole } from "@/lib/roles";
 import { canInvite, canWriteMenu, canWriteStock } from "@/lib/roles";
 import { type Lang, type LangKey, t, DAYS, MONTHS } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs-context";
+import { CommandPalette } from "./command-palette";
 
 interface MenuToday {
   id: number | null;
@@ -52,11 +53,25 @@ const TABS: TabCard[] = [
   { href: "/suppliers", labelKey: "tabSuppliers", icon: "🤝", group: "buy", show: () => true },
   { href: "/price-list", labelKey: "tabPriceList", icon: "💹", group: "buy", show: () => true },
   {
+    href: "/supplier",
+    labelKey: "tabSupplierPortal",
+    icon: "🏢",
+    group: "buy",
+    show: (r) => r === "supplier"
+  },
+  {
     href: "/supplier/forecast",
     labelKey: "tabForecast",
     icon: "📅",
     group: "buy",
     show: (r) => r === "supplier"
+  },
+  {
+    href: "/payments",
+    labelKey: "tabPayments",
+    icon: "💳",
+    group: "buy",
+    show: (r) => r === "admin" || r === "operator" || r === "viewer"
   },
   {
     href: "/stock",
@@ -66,6 +81,21 @@ const TABS: TabCard[] = [
     show: (r) => canWriteStock(r) || r === "viewer" || r === "ahli_gizi"
   },
   { href: "/schools", labelKey: "tabSchools", icon: "🏫", group: "run", show: () => true },
+  {
+    href: "/deliveries",
+    labelKey: "tabDeliveries",
+    icon: "🚚",
+    group: "run",
+    show: (r) =>
+      r === "admin" || r === "operator" || r === "viewer" || r === "ahli_gizi"
+  },
+  {
+    href: "/budget",
+    labelKey: "tabBudget",
+    icon: "💰",
+    group: "run",
+    show: (r) => r === "admin" || r === "operator" || r === "viewer"
+  },
   { href: "/docgen", labelKey: "tabDocgen", icon: "🖨️", group: "audit", show: () => true },
   { href: "/sop", labelKey: "tabSOP", icon: "📚", group: "audit", show: () => true }
 ];
@@ -178,6 +208,13 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
           show: () => true
         },
         {
+          href: "/admin/audit",
+          labelKey: "tabAudit",
+          icon: "📜",
+          group: "admin",
+          show: () => true
+        },
+        {
           href: "/admin/invite",
           labelKey: "tabAdmin",
           icon: "🛡️",
@@ -185,7 +222,17 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
           show: () => true
         }
       ]
-    : [];
+    : role === "viewer"
+      ? [
+          {
+            href: "/admin/audit",
+            labelKey: "tabAudit",
+            icon: "📜",
+            group: "admin",
+            show: () => true
+          }
+        ]
+      : [];
   const allTabs = [...visible, ...adminTabs];
   const displayName = fullName || email.split("@")[0];
 
@@ -193,9 +240,21 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
     if (tab.href === "/admin/data") {
       return current.startsWith("/admin/data");
     }
+    if (tab.href === "/admin/audit") {
+      return current.startsWith("/admin/audit");
+    }
     if (tab.href === "/admin/invite") {
       return (
-        current.startsWith("/admin") && !current.startsWith("/admin/data")
+        current.startsWith("/admin") &&
+        !current.startsWith("/admin/data") &&
+        !current.startsWith("/admin/audit")
+      );
+    }
+    if (tab.href === "/supplier") {
+      return (
+        current === "/supplier" ||
+        (current.startsWith("/supplier/") &&
+          !current.startsWith("/supplier/forecast"))
       );
     }
     return isActive(tab.href, current);
@@ -364,6 +423,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
           </div>
         </nav>
       </div>
+      <CommandPalette />
     </header>
   );
 }

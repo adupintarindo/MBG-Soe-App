@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
-import { actionReadinessSnapshot } from "@/lib/engine";
+import {
+  actionReadinessSnapshot,
+  listSupplierActions
+} from "@/lib/engine";
 import { Nav } from "@/components/nav";
 import {
   KpiGrid,
@@ -40,29 +43,38 @@ export default async function SuppliersPage() {
     readiness_pct: 0
   };
 
-  const [supRes, supItemsRes, invoicesRes, readiness] = await Promise.all([
-    supabase
-      .from("suppliers")
-      .select(
-        "id, name, type, commodity, pic, phone, address, email, notes, score, status, active"
-      )
-      .order("id"),
-    supabase
-      .from("supplier_items")
-      .select("supplier_id, item_code, is_main, price_idr, lead_time_days"),
-    supabase
-      .from("invoices")
-      .select("no, supplier_id, inv_date, total, status, po_no")
-      .order("inv_date", { ascending: false }),
-    actionReadinessSnapshot(supabase).catch((e) => {
-      console.error("[suppliers] actionReadinessSnapshot failed:", e);
-      return emptyReadiness;
-    })
-  ]);
+  const [supRes, supItemsRes, invoicesRes, readiness, actionsAll] =
+    await Promise.all([
+      supabase
+        .from("suppliers")
+        .select(
+          "id, name, type, commodity, pic, phone, address, email, notes, score, status, active"
+        )
+        .order("id"),
+      supabase
+        .from("supplier_items")
+        .select("supplier_id, item_code, is_main, price_idr, lead_time_days"),
+      supabase
+        .from("invoices")
+        .select("no, supplier_id, inv_date, total, status, po_no")
+        .order("inv_date", { ascending: false }),
+      actionReadinessSnapshot(supabase).catch((e) => {
+        console.error("[suppliers] actionReadinessSnapshot failed:", e);
+        return emptyReadiness;
+      }),
+      listSupplierActions(supabase).catch((e) => {
+        console.error("[suppliers] listSupplierActions failed:", e);
+        return [];
+      })
+    ]);
 
   const suppliers = (supRes.data ?? []) as SupplierRow[];
   const supItems = (supItemsRes.data ?? []) as SupItemLink[];
   const invoices = (invoicesRes.data ?? []) as InvoiceTx[];
+
+  const canWriteActions =
+    profile.role === "admin" || profile.role === "operator";
+  const isSupplierRole = profile.role === "supplier";
 
   const signed = suppliers.filter((s) => s.status === "signed").length;
   const awaiting = suppliers.filter((s) => s.status === "awaiting").length;
@@ -142,6 +154,9 @@ export default async function SuppliersPage() {
           suppliers={suppliers}
           supItems={supItems}
           invoices={invoices}
+          actions={actionsAll}
+          canWriteActions={canWriteActions}
+          isSupplierRole={isSupplierRole}
         />
       </PageContainer>
     </div>

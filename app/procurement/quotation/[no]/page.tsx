@@ -212,7 +212,7 @@ export default async function QuotationDetailPage({
               {t("qtDetail.btnXlsx", lang)}
             </a>
             <Link
-              href={`/api/quotations/${encodeURIComponent(qt.no)}/print`}
+              href={`/docgen/qt/${encodeURIComponent(qt.no)}`}
               target="_blank"
               className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-ink ring-1 ring-ink/20 hover:bg-paper"
             >

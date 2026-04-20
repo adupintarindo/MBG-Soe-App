@@ -320,159 +320,178 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
           message={t("adminItems.emptyMsg", lang)}
         />
       ) : (
-        <TableWrap>
-          <table className="w-full text-sm">
-            <THead>
-              <th className="py-2 px-3 text-center">{t("adminItems.colCode", lang)}</th>
-              <th className="py-2 px-3 text-center">{t("adminItems.colCategory", lang)}</th>
-              <th className="py-2 px-3 text-center">{t("adminItems.colUnit", lang)}</th>
-              <th className="py-2 px-3 text-center">{t("adminItems.colPrice", lang)}</th>
-              <th className="py-2 px-3 text-center">{t("adminItems.colVolWk", lang)}</th>
-              <th className="py-2 px-3 text-center">{t("adminItems.colActive", lang)}</th>
-              <th className="py-2 px-3 text-center">{t("adminItems.colAction", lang)}</th>
-            </THead>
-            <tbody>
-              {filtered.map((r) =>
+        (() => {
+          const columns: SortableColumn<Row>[] = [
+            {
+              key: "code",
+              label: t("adminItems.colCode", lang),
+              sortValue: (r) => r.code,
+              render: (r) => (
+                <span className="font-mono text-[12px] text-ink">{r.code}</span>
+              )
+            },
+            {
+              key: "category",
+              label: t("adminItems.colCategory", lang),
+              sortValue: (r) => r.category,
+              render: (r) =>
                 editCode === r.code ? (
-                  <tr
-                    key={r.code}
-                    className="border-b border-ink/5 bg-amber-50/40"
+                  <Select
+                    value={editDraft.category}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        category: e.target.value as Cat
+                      })
+                    }
                   >
-                    <td className="py-2 px-3 text-center font-mono text-[12px] text-ink">
-                      {r.code}
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <Select
-                        value={editDraft.category}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            category: e.target.value as Cat
-                          })
-                        }
-                      >
-                        {CATEGORIES.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </Select>
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <Input
-                        value={editDraft.unit}
-                        onChange={(e) =>
-                          setEditDraft({ ...editDraft, unit: e.target.value })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <Input
-                        type="number"
-                        value={editDraft.price_idr}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            price_idr: e.target.value
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <Input
-                        type="number"
-                        value={editDraft.vol_weekly}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            vol_weekly: e.target.value
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <input
-                        type="checkbox"
-                        checked={editDraft.active}
-                        onChange={(e) =>
-                          setEditDraft({
-                            ...editDraft,
-                            active: e.target.checked
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <div className="flex justify-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          disabled={busy}
-                          onClick={saveEdit}
-                        >
-                          {t("adminItems.btnSaveEdit", lang)}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={busy}
-                          onClick={cancelEdit}
-                        >
-                          {t("adminItems.btnCancelEdit", lang)}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </Select>
                 ) : (
-                  <tr key={r.code} className="row-hover border-b border-ink/5">
-                    <td className="py-2 px-3 text-center font-mono text-[12px] text-ink">
-                      {r.code}
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <div className="flex justify-center">
-                        <CategoryBadge category={r.category} />
-                      </div>
-                    </td>
-                    <td className="py-2 px-3 text-center text-[12px] text-ink2">
-                      {r.unit}
-                    </td>
-                    <td className="py-2 px-3 text-center font-mono text-[12px]">
-                      {formatNumber(Number(r.price_idr), lang)}
-                    </td>
-                    <td className="py-2 px-3 text-center font-mono text-[12px]">
-                      {formatNumber(Number(r.vol_weekly ?? 0), lang)}
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      {r.active ? (
-                        <Badge tone="ok">{t("adminItems.tagActive", lang)}</Badge>
-                      ) : (
-                        <Badge tone="muted">{t("adminItems.tagInactive", lang)}</Badge>
-                      )}
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <div className="flex justify-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => startEdit(r)}
-                        >
-                          {t("adminItems.btnEdit", lang)}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => remove(r.code)}
-                        >
-                          {t("adminItems.btnDelete", lang)}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                  <div className="flex justify-center">
+                    <CategoryBadge category={r.category} />
+                  </div>
                 )
-              )}
-            </tbody>
-          </table>
-        </TableWrap>
+            },
+            {
+              key: "unit",
+              label: t("adminItems.colUnit", lang),
+              sortValue: (r) => r.unit,
+              render: (r) =>
+                editCode === r.code ? (
+                  <Input
+                    value={editDraft.unit}
+                    onChange={(e) =>
+                      setEditDraft({ ...editDraft, unit: e.target.value })
+                    }
+                  />
+                ) : (
+                  <span className="text-[12px] text-ink2">{r.unit}</span>
+                )
+            },
+            {
+              key: "price",
+              label: t("adminItems.colPrice", lang),
+              sortValue: (r) => Number(r.price_idr),
+              render: (r) =>
+                editCode === r.code ? (
+                  <Input
+                    type="number"
+                    value={editDraft.price_idr}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        price_idr: e.target.value
+                      })
+                    }
+                  />
+                ) : (
+                  <span className="font-mono text-[12px]">
+                    {formatNumber(Number(r.price_idr), lang)}
+                  </span>
+                )
+            },
+            {
+              key: "vol",
+              label: t("adminItems.colVolWk", lang),
+              sortValue: (r) => Number(r.vol_weekly ?? 0),
+              render: (r) =>
+                editCode === r.code ? (
+                  <Input
+                    type="number"
+                    value={editDraft.vol_weekly}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        vol_weekly: e.target.value
+                      })
+                    }
+                  />
+                ) : (
+                  <span className="font-mono text-[12px]">
+                    {formatNumber(Number(r.vol_weekly ?? 0), lang)}
+                  </span>
+                )
+            },
+            {
+              key: "active",
+              label: t("adminItems.colActive", lang),
+              sortValue: (r) => (r.active ? 0 : 1),
+              render: (r) =>
+                editCode === r.code ? (
+                  <input
+                    type="checkbox"
+                    checked={editDraft.active}
+                    onChange={(e) =>
+                      setEditDraft({
+                        ...editDraft,
+                        active: e.target.checked
+                      })
+                    }
+                  />
+                ) : r.active ? (
+                  <Badge tone="ok">{t("adminItems.tagActive", lang)}</Badge>
+                ) : (
+                  <Badge tone="muted">{t("adminItems.tagInactive", lang)}</Badge>
+                )
+            },
+            {
+              key: "actions",
+              label: t("adminItems.colAction", lang),
+              sortable: false,
+              render: (r) =>
+                editCode === r.code ? (
+                  <div className="flex justify-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      disabled={busy}
+                      onClick={saveEdit}
+                    >
+                      {t("adminItems.btnSaveEdit", lang)}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={cancelEdit}
+                    >
+                      {t("adminItems.btnCancelEdit", lang)}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex justify-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => startEdit(r)}
+                    >
+                      {t("adminItems.btnEdit", lang)}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => remove(r.code)}
+                    >
+                      {t("adminItems.btnDelete", lang)}
+                    </Button>
+                  </div>
+                )
+            }
+          ];
+          return (
+            <SortableTable<Row>
+              columns={columns}
+              rows={filtered}
+              rowKey={(r) => r.code}
+              initialSort={{ key: "code", dir: "asc" }}
+            />
+          );
+        })()
       )}
     </Section>
   );
