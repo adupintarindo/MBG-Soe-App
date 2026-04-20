@@ -908,7 +908,7 @@ export const LANG_KEYS = {
   "sop.kpiExec": { ID: "Eksekusi 90 hari", EN: "90-day Executions" },
   "sop.kpiAvg": { ID: "Avg Completion", EN: "Avg Completion" },
   "sop.kpiRisk": { ID: "Risiko Teramati", EN: "Observed Risks" },
-  "sop.tocTitle": { ID: "📑 Daftar Isi", EN: "📑 Table of Contents" },
+  "sop.tocTitle": { ID: "Daftar Isi", EN: "Table of Contents" },
   "sop.tocHint": { ID: "Klik untuk buka detail SOP di popup.", EN: "Click to open SOP detail in a popup." },
   "sop.badgeOp": { ID: "{n} Operasional", EN: "{n} Operational" },
   "sop.badgeHg": { ID: "{n} Higiene", EN: "{n} Hygiene" },
@@ -1311,7 +1311,7 @@ export const LANG_KEYS = {
   "supplierDetail.recoImprove": { ID: "IMPROVE — butuh pembinaan", EN: "IMPROVE — needs coaching" },
   "supplierDetail.recoWarning": { ID: "WARNING — resiko tinggi", EN: "WARNING — high risk" },
   "supplierDetail.recoReplace": { ID: "REPLACE — exit plan", EN: "REPLACE — exit plan" },
-  "supplierDetail.secScorecard": { ID: "📊 Scorecard Otomatis", EN: "📊 Automatic Scorecard" },
+  "supplierDetail.secScorecard": { ID: "Scorecard Otomatis", EN: "Automatic Scorecard" },
   "supplierDetail.secScorecardHint": {
     ID: "Dihitung dari data operasional {start} → {end}. Bobot default: Q 30% · D 25% · P 20% · C 15% · R 10%.",
     EN: "Computed from operational data {start} → {end}. Default weights: Q 30% · D 25% · P 20% · C 15% · R 10%."
@@ -1380,7 +1380,7 @@ export const LANG_KEYS = {
   "reval.colEval": { ID: "Evaluasi", EN: "Evaluated" },
 
   // ---------------- Actions Panel ----------------
-  "actions.title": { ID: "📋 Action Tracker · Onboarding & Follow-up", EN: "📋 Action Tracker · Onboarding & Follow-up" },
+  "actions.title": { ID: "Action Tracker · Onboarding & Follow-up", EN: "Action Tracker · Onboarding & Follow-up" },
   "actions.totalSuffix": { ID: "· {n} total", EN: "· {n} total" },
   "actions.filterActive": { ID: "Aktif (non-done)", EN: "Active (non-done)" },
   "actions.filterAll": { ID: "Semua status", EN: "All statuses" },
@@ -1531,7 +1531,7 @@ export const LANG_KEYS = {
   "calGrid.errMarkNonOp": { ID: "Gagal menandai non-operasional.", EN: "Failed to mark non-operational." },
   "calGrid.errClearNonOp": { ID: "Gagal menghapus non-operasional.", EN: "Failed to clear non-operational." },
   "calGrid.errSaveAttendance": { ID: "Gagal menyimpan kehadiran.", EN: "Failed to save attendance." },
-  "calGrid.modalTitlePrefix": { ID: "📆 Atur Jadwal Menu", EN: "📆 Set Menu Schedule" },
+  "calGrid.modalTitlePrefix": { ID: "Atur Jadwal Menu", EN: "Set Menu Schedule" },
   "calGrid.closeAria": { ID: "Tutup", EN: "Close" },
   "calGrid.step1Title": { ID: "Operasional Hari Ini?", EN: "Operational Today?" },
   "calGrid.btnYesOp": { ID: "✅ Ya, Operasional", EN: "✅ Yes, Operational" },
@@ -1541,7 +1541,7 @@ export const LANG_KEYS = {
     ID: "⚠ Belum di-assign · pilih menu di bawah",
     EN: "⚠ Not assigned yet · choose a menu below"
   },
-  "calGrid.step2Title": { ID: "📋 Pilih Menu ID", EN: "📋 Choose Menu ID" },
+  "calGrid.step2Title": { ID: "Pilih Menu ID", EN: "Choose Menu ID" },
   "calGrid.btnSetMenu": { ID: "Set Menu", EN: "Set Menu" },
   "calGrid.autoFillHint": {
     ID: "💡 Memilih Menu ID akan otomatis mengisi kombinasi di bawah.",
@@ -2047,7 +2047,7 @@ export const LANG_KEYS = {
   },
 
   // ---------------- Transaction Log component ----------------
-  "tx.title": { ID: "📦 Transaksi Rantai Pasok", EN: "📦 Supply Chain Transactions" },
+  "tx.title": { ID: "Transaksi Rantai Pasok", EN: "Supply Chain Transactions" },
   "tx.filterDate": { ID: "Filter tanggal:", EN: "Filter date:" },
   "tx.allTypes": { ID: "Semua tipe", EN: "All types" },
   "tx.typePO": { ID: "Purchase Order", EN: "Purchase Order" },
