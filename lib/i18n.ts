@@ -1340,7 +1340,7 @@ export const LANG_KEYS = {
     ID: "Foto akan muncul di sini ketika operator upload photo_url ke QC Check atau NCR.",
     EN: "Photos will appear here when operators upload photo_url to QC Check or NCR."
   },
-  "supplierDetail.secItems": { ID: "📦 Komoditas yang Dipasok", EN: "📦 Supplied Commodities" },
+  "supplierDetail.secItems": { ID: "Komoditas yang Dipasok", EN: "Supplied Commodities" },
   "supplierDetail.secItemsHint": { ID: "{n} item di-map ke supplier ini.", EN: "{n} items mapped to this supplier." },
   "supplierDetail.itemsEmpty": { ID: "Belum ada mapping item.", EN: "No item mapping yet." },
   "supplierDetail.colItem": { ID: "Item", EN: "Item" },
@@ -1350,7 +1350,7 @@ export const LANG_KEYS = {
   "supplierDetail.badgeMain": { ID: "utama", EN: "main" },
   "supplierDetail.badgeAlt": { ID: "alternatif", EN: "alternative" },
   "supplierDetail.leadDays": { ID: "{n} hari", EN: "{n} days" },
-  "supplierDetail.secCerts": { ID: "📜 Sertifikasi", EN: "📜 Certifications" },
+  "supplierDetail.secCerts": { ID: "Sertifikasi", EN: "Certifications" },
   "supplierDetail.secCertsHint": { ID: "{n} sertifikat terdaftar.", EN: "{n} certificates registered." },
   "supplierDetail.certsEmpty": { ID: "Belum ada sertifikat.", EN: "No certificates yet." },
   "supplierDetail.colCert": { ID: "Sertifikat", EN: "Certificate" },
@@ -1760,7 +1760,7 @@ export const LANG_KEYS = {
   "variance.kpiActual": { ID: "Realisasi", EN: "Actual" },
   "variance.kpiActualSub": { ID: "dari GRN ok/partial", EN: "from ok/partial GRN" },
   "variance.kpiVariance": { ID: "Variance", EN: "Variance" },
-  "variance.secPerItem": { ID: "📋 Per Item", EN: "📋 Per Item" },
+  "variance.secPerItem": { ID: "Per Item", EN: "Per Item" },
   "variance.secPerItemHint": {
     ID: "Plan dihitung dari menu_assign × gramasi tiered × porsi hadir. Actual dari GRN (status ok/partial). Flag OVER/UNDER jika |variance| > {pct}%.",
     EN: "Plan is computed from menu_assign × tiered grammage × servings attended. Actual from GRN (ok/partial status). Flag OVER/UNDER when |variance| > {pct}%."
@@ -1775,7 +1775,7 @@ export const LANG_KEYS = {
   "variance.colActualKg": { ID: "Actual (kg)", EN: "Actual (kg)" },
   "variance.colDeltaKg": { ID: "Δ (kg)", EN: "Δ (kg)" },
   "variance.colDeltaPct": { ID: "Δ (%)", EN: "Δ (%)" },
-  "variance.secPerMenu": { ID: "🍽️ Per Menu", EN: "🍽️ Per Menu" },
+  "variance.secPerMenu": { ID: "Per Menu", EN: "Per Menu" },
   "variance.secPerMenuHint": {
     ID: "Breakdown rencana per menu: jumlah hari tersajikan, total porsi, total kg bahan, dan perkiraan cost bahan.",
     EN: "Plan breakdown per menu: days served, total servings, total ingredient kg, and estimated ingredient cost."
