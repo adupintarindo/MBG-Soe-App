@@ -33,7 +33,10 @@ interface TabCard {
 }
 
 const TABS: TabCard[] = [
+  // Home
   { href: "/dashboard", labelKey: "tabDashboard", icon: "📊", group: "home", show: () => true },
+
+  // Plan — what to cook & when
   { href: "/menu", labelKey: "tabMenu", icon: "🍲", group: "plan", show: () => true },
   {
     href: "/calendar",
@@ -43,28 +46,16 @@ const TABS: TabCard[] = [
     show: (r) => canWriteMenu(r) || r === "viewer"
   },
   { href: "/planning", labelKey: "tabPlanning", icon: "📋", group: "plan", show: () => true },
+
+  // Buy — source, price, order, pay
+  { href: "/price-list", labelKey: "tabPriceList", icon: "💹", group: "buy", show: () => true },
+  { href: "/suppliers", labelKey: "tabSuppliers", icon: "🤝", group: "buy", show: () => true },
   {
     href: "/procurement",
     labelKey: "tabProcurement",
     icon: "🧾",
     group: "buy",
     show: () => true
-  },
-  { href: "/suppliers", labelKey: "tabSuppliers", icon: "🤝", group: "buy", show: () => true },
-  { href: "/price-list", labelKey: "tabPriceList", icon: "💹", group: "buy", show: () => true },
-  {
-    href: "/supplier",
-    labelKey: "tabSupplierPortal",
-    icon: "🏢",
-    group: "buy",
-    show: (r) => r === "supplier"
-  },
-  {
-    href: "/supplier/forecast",
-    labelKey: "tabForecast",
-    icon: "📅",
-    group: "buy",
-    show: (r) => r === "supplier"
   },
   {
     href: "/payments",
@@ -73,6 +64,8 @@ const TABS: TabCard[] = [
     group: "buy",
     show: (r) => r === "admin" || r === "operator" || r === "viewer"
   },
+
+  // Run — receive, cook, deliver
   {
     href: "/stock",
     labelKey: "tabStock",
@@ -89,6 +82,8 @@ const TABS: TabCard[] = [
     show: (r) =>
       r === "admin" || r === "operator" || r === "viewer" || r === "ahli_gizi"
   },
+
+  // Finance — cost per portion & budget
   {
     href: "/budget",
     labelKey: "tabBudget",
@@ -96,6 +91,24 @@ const TABS: TabCard[] = [
     group: "run",
     show: (r) => r === "admin" || r === "operator" || r === "viewer"
   },
+
+  // Supplier portal (only visible to supplier role)
+  {
+    href: "/supplier",
+    labelKey: "tabSupplierPortal",
+    icon: "🏢",
+    group: "buy",
+    show: (r) => r === "supplier"
+  },
+  {
+    href: "/supplier/forecast",
+    labelKey: "tabForecast",
+    icon: "📅",
+    group: "buy",
+    show: (r) => r === "supplier"
+  },
+
+  // Docs & SOP
   { href: "/docgen", labelKey: "tabDocgen", icon: "🖨️", group: "audit", show: () => true },
   { href: "/sop", labelKey: "tabSOP", icon: "📚", group: "audit", show: () => true }
 ];
@@ -292,6 +305,25 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
             <Chip icon="📆" text={formatDate(now, lang)} hideOnMobile suppressHydrationWarning />
             <Chip icon="🕐" text={formatTimeWITA(now)} mono suppressHydrationWarning />
 
+            <CommandPalette
+              renderTrigger={(openPalette) => (
+                <button
+                  type="button"
+                  onClick={openPalette}
+                  aria-label={t("cmdk.trigger", lang)}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-primary-2 shadow-card transition hover:bg-primary hover:text-white dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark dark:hover:bg-accent-strong"
+                >
+                  <span aria-hidden>🔍</span>
+                  <span className="hidden sm:inline">
+                    {t("cmdk.trigger", lang)}
+                  </span>
+                  <kbd className="hidden rounded bg-ink/10 px-1.5 py-0.5 font-mono text-[10px] sm:inline">
+                    ⌘K
+                  </kbd>
+                </button>
+              )}
+            />
+
             <div
               className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold shadow-card dark:bg-d-surface-2 dark:shadow-card-dark"
               title={status.text}
@@ -423,7 +455,6 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
           </div>
         </nav>
       </div>
-      <CommandPalette />
     </header>
   );
 }

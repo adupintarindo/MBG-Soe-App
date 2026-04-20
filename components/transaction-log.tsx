@@ -5,6 +5,7 @@ import { formatIDR } from "@/lib/engine";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import { Section } from "@/components/ui";
 
 export type TxRow = {
   id: number;
@@ -62,48 +63,59 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
   }
 
   return (
-    <section className="mb-6 rounded-2xl border-l-4 border-accent bg-white p-5 shadow-card">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-black uppercase tracking-wide text-ink">
-          {t("tx.title", lang)}
-        </h2>
+    <Section
+      title={t("tx.title", lang)}
+      actions={
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="font-semibold text-ink2/70">{t("tx.filterDate", lang)}</span>
           <input
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded-lg border border-ink/20 bg-white px-2 py-1 text-xs"
+            className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs text-white placeholder:text-white/60 [color-scheme:dark]"
           />
-          <span className="text-ink2/60">–</span>
+          <span className="text-white/70">–</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="rounded-lg border border-ink/20 bg-white px-2 py-1 text-xs"
+            className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs text-white placeholder:text-white/60 [color-scheme:dark]"
           />
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-lg border border-ink/20 bg-white px-2 py-1 text-xs"
+            className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-xs text-white"
           >
-            <option value="">{t("tx.allTypes", lang)}</option>
-            <option value="po">{t("tx.typePO", lang)}</option>
-            <option value="grn">{t("tx.typeGRN", lang)}</option>
-            <option value="invoice">{t("tx.typeInvoice", lang)}</option>
-            <option value="payment">{t("tx.typePayment", lang)}</option>
-            <option value="adjustment">{t("tx.typeAdjustment", lang)}</option>
-            <option value="receipt">{t("tx.typeReceipt", lang)}</option>
+            <option value="" className="text-ink">
+              {t("tx.allTypes", lang)}
+            </option>
+            <option value="po" className="text-ink">
+              {t("tx.typePO", lang)}
+            </option>
+            <option value="grn" className="text-ink">
+              {t("tx.typeGRN", lang)}
+            </option>
+            <option value="invoice" className="text-ink">
+              {t("tx.typeInvoice", lang)}
+            </option>
+            <option value="payment" className="text-ink">
+              {t("tx.typePayment", lang)}
+            </option>
+            <option value="adjustment" className="text-ink">
+              {t("tx.typeAdjustment", lang)}
+            </option>
+            <option value="receipt" className="text-ink">
+              {t("tx.typeReceipt", lang)}
+            </option>
           </select>
           <button
             onClick={reset}
-            className="rounded-lg border border-ink/20 bg-white px-3 py-1 text-[11px] font-bold text-ink2 hover:bg-ink/5"
+            className="rounded-lg border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold text-white hover:bg-white/20"
           >
             {t("common.reset", lang)}
           </button>
         </div>
-      </div>
-
+      }
+    >
       <p className="mb-2 text-[11px] text-ink2/70">
         {ti("tx.nRows", lang, { n: filtered.length })} · {t("tx.totalShown", lang)} {formatIDR(totalAmount)}
       </p>
@@ -120,10 +132,11 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
             initialSort={{ key: "date", dir: "desc" }}
             columns={txColumns(lang)}
             rows={filtered}
+            searchable
           />
         </div>
       )}
-    </section>
+    </Section>
   );
 }
 

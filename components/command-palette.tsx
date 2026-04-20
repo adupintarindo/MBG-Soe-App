@@ -142,7 +142,12 @@ const STATIC_ROUTES: Array<{
   }
 ];
 
-export function CommandPalette() {
+export function CommandPalette({
+  renderTrigger
+}: {
+  /** Optional custom trigger (e.g. navbar button). When provided, floating FAB is suppressed. */
+  renderTrigger?: (open: () => void) => React.ReactNode;
+} = {}) {
   const { lang } = useLang();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -250,20 +255,22 @@ export function CommandPalette() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={t("cmdk.trigger", lang)}
-        className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-ink px-4 py-3 text-xs font-black text-white shadow-cardlg transition hover:bg-ink2 hover:scale-105 sm:text-sm"
-      >
-        <span>🔍</span>
-        <span className="hidden sm:inline">
-          {t("cmdk.trigger", lang)}
-        </span>
-        <kbd className="hidden rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] sm:inline">
-          ⌘K
-        </kbd>
-      </button>
+      {renderTrigger ? (
+        renderTrigger(() => setOpen(true))
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={t("cmdk.trigger", lang)}
+          className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-primary-2 shadow-card transition hover:bg-primary hover:text-white dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark dark:hover:bg-accent-strong"
+        >
+          <span aria-hidden>🔍</span>
+          <span className="hidden sm:inline">{t("cmdk.trigger", lang)}</span>
+          <kbd className="hidden rounded bg-ink/10 px-1.5 py-0.5 font-mono text-[10px] sm:inline">
+            ⌘K
+          </kbd>
+        </button>
+      )}
 
       {open && (
         <div

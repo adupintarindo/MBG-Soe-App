@@ -202,7 +202,6 @@ export default async function DashboardPage() {
     matrix[r.item_code][m] =
       (matrix[r.item_code][m] ?? 0) + Number(r.qty_kg);
   }
-  const grandTotal = monthly.reduce((s, r) => s + Number(r.qty_kg), 0);
   const maxItemTotal = topItems.length
     ? (itemTotals.get(topItems[0]) ?? 0)
     : 0;
@@ -349,12 +348,6 @@ export default async function DashboardPage() {
       />
 
       <PageContainer>
-        {shortItems.length > 0 && (
-          <div className="mb-4">
-            <Badge tone="bad">{ti("dashboard.shortageToday", lang, { n: shortItems.length })}</Badge>
-          </div>
-        )}
-
         <KpiGrid>
           <KpiTile
             icon="👥"
@@ -371,9 +364,16 @@ export default async function DashboardPage() {
           <KpiTile
             icon="🍽️"
             label={t("dashboard.kpiMenuToday", lang)}
-            value={kpis.menu_today_name || "—"}
-            size="md"
-            tone={kpis.menu_today_name ? "info" : "default"}
+            value={
+              <span
+                className="block truncate"
+                title={kpis.menu_today_name || "—"}
+              >
+                {kpis.menu_today_name || "—"}
+              </span>
+            }
+            size="sm"
+            tone="default"
             palette="amber"
           />
           <KpiTile
@@ -402,13 +402,7 @@ export default async function DashboardPage() {
 
         {/* 4-month requirements matrix */}
         <Section
-          title={ti("dashboard.volumeTitle", lang, {
-            range:
-              months.length > 0
-                ? `${monthLabel(months[0])}–${monthLabel(months[months.length - 1])}`
-                : t("dashboard.volumeRangeFallback", lang),
-            total: formatKg(grandTotal, 0)
-          })}
+          title={t("dashboard.volumeTitle", lang)}
           hint={t("dashboard.volumeHint", lang)}
           accent="ok"
         >

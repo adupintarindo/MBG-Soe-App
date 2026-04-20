@@ -494,6 +494,7 @@ export function SupplierSpendTable({
     {
       key: "type",
       label: t("dashboard.tblType", lang),
+      align: "center",
       sortValue: (r) => r.supplier_type,
       searchValue: (r) => r.supplier_type,
       exportValue: (r) => r.supplier_type,
@@ -502,7 +503,7 @@ export function SupplierSpendTable({
     {
       key: "invoices",
       label: t("dashboard.tblInvoice", lang),
-      align: "right",
+      align: "center",
       sortValue: (r) => r.invoice_count,
       exportValue: (r) => r.invoice_count,
       render: (r) => (

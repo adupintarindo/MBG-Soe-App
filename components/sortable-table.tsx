@@ -191,7 +191,7 @@ export function SortableTable<T>({
   ariaLabel,
   zebra = false,
   dense = false,
-  searchable = false,
+  searchable = true,
   searchPlaceholder,
   exportable = false,
   exportFileName = "export",

@@ -156,8 +156,8 @@ export const LANG_KEYS = {
   "dashboard.kpiSuppliersActive": { ID: "Supplier Aktif", EN: "Active Suppliers" },
   "dashboard.kpiSuppliersSub": { ID: "BUMN + UMKM + Poktan", EN: "SOE + SMEs + Farmer Groups" },
   "dashboard.volumeTitle": {
-    ID: "🌾 Volume Kebutuhan Bahan · {range} · {total}",
-    EN: "🌾 Ingredient Requirements Volume · {range} · {total}"
+    ID: "🌾 Volume Kebutuhan Bahan",
+    EN: "🌾 Ingredient Requirements Volume"
   },
   "dashboard.volumeRangeFallback": { ID: "4 Bulan", EN: "4 Months" },
   "dashboard.volumeHint": {
@@ -188,8 +188,8 @@ export const LANG_KEYS = {
   "dashboard.tblShort": { ID: "Short", EN: "Short" },
   "dashboard.badgeNonOp": { ID: "NON-OP", EN: "NON-OP" },
   "dashboard.scheduleTitle": {
-    ID: "🍽️ Jadwal Menu & Porsi · 10 Hari Ke Depan",
-    EN: "🍽️ Menu & Portion Schedule · Next 10 Days"
+    ID: "🍽️ Jadwal Menu dan Porsi",
+    EN: "🍽️ Menu and Portion Schedule"
   },
   "dashboard.scheduleHint": {
     ID: "Ringkasan menu harian, sekolah penerima, dan distribusi porsi kecil/besar per tanggal.",
@@ -2047,7 +2047,7 @@ export const LANG_KEYS = {
   },
 
   // ---------------- Transaction Log component ----------------
-  "tx.title": { ID: "📦 Transaksi Rantai Pasok · 50 Terakhir", EN: "📦 Supply Chain Transactions · Last 50" },
+  "tx.title": { ID: "📦 Transaksi Rantai Pasok", EN: "📦 Supply Chain Transactions" },
   "tx.filterDate": { ID: "Filter tanggal:", EN: "Filter date:" },
   "tx.allTypes": { ID: "Semua tipe", EN: "All types" },
   "tx.typePO": { ID: "Purchase Order", EN: "Purchase Order" },
