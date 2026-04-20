@@ -5,9 +5,7 @@ import { Nav } from "@/components/nav";
 import { listAudit, type AuditEvent } from "@/lib/engine";
 import {
   EmptyState,
-  LinkButton,
   PageContainer,
-  PageHeader,
   Section
 } from "@/components/ui";
 import { t } from "@/lib/i18n";
@@ -69,14 +67,6 @@ export default async function AuditPage({
       />
 
       <PageContainer>
-        <PageHeader
-          actions={
-            <LinkButton href="/admin/data" variant="secondary" size="sm">
-              {t("tabData", lang)}
-            </LinkButton>
-          }
-        />
-
         <Section title={t("audit.listTitle", lang)} hint={t("audit.listHint", lang)}>
           <AuditFilters initial={filters} />
           {events.length === 0 ? (

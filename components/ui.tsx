@@ -59,7 +59,8 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) {
-  const hasText = !!title || !!subtitle;
+  void subtitle;
+  const hasText = !!title;
   if (!hasText && !actions) return null;
   return (
     <div
@@ -67,16 +68,12 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
     >
       {hasText && (
         <div className="min-w-0">
-          {title && (
-            <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-crisp text-ink sm:text-[1.75rem]">
-              {icon && (
-                <span className="shrink-0 text-2xl leading-none">{icon}</span>
-              )}
-              <span className="truncate">{title}</span>
-              {subtitle && <InfoBadge tone="light">{subtitle}</InfoBadge>}
-            </h1>
-          )}
-          {!title && subtitle && <InfoBadge tone="light">{subtitle}</InfoBadge>}
+          <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-crisp text-ink sm:text-[1.75rem]">
+            {icon && (
+              <span className="shrink-0 text-2xl leading-none">{icon}</span>
+            )}
+            <span className="truncate">{title}</span>
+          </h1>
         </div>
       )}
       {actions && (
