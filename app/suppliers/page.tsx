@@ -10,6 +10,7 @@ import type {
   InvoiceTx
 } from "./types";
 import { getLang } from "@/lib/i18n-server";
+import { actionReadinessSnapshot } from "@/lib/engine";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export default async function SuppliersPage() {
       .from("invoices")
       .select("no, supplier_id, inv_date, total, status, po_no")
       .order("inv_date", { ascending: false }),
-    actionReadinessSnapshot(supabase).catch((e) => {
+    actionReadinessSnapshot(supabase).catch((e: unknown) => {
       console.error("[suppliers] actionReadinessSnapshot failed:", e);
       return emptyReadiness;
     })

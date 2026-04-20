@@ -5,8 +5,6 @@ import { Nav } from "@/components/nav";
 import { listAudit, type AuditEvent } from "@/lib/engine";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
@@ -62,10 +60,6 @@ export default async function AuditPage({
     limit: 300
   }).catch(() => [] as AuditEvent[]);
 
-  const actors = new Set(events.map((e) => e.actor_email ?? "—"));
-  const tables = new Set(events.map((e) => e.table_name));
-  const deletes = events.filter((e) => e.action === "DELETE").length;
-
   return (
     <div>
       <Nav
@@ -82,31 +76,6 @@ export default async function AuditPage({
             </LinkButton>
           }
         />
-
-        <KpiGrid>
-          <KpiTile
-            icon="📜"
-            label={t("audit.kpiTotal", lang)}
-            value={events.length.toString()}
-            sub={t("common.noData", lang)}
-          />
-          <KpiTile
-            icon="👥"
-            label={t("audit.kpiActors", lang)}
-            value={actors.size.toString()}
-          />
-          <KpiTile
-            icon="🗃️"
-            label={t("audit.kpiTables", lang)}
-            value={tables.size.toString()}
-          />
-          <KpiTile
-            icon="🗑️"
-            label={t("audit.kpiDeletes", lang)}
-            value={deletes.toString()}
-            tone={deletes > 0 ? "warn" : "default"}
-          />
-        </KpiGrid>
 
         <Section title={t("audit.listTitle", lang)} hint={t("audit.listHint", lang)}>
           <AuditFilters initial={filters} />

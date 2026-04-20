@@ -45,12 +45,27 @@ import {
   type CostPerPortionRow
 } from "@/lib/engine";
 import { DashboardAnalytics } from "@/components/dashboard-analytics";
+import {
+  demoBeneficiary,
+  demoBeneficiaryToday,
+  demoBudget,
+  demoCashflow,
+  demoCommodities,
+  demoCostPerPortion,
+  demoSuppliers,
+  demoUpcomingShortages
+} from "@/lib/demo-analytics";
 import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = { from?: string; to?: string; demoStock?: string };
+type SearchParams = {
+  from?: string;
+  to?: string;
+  demoStock?: string;
+  demo?: string;
+};
 
 const DEMO_SHORTAGES: import("@/lib/engine").Shortage[] = [
   { item_code: "Beras Premium", required: 120.5, on_hand: 45.25, gap: 75.25, unit: "kg" },
@@ -477,6 +492,42 @@ export default async function DashboardPage({
     target: c.target != null ? Number(c.target) : null
   }));
 
+  // ---- demo overlay (activated with ?demo=1) ----
+  // Menutupi lubang data untuk screenshot/presentasi tanpa menyentuh DB.
+  const demoMode = sp.demo === "1" || sp.demo === "true";
+
+  const analyticsBeneficiary = demoMode
+    ? demoBeneficiary(beneficiaryDays)
+    : beneficiaryDays;
+
+  const analyticsBeneficiaryToday =
+    demoMode && beneficiaryTodayList.length === 0
+      ? demoBeneficiaryToday()
+      : beneficiaryTodayList;
+
+  const analyticsCommodities =
+    demoMode && commodityRows.length === 0 ? demoCommodities() : commodityRows;
+
+  const analyticsSuppliers =
+    demoMode && supplierRows.length === 0 ? demoSuppliers() : supplierRows;
+
+  const analyticsCashflow =
+    demoMode && cashflowRows.length === 0
+      ? demoCashflow(monthStart)
+      : cashflowRows;
+
+  const analyticsBudget = demoMode
+    ? demoBudget(monthStart, currentBudget)
+    : currentBudget;
+
+  const analyticsCostPerPortion =
+    demoMode && costPerPortionRows.length === 0
+      ? demoCostPerPortion(today)
+      : costPerPortionRows;
+
+  const upcomingDisplay =
+    demoMode && upcoming.length === 0 ? demoUpcomingShortages(today) : upcoming;
+
   return (
     <div>
       <Nav
@@ -644,14 +695,14 @@ export default async function DashboardPage({
 
         <DashboardAnalytics
           lang={lang}
-          beneficiary={beneficiaryDays}
-          beneficiaryToday={beneficiaryTodayList}
-          commodities={commodityRows}
+          beneficiary={analyticsBeneficiary}
+          beneficiaryToday={analyticsBeneficiaryToday}
+          commodities={analyticsCommodities}
           stockGaps={stockGapRows}
-          topSuppliers={supplierRows}
-          cashflow={cashflowRows}
-          budget={currentBudget}
-          costPerPortion={costPerPortionRows}
+          topSuppliers={analyticsSuppliers}
+          cashflow={analyticsCashflow}
+          budget={analyticsBudget}
+          costPerPortion={analyticsCostPerPortion}
         />
 
         <p className="mt-8 text-center text-[11px] text-ink2/60">

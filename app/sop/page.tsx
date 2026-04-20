@@ -83,44 +83,6 @@ export default async function SopPage() {
       <PageContainer>
         <PageHeader />
 
-        <KpiGrid>
-          <KpiTile
-            icon="📘"
-            label={t("sop.kpiTotal", lang)}
-            value={SOPS.length.toString()}
-            sub={ti("sop.kpiTotalSub", lang, {
-              exec: sopsWithRuns,
-              rest: SOPS.length - sopsWithRuns
-            })}
-          />
-          <KpiTile
-            icon="✅"
-            label={t("sop.kpiExec", lang)}
-            value={totalRuns.toString()}
-            tone={totalRuns === 0 ? "warn" : "ok"}
-            sub={t("sop.kpiExecSub", lang)}
-          />
-          <KpiTile
-            icon="📊"
-            label={t("sop.kpiAvg", lang)}
-            value={`${avgCompletion}%`}
-            tone={
-              avgCompletion >= 80 ? "ok" : avgCompletion >= 50 ? "warn" : "bad"
-            }
-            sub={t("sop.kpiAvgSub", lang)}
-          />
-          <KpiTile
-            icon="⚠️"
-            label={t("sop.kpiRisk", lang)}
-            value={totalRisksFlagged.toString()}
-            tone={totalRisksFlagged > 0 ? "bad" : "default"}
-            sub={ti("sop.kpiRiskSub", lang, {
-              steps: totalSteps,
-              risks: totalRisks
-            })}
-          />
-        </KpiGrid>
-
         <Section title={t("sop.tocTitle", lang)} hint={t("sop.tocHint", lang)}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {(["OPERASIONAL", "HIGIENE"] as const).map((cat) => (

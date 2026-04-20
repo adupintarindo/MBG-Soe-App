@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import {
-  formatIDR,
   budgetBurn,
   costPerPortionDaily,
   type BudgetBurnRow,
@@ -11,8 +10,6 @@ import {
 } from "@/lib/engine";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
@@ -77,21 +74,6 @@ export default async function BudgetPage() {
     note: b.note
   }));
 
-  const currentPeriod = new Date().toISOString().slice(0, 7);
-  const activeBurn =
-    burn.find((b) => b.period === currentPeriod) ?? burn.slice(-1)[0];
-  const totalBudget = Number(activeBurn?.budget_total ?? 0);
-  const spentPaid = Number(activeBurn?.spent_paid ?? 0);
-  const burnPct = Number(activeBurn?.burn_pct ?? 0);
-
-  const cppWithValue = cpp.filter((r) => Number(r.cost_per_portion ?? 0) > 0);
-  const avgCpp =
-    cppWithValue.length > 0
-      ? cppWithValue.reduce((s, r) => s + Number(r.cost_per_portion), 0) /
-        cppWithValue.length
-      : 0;
-  const target = Number(cpp[0]?.target ?? 0);
-
   return (
     <div>
       <Nav
@@ -114,50 +96,6 @@ export default async function BudgetPage() {
             )
           }
         />
-
-        <KpiGrid>
-          <KpiTile
-            icon="💰"
-            label={t("bud.kpiBudget", lang)}
-            value={formatIDR(totalBudget)}
-            size="md"
-            sub={`${activeBurn?.period ?? "—"}`}
-          />
-          <KpiTile
-            icon="📉"
-            label={t("bud.kpiSpent", lang)}
-            value={formatIDR(spentPaid)}
-            size="md"
-            tone="bad"
-            sub={t("bud.kpiSpentSub", lang)}
-          />
-          <KpiTile
-            icon="🔥"
-            label={t("bud.kpiBurnPct", lang)}
-            value={`${burnPct.toFixed(1)}%`}
-            tone={
-              burnPct > 90 ? "bad" : burnPct > 70 ? "warn" : "ok"
-            }
-            sub={t("bud.kpiBurnPctSub", lang)}
-          />
-          <KpiTile
-            icon="🍱"
-            label={t("bud.kpiCPP", lang)}
-            value={formatIDR(Math.round(avgCpp))}
-            tone={
-              target > 0 && avgCpp > target
-                ? "bad"
-                : target > 0 && avgCpp > 0
-                  ? "ok"
-                  : "default"
-            }
-            sub={
-              target > 0
-                ? `Target ${formatIDR(target)}`
-                : t("bud.kpiCPPSub", lang)
-            }
-          />
-        </KpiGrid>
 
         <Section title={t("bud.burnTitle", lang)} hint={t("bud.burnHint", lang)}>
           {burn.length === 0 ? (

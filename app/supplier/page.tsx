@@ -10,8 +10,6 @@ import {
 } from "@/lib/engine";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
@@ -112,14 +110,6 @@ export default async function SupplierPage({
     uploaded_at: u.uploaded_at
   }));
 
-  const pendingAck = inbox.filter((r) => r.ack_decision === "pending").length;
-  const unreadMsgs = inbox.reduce((s, r) => s + (r.unread_msg ?? 0), 0);
-  const totalOutstanding = payments.reduce(
-    (s, r) => s + Number(r.outstanding ?? 0),
-    0
-  );
-  const pendingUploads = uploads.filter((u) => u.status === "pending").length;
-
   const isSupplier = profile.role === "supplier";
 
   const activeTab: SupTabId = VALID_TABS.includes(
@@ -193,25 +183,6 @@ export default async function SupplierPage({
 
         {activeTab === "inbox" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="📬"
-                label={t("sup.inboxTitle", lang)}
-                value={inbox.length.toString()}
-                sub={
-                  pendingAck > 0
-                    ? `${pendingAck} ${t("sup.ackPending", lang).toLowerCase()}`
-                    : t("sup.ackAccepted", lang)
-                }
-                tone={pendingAck > 0 ? "warn" : "ok"}
-              />
-              <KpiTile
-                icon="💬"
-                label={t("sup.colUnread", lang)}
-                value={unreadMsgs.toString()}
-                tone={unreadMsgs > 0 ? "warn" : "default"}
-              />
-            </KpiGrid>
             <Section title={t("sup.inboxTitle", lang)} hint={t("sup.inboxHint", lang)}>
               {inbox.length === 0 ? (
                 <EmptyState message={t("common.noData", lang)} />
@@ -224,16 +195,6 @@ export default async function SupplierPage({
 
         {activeTab === "payment" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="💰"
-                label={t("sup.paymentStatusTitle", lang)}
-                value={`Rp ${Math.round(totalOutstanding).toLocaleString("id-ID")}`}
-                size="md"
-                tone={totalOutstanding > 0 ? "bad" : "ok"}
-                sub={`${payments.length} invoice`}
-              />
-            </KpiGrid>
             <Section title={t("sup.paymentStatusTitle", lang)} hint={t("sup.paymentStatusHint", lang)}>
               {payments.length === 0 ? (
                 <EmptyState message={t("common.noData", lang)} />
@@ -246,19 +207,6 @@ export default async function SupplierPage({
 
         {activeTab === "uploads" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="📄"
-                label={t("sup.uploadTitle", lang)}
-                value={uploads.length.toString()}
-                sub={
-                  pendingUploads > 0
-                    ? `${pendingUploads} ${t("sup.ackPending", lang).toLowerCase()}`
-                    : "-"
-                }
-                tone={pendingUploads > 0 ? "warn" : "default"}
-              />
-            </KpiGrid>
             <Section title={t("sup.uploadTitle", lang)} hint={t("sup.uploadHint", lang)}>
               {uploads.length === 0 ? (
                 <EmptyState

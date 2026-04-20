@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import {
-  formatIDR,
   outstandingBySupplier,
   monthlyCashflow,
   type OutstandingBySupplier,
@@ -11,15 +10,13 @@ import {
 } from "@/lib/engine";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
   Section
 } from "@/components/ui";
 import { PageTabs, type PageTab } from "@/components/page-tabs";
-import { t, ti } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import {
   CashflowTable,
@@ -136,18 +133,6 @@ export default async function PaymentsPage({
   const payments = (paymentsRes.data ?? []) as PaymentRow[];
   const receipts = (receiptsRes.data ?? []) as ReceiptRow[];
 
-  const outstandingTotal = outstanding.reduce(
-    (s, o) => s + Number(o.outstanding),
-    0
-  );
-
-  const last30 = cashflow.slice(-1)[0];
-  const prevRow = cashflow.slice(-2)[0];
-  const cashIn30 = Number(last30?.cash_in ?? 0);
-  const cashOut30 = Number(last30?.cash_out ?? 0);
-  const net30 = Number(last30?.net ?? 0);
-  void prevRow;
-
   return (
     <div>
       <Nav
@@ -184,16 +169,6 @@ export default async function PaymentsPage({
 
         {activeTab === "outstanding" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="⚠️"
-                label={t("pay.kpiOutstanding", lang)}
-                value={formatIDR(outstandingTotal)}
-                size="md"
-                tone={outstandingTotal > 0 ? "warn" : "ok"}
-                sub={ti("pay.kpiOutstandingSub", lang, {})}
-              />
-            </KpiGrid>
             <Section
               title={t("pay.outstandingTitle", lang)}
               hint={t("pay.outstandingHint", lang)}
@@ -210,32 +185,6 @@ export default async function PaymentsPage({
 
         {activeTab === "cashflow" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="📥"
-                label={t("pay.kpiCashIn", lang)}
-                value={formatIDR(cashIn30)}
-                size="md"
-                tone="ok"
-                sub={t("pay.kpiCashInSub", lang)}
-              />
-              <KpiTile
-                icon="📤"
-                label={t("pay.kpiCashOut", lang)}
-                value={formatIDR(cashOut30)}
-                size="md"
-                tone="bad"
-                sub={t("pay.kpiCashOutSub", lang)}
-              />
-              <KpiTile
-                icon="💹"
-                label={t("pay.kpiNet", lang)}
-                value={formatIDR(net30)}
-                size="md"
-                tone={net30 >= 0 ? "ok" : "bad"}
-                sub={t("pay.kpiNetSub", lang)}
-              />
-            </KpiGrid>
             <Section title={t("pay.cashflowTitle", lang)} hint={t("pay.cashflowHint", lang)}>
               {cashflow.length === 0 ? (
                 <EmptyState message={t("common.noData", lang)} />

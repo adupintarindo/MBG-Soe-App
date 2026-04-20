@@ -4,15 +4,13 @@ import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import {
   Badge,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
   Section
 } from "@/components/ui";
 import { formatIDR, formatDateShort } from "@/lib/engine";
-import { t, type LangKey } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import { AckForm } from "./ack-form";
 import { MessageThread } from "./message-thread";
@@ -185,50 +183,6 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
             </LinkButton>
           }
         />
-
-        <KpiGrid>
-          <KpiTile
-            icon="💰"
-            label={t("common.total", lang)}
-            value={formatIDR(Number(po.total))}
-            size="md"
-          />
-          <KpiTile
-            icon="📌"
-            label={t("common.status", lang)}
-            value={po.status}
-            tone={
-              po.status === "approved"
-                ? "ok"
-                : po.status === "cancelled"
-                  ? "bad"
-                  : "info"
-            }
-          />
-          <KpiTile
-            icon="🤝"
-            label={t("sup.colDecision", lang)}
-            value={t(
-              (`sup.ack${ackDecision.charAt(0).toUpperCase()}${ackDecision.slice(1)}`) as LangKey,
-              lang
-            )}
-            tone={
-              ackDecision === "accepted"
-                ? "ok"
-                : ackDecision === "rejected"
-                  ? "bad"
-                  : ackDecision === "partial"
-                    ? "warn"
-                    : "default"
-            }
-            sub={ack?.decided_at ? formatDateShort(ack.decided_at) : "—"}
-          />
-          <KpiTile
-            icon="💬"
-            label={t("sup.messagesTitle", lang).split("{po}")[0].trim()}
-            value={messages.length.toString()}
-          />
-        </KpiGrid>
 
         <Section
           title={lang === "EN" ? "Line items" : "Item PO"}

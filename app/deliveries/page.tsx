@@ -9,8 +9,6 @@ import {
 } from "@/lib/engine";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
@@ -178,42 +176,6 @@ export default async function DeliveriesPage() {
             )
           }
         />
-
-        <KpiGrid>
-          <KpiTile
-            icon="🚚"
-            label={t("del.kpiToday", lang)}
-            value={todayStops.length.toString()}
-            sub={t("del.kpiTodaySub", lang)}
-          />
-          <KpiTile
-            icon="🍱"
-            label={t("del.kpiPorsiDelivered", lang)}
-            value={todayPorsiDelivered.toString()}
-            tone="ok"
-            sub={ti("del.kpiPorsiDeliveredSub", lang, {})}
-          />
-          <KpiTile
-            icon="✅"
-            label={t("del.kpiFulfilment", lang)}
-            value={`${todayFulfilment}%`}
-            tone={
-              todayFulfilment >= 95
-                ? "ok"
-                : todayFulfilment >= 80
-                  ? "warn"
-                  : "bad"
-            }
-            sub={t("del.kpiFulfilmentSub", lang)}
-          />
-          <KpiTile
-            icon="⏸️"
-            label={t("del.kpiPending", lang)}
-            value={pendingDispatch.toString()}
-            tone={pendingDispatch > 0 ? "warn" : "default"}
-            sub={t("del.kpiPendingSub", lang)}
-          />
-        </KpiGrid>
 
         <Section title={t("del.todayTitle", lang)} hint={t("del.todayHint", lang)}>
           {!todayRow ? (

@@ -6,8 +6,6 @@ import { formatIDR, listNcr, ncrSnapshot } from "@/lib/engine";
 import Link from "next/link";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   PageContainer,
   PageHeader,
@@ -362,15 +360,6 @@ export default async function ProcurementPage({
 
         {activeTab === "po" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="📝"
-                label={t("procurement.kpiPOValue", lang)}
-                value={formatIDR(poTotal)}
-                size="md"
-                sub={ti("procurement.kpiDocuments", lang, { n: poCount })}
-              />
-            </KpiGrid>
             <Section title={t("procurement.secPOtitle", lang)} hint={t("procurement.secPOhint", lang)}>
               {pos.length === 0 ? (
                 <EmptyState message={t("procurement.poEmpty", lang)} />
@@ -388,32 +377,6 @@ export default async function ProcurementPage({
 
         {activeTab === "grn" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="📦"
-                label={t("procurement.kpiGRN", lang)}
-                value={grnCount.toString()}
-                sub={ti("procurement.kpiOK", lang, {
-                  n: grns.filter((g) => g.status === "ok").length
-                })}
-              />
-              <KpiTile
-                icon="🧪"
-                label={t("procurement.kpiNCR", lang)}
-                value={(ncrStats.open_cnt + ncrStats.in_progress_cnt).toString()}
-                tone={
-                  ncrStats.critical_open > 0
-                    ? "bad"
-                    : ncrStats.open_cnt > 0
-                      ? "warn"
-                      : "ok"
-                }
-                sub={ti("procurement.kpiNCRSub", lang, {
-                  crit: ncrStats.critical_open,
-                  days: ncrStats.avg_resolve_days ?? "—"
-                })}
-              />
-            </KpiGrid>
             <Section
               title={t("procurement.secGRNtitle", lang)}
               hint={t("procurement.secGRNhint", lang)}

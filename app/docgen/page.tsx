@@ -6,8 +6,6 @@ import { formatIDR, formatDateShort } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   PageContainer,
   Section
 } from "@/components/ui";
@@ -85,33 +83,6 @@ export default async function DocGenPage() {
       />
 
       <PageContainer>
-        <KpiGrid>
-          <KpiTile
-            icon="📝"
-            label={t("docgen.kpiPO", lang)}
-            value={pos.length.toString()}
-            sub={t("docgen.kpiPOSub", lang)}
-          />
-          <KpiTile
-            icon="📦"
-            label={t("docgen.kpiGRN", lang)}
-            value={grns.length.toString()}
-            sub={t("docgen.kpiGRNSub", lang)}
-          />
-          <KpiTile
-            icon="💰"
-            label={t("docgen.kpiInvoice", lang)}
-            value={invoices.length.toString()}
-            sub={t("docgen.kpiInvoiceSub", lang)}
-          />
-          <KpiTile
-            icon="🧾"
-            label={t("docgen.kpiLTA", lang)}
-            value={suppliers.length.toString()}
-            sub={t("docgen.kpiLTASub", lang)}
-          />
-        </KpiGrid>
-
         <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <DocList
             lang={lang}
