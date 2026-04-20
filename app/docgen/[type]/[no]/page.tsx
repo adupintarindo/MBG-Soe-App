@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
-import { formatIDR } from "@/lib/engine";
+import { formatIDR, formatDateShort } from "@/lib/engine";
 import { PrintButton } from "./print-button";
 import { t, ti, numberLocale } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
