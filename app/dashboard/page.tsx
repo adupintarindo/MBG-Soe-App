@@ -366,7 +366,7 @@ export default async function DashboardPage() {
             label={t("dashboard.kpiMenuToday", lang)}
             value={
               <span
-                className="block truncate"
+                className="block text-[13px] leading-snug"
                 title={kpis.menu_today_name || "—"}
               >
                 {kpis.menu_today_name || "—"}

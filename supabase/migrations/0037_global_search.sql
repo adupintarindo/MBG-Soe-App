@@ -5,6 +5,11 @@
 -- atau "SUP-03 Mega Mart" — butuh satu endpoint yang jelajah semua entitas.
 -- =============================================================================
 
+-- pg_trgm wajib: similarity() dan % operator dipakai untuk fuzzy match skor.
+-- extensions schema adalah konvensi Supabase (project baru sudah punya schema
+-- tsb.). Fallback: kalau schema ga ada, install di public.
+create extension if not exists pg_trgm;
+
 create or replace function public.global_search(
   p_query text,
   p_limit int default 20
@@ -81,7 +86,7 @@ language sql stable as $$
     select 'pr',
            pr.no,
            pr.no,
-           coalesce(pr.notes, pr.status) || ' · ' || pr.need_date::text,
+           coalesce(pr.notes, pr.status::text) || ' · ' || pr.need_date::text,
            '/procurement',
            similarity(pr.no, (select s from q))
       from public.purchase_requisitions pr, q

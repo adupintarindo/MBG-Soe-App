@@ -40,9 +40,8 @@ export async function middleware(request: NextRequest) {
     data: { user: realUser }
   } = await supabase.auth.getUser();
 
-  // Dev shortcut: admin/admin cookie counts as authenticated in non-prod.
+  // Shortcut: admin/admin cookie counts as authenticated.
   const isDevAdmin =
-    process.env.NODE_ENV !== "production" &&
     request.cookies.get(DEV_ADMIN_COOKIE)?.value === DEV_ADMIN_VALUE;
 
   const user = realUser ?? (isDevAdmin ? { id: "dev-admin" } : null);

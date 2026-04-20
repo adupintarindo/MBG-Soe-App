@@ -33,13 +33,8 @@ function LoginInner() {
 
     const trimmedEmail = email.trim().toLowerCase();
 
-    // Dev shortcut: admin / admin → instant session via /api/dev-login.
-    // Disabled in production — route returns 404 there anyway.
-    if (
-      process.env.NODE_ENV !== "production" &&
-      trimmedEmail === "admin" &&
-      password === "admin"
-    ) {
+    // Shortcut: admin / admin → instant session via /api/dev-login.
+    if (trimmedEmail === "admin" && password === "admin") {
       try {
         const res = await fetch("/api/dev-login", {
           method: "POST",
@@ -137,13 +132,8 @@ function LoginInner() {
                 </h2>
                 <p className="mt-1 text-[12px] text-ink2/75">
                   Kami akan mengirim tautan masuk sekali pakai ke email Anda —
-                  tanpa password.
-                  {process.env.NODE_ENV !== "production" && (
-                    <>
-                      {" "}Dev shortcut:{" "}
-                      <span className="font-mono font-bold">admin / admin</span>.
-                    </>
-                  )}
+                  tanpa password. Shortcut:{" "}
+                  <span className="font-mono font-bold">admin / admin</span>.
                 </p>
               </div>
 
