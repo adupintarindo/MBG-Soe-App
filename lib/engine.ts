@@ -801,6 +801,66 @@ export function formatDateID(d: Date | string): string {
   });
 }
 
+/**
+ * Short numeric date DD-MM-YYYY (day-first, Indonesian convention).
+ * Accepts ISO "YYYY-MM-DD" strings or Date objects.
+ */
+export function formatDateShort(d: Date | string | null | undefined): string {
+  if (d == null || d === "") return "—";
+  if (typeof d === "string") {
+    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  }
+  const date = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(date.getTime())) return "—";
+  const yr = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, "0");
+  const da = String(date.getDate()).padStart(2, "0");
+  return `${da}-${mo}-${yr}`;
+}
+
+const DAY_NAMES_LONG = {
+  ID: ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"],
+  EN: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+} as const;
+
+const MONTH_NAMES_LONG = {
+  ID: [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ],
+  EN: [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ]
+} as const;
+
+/**
+ * Long date with weekday — "Senin, 20 April 2026" (ID) or "Monday, 20 April 2026" (EN).
+ * Accepts ISO "YYYY-MM-DD" strings or Date objects. Timezone-safe for date-only strings.
+ */
+export function formatDateLong(
+  d: Date | string | null | undefined,
+  lang: "ID" | "EN" = "ID"
+): string {
+  if (d == null || d === "") return "—";
+  let date: Date;
+  if (typeof d === "string") {
+    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) {
+      date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    } else {
+      date = new Date(d);
+    }
+  } else {
+    date = d;
+  }
+  if (Number.isNaN(date.getTime())) return "—";
+  const day = DAY_NAMES_LONG[lang][date.getDay()];
+  const month = MONTH_NAMES_LONG[lang][date.getMonth()];
+  return `${day}, ${date.getDate()} ${month} ${date.getFullYear()}`;
+}
+
 export function isWeekend(d: Date | string): boolean {
   const date = typeof d === "string" ? new Date(d) : d;
   const dow = date.getDay();

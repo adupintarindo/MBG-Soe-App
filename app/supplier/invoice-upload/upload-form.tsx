@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { t } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
+import { formatDateShort } from "@/lib/engine";
 
 type PO = { no: string; po_date: string; total: number };
 type GRN = {
@@ -135,7 +136,7 @@ export function InvoiceUploadForm({
             <option value="">— {lang === "EN" ? "optional" : "opsional"} —</option>
             {pos.map((p) => (
               <option key={p.no} value={p.no}>
-                {p.no} · {p.po_date}
+                {p.no} · {formatDateShort(p.po_date)}
               </option>
             ))}
           </select>
@@ -150,7 +151,7 @@ export function InvoiceUploadForm({
             <option value="">— {lang === "EN" ? "optional" : "opsional"} —</option>
             {filteredGrns.map((g) => (
               <option key={g.no} value={g.no}>
-                {g.no} · {g.grn_date} · {g.status}
+                {g.no} · {formatDateShort(g.grn_date)} · {g.status}
               </option>
             ))}
           </select>

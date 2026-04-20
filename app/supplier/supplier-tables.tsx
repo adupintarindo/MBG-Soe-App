@@ -8,6 +8,7 @@ import type {
   SupplierPoInboxRow,
   SupplierPaymentStatusRow
 } from "@/lib/engine";
+import { formatDateLong } from "@/lib/engine";
 
 export type InvoiceUploadRow = {
   id: number;
@@ -81,11 +82,11 @@ export function SupplierInboxTable({
     },
     {
       key: "po_date",
-      label: t("common.date", lang),
+      label: t("common.dayDate", lang),
       align: "left",
       sortValue: (r) => r.po_date,
       render: (r) => (
-        <span className="font-mono text-[11px]">{r.po_date}</span>
+        <span className="text-[11px] font-semibold">{formatDateLong(r.po_date, lang)}</span>
       )
     },
     {
@@ -94,8 +95,8 @@ export function SupplierInboxTable({
       align: "left",
       sortValue: (r) => r.delivery_date ?? "",
       render: (r) => (
-        <span className="font-mono text-[11px] text-ink2">
-          {r.delivery_date ?? "—"}
+        <span className="text-[11px] text-ink2">
+          {r.delivery_date ? formatDateLong(r.delivery_date, lang) : "—"}
         </span>
       )
     },
@@ -209,11 +210,11 @@ export function SupplierPaymentTable({
     },
     {
       key: "inv_date",
-      label: t("common.date", lang),
+      label: t("common.dayDate", lang),
       align: "left",
       sortValue: (r) => r.inv_date,
       render: (r) => (
-        <span className="font-mono text-[11px]">{r.inv_date}</span>
+        <span className="text-[11px] font-semibold">{formatDateLong(r.inv_date, lang)}</span>
       )
     },
     {
@@ -229,11 +230,11 @@ export function SupplierPaymentTable({
           new Date(r.due_date).getTime() < Date.now();
         return (
           <span
-            className={`font-mono text-[11px] ${
+            className={`text-[11px] ${
               overdue ? "font-black text-red-700" : "text-ink2"
             }`}
           >
-            {r.due_date}
+            {formatDateLong(r.due_date, lang)}
           </span>
         );
       }
@@ -315,8 +316,9 @@ export function SupplierUploadsTable({
       align: "left",
       sortValue: (r) => r.uploaded_at,
       render: (r) => (
-        <span className="font-mono text-[11px] text-ink2">
-          {r.uploaded_at.slice(0, 16).replace("T", " ")}
+        <span className="text-[11px] text-ink2">
+          {formatDateLong(r.uploaded_at, lang)}
+          {r.uploaded_at.length >= 16 ? ` ${r.uploaded_at.slice(11, 16)}` : ""}
         </span>
       )
     },

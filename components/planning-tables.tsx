@@ -2,13 +2,14 @@
 
 import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
-import { formatKg } from "@/lib/engine";
+import { formatKg, formatDateLong } from "@/lib/engine";
 import { t, formatNumber, type Lang } from "@/lib/i18n";
 
 export type PlanningMatrixRow = {
   rank: number;
   code: string;
   category: string;
+  unit: string;
   monthly: Record<string, number>;
   total: number;
   cost: number;
@@ -64,6 +65,16 @@ export function PlanningMatrixTable({
         </div>
       )
     },
+    {
+      key: "unit",
+      label: t("common.unit", lang),
+      align: "center",
+      sortValue: (r) => r.unit,
+      exportValue: (r) => r.unit,
+      render: (r) => (
+        <span className="font-mono text-[11px] text-ink2">{r.unit}</span>
+      )
+    },
     ...monthColumns,
     {
       key: "total",
@@ -96,7 +107,7 @@ export function PlanningMatrixTable({
 
   const footer = (
     <tr className="border-t-2 border-ink/20 bg-paper">
-      <td colSpan={3} className="py-2 px-3 text-center font-black">
+      <td colSpan={4} className="py-2 px-3 text-center font-black">
         {t("planning.totalTop30", lang)}
       </td>
       {months.map((m) => (
@@ -148,10 +159,15 @@ export function PlanningDailyTable({
   const columns: SortableColumn<PlanningDailyRow>[] = [
     {
       key: "date",
-      label: t("common.date", lang),
+      label: t("common.dayDate", lang),
       align: "left",
       sortValue: (r) => r.op_date,
-      render: (r) => <span className="font-mono text-xs">{r.op_date}</span>
+      exportValue: (r) => formatDateLong(r.op_date, lang),
+      render: (r) => (
+        <span className="text-xs font-semibold">
+          {formatDateLong(r.op_date, lang)}
+        </span>
+      )
     },
     {
       key: "menu",

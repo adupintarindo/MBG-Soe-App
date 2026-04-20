@@ -160,6 +160,7 @@ export default async function PlanningPage({
       rank: i + 1,
       code,
       category: itemByCode.get(code)?.category ?? "LAIN",
+      unit: itemByCode.get(code)?.unit ?? "kg",
       monthly: { ...(matrix[code] ?? {}) },
       total,
       cost: itemCost.get(code) ?? 0

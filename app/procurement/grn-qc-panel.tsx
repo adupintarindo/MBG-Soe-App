@@ -13,6 +13,7 @@ import type {
 } from "@/lib/engine";
 import { t, ti, numberLocale, formatNumber } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
+import { formatDateShort, formatDateLong } from "@/lib/engine";
 
 const RESULT_TONE: Record<QcResult, string> = {
   pass: "bg-emerald-100 text-emerald-800",
@@ -90,9 +91,9 @@ function grnColumns({
     },
     {
       key: "date",
-      label: t("grnQc.colDate", lang),
+      label: t("common.dayDate", lang),
       sortValue: (r) => r.grn_date,
-      render: (r) => <span className="text-xs">{r.grn_date}</span>
+      render: (r) => <span className="text-xs">{formatDateLong(r.grn_date, lang)}</span>
     },
     {
       key: "po",
@@ -757,7 +758,7 @@ function NewNcrDialog({
             <option value="">{t("grnQc.optNoLink", lang)}</option>
             {grns.map((g) => (
               <option key={g.no} value={g.no}>
-                {g.no} · {g.grn_date}
+                {g.no} · {formatDateShort(g.grn_date)}
               </option>
             ))}
           </select>

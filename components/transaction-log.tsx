@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { t, ti } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 import {
   SortableTable,
@@ -9,6 +9,7 @@ import {
   type SortableTableFilter
 } from "@/components/sortable-table";
 import { IDR, Section } from "@/components/ui";
+import { formatDateLong } from "@/lib/engine";
 
 export type TxRow = {
   id: number;
@@ -112,10 +113,6 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
 
   return (
     <Section title={t("tx.title", lang)}>
-      <p className="mb-2 text-[11px] text-ink2/70">
-        {ti("tx.nRows", lang, { n: dateRangeFiltered.length })}
-      </p>
-
       {dateRangeFiltered.length === 0 && !rangeActive ? (
         <div className="rounded-xl bg-ink/5 p-4 text-center text-sm text-ink2">
           {t("tx.empty", lang)}
@@ -171,11 +168,11 @@ function txColumns(lang: "ID" | "EN"): SortableColumn<TxRow>[] {
     },
     {
       key: "date",
-      label: t("tx.colDate", lang),
+      label: t("common.dayDate", lang),
       sortValue: (r) => r.tx_date,
       render: (r) => (
-        <span className="whitespace-nowrap font-mono text-[11px]">
-          {r.tx_date}
+        <span className="whitespace-nowrap text-[11px] font-semibold">
+          {formatDateLong(r.tx_date, lang)}
         </span>
       )
     },

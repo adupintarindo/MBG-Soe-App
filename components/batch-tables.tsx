@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { t, formatNumber, type Lang } from "@/lib/i18n";
+import { formatDateLong } from "@/lib/engine";
 
 export type ExpiringBatchRow = {
   id: number;
@@ -86,7 +87,7 @@ export function ExpiringBatchTable({
       label: t("batch.colExpiry", lang),
       sortValue: (r) => r.expiry_date,
       render: (r) => (
-        <span className="font-mono text-[11px]">{r.expiry_date}</span>
+        <span className="text-[11px]">{formatDateLong(r.expiry_date, lang)}</span>
       )
     },
     {
@@ -171,7 +172,9 @@ export function BatchTable({
       label: t("batch.colReceived", lang),
       sortValue: (r) => r.received_date ?? "",
       render: (r) => (
-        <span className="font-mono text-[11px]">{r.received_date ?? "—"}</span>
+        <span className="text-[11px]">
+          {r.received_date ? formatDateLong(r.received_date, lang) : "—"}
+        </span>
       )
     },
     {

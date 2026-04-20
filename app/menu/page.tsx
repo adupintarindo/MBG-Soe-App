@@ -7,7 +7,6 @@ import {
   EmptyState,
   KpiGrid,
   KpiTile,
-  LinkButton,
   PageContainer,
   PageHeader,
   Section
@@ -189,21 +188,7 @@ export default async function MenuMasterPage({
       />
 
       <PageContainer>
-        <PageHeader
-          actions={
-            <>
-              <LinkButton href="/calendar" variant="secondary" size="sm">
-                {t("menu.btnCalendar", lang)}
-              </LinkButton>
-              <LinkButton href="/menu/variance" variant="secondary" size="sm">
-                {t("menu.btnVariance", lang)}
-              </LinkButton>
-              <LinkButton href="/planning" variant="primary" size="sm">
-                {t("menu.btnPlanning", lang)}
-              </LinkButton>
-            </>
-          }
-        />
+        <PageHeader />
 
         <PageTabs tabs={tabs} activeId={activeTab} />
 
@@ -231,11 +216,10 @@ export default async function MenuMasterPage({
 
         <Section
           title={ti("menu.cycleTitle", lang, { n: menus.length })}
-          hint={t("menu.cycleHint", lang)}
           noPad
         >
           <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
-            {menuStats.map(({ menu, rows, totalGrams, costPerPorsi }) => (
+            {menuStats.map(({ menu, rows, costPerPorsi }) => (
               <article
                 key={menu.id}
                 className="rounded-2xl bg-paper p-4 ring-1 ring-ink/5 transition hover:shadow-card"
@@ -252,13 +236,7 @@ export default async function MenuMasterPage({
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-ink2/60">
-                      {t("menu.totalLabel", lang)}
-                    </div>
-                    <div className="font-mono text-sm font-black text-ink">
-                      {totalGrams.toFixed(0)} g
-                    </div>
-                    <div className="mt-0.5 text-[10px] font-semibold text-emerald-700">
+                    <div className="font-mono text-sm font-black text-emerald-700">
                       {formatIDR(costPerPorsi)}{t("menu.perPorsi", lang)}
                     </div>
                   </div>

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { t, type Lang } from "@/lib/i18n";
 import type { DeliverySummaryRow } from "@/lib/engine";
+import { formatDateShort } from "@/lib/engine";
 
 export type StopRow = {
   id: number;
@@ -176,7 +177,7 @@ export function DeliveryManifestTable({
           <b className="font-mono">{delivery.no}</b>
         </span>
         <span>·</span>
-        <span>{delivery.delivery_date}</span>
+        <span>{formatDateShort(delivery.delivery_date)}</span>
         {delivery.menu_id != null && (
           <>
             <span>·</span>
@@ -233,7 +234,7 @@ export function DeliveryHistoryTable({
       align: "left",
       sortValue: (r) => r.delivery_date,
       render: (r) => (
-        <span className="font-mono text-[11px]">{r.delivery_date}</span>
+        <span className="font-mono text-[11px]">{formatDateShort(r.delivery_date)}</span>
       )
     },
     {

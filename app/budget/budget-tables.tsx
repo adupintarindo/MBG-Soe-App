@@ -4,6 +4,7 @@ import { Badge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { t, type Lang } from "@/lib/i18n";
 import type { BudgetBurnRow, CostPerPortionRow } from "@/lib/engine";
+import { formatDateLong } from "@/lib/engine";
 
 export type BudgetRow = {
   id: number;
@@ -117,10 +118,12 @@ export function CPPTable({
   const columns: SortableColumn<CostPerPortionRow>[] = [
     {
       key: "date",
-      label: t("common.date", lang),
+      label: t("common.dayDate", lang),
       align: "left",
       sortValue: (r) => r.op_date,
-      render: (r) => <span className="font-mono text-[11px]">{r.op_date}</span>
+      render: (r) => (
+        <span className="text-[11px] font-semibold">{formatDateLong(r.op_date, lang)}</span>
+      )
     },
     {
       key: "porsi",

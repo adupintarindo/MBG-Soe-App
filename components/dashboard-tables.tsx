@@ -7,7 +7,7 @@ import {
   type SortableColumn,
   type SortableTableFilter
 } from "@/components/sortable-table";
-import { formatKg } from "@/lib/engine";
+import { formatKg, formatDateLong } from "@/lib/engine";
 import { t, formatNumber, ti, type Lang } from "@/lib/i18n";
 
 const displayCode = (code: string) => code.replace(/^Buah\s*-\s*/i, "");
@@ -738,6 +738,7 @@ function ScheduleBreakdownModal({
 export type VolumeRow = {
   code: string;
   category: string;
+  unit: string;
   total: number;
   monthly: Record<string, number>;
 };
@@ -746,13 +747,11 @@ export function VolumeMatrixTable({
   rows,
   months,
   monthLabels,
-  maxItemTotal,
   lang
 }: {
   rows: VolumeRow[];
   months: string[];
   monthLabels: Record<string, string>;
-  maxItemTotal: number;
   lang: Lang;
 }) {
   const monthCols: SortableColumn<VolumeRow>[] = months.map((m) => ({
@@ -764,24 +763,11 @@ export function VolumeMatrixTable({
     exportLabel: monthLabels[m] ?? m,
     exportHint: "number",
     exportNumFmt: "#,##0.0",
-    render: (r) => {
-      const v = r.monthly[m] ?? 0;
-      const rowMax = Math.max(1, ...months.map((x) => r.monthly[x] ?? 0));
-      const intensity = v / rowMax;
-      const bg =
-        intensity >= 0.95
-          ? "bg-emerald-100/80"
-          : intensity >= 0.7
-            ? "bg-emerald-50"
-            : intensity >= 0.4
-              ? "bg-emerald-50/50"
-              : "";
-      return (
-        <span className={`block font-mono text-xs ${bg} -mx-3 px-3`}>
-          {formatNumber(v, lang, { maximumFractionDigits: 1 })}
-        </span>
-      );
-    }
+    render: (r) => (
+      <span className="font-mono text-xs">
+        {formatNumber(r.monthly[m] ?? 0, lang, { maximumFractionDigits: 1 })}
+      </span>
+    )
   }));
 
   const columns: SortableColumn<VolumeRow>[] = [
@@ -790,23 +776,9 @@ export function VolumeMatrixTable({
       label: t("dashboard.tblNo", lang),
       width: "56px",
       sortable: false,
-      render: (_r, i) => {
-        const rankTone =
-          i === 0
-            ? "bg-emerald-600 text-white"
-            : i === 1
-              ? "bg-emerald-200 text-emerald-900"
-              : i === 2
-                ? "bg-emerald-100 text-emerald-900"
-                : "bg-slate-100 text-ink2";
-        return (
-          <span
-            className={`inline-flex h-6 w-6 items-center justify-center rounded-full font-display text-[11px] font-bold ${rankTone}`}
-          >
-            {i + 1}
-          </span>
-        );
-      }
+      render: (_r, i) => (
+        <span className="font-mono text-xs text-ink2">{i + 1}</span>
+      )
     },
     {
       key: "code",
@@ -828,6 +800,16 @@ export function VolumeMatrixTable({
       exportValue: (r) => r.category,
       render: (r) => <CategoryBadge category={r.category} size="sm" />
     },
+    {
+      key: "unit",
+      label: t("common.unit", lang),
+      align: "center",
+      sortValue: (r) => r.unit,
+      exportValue: (r) => r.unit,
+      render: (r) => (
+        <span className="font-mono text-[11px] text-ink2">{r.unit}</span>
+      )
+    },
     ...monthCols,
     {
       key: "total",
@@ -837,22 +819,11 @@ export function VolumeMatrixTable({
       exportValue: (r) => r.total,
       exportHint: "bold",
       exportNumFmt: "#,##0",
-      render: (r) => {
-        const share = maxItemTotal > 0 ? r.total / maxItemTotal : 0;
-        return (
-          <div className="flex items-center justify-end gap-3">
-            <div className="relative hidden h-1.5 w-20 overflow-hidden rounded-full bg-slate-200/70 md:block">
-              <div
-                className="absolute inset-y-0 left-0 rounded-full bg-emerald-500"
-                style={{ width: `${Math.max(4, share * 100)}%` }}
-              />
-            </div>
-            <span className="font-mono text-xs font-black">
-              {formatNumber(r.total, lang, { maximumFractionDigits: 0 })}
-            </span>
-          </div>
-        );
-      }
+      render: (r) => (
+        <span className="font-mono text-xs font-black">
+          {formatNumber(r.total, lang, { maximumFractionDigits: 0 })}
+        </span>
+      )
     }
   ];
 
@@ -869,7 +840,6 @@ export function VolumeMatrixTable({
       initialSort={{ key: "total", dir: "desc" }}
       columns={columns}
       rows={rows}
-      zebra
       searchable
       exportable
       exportFileName="volume-matrix"
@@ -900,14 +870,16 @@ export function PlanningTable({
   const columns: SortableColumn<PlanRow>[] = [
     {
       key: "date",
-      label: t("dashboard.tblDate", lang),
+      label: t("common.dayDate", lang),
       align: "left",
       sortValue: (r) => r.op_date,
       searchValue: (r) => r.op_date,
-      exportValue: (r) => r.op_date,
+      exportValue: (r) => formatDateLong(r.op_date, lang),
       render: (r) => (
         <div>
-          <div className="font-mono text-[11px]">{r.op_date}</div>
+          <div className="text-[11px] font-semibold">
+            {formatDateLong(r.op_date, lang)}
+          </div>
           {!r.operasional && (
             <Badge tone="warn" className="mt-1">
               {t("dashboard.badgeNonOp", lang)}

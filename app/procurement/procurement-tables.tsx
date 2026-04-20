@@ -5,6 +5,7 @@ import { IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { t, formatNumber } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
+import { formatDateLong } from "@/lib/engine";
 
 const PO_STATUS_COLOR: Record<string, string> = {
   draft: "bg-slate-100 text-slate-800",
@@ -96,7 +97,7 @@ export function PrTable({ rows }: { rows: PrRow[] }) {
       label: t("procurement.colCreated", lang),
       sortValue: (r) => r.created_at,
       render: (r) => (
-        <span className="text-xs text-ink2">{r.created_at.slice(0, 10)}</span>
+        <span className="text-xs text-ink2">{formatDateLong(r.created_at, lang)}</span>
       )
     },
     {
@@ -317,9 +318,9 @@ export function PoTable({
     },
     {
       key: "date",
-      label: t("common.date", lang),
+      label: t("common.dayDate", lang),
       sortValue: (r) => r.po_date,
-      render: (r) => <span className="text-xs">{r.po_date}</span>
+      render: (r) => <span className="text-xs">{formatDateLong(r.po_date, lang)}</span>
     },
     {
       key: "supplier",
@@ -455,9 +456,9 @@ export function InvoiceTable({
     },
     {
       key: "date",
-      label: t("common.date", lang),
+      label: t("common.dayDate", lang),
       sortValue: (r) => r.inv_date,
-      render: (r) => <span className="text-xs">{r.inv_date}</span>
+      render: (r) => <span className="text-xs">{formatDateLong(r.inv_date, lang)}</span>
     },
     {
       key: "supplier",
@@ -495,7 +496,11 @@ export function InvoiceTable({
       key: "due",
       label: t("procurement.colDueDate", lang),
       sortValue: (r) => r.due_date ?? "",
-      render: (r) => <span className="text-xs">{r.due_date ?? "—"}</span>
+      render: (r) => (
+        <span className="text-xs">
+          {r.due_date ? formatDateLong(r.due_date, lang) : "—"}
+        </span>
+      )
     },
     {
       key: "status",

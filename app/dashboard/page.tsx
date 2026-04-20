@@ -94,7 +94,8 @@ export default async function DashboardPage() {
     cashflow,
     budgetRows,
     costPorsi,
-    schoolsToday
+    schoolsToday,
+    itemsRes
   ] = await Promise.all([
     dashboardKpis(supabase).catch(() => ({
       students_total: 0,
@@ -133,8 +134,19 @@ export default async function DashboardPage() {
     monthlyCashflow(supabase).catch(() => [] as CashflowRow[]),
     budgetBurn(supabase).catch(() => [] as BudgetBurnRow[]),
     costPerPortionDaily(supabase).catch(() => [] as CostPerPortionRow[]),
-    schoolsBreakdown(supabase, today).catch(() => [])
+    schoolsBreakdown(supabase, today).catch(() => []),
+    supabase
+      .from("items")
+      .select("code, unit")
+      .then((r) => r.data ?? [])
   ]);
+
+  const unitByCode = new Map<string, string>(
+    (itemsRes as Array<{ code: string; unit: string | null }>).map((i) => [
+      i.code,
+      i.unit ?? "kg"
+    ])
+  );
 
   // ---- portion counts + beneficiary breakdown per horizon date ----
   const porsiByDate = new Map<
@@ -236,9 +248,6 @@ export default async function DashboardPage() {
     matrix[r.item_code][m] =
       (matrix[r.item_code][m] ?? 0) + Number(r.qty_kg);
   }
-  const maxItemTotal = topItems.length
-    ? (itemTotals.get(topItems[0]) ?? 0)
-    : 0;
   const monthLabel = (m: string) => {
     const [y, mo] = m.split("-");
     const idx = Number(mo) - 1;
@@ -342,6 +351,7 @@ export default async function DashboardPage() {
   const volumeRows: VolumeRow[] = topItems.map((code) => ({
     code,
     category: commodityCategory(code),
+    unit: unitByCode.get(code) ?? "kg",
     total: itemTotals.get(code) ?? 0,
     monthly: Object.fromEntries(
       months.map((m) => [m, matrix[code]?.[m] ?? 0])
@@ -518,7 +528,6 @@ export default async function DashboardPage() {
               rows={volumeRows}
               months={months}
               monthLabels={monthLabels}
-              maxItemTotal={maxItemTotal}
               lang={lang}
             />
           )}

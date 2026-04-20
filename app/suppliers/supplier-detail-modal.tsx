@@ -8,6 +8,7 @@ import { SortableTable, type SortableColumn } from "@/components/sortable-table"
 import { ActionsPanel } from "./actions-panel";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
+import { formatDateLong } from "@/lib/engine";
 import type {
   SupplierRow,
   SupItemLink,
@@ -767,11 +768,11 @@ function TransactionPanel({ rows }: { rows: TxRow[] }) {
   const columns: SortableColumn<TxRow>[] = [
     {
       key: "date",
-      label: t("supModal.txColDate", lang),
+      label: t("common.dayDate", lang),
       align: "left",
       sortValue: (r) => r.date,
       render: (r) => (
-        <span className="font-mono text-[12px] text-ink2">{r.date}</span>
+        <span className="text-[12px] text-ink2">{formatDateLong(r.date, lang)}</span>
       )
     },
     {

@@ -58,11 +58,12 @@ export const LANG_KEYS = {
   "common.loading": { ID: "Memuat...", EN: "Loading..." },
   "common.saving": { ID: "Menyimpan...", EN: "Saving..." },
   "common.date": { ID: "Tanggal", EN: "Date" },
+  "common.dayDate": { ID: "Hari, Tanggal", EN: "Day, Date" },
   "common.status": { ID: "Status", EN: "Status" },
   "common.note": { ID: "Catatan", EN: "Notes" },
   "common.item": { ID: "Item", EN: "Item" },
   "common.items": { ID: "item", EN: "items" },
-  "common.unit": { ID: "Unit", EN: "Unit" },
+  "common.unit": { ID: "Satuan", EN: "Unit" },
   "common.qty": { ID: "Qty", EN: "Qty" },
   "common.total": { ID: "Total", EN: "Total" },
   "common.grandTotal": { ID: "GRAND TOTAL", EN: "GRAND TOTAL" },
@@ -160,8 +161,8 @@ export const LANG_KEYS = {
   "dashboard.kpiSuppliersActive": { ID: "Supplier Aktif", EN: "Active Suppliers" },
   "dashboard.kpiSuppliersSub": { ID: "BUMN + UMKM + Poktan", EN: "SOE + SMEs + Farmer Groups" },
   "dashboard.volumeTitle": {
-    ID: "Volume Kebutuhan Bahan",
-    EN: "Ingredient Requirements Volume"
+    ID: "Kebutuhan Bahan",
+    EN: "Ingredient Requirements"
   },
   "dashboard.volumeRangeFallback": { ID: "4 Bulan", EN: "4 Months" },
   "dashboard.volumeHint": {
@@ -242,7 +243,7 @@ export const LANG_KEYS = {
   "dashboard.tblButuh": { ID: "Butuh", EN: "Needed" },
   "dashboard.tblAda": { ID: "Ada", EN: "On hand" },
   "dashboard.tblKurang": { ID: "Kurang", EN: "Short" },
-  "dashboard.supplierSpendTitle": { ID: "Nilai Belanja Supplier Bulan Ini", EN: "Supplier Spend This Month" },
+  "dashboard.supplierSpendTitle": { ID: "Nilai Belanja Supplier", EN: "Supplier Spend" },
   "dashboard.supplierSpendHint": {
     ID: "Periode {start} s.d. {end} | {n} supplier bertransaksi",
     EN: "Period {start} to {end} | {n} suppliers with transactions"
@@ -943,8 +944,8 @@ export const LANG_KEYS = {
   "menu.titleSmall": { ID: "PAUD + SD 1-3 (3-9 th)", EN: "PAUD + SD 1-3 (3-9 y)" },
   "menu.titleLarge": { ID: "SD 4-6 + SMP/SMA + Guru (10 th+)", EN: "SD 4-6 + SMP/SMA + Teachers (10 y+)" },
   "menu.gramasiNote": {
-    ID: "Gramasi: <b>Kecil</b> = PAUD + SD 1-3 (3-9 th); <b>Besar</b> = SD 4-6 + SMP/SMA + Guru (10 th+)",
-    EN: "Grammage: <b>Small</b> = PAUD + SD 1-3 (3-9 y); <b>Large</b> = SD 4-6 + SMP/SMA + Teachers (10 y+)"
+    ID: "Gramasi: <b>Kecil</b> = PAUD + SD 1-3 (3-9 th) + Balita; <b>Besar</b> = SD 4-6 + SMP/SMA + Guru (10 th+) + Bumil/Busui",
+    EN: "Grammage: <b>Small</b> = PAUD + SD 1-3 (3-9 y) + Toddlers; <b>Large</b> = SD 4-6 + SMP/SMA + Teachers (10 y+) + Pregnant/Nursing"
   },
   "menu.commodityTitle": { ID: "Master Komoditas ({n} item)", EN: "Commodity Master ({n} items)" },
   "menu.commodityHint": {

@@ -11,7 +11,7 @@ import {
   PageHeader,
   Section
 } from "@/components/ui";
-import { formatIDR } from "@/lib/engine";
+import { formatIDR, formatDateShort } from "@/lib/engine";
 import { t, type LangKey } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import { AckForm } from "./ack-form";
@@ -174,8 +174,8 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
                 {sup?.pic && ` · ${sup.pic}`}
               </span>
               <span className="text-ink2/60">
-                {po.po_date}
-                {po.delivery_date && ` → ${po.delivery_date}`}
+                {formatDateShort(po.po_date)}
+                {po.delivery_date && ` → ${formatDateShort(po.delivery_date)}`}
               </span>
             </span>
           }
@@ -221,7 +221,7 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
                     ? "warn"
                     : "default"
             }
-            sub={ack?.decided_at?.slice(0, 10) ?? "—"}
+            sub={ack?.decided_at ? formatDateShort(ack.decided_at) : "—"}
           />
           <KpiTile
             icon="💬"
@@ -325,7 +325,9 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
                   {t("common.date", lang)}
                 </div>
                 <span className="font-mono text-xs">
-                  {ack.decided_at?.slice(0, 16).replace("T", " ") ?? "—"}
+                  {ack.decided_at
+                    ? `${formatDateShort(ack.decided_at)} ${ack.decided_at.slice(11, 16)}`
+                    : "—"}
                 </span>
               </div>
               {ack.alt_delivery_date && (
@@ -334,7 +336,7 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
                     {t("sup.ackAltDate", lang)}
                   </div>
                   <span className="font-mono text-xs">
-                    {ack.alt_delivery_date}
+                    {formatDateShort(ack.alt_delivery_date)}
                   </span>
                 </div>
               )}
@@ -378,7 +380,7 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
                         className="flex items-center justify-between rounded-lg bg-ink2/5 px-3 py-1.5 text-xs"
                       >
                         <span className="font-mono font-bold">{g.no}</span>
-                        <span className="text-ink2">{g.grn_date}</span>
+                        <span className="text-ink2">{formatDateShort(g.grn_date)}</span>
                         <Badge
                           tone={
                             g.status === "ok"
