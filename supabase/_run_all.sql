@@ -5617,4 +5617,2559 @@ begin
 end$$;
 
 
+-- >>> 0027_fix_critical_bugs.sql ============================================
+-- =============================================================================
+-- 0027 · Fix critical bugs (Prioritas 1 dari DB_REVIEW.md)
+-- -----------------------------------------------------------------------------
+-- Bug #1  bom_variance / bom_variance_by_menu refer ma.op_date (kolom tidak ada)
+--         Fix: ganti ke ma.assign_date
+-- Bug #2  log_sop_run SELECT profiles WHERE user_id (kolom tidak ada)
+--         Fix: ganti ke WHERE id
+-- Bug #3  Duplicate updated_at trigger function
+--         tg_touch_updated_at (0017) identical dengan touch_updated_at (0001).
+--         Fix: point trigger 0017 ke touch_updated_at, drop tg_touch_updated_at.
+--
+-- Idempoten: CREATE OR REPLACE FUNCTION, DROP TRIGGER IF EXISTS, DROP FUNCTION
+-- IF EXISTS.
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- Bug #1 · bom_variance
+-- -----------------------------------------------------------------------------
+create or replace function public.bom_variance(
+  p_start date,
+  p_end   date,
+  p_threshold_pct numeric default 10.0
+)
+returns table(
+  item_code text,
+  name_en text,
+  unit text,
+  category public.item_category,
+  plan_kg numeric,
+  actual_kg numeric,
+  variance_kg numeric,
+  variance_pct numeric,
+  flag text
+) language plpgsql stable as $$
+begin
+  return query
+  with
+  dates as (
+    select d::date as op_date
+    from generate_series(p_start, p_end, interval '1 day') as d
+  ),
+  day_counts as (
+    select d.op_date,
+           (public.porsi_counts_tiered(d.op_date)).*
+    from dates d
+  ),
+  day_menu as (
+    select dc.op_date, dc.paud, dc.sd13, dc.sd46, dc.smp_plus, dc.operasional,
+           ma.menu_id
+    from day_counts dc
+    left join public.menu_assign ma on ma.assign_date = dc.op_date
+    where dc.operasional = true
+  ),
+  plan_per_item as (
+    select
+      b.item_code,
+      sum(
+        case
+          when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+              + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+            ( coalesce(b.grams_paud,0)*dm.paud
+            + coalesce(b.grams_sd13,0)*dm.sd13
+            + coalesce(b.grams_sd46,0)*dm.sd46
+            + coalesce(b.grams_smp,0)*dm.smp_plus
+            ) / 1000.0
+          else
+            coalesce(b.grams_per_porsi,0)
+              * (dm.paud + dm.sd13 + dm.sd46 + dm.smp_plus) / 1000.0
+        end
+      ) as plan_kg
+    from day_menu dm
+    join public.menu_bom b on b.menu_id = dm.menu_id
+    group by b.item_code
+  ),
+  actual_per_item as (
+    select pr.item_code,
+           sum(pr.qty) as actual_kg
+    from public.grns g
+    join public.po_rows pr on pr.po_no = g.po_no
+    where g.grn_date between p_start and p_end
+      and g.status in ('ok','partial')
+    group by pr.item_code
+  )
+  select
+    i.code as item_code,
+    i.name_en,
+    i.unit,
+    i.category,
+    coalesce(p.plan_kg,   0)::numeric(14,3) as plan_kg,
+    coalesce(a.actual_kg, 0)::numeric(14,3) as actual_kg,
+    (coalesce(a.actual_kg,0) - coalesce(p.plan_kg,0))::numeric(14,3) as variance_kg,
+    case
+      when coalesce(p.plan_kg,0) <= 0 then null
+      else ((coalesce(a.actual_kg,0) - p.plan_kg) / p.plan_kg * 100.0)::numeric(7,2)
+    end as variance_pct,
+    case
+      when coalesce(p.plan_kg,0) <= 0 and coalesce(a.actual_kg,0) > 0 then 'OVER'
+      when coalesce(p.plan_kg,0) <= 0 and coalesce(a.actual_kg,0) = 0 then 'OK'
+      when abs((coalesce(a.actual_kg,0) - p.plan_kg) / nullif(p.plan_kg,0) * 100.0)
+           <= p_threshold_pct then 'OK'
+      when (coalesce(a.actual_kg,0) - p.plan_kg) > 0 then 'OVER'
+      else 'UNDER'
+    end as flag
+  from public.items i
+  left join plan_per_item   p on p.item_code = i.code
+  left join actual_per_item a on a.item_code = i.code
+  where coalesce(p.plan_kg,0) > 0 or coalesce(a.actual_kg,0) > 0
+  order by
+    case
+      when coalesce(p.plan_kg,0) <= 0 then 3
+      when abs((coalesce(a.actual_kg,0) - p.plan_kg) / nullif(p.plan_kg,0) * 100.0)
+           > p_threshold_pct then 1
+      else 2
+    end,
+    i.code;
+end; $$;
+
+create or replace function public.bom_variance_by_menu(
+  p_start date,
+  p_end   date
+)
+returns table(
+  menu_id int,
+  menu_name text,
+  days_served int,
+  plan_porsi int,
+  plan_kg_total numeric,
+  plan_cost_idr numeric
+) language plpgsql stable as $$
+begin
+  return query
+  with
+  dates as (
+    select d::date as op_date
+    from generate_series(p_start, p_end, interval '1 day') as d
+  ),
+  day_counts as (
+    select d.op_date,
+           (public.porsi_counts_tiered(d.op_date)).*
+    from dates d
+  ),
+  day_menu as (
+    select dc.op_date, dc.paud, dc.sd13, dc.sd46, dc.smp_plus,
+           dc.total as porsi_total, dc.operasional,
+           ma.menu_id
+    from day_counts dc
+    left join public.menu_assign ma on ma.assign_date = dc.op_date
+    where dc.operasional = true
+      and ma.menu_id is not null
+  ),
+  per_menu_day as (
+    select dm.menu_id, dm.op_date, dm.porsi_total,
+      sum(
+        case
+          when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+              + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+            ( coalesce(b.grams_paud,0)*dm.paud
+            + coalesce(b.grams_sd13,0)*dm.sd13
+            + coalesce(b.grams_sd46,0)*dm.sd46
+            + coalesce(b.grams_smp,0)*dm.smp_plus
+            ) / 1000.0
+          else
+            coalesce(b.grams_per_porsi,0)
+              * (dm.paud + dm.sd13 + dm.sd46 + dm.smp_plus) / 1000.0
+        end
+      ) as kg_total,
+      sum(
+        case
+          when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+              + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+            ( coalesce(b.grams_paud,0)*dm.paud
+            + coalesce(b.grams_sd13,0)*dm.sd13
+            + coalesce(b.grams_sd46,0)*dm.sd46
+            + coalesce(b.grams_smp,0)*dm.smp_plus
+            ) / 1000.0 * coalesce(i.price_idr,0)
+          else
+            coalesce(b.grams_per_porsi,0)
+              * (dm.paud + dm.sd13 + dm.sd46 + dm.smp_plus) / 1000.0
+              * coalesce(i.price_idr,0)
+        end
+      ) as cost_idr
+    from day_menu dm
+    join public.menu_bom b on b.menu_id = dm.menu_id
+    join public.items   i on i.code = b.item_code
+    group by dm.menu_id, dm.op_date, dm.porsi_total
+  )
+  select
+    m.id as menu_id,
+    m.name as menu_name,
+    count(pmd.op_date)::int as days_served,
+    coalesce(sum(pmd.porsi_total),0)::int as plan_porsi,
+    coalesce(sum(pmd.kg_total),0)::numeric(14,3) as plan_kg_total,
+    coalesce(sum(pmd.cost_idr),0)::numeric(16,2) as plan_cost_idr
+  from public.menus m
+  left join per_menu_day pmd on pmd.menu_id = m.id
+  where m.active = true
+  group by m.id, m.name
+  order by m.id;
+end; $$;
+
+-- -----------------------------------------------------------------------------
+-- Bug #2 · log_sop_run SELECT profiles salah kolom
+-- -----------------------------------------------------------------------------
+create or replace function public.log_sop_run(
+  p_sop_id        text,
+  p_sop_title     text,
+  p_sop_category  text,
+  p_steps_checked int,
+  p_steps_total   int,
+  p_risks_flagged text[],
+  p_notes         text default null,
+  p_run_date      date default null
+)
+returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role public.user_role := public.current_role();
+  v_id bigint;
+  v_eval text;
+begin
+  if v_role not in ('admin', 'operator', 'ahli_gizi') then
+    raise exception 'Hanya admin/operator/ahli_gizi yang boleh mencatat eksekusi SOP.';
+  end if;
+  if p_sop_id is null or length(trim(p_sop_id)) = 0 then
+    raise exception 'sop_id wajib diisi.';
+  end if;
+  if p_steps_checked > p_steps_total then
+    raise exception 'steps_checked (%) tidak boleh melebihi steps_total (%).',
+      p_steps_checked, p_steps_total;
+  end if;
+
+  select full_name into v_eval
+    from public.profiles
+    where id = auth.uid();
+
+  insert into public.sop_runs(
+    sop_id, sop_title, sop_category,
+    run_date, steps_checked, steps_total, risks_flagged, notes,
+    evaluator, created_by
+  ) values (
+    p_sop_id, p_sop_title, p_sop_category,
+    coalesce(p_run_date, current_date),
+    coalesce(p_steps_checked, 0),
+    coalesce(p_steps_total, 0),
+    coalesce(p_risks_flagged, '{}'::text[]),
+    nullif(trim(coalesce(p_notes, '')), ''),
+    v_eval, auth.uid()
+  ) returning id into v_id;
+
+  return v_id;
+end;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- Bug #3 · Konsolidasi touch_updated_at
+--         0001 menciptakan `touch_updated_at()`, 0017 duplikat `tg_touch_updated_at()`.
+--         Point trigger 0017 ke versi 0001, drop yg duplikat.
+-- -----------------------------------------------------------------------------
+drop trigger if exists trg_price_periods_touch   on public.price_periods;
+drop trigger if exists trg_supplier_prices_touch on public.supplier_prices;
+
+drop trigger if exists trg_price_periods_touch on public.price_periods;
+create trigger trg_price_periods_touch before update on public.price_periods
+  for each row execute function public.touch_updated_at();
+
+drop trigger if exists trg_supplier_prices_touch on public.supplier_prices;
+create trigger trg_supplier_prices_touch before update on public.supplier_prices
+  for each row execute function public.touch_updated_at();
+
+drop function if exists public.tg_touch_updated_at();
+
+-- =============================================================================
+-- END 0027
+-- =============================================================================
+
+
+-- >>> 0028_integrity_and_indexes.sql ========================================
+-- =============================================================================
+-- 0028 · Data integrity + missing indexes (Prioritas 2 dari DB_REVIEW.md)
+-- -----------------------------------------------------------------------------
+-- 1. grn_rows: actual received qty per line (hilangkan approximation partial)
+-- 2. grn_sync_stock v2: prefer grn_rows, fallback po_rows (backward compat)
+-- 3. stock.qty non-negative check (conditional — skip kalau ada data negatif)
+-- 4. profiles.supplier_id FK ke suppliers(id) on delete set null
+-- 5. Auto-recalc purchase_orders.total dari po_rows
+-- 6. Missing indexes untuk high-traffic joins
+--
+-- Semua idempoten: IF NOT EXISTS, DROP TRIGGER IF EXISTS, DROP POLICY IF EXISTS.
+-- Tidak break data existing: grn_rows opsional, constraint conditional.
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. grn_rows · actual received qty per line item (parallel po_rows)
+-- -----------------------------------------------------------------------------
+create table if not exists public.grn_rows (
+  grn_no text not null references public.grns(no) on delete cascade,
+  line_no smallint not null,
+  item_code text not null references public.items(code) on delete restrict,
+  qty_ordered numeric(12,3) not null default 0,      -- snapshot dari po_rows
+  qty_received numeric(12,3) not null default 0
+    check (qty_received >= 0),
+  qty_rejected numeric(12,3) not null default 0
+    check (qty_rejected >= 0),
+  unit text not null,
+  note text,
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id),
+  primary key (grn_no, line_no)
+);
+create index if not exists idx_grn_rows_item on public.grn_rows(item_code);
+create index if not exists idx_grn_rows_grn  on public.grn_rows(grn_no);
+
+alter table public.grn_rows enable row level security;
+
+drop policy if exists "grn_rows: read staff or own-supplier" on public.grn_rows;
+drop policy if exists "grn_rows: read staff or own-supplier" on public.grn_rows;
+create policy "grn_rows: read staff or own-supplier" on public.grn_rows
+  for select using (
+    auth.uid() is not null and (
+      public.current_role() in ('admin','operator','ahli_gizi','viewer')
+      or (public.current_role() = 'supplier' and exists (
+        select 1 from public.grns g
+        join public.purchase_orders p on p.no = g.po_no
+        where g.no = grn_rows.grn_no
+          and p.supplier_id = public.current_supplier_id()
+      ))
+    )
+  );
+
+drop policy if exists "grn_rows: op/admin write" on public.grn_rows;
+drop policy if exists "grn_rows: op/admin write" on public.grn_rows;
+create policy "grn_rows: op/admin write" on public.grn_rows
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- -----------------------------------------------------------------------------
+-- 2. grn_sync_stock v2: prefer grn_rows, fallback po_rows
+-- -----------------------------------------------------------------------------
+create or replace function public.grn_sync_stock()
+returns trigger language plpgsql as $$
+declare
+  v_exists int;
+  v_po text;
+  v_has_rows boolean;
+  r record;
+begin
+  if new.status not in ('ok','partial') then
+    return new;
+  end if;
+  if tg_op = 'UPDATE' and old.status in ('ok','partial') then
+    return new;
+  end if;
+
+  v_po := new.po_no;
+
+  -- Idempotency guard
+  select count(*) into v_exists
+    from public.stock_moves
+    where ref_doc = 'grn' and ref_no = new.no;
+  if v_exists > 0 then
+    return new;
+  end if;
+
+  -- Prefer grn_rows (actual received) — accurate untuk partial
+  select exists(select 1 from public.grn_rows where grn_no = new.no)
+    into v_has_rows;
+
+  if v_has_rows then
+    for r in
+      select item_code, qty_received as qty, unit
+        from public.grn_rows
+        where grn_no = new.no
+          and qty_received > 0
+        order by line_no
+    loop
+      insert into public.stock_moves(
+        item_code, delta, reason, ref_doc, ref_no, note, created_by
+      ) values (
+        r.item_code, r.qty, 'receipt', 'grn', new.no,
+        'Auto-sync dari GRN ' || new.no || ' (grn_rows)',
+        auth.uid()
+      );
+    end loop;
+  elsif v_po is not null then
+    -- Fallback: po_rows (pre-0028 behavior, approximation)
+    for r in
+      select item_code, qty, unit
+        from public.po_rows
+        where po_no = v_po
+        order by line_no
+    loop
+      insert into public.stock_moves(
+        item_code, delta, reason, ref_doc, ref_no, note, created_by
+      ) values (
+        r.item_code, r.qty, 'receipt', 'grn', new.no,
+        'Auto-sync dari GRN ' || new.no || ' (PO ' || v_po || ' fallback)',
+        auth.uid()
+      );
+    end loop;
+  end if;
+
+  return new;
+end; $$;
+
+-- -----------------------------------------------------------------------------
+-- 3. stock.qty non-negative check (conditional: skip kalau ada negatif existing)
+-- -----------------------------------------------------------------------------
+do $$
+declare
+  v_neg int;
+begin
+  select count(*) into v_neg from public.stock where qty < 0;
+  if v_neg > 0 then
+    raise notice 'Skip stock_qty_nonneg: ditemukan % baris dengan qty < 0. '
+                 'Reconcile data dulu, baru jalankan: '
+                 'alter table public.stock add constraint stock_qty_nonneg check (qty >= 0);',
+                 v_neg;
+  else
+    begin
+      alter table public.stock
+        add constraint stock_qty_nonneg check (qty >= 0);
+    exception when duplicate_object then
+      null;  -- sudah ada
+    end;
+  end if;
+end $$;
+
+-- -----------------------------------------------------------------------------
+-- 4. profiles.supplier_id FK
+-- -----------------------------------------------------------------------------
+-- Cleanup orphan dulu (profile.supplier_id tidak match suppliers.id)
+update public.profiles p
+   set supplier_id = null
+ where supplier_id is not null
+   and not exists (select 1 from public.suppliers s where s.id = p.supplier_id);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+     where conname = 'profiles_supplier_id_fkey'
+       and conrelid = 'public.profiles'::regclass
+  ) then
+    alter table public.profiles
+      add constraint profiles_supplier_id_fkey
+      foreign key (supplier_id) references public.suppliers(id)
+      on delete set null;
+  end if;
+end $$;
+
+-- -----------------------------------------------------------------------------
+-- 5. Auto-recalc purchase_orders.total dari po_rows
+-- -----------------------------------------------------------------------------
+create or replace function public.recalc_po_total()
+returns trigger language plpgsql as $$
+declare
+  v_po text;
+  v_sum numeric(14,2);
+begin
+  if pg_trigger_depth() > 1 then return null; end if;
+  v_po := coalesce(new.po_no, old.po_no);
+  select coalesce(sum(subtotal), 0) into v_sum
+    from public.po_rows
+    where po_no = v_po;
+  update public.purchase_orders
+     set total = v_sum
+   where no = v_po;
+  return null;
+end; $$;
+
+drop trigger if exists trg_po_rows_recalc on public.po_rows;
+drop trigger if exists trg_po_rows_recalc on public.po_rows;
+create trigger trg_po_rows_recalc after insert or update or delete on public.po_rows
+  for each row execute function public.recalc_po_total();
+
+-- Backfill existing PO totals (one-shot sync)
+update public.purchase_orders po
+   set total = coalesce(s.sum_sub, 0)
+  from (
+    select po_no, sum(subtotal) as sum_sub
+      from public.po_rows
+     group by po_no
+  ) s
+ where s.po_no = po.no
+   and coalesce(po.total, 0) <> coalesce(s.sum_sub, 0);
+
+-- -----------------------------------------------------------------------------
+-- 6. Missing indexes (high-impact untuk dashboard / scorecard / RPC)
+-- -----------------------------------------------------------------------------
+create index if not exists idx_grns_po
+  on public.grns(po_no);
+create index if not exists idx_grns_date
+  on public.grns(grn_date desc);
+create index if not exists idx_grns_status
+  on public.grns(status) where status <> 'ok';
+
+create index if not exists idx_invoices_sup_date
+  on public.invoices(supplier_id, inv_date desc);
+create index if not exists idx_invoices_status_open
+  on public.invoices(status) where status <> 'paid';
+
+create index if not exists idx_po_rows_item
+  on public.po_rows(item_code);
+
+create index if not exists idx_supaction_owner_user
+  on public.supplier_actions(owner_user_id)
+  where owner_user_id is not null;
+
+create index if not exists idx_supplier_items_item
+  on public.supplier_items(item_code);
+
+-- =============================================================================
+-- END 0028
+-- =============================================================================
+
+
+-- >>> 0029_rls_tighten.sql ==================================================
+-- =============================================================================
+-- 0029 · RLS tightening (Prioritas 3 dari DB_REVIEW.md)
+-- -----------------------------------------------------------------------------
+-- Isu: Policies existing memberi `auth.uid() is not null` read untuk banyak
+-- tabel sensitif (suppliers, schools) termasuk role supplier — artinya supplier
+-- bisa lihat competitor + school detail WFP program. Selain itu, UPDATE policy
+-- supplier di grns / supplier_actions / quotations tidak membatasi kolom
+-- (supplier bisa ubah po_no, supplier_id, total, dll).
+--
+-- Fix:
+--   1. suppliers  · supplier role hanya lihat own row
+--   2. schools    · supplier role tidak boleh read sama sekali
+--   3. Column-whitelist triggers untuk supplier UPDATE:
+--        - grns              → hanya status, qc_note
+--        - supplier_actions  → hanya status, output_notes, blocked_reason, done_at
+--        - quotations        → hanya status, notes, responded_at, responded_by
+--        - quotation_rows    → hanya price_quoted, qty_quoted, note
+--
+-- Idempoten: DROP POLICY / TRIGGER / FUNCTION IF EXISTS.
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. suppliers · supplier role scoped to own record
+-- -----------------------------------------------------------------------------
+drop policy if exists "suppliers: auth read" on public.suppliers;
+
+drop policy if exists "suppliers: staff read" on public.suppliers;
+drop policy if exists "suppliers: staff read" on public.suppliers;
+create policy "suppliers: staff read" on public.suppliers
+  for select using (
+    auth.uid() is not null
+    and public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "suppliers: supplier read own" on public.suppliers;
+drop policy if exists "suppliers: supplier read own" on public.suppliers;
+create policy "suppliers: supplier read own" on public.suppliers
+  for select using (
+    public.current_role() = 'supplier'
+    and id = public.current_supplier_id()
+  );
+
+-- Supplier boleh update kontak / alamat profil sendiri (bukan rating/status).
+-- Enforce kolom via trigger di bawah (trg_suppliers_supplier_whitelist).
+drop policy if exists "suppliers: supplier update own" on public.suppliers;
+drop policy if exists "suppliers: supplier update own" on public.suppliers;
+create policy "suppliers: supplier update own" on public.suppliers
+  for update using (
+    public.current_role() = 'supplier'
+    and id = public.current_supplier_id()
+  ) with check (
+    public.current_role() = 'supplier'
+    and id = public.current_supplier_id()
+  );
+
+-- -----------------------------------------------------------------------------
+-- 2. schools · supplier role tidak boleh akses
+-- -----------------------------------------------------------------------------
+drop policy if exists "schools: auth read" on public.schools;
+
+drop policy if exists "schools: staff read" on public.schools;
+drop policy if exists "schools: staff read" on public.schools;
+create policy "schools: staff read" on public.schools
+  for select using (
+    auth.uid() is not null
+    and public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+-- -----------------------------------------------------------------------------
+-- 3. Column-whitelist triggers · supplier UPDATE hanya ubah kolom tertentu
+-- -----------------------------------------------------------------------------
+
+-- 3a. grns: supplier hanya boleh ubah status + qc_note
+create or replace function public.enforce_supplier_update_grns()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.current_role() <> 'supplier' then
+    return new;
+  end if;
+  if new.no          is distinct from old.no
+  or new.po_no       is distinct from old.po_no
+  or new.grn_date    is distinct from old.grn_date
+  or new.created_at  is distinct from old.created_at
+  or new.created_by  is distinct from old.created_by then
+    raise exception 'supplier only allowed to update status / qc_note on grns';
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists trg_grns_supplier_whitelist on public.grns;
+drop trigger if exists trg_grns_supplier_whitelist on public.grns;
+create trigger trg_grns_supplier_whitelist before update on public.grns
+  for each row execute function public.enforce_supplier_update_grns();
+
+-- 3b. supplier_actions: supplier hanya update status, output_notes, blocked_reason, done_at
+create or replace function public.enforce_supplier_update_supactions()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.current_role() <> 'supplier' then
+    return new;
+  end if;
+  if new.id              is distinct from old.id
+  or new.supplier_id     is distinct from old.supplier_id
+  or new.related_scope   is distinct from old.related_scope
+  or new.title           is distinct from old.title
+  or new.description     is distinct from old.description
+  or new.category        is distinct from old.category
+  or new.priority        is distinct from old.priority
+  or new.owner           is distinct from old.owner
+  or new.owner_user_id   is distinct from old.owner_user_id
+  or new.target_date     is distinct from old.target_date
+  or new.done_by         is distinct from old.done_by
+  or new.source          is distinct from old.source
+  or new.source_ref      is distinct from old.source_ref
+  or new.created_at      is distinct from old.created_at
+  or new.created_by      is distinct from old.created_by then
+    raise exception 'supplier only allowed to update status / output_notes / blocked_reason / done_at';
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists trg_supactions_supplier_whitelist on public.supplier_actions;
+drop trigger if exists trg_supactions_supplier_whitelist on public.supplier_actions;
+create trigger trg_supactions_supplier_whitelist before update on public.supplier_actions
+  for each row execute function public.enforce_supplier_update_supactions();
+
+-- 3c. quotations: supplier hanya ubah status (->'responded'), notes, responded_at/by
+create or replace function public.enforce_supplier_update_quotations()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.current_role() <> 'supplier' then
+    return new;
+  end if;
+  if new.no              is distinct from old.no
+  or new.supplier_id     is distinct from old.supplier_id
+  or new.quote_date      is distinct from old.quote_date
+  or new.valid_until     is distinct from old.valid_until
+  or new.need_date       is distinct from old.need_date
+  or new.total           is distinct from old.total  -- recomputed via trigger
+  or new.converted_po_no is distinct from old.converted_po_no
+  or new.created_at      is distinct from old.created_at
+  or new.created_by      is distinct from old.created_by then
+    raise exception 'supplier only allowed to update status / notes / responded_at / responded_by';
+  end if;
+  -- Status transition: supplier can only move sent → responded (or keep responded)
+  if new.status is distinct from old.status
+     and not (old.status = 'sent' and new.status = 'responded')
+     and not (old.status = 'responded' and new.status = 'responded') then
+    raise exception 'supplier status transition % → % not allowed', old.status, new.status;
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists trg_quotations_supplier_whitelist on public.quotations;
+drop trigger if exists trg_quotations_supplier_whitelist on public.quotations;
+create trigger trg_quotations_supplier_whitelist before update on public.quotations
+  for each row execute function public.enforce_supplier_update_quotations();
+
+-- 3d. quotation_rows: supplier hanya ubah price_quoted, qty_quoted, note
+create or replace function public.enforce_supplier_update_qt_rows()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.current_role() <> 'supplier' then
+    return new;
+  end if;
+  if new.qt_no            is distinct from old.qt_no
+  or new.line_no          is distinct from old.line_no
+  or new.item_code        is distinct from old.item_code
+  or new.qty              is distinct from old.qty
+  or new.unit             is distinct from old.unit
+  or new.price_suggested  is distinct from old.price_suggested then
+    raise exception 'supplier only allowed to update price_quoted / qty_quoted / note';
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists trg_qt_rows_supplier_whitelist on public.quotation_rows;
+drop trigger if exists trg_qt_rows_supplier_whitelist on public.quotation_rows;
+create trigger trg_qt_rows_supplier_whitelist before update on public.quotation_rows
+  for each row execute function public.enforce_supplier_update_qt_rows();
+
+-- 3e. suppliers: supplier hanya ubah contact fields (bukan rating/status/scoring).
+--     Kolom suppliers per 0001: id, name, type, commodity, pic, phone, address,
+--     email, notes, score, status, active, created_at.
+--     Whitelist utk supplier role: pic, phone, email, address, notes.
+create or replace function public.enforce_supplier_update_suppliers()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.current_role() <> 'supplier' then
+    return new;
+  end if;
+  if new.id         is distinct from old.id
+  or new.name       is distinct from old.name
+  or new.type       is distinct from old.type
+  or new.commodity  is distinct from old.commodity
+  or new.score      is distinct from old.score
+  or new.status     is distinct from old.status
+  or new.active     is distinct from old.active
+  or new.created_at is distinct from old.created_at then
+    raise exception 'supplier only allowed to update contact fields (pic, phone, email, address, notes)';
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists trg_suppliers_supplier_whitelist on public.suppliers;
+drop trigger if exists trg_suppliers_supplier_whitelist on public.suppliers;
+create trigger trg_suppliers_supplier_whitelist before update on public.suppliers
+  for each row execute function public.enforce_supplier_update_suppliers();
+
+-- =============================================================================
+-- END 0029
+-- =============================================================================
+
+
+-- >>> 0030_zero_out_stock_values.sql ========================================
+-- =============================================================================
+-- 0030_zero_out_stock_values.sql
+-- Reset semua nilai kuantitatif di master data ke 0.
+-- Alasan: data belum diisi — tampilan awal harus menunjukkan 0, bukan seed dummy.
+--
+-- Kolom yang direset:
+--   items.price_idr      → 0
+--   items.vol_weekly     → 0
+--   stock.qty            → 0
+--   supplier_items.price_idr → NULL
+--
+-- Kolom text (items.unit) TIDAK disentuh.
+-- Harga per minggu di weekly_prices TIDAK disentuh (itu data histori).
+-- =============================================================================
+
+begin;
+
+update public.items
+set
+  price_idr = 0,
+  vol_weekly = 0,
+  updated_at = now();
+
+update public.stock
+set
+  qty = 0,
+  updated_at = now();
+
+update public.supplier_items
+set
+  price_idr = null;
+
+commit;
+
+
+-- >>> 0031_stock_batches.sql ================================================
+-- =============================================================================
+-- 0031 · Stock batches + expiry tracking + FIFO consumption
+-- -----------------------------------------------------------------------------
+-- Masalah: stock.qty tunggal, tidak ada jejak lot. Food safety (recall ikan/
+-- telur) dan compliance WFP/SNI 8152 butuh tracebility per batch dengan
+-- tanggal kedaluwarsa + FIFO discipline.
+--
+-- Desain:
+--   stock_batches  : 1 row per line GRN (atau manual) dengan expiry + sisa
+--   trg_grn_fill_batches : auto-generate batch row saat GRN ok/partial
+--   stock_consume_fifo(item, qty) : RPC yang iterasi oldest-expiry-first
+--   expiring_batches(days)        : batch H-N untuk dashboard alert
+--   v_stock_on_hand_by_item       : view sum qty_remaining per item
+--
+-- Idempoten: IF NOT EXISTS, DROP TRIGGER IF EXISTS.
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. Table
+-- -----------------------------------------------------------------------------
+create table if not exists public.stock_batches (
+  id bigserial primary key,
+  item_code text not null references public.items(code) on delete restrict,
+  grn_no text references public.grns(no) on delete set null,
+  supplier_id text references public.suppliers(id) on delete set null,
+  batch_code text,                              -- lot/batch dari pemasok, opsional
+  qty_received numeric(12,3) not null check (qty_received > 0),
+  qty_remaining numeric(12,3) not null
+    check (qty_remaining >= 0 and qty_remaining <= qty_received),
+  unit text not null,
+  received_date date not null,
+  expiry_date date,                             -- null = non-perishable
+  note text,
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_batch_item_exp
+  on public.stock_batches(item_code, expiry_date nulls last)
+  where qty_remaining > 0;
+create index if not exists idx_batch_grn
+  on public.stock_batches(grn_no) where grn_no is not null;
+create index if not exists idx_batch_expiring
+  on public.stock_batches(expiry_date) where qty_remaining > 0 and expiry_date is not null;
+
+drop trigger if exists trg_batch_touch on public.stock_batches;
+drop trigger if exists trg_batch_touch on public.stock_batches;
+create trigger trg_batch_touch before update on public.stock_batches
+  for each row execute function public.touch_updated_at();
+
+-- -----------------------------------------------------------------------------
+-- 2. RLS
+-- -----------------------------------------------------------------------------
+alter table public.stock_batches enable row level security;
+
+drop policy if exists "batches: staff read" on public.stock_batches;
+drop policy if exists "batches: staff read" on public.stock_batches;
+create policy "batches: staff read" on public.stock_batches
+  for select using (
+    auth.uid() is not null and public.current_role() in
+      ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "batches: supplier read own" on public.stock_batches;
+drop policy if exists "batches: supplier read own" on public.stock_batches;
+create policy "batches: supplier read own" on public.stock_batches
+  for select using (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  );
+
+drop policy if exists "batches: op/admin write" on public.stock_batches;
+drop policy if exists "batches: op/admin write" on public.stock_batches;
+create policy "batches: op/admin write" on public.stock_batches
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- -----------------------------------------------------------------------------
+-- 3. Auto-generate batches dari GRN (hook ke grn_sync_stock)
+-- -----------------------------------------------------------------------------
+create or replace function public.grn_fill_batches()
+returns trigger language plpgsql as $$
+declare
+  v_exists int;
+  v_po text;
+  v_supplier text;
+  v_has_rows boolean;
+  r record;
+begin
+  if new.status not in ('ok','partial') then
+    return new;
+  end if;
+  if tg_op = 'UPDATE' and old.status in ('ok','partial') then
+    return new;
+  end if;
+
+  -- Idempotency: skip kalau sudah pernah insert untuk GRN ini
+  select count(*) into v_exists from public.stock_batches where grn_no = new.no;
+  if v_exists > 0 then
+    return new;
+  end if;
+
+  v_po := new.po_no;
+  if v_po is not null then
+    select supplier_id into v_supplier
+      from public.purchase_orders where no = v_po;
+  end if;
+
+  select exists(select 1 from public.grn_rows where grn_no = new.no)
+    into v_has_rows;
+
+  if v_has_rows then
+    for r in
+      select gr.item_code, gr.qty_received as qty, gr.unit
+        from public.grn_rows gr
+       where gr.grn_no = new.no
+         and gr.qty_received > 0
+       order by gr.line_no
+    loop
+      insert into public.stock_batches(
+        item_code, grn_no, supplier_id, qty_received, qty_remaining, unit,
+        received_date, created_by
+      ) values (
+        r.item_code, new.no, v_supplier, r.qty, r.qty, r.unit,
+        new.grn_date, auth.uid()
+      );
+    end loop;
+  elsif v_po is not null then
+    for r in
+      select item_code, qty, unit
+        from public.po_rows
+       where po_no = v_po
+       order by line_no
+    loop
+      insert into public.stock_batches(
+        item_code, grn_no, supplier_id, qty_received, qty_remaining, unit,
+        received_date, created_by
+      ) values (
+        r.item_code, new.no, v_supplier, r.qty, r.qty, r.unit,
+        new.grn_date, auth.uid()
+      );
+    end loop;
+  end if;
+
+  return new;
+end; $$;
+
+drop trigger if exists trg_grn_fill_batches_ins on public.grns;
+drop trigger if exists trg_grn_fill_batches_ins on public.grns;
+create trigger trg_grn_fill_batches_ins after insert on public.grns
+  for each row execute function public.grn_fill_batches();
+
+drop trigger if exists trg_grn_fill_batches_upd on public.grns;
+drop trigger if exists trg_grn_fill_batches_upd on public.grns;
+create trigger trg_grn_fill_batches_upd after update of status on public.grns
+  for each row execute function public.grn_fill_batches();
+
+-- -----------------------------------------------------------------------------
+-- 4. FIFO consumption RPC
+-- -----------------------------------------------------------------------------
+create or replace function public.stock_consume_fifo(
+  p_item_code text,
+  p_qty numeric,
+  p_ref_doc text default 'menu_consumption',
+  p_ref_no text default null,
+  p_note text default null
+)
+returns table (batch_id bigint, consumed numeric, remaining_after numeric)
+language plpgsql as $$
+declare
+  v_role public.user_role;
+  v_remaining numeric := p_qty;
+  v_take numeric;
+  r record;
+begin
+  v_role := public.current_role();
+  if v_role not in ('admin','operator') then
+    raise exception 'stock_consume_fifo: role % tidak punya akses', v_role;
+  end if;
+  if p_qty <= 0 then
+    raise exception 'stock_consume_fifo: qty harus > 0';
+  end if;
+
+  for r in
+    select id, qty_remaining
+      from public.stock_batches
+     where item_code = p_item_code
+       and qty_remaining > 0
+     order by expiry_date nulls last, received_date, id
+  loop
+    exit when v_remaining <= 0;
+
+    v_take := least(r.qty_remaining, v_remaining);
+
+    update public.stock_batches
+       set qty_remaining = qty_remaining - v_take,
+           updated_at = now()
+     where id = r.id;
+
+    batch_id := r.id;
+    consumed := v_take;
+    remaining_after := r.qty_remaining - v_take;
+    return next;
+
+    v_remaining := v_remaining - v_take;
+  end loop;
+
+  -- Catat stock_move tunggal (bukan per batch) supaya trg_moves_apply
+  -- tetap menurunkan stock.qty secara aggregate.
+  if (p_qty - v_remaining) > 0 then
+    insert into public.stock_moves(
+      item_code, delta, reason, ref_doc, ref_no, note, created_by
+    ) values (
+      p_item_code,
+      -(p_qty - v_remaining),
+      'consumption'::public.move_reason,
+      coalesce(p_ref_doc, 'menu_consumption'),
+      p_ref_no,
+      coalesce(p_note, 'FIFO consume'),
+      auth.uid()
+    );
+  end if;
+
+  if v_remaining > 0 then
+    raise warning 'stock_consume_fifo: kurang % % untuk %', v_remaining,
+      (select unit from public.items where code = p_item_code), p_item_code;
+  end if;
+end; $$;
+
+grant execute on function public.stock_consume_fifo(text, numeric, text, text, text)
+  to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 5. Expiring batches RPC untuk dashboard alert
+-- -----------------------------------------------------------------------------
+create or replace function public.expiring_batches(p_days int default 14)
+returns table (
+  id bigint,
+  item_code text,
+  item_name text,
+  grn_no text,
+  supplier_id text,
+  supplier_name text,
+  qty_remaining numeric,
+  unit text,
+  expiry_date date,
+  days_left int,
+  status text                          -- 'expired','urgent','soon'
+)
+language sql stable as $$
+  select
+    b.id,
+    b.item_code,
+    i.name_en,
+    b.grn_no,
+    b.supplier_id,
+    s.name,
+    b.qty_remaining,
+    b.unit,
+    b.expiry_date,
+    (b.expiry_date - current_date) as days_left,
+    case
+      when b.expiry_date < current_date then 'expired'
+      when (b.expiry_date - current_date) <= 3 then 'urgent'
+      else 'soon'
+    end as status
+  from public.stock_batches b
+  left join public.items i on i.code = b.item_code
+  left join public.suppliers s on s.id = b.supplier_id
+  where b.qty_remaining > 0
+    and b.expiry_date is not null
+    and b.expiry_date <= (current_date + make_interval(days => greatest(p_days, 0)))
+  order by b.expiry_date, b.received_date;
+$$;
+
+grant execute on function public.expiring_batches(int) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 6. View · on-hand per item dari batches (untuk rekonsiliasi dengan stock.qty)
+-- -----------------------------------------------------------------------------
+create or replace view public.v_stock_on_hand_by_item as
+  select
+    i.code as item_code,
+    i.unit,
+    coalesce(sum(b.qty_remaining), 0) as qty_batches,
+    coalesce((select qty from public.stock where item_code = i.code), 0) as qty_aggregate,
+    count(b.id) filter (where b.qty_remaining > 0) as active_batches,
+    min(b.expiry_date) filter (where b.qty_remaining > 0) as nearest_expiry
+  from public.items i
+  left join public.stock_batches b on b.item_code = i.code and b.qty_remaining > 0
+  group by i.code, i.unit;
+
+grant select on public.v_stock_on_hand_by_item to authenticated;
+
+-- =============================================================================
+-- END 0031
+-- =============================================================================
+
+
+-- >>> 0032_payments_cashflow.sql ============================================
+-- =============================================================================
+-- 0032 · Payments + cashflow (incoming from donor/dinas, outgoing to supplier)
+-- -----------------------------------------------------------------------------
+-- Masalah: invoices status 'paid/overdue' flat, tidak ada histori pembayaran,
+-- tidak ada DP/termin/split-payment, dan tidak ada pencatatan kas masuk dari
+-- dinas/WFP. Operator akan fallback ke Excel.
+--
+-- Desain:
+--   payments       : pembayaran outgoing ke supplier (boleh partial)
+--   cash_receipts  : penerimaan incoming dari source (dinas, WFP, donor)
+--   trg_payment_update_invoice : auto-update invoice.status saat terbayar penuh
+--   RPC monthly_cashflow, payment_summary_by_invoice, outstanding_by_supplier
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. payments (outgoing)
+-- -----------------------------------------------------------------------------
+do $$ begin
+  create type public.payment_method as enum (
+  'transfer','tunai','cek','giro','virtual_account','qris','lainnya'
+  );
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.payments (
+  no text primary key,                          -- 'PAY-2026-001'
+  invoice_no text references public.invoices(no) on delete set null,
+  supplier_id text references public.suppliers(id) on delete set null,
+  pay_date date not null,
+  amount numeric(14,2) not null check (amount > 0),
+  method public.payment_method not null default 'transfer',
+  reference text,                               -- no transfer, no giro, dsb
+  bukti_url text,                               -- storage path untuk scan bukti
+  note text,
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_payments_inv on public.payments(invoice_no);
+create index if not exists idx_payments_sup on public.payments(supplier_id, pay_date desc);
+create index if not exists idx_payments_date on public.payments(pay_date desc);
+
+drop trigger if exists trg_payments_touch on public.payments;
+drop trigger if exists trg_payments_touch on public.payments;
+create trigger trg_payments_touch before update on public.payments
+  for each row execute function public.touch_updated_at();
+
+alter table public.payments enable row level security;
+
+drop policy if exists "payments: staff read" on public.payments;
+drop policy if exists "payments: staff read" on public.payments;
+create policy "payments: staff read" on public.payments
+  for select using (
+    auth.uid() is not null and public.current_role() in
+      ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "payments: supplier read own" on public.payments;
+drop policy if exists "payments: supplier read own" on public.payments;
+create policy "payments: supplier read own" on public.payments
+  for select using (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  );
+
+drop policy if exists "payments: op/admin write" on public.payments;
+drop policy if exists "payments: op/admin write" on public.payments;
+create policy "payments: op/admin write" on public.payments
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- -----------------------------------------------------------------------------
+-- 2. cash_receipts (incoming — dinas/WFP/donor)
+-- -----------------------------------------------------------------------------
+do $$ begin
+  create type public.cash_source as enum (
+  'dinas','wfp','ifsr','ffi','donor_swasta','lainnya'
+  );
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.cash_receipts (
+  no text primary key,                          -- 'CR-2026-001'
+  receipt_date date not null,
+  source public.cash_source not null,
+  source_name text,                             -- 'Dinas Pendidikan TTS'
+  amount numeric(14,2) not null check (amount > 0),
+  period text,                                  -- '2026-05' utk alokasi bulanan
+  reference text,
+  bukti_url text,
+  note text,
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_cash_receipts_date on public.cash_receipts(receipt_date desc);
+create index if not exists idx_cash_receipts_period on public.cash_receipts(period);
+
+drop trigger if exists trg_cash_receipts_touch on public.cash_receipts;
+drop trigger if exists trg_cash_receipts_touch on public.cash_receipts;
+create trigger trg_cash_receipts_touch before update on public.cash_receipts
+  for each row execute function public.touch_updated_at();
+
+alter table public.cash_receipts enable row level security;
+
+drop policy if exists "cash_receipts: staff read" on public.cash_receipts;
+drop policy if exists "cash_receipts: staff read" on public.cash_receipts;
+create policy "cash_receipts: staff read" on public.cash_receipts
+  for select using (
+    auth.uid() is not null and public.current_role() in
+      ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "cash_receipts: admin write" on public.cash_receipts;
+drop policy if exists "cash_receipts: admin write" on public.cash_receipts;
+create policy "cash_receipts: admin write" on public.cash_receipts
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- -----------------------------------------------------------------------------
+-- 3. Trigger: update invoice.status saat total payment ≥ invoice.total
+-- -----------------------------------------------------------------------------
+create or replace function public.payment_sync_invoice()
+returns trigger language plpgsql as $$
+declare
+  v_inv text;
+  v_total numeric(14,2);
+  v_paid numeric(14,2);
+  v_status public.invoice_status;
+begin
+  if pg_trigger_depth() > 1 then return null; end if;
+  v_inv := coalesce(new.invoice_no, old.invoice_no);
+  if v_inv is null then return null; end if;
+
+  select total, status into v_total, v_status
+    from public.invoices where no = v_inv;
+  if not found then return null; end if;
+
+  select coalesce(sum(amount), 0) into v_paid
+    from public.payments where invoice_no = v_inv;
+
+  if v_paid >= v_total and v_status <> 'paid' then
+    update public.invoices set status = 'paid' where no = v_inv;
+  elsif v_paid = 0 and v_status = 'paid' then
+    update public.invoices
+       set status = case when due_date is not null and due_date < current_date
+                         then 'overdue' else 'issued' end
+     where no = v_inv;
+  end if;
+
+  return null;
+end; $$;
+
+drop trigger if exists trg_payment_sync_invoice on public.payments;
+drop trigger if exists trg_payment_sync_invoice on public.payments;
+create trigger trg_payment_sync_invoice after insert or update or delete on public.payments
+  for each row execute function public.payment_sync_invoice();
+
+-- -----------------------------------------------------------------------------
+-- 4. RPC · outstanding by supplier (invoice.total − sum(payments))
+-- -----------------------------------------------------------------------------
+create or replace function public.outstanding_by_supplier()
+returns table (
+  supplier_id text,
+  supplier_name text,
+  invoice_count int,
+  invoice_total numeric,
+  paid_total numeric,
+  outstanding numeric,
+  oldest_due date
+)
+language sql stable as $$
+  with inv as (
+    select i.no, i.supplier_id, i.total, i.due_date,
+           coalesce((select sum(amount) from public.payments p
+                     where p.invoice_no = i.no), 0) as paid
+      from public.invoices i
+     where i.status <> 'cancelled'
+  )
+  select
+    inv.supplier_id,
+    s.name,
+    count(*)::int                              as invoice_count,
+    sum(inv.total)                             as invoice_total,
+    sum(inv.paid)                              as paid_total,
+    sum(inv.total - inv.paid)                  as outstanding,
+    min(inv.due_date) filter (where inv.total - inv.paid > 0) as oldest_due
+  from inv
+  left join public.suppliers s on s.id = inv.supplier_id
+  where inv.total - inv.paid > 0.01
+  group by inv.supplier_id, s.name
+  order by outstanding desc;
+$$;
+
+grant execute on function public.outstanding_by_supplier() to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 5. RPC · monthly_cashflow (in, out, net, cumulative)
+-- -----------------------------------------------------------------------------
+create or replace function public.monthly_cashflow(
+  p_from date default (current_date - interval '6 months')::date,
+  p_to date default current_date
+)
+returns table (
+  period text,
+  cash_in numeric,
+  cash_out numeric,
+  net numeric,
+  cumulative numeric
+)
+language sql stable as $$
+  with months as (
+    select to_char(gs, 'YYYY-MM') as period, gs::date as month_start
+    from generate_series(date_trunc('month', p_from),
+                         date_trunc('month', p_to),
+                         interval '1 month') gs
+  ),
+  inflow as (
+    select to_char(receipt_date, 'YYYY-MM') as period,
+           coalesce(sum(amount), 0) as cash_in
+      from public.cash_receipts
+     where receipt_date between p_from and p_to
+     group by to_char(receipt_date, 'YYYY-MM')
+  ),
+  outflow as (
+    select to_char(pay_date, 'YYYY-MM') as period,
+           coalesce(sum(amount), 0) as cash_out
+      from public.payments
+     where pay_date between p_from and p_to
+     group by to_char(pay_date, 'YYYY-MM')
+  ),
+  merged as (
+    select m.period,
+           coalesce(i.cash_in, 0)  as cash_in,
+           coalesce(o.cash_out, 0) as cash_out,
+           coalesce(i.cash_in, 0) - coalesce(o.cash_out, 0) as net
+      from months m
+      left join inflow i  on i.period = m.period
+      left join outflow o on o.period = m.period
+  )
+  select period,
+         cash_in,
+         cash_out,
+         net,
+         sum(net) over (order by period rows unbounded preceding) as cumulative
+    from merged
+   order by period;
+$$;
+
+grant execute on function public.monthly_cashflow(date, date) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 6. RPC · payment_summary_by_invoice (untuk detail invoice page)
+-- -----------------------------------------------------------------------------
+create or replace function public.payment_summary_by_invoice(p_invoice_no text)
+returns table (
+  invoice_no text,
+  invoice_total numeric,
+  paid numeric,
+  outstanding numeric,
+  payment_count int,
+  last_payment_date date
+)
+language sql stable as $$
+  select
+    i.no,
+    i.total,
+    coalesce(sum(p.amount), 0),
+    i.total - coalesce(sum(p.amount), 0),
+    count(p.no)::int,
+    max(p.pay_date)
+  from public.invoices i
+  left join public.payments p on p.invoice_no = i.no
+  where i.no = p_invoice_no
+  group by i.no, i.total;
+$$;
+
+grant execute on function public.payment_summary_by_invoice(text) to authenticated;
+
+-- =============================================================================
+-- END 0032
+-- =============================================================================
+
+
+-- >>> 0033_deliveries.sql ===================================================
+-- =============================================================================
+-- 0033 · Deliveries dapur → sekolah + POD (proof of delivery)
+-- -----------------------------------------------------------------------------
+-- Masalah: SPPG Nunumeu distribusikan ke 9 sekolah setiap hari. Tidak ada
+-- surat jalan/manifest/POD → klaim ke WFP/dinas tidak bisa dibuktikan.
+-- school_attendance = konsumsi (bukan distribusi).
+--
+-- Desain:
+--   deliveries       : header per trip (delivery_no, date, driver, kendaraan)
+--   delivery_stops   : per sekolah (porsi_planned, porsi_delivered, foto, sign, waktu)
+--   RPC daily_delivery_summary, delivery_generate_for_date
+-- =============================================================================
+
+do $$ begin
+  create type public.delivery_status as enum (
+  'planned','dispatched','delivered','partial','cancelled'
+  );
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.deliveries (
+  no text primary key,                              -- 'DLV-2026-04-18-01'
+  delivery_date date not null,
+  menu_id smallint references public.menus(id),
+  driver_name text,
+  vehicle text,
+  dispatched_at timestamptz,
+  completed_at timestamptz,
+  status public.delivery_status not null default 'planned',
+  total_porsi_planned int not null default 0,
+  total_porsi_delivered int not null default 0,
+  note text,
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id),
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_deliveries_date on public.deliveries(delivery_date desc);
+create index if not exists idx_deliveries_status on public.deliveries(status)
+  where status in ('planned','dispatched');
+
+drop trigger if exists trg_deliveries_touch on public.deliveries;
+drop trigger if exists trg_deliveries_touch on public.deliveries;
+create trigger trg_deliveries_touch before update on public.deliveries
+  for each row execute function public.touch_updated_at();
+
+alter table public.deliveries enable row level security;
+
+drop policy if exists "deliveries: staff read" on public.deliveries;
+drop policy if exists "deliveries: staff read" on public.deliveries;
+create policy "deliveries: staff read" on public.deliveries
+  for select using (
+    auth.uid() is not null and public.current_role() in
+      ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "deliveries: op/admin write" on public.deliveries;
+drop policy if exists "deliveries: op/admin write" on public.deliveries;
+create policy "deliveries: op/admin write" on public.deliveries
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- -----------------------------------------------------------------------------
+create table if not exists public.delivery_stops (
+  id bigserial primary key,
+  delivery_no text not null references public.deliveries(no) on delete cascade,
+  stop_order smallint not null,
+  school_id text not null references public.schools(id),
+  porsi_planned int not null default 0,
+  porsi_delivered int not null default 0 check (porsi_delivered >= 0),
+  arrival_at timestamptz,
+  temperature_c numeric(4,1),                       -- suhu saat tiba
+  receiver_name text,
+  signature_url text,                               -- storage path PNG tanda tangan
+  photo_url text,                                   -- foto serah-terima
+  note text,
+  status public.delivery_status not null default 'planned',
+  created_at timestamptz not null default now(),
+  unique (delivery_no, school_id)
+);
+create index if not exists idx_stop_delivery on public.delivery_stops(delivery_no);
+create index if not exists idx_stop_school_date on public.delivery_stops(school_id);
+
+alter table public.delivery_stops enable row level security;
+
+drop policy if exists "stops: staff read" on public.delivery_stops;
+drop policy if exists "stops: staff read" on public.delivery_stops;
+create policy "stops: staff read" on public.delivery_stops
+  for select using (
+    auth.uid() is not null and public.current_role() in
+      ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "stops: op/admin write" on public.delivery_stops;
+drop policy if exists "stops: op/admin write" on public.delivery_stops;
+create policy "stops: op/admin write" on public.delivery_stops
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- -----------------------------------------------------------------------------
+-- Trigger: roll-up total porsi dari delivery_stops ke deliveries
+-- -----------------------------------------------------------------------------
+create or replace function public.delivery_recalc_totals()
+returns trigger language plpgsql as $$
+declare
+  v_no text;
+  v_planned int;
+  v_delivered int;
+  v_stops_done int;
+  v_stops_total int;
+begin
+  if pg_trigger_depth() > 1 then return null; end if;
+  v_no := coalesce(new.delivery_no, old.delivery_no);
+
+  select coalesce(sum(porsi_planned), 0),
+         coalesce(sum(porsi_delivered), 0),
+         count(*) filter (where status = 'delivered'),
+         count(*)
+    into v_planned, v_delivered, v_stops_done, v_stops_total
+    from public.delivery_stops
+   where delivery_no = v_no;
+
+  update public.deliveries
+     set total_porsi_planned = v_planned,
+         total_porsi_delivered = v_delivered,
+         status = case
+           when v_stops_total = 0 then status
+           when v_stops_done = v_stops_total then 'delivered'
+           when v_stops_done > 0 then 'partial'
+           else status
+         end,
+         completed_at = case
+           when v_stops_done = v_stops_total and v_stops_total > 0 then now()
+           else completed_at
+         end
+   where no = v_no;
+  return null;
+end; $$;
+
+drop trigger if exists trg_stop_recalc on public.delivery_stops;
+drop trigger if exists trg_stop_recalc on public.delivery_stops;
+create trigger trg_stop_recalc after insert or update or delete on public.delivery_stops
+  for each row execute function public.delivery_recalc_totals();
+
+-- -----------------------------------------------------------------------------
+-- RPC · generate delivery plan untuk tanggal (iterate schools × attendance)
+-- -----------------------------------------------------------------------------
+create or replace function public.delivery_generate_for_date(p_date date)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role public.user_role;
+  v_no text;
+  v_menu_id smallint;
+  v_existing int;
+  r record;
+  v_order smallint := 1;
+begin
+  v_role := public.current_role();
+  if v_role not in ('admin','operator') then
+    raise exception 'role % tidak berwenang', v_role;
+  end if;
+
+  -- Sudah ada untuk tanggal ini?
+  select count(*) into v_existing
+    from public.deliveries where delivery_date = p_date;
+  if v_existing > 0 then
+    select no into v_no from public.deliveries
+      where delivery_date = p_date order by created_at limit 1;
+    return v_no;  -- idempotent: kembali yang ada
+  end if;
+
+  select menu_id into v_menu_id from public.menu_assign where assign_date = p_date;
+
+  v_no := 'DLV-' || to_char(p_date, 'YYYY-MM-DD') || '-01';
+
+  insert into public.deliveries(no, delivery_date, menu_id, status, created_by)
+  values (v_no, p_date, v_menu_id, 'planned', auth.uid());
+
+  -- Ambil school_attendance qty untuk tanggal; fallback ke schools.students
+  for r in
+    select s.id as school_id,
+           coalesce(a.qty, s.students) as porsi
+      from public.schools s
+      left join public.school_attendance a
+        on a.school_id = s.id and a.att_date = p_date
+     where s.active = true
+     order by s.id
+  loop
+    insert into public.delivery_stops(
+      delivery_no, stop_order, school_id, porsi_planned, status
+    ) values (
+      v_no, v_order, r.school_id, r.porsi::int, 'planned'
+    );
+    v_order := v_order + 1;
+  end loop;
+
+  return v_no;
+end; $$;
+
+grant execute on function public.delivery_generate_for_date(date) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- RPC · daily_delivery_summary (untuk dashboard)
+-- -----------------------------------------------------------------------------
+create or replace function public.daily_delivery_summary(
+  p_from date default (current_date - interval '30 days')::date,
+  p_to date default current_date
+)
+returns table (
+  delivery_date date,
+  delivery_no text,
+  status text,
+  stops_total int,
+  stops_delivered int,
+  porsi_planned int,
+  porsi_delivered int,
+  fulfilment_pct numeric
+)
+language sql stable as $$
+  select
+    d.delivery_date,
+    d.no,
+    d.status::text,
+    count(ds.id)::int as stops_total,
+    count(ds.id) filter (where ds.status = 'delivered')::int as stops_delivered,
+    d.total_porsi_planned,
+    d.total_porsi_delivered,
+    case when d.total_porsi_planned > 0
+         then round(d.total_porsi_delivered::numeric * 100
+                    / d.total_porsi_planned, 1)
+         else null end as fulfilment_pct
+  from public.deliveries d
+  left join public.delivery_stops ds on ds.delivery_no = d.no
+  where d.delivery_date between p_from and p_to
+  group by d.delivery_date, d.no, d.status,
+           d.total_porsi_planned, d.total_porsi_delivered
+  order by d.delivery_date desc, d.no;
+$$;
+
+grant execute on function public.daily_delivery_summary(date, date) to authenticated;
+
+-- =============================================================================
+-- END 0033
+-- =============================================================================
+
+
+-- >>> 0034_audit_events.sql =================================================
+-- =============================================================================
+-- 0034 · Generic audit log untuk tabel kritikal
+-- -----------------------------------------------------------------------------
+-- Masalah: tidak ada jejak "siapa ubah apa kapan". Supplier punya write access,
+-- admin butuh audit untuk compliance WFP + internal investigation.
+--
+-- Desain:
+--   audit_events(id, actor_id, actor_email, actor_role, table_name, row_pk,
+--                action, diff, ts, user_agent, ip)
+--   trg_audit_generic (row-level, before/after JSON diff)
+--   RPC list_audit, audit_for_row
+--
+-- Tabel yang di-attach trigger: items, suppliers, menus, menu_bom, menu_assign,
+--   purchase_orders, po_rows, grns, invoices, payments, supplier_prices,
+--   settings (harga bahan & konfigurasi = high-stakes).
+-- =============================================================================
+
+do $$ begin
+  create type public.audit_action as enum ('INSERT','UPDATE','DELETE'
+  );
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.audit_events (
+  id bigserial primary key,
+  ts timestamptz not null default now(),
+  actor_id uuid,                                -- auth.uid() — null kalau service role
+  actor_email text,
+  actor_role public.user_role,
+  table_name text not null,
+  row_pk text,                                  -- PK sebagai text (serialize composite jadi json)
+  action public.audit_action not null,
+  diff jsonb not null,                          -- {"before": {...}, "after": {...}, "changed": ["col1",...]}
+  request_id text,                              -- set dari app layer kalau perlu
+  user_agent text,
+  ip text
+);
+create index if not exists idx_audit_ts on public.audit_events(ts desc);
+create index if not exists idx_audit_table_ts on public.audit_events(table_name, ts desc);
+create index if not exists idx_audit_actor on public.audit_events(actor_id, ts desc);
+create index if not exists idx_audit_row on public.audit_events(table_name, row_pk);
+
+alter table public.audit_events enable row level security;
+
+drop policy if exists "audit: admin+viewer read" on public.audit_events;
+drop policy if exists "audit: admin+viewer read" on public.audit_events;
+create policy "audit: admin+viewer read" on public.audit_events
+  for select using (
+    public.current_role() in ('admin','viewer')
+  );
+
+-- Tidak ada write policy → insert hanya via trigger (security definer)
+
+-- -----------------------------------------------------------------------------
+-- Helper: resolve PK value jadi text (untuk single-col PK)
+-- -----------------------------------------------------------------------------
+create or replace function public._audit_row_pk(
+  p_table regclass, p_row jsonb
+) returns text language plpgsql stable as $$
+declare
+  v_pks text[];
+  v_parts text[];
+  k text;
+begin
+  select array_agg(a.attname::text order by a.attnum)
+    into v_pks
+  from pg_index i
+  join pg_attribute a
+    on a.attrelid = i.indrelid and a.attnum = any(i.indkey)
+  where i.indrelid = p_table and i.indisprimary;
+
+  if v_pks is null or array_length(v_pks, 1) is null then
+    return null;
+  end if;
+
+  v_parts := array(select coalesce(p_row ->> k, 'null') from unnest(v_pks) k);
+  return array_to_string(v_parts, '|');
+end; $$;
+
+-- -----------------------------------------------------------------------------
+-- Generic audit trigger function
+-- -----------------------------------------------------------------------------
+create or replace function public.audit_trigger()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_before jsonb;
+  v_after  jsonb;
+  v_pk text;
+  v_role public.user_role;
+  v_email text;
+  v_changed text[];
+begin
+  if tg_op = 'INSERT' then
+    v_after := to_jsonb(new);
+    v_pk := public._audit_row_pk(tg_relid, v_after);
+  elsif tg_op = 'DELETE' then
+    v_before := to_jsonb(old);
+    v_pk := public._audit_row_pk(tg_relid, v_before);
+  else  -- UPDATE
+    v_before := to_jsonb(old);
+    v_after  := to_jsonb(new);
+    v_pk := public._audit_row_pk(tg_relid, v_after);
+    -- Skip kalau tidak ada kolom yang berubah (mis. touch trigger trivial)
+    select array_agg(k) into v_changed
+      from (
+        select k from jsonb_each(v_after) j(k, v)
+        where j.v is distinct from (v_before -> j.k)
+      ) diff
+     where k not in ('updated_at','created_at');
+    if v_changed is null or array_length(v_changed, 1) is null then
+      return null;
+    end if;
+  end if;
+
+  begin
+    select role, email into v_role, v_email
+      from public.profiles where id = auth.uid();
+  exception when others then
+    v_role := null; v_email := null;
+  end;
+
+  insert into public.audit_events(
+    actor_id, actor_email, actor_role, table_name, row_pk, action, diff
+  ) values (
+    auth.uid(), v_email, v_role,
+    tg_table_name, v_pk, tg_op::public.audit_action,
+    jsonb_build_object(
+      'before', v_before,
+      'after',  v_after,
+      'changed', v_changed
+    )
+  );
+  return null;
+end; $$;
+
+-- -----------------------------------------------------------------------------
+-- Attach trigger ke tabel kritikal (idempoten)
+-- -----------------------------------------------------------------------------
+do $$
+declare
+  t text;
+  tables text[] := array[
+    'items','suppliers','supplier_items','menus','menu_bom','menu_assign',
+    'custom_menus','purchase_orders','po_rows','grns','grn_rows','invoices',
+    'payments','cash_receipts','settings','supplier_prices',
+    'profiles','invites','stock_batches','deliveries','delivery_stops'
+  ];
+begin
+  foreach t in array tables loop
+    if to_regclass('public.' || t) is null then
+      continue;
+    end if;
+    execute format('drop trigger if exists trg_audit on public.%I', t);
+    execute format(
+      'create trigger trg_audit after insert or update or delete on public.%I
+         for each row execute function public.audit_trigger()', t
+    );
+  end loop;
+end $$;
+
+-- -----------------------------------------------------------------------------
+-- RPC · list_audit dengan filter
+-- -----------------------------------------------------------------------------
+create or replace function public.list_audit(
+  p_table text default null,
+  p_actor uuid default null,
+  p_action public.audit_action default null,
+  p_from timestamptz default (now() - interval '30 days'),
+  p_to timestamptz default now(),
+  p_limit int default 200
+)
+returns setof public.audit_events
+language sql stable as $$
+  select *
+    from public.audit_events
+   where ts between p_from and p_to
+     and (p_table is null or table_name = p_table)
+     and (p_actor is null or actor_id = p_actor)
+     and (p_action is null or action = p_action)
+   order by ts desc
+   limit greatest(p_limit, 1);
+$$;
+
+grant execute on function public.list_audit(text, uuid, public.audit_action, timestamptz, timestamptz, int)
+  to authenticated;
+
+-- =============================================================================
+-- END 0034
+-- =============================================================================
+
+
+-- >>> 0035_budgets.sql ======================================================
+-- =============================================================================
+-- 0035 · Budgets + cost-per-portion tracker
+-- -----------------------------------------------------------------------------
+-- Masalah: alokasi bulanan dari dinas/WFP/IFSR tidak tercatat di DB. Tidak
+-- ada burn-rate dashboard, tidak ada unit cost per porsi (realized vs target).
+--
+-- Desain:
+--   budgets(period, source, amount_idr, allocation_json, target_cost_per_portion)
+--   RPC budget_burn(period) → realized spend vs budget
+--   RPC cost_per_portion_daily(from, to) → Σspend / Σporsi per hari
+-- =============================================================================
+
+create table if not exists public.budgets (
+  id bigserial primary key,
+  period text not null,                           -- 'YYYY-MM' atau 'YYYY-Q1'
+  source public.cash_source not null,
+  source_name text,
+  amount_idr numeric(14,2) not null check (amount_idr >= 0),
+  allocation jsonb not null default '{}'::jsonb,  -- {"pangan": 0.7, "ops": 0.2, "admin": 0.1}
+  target_cost_per_portion numeric(10,2),          -- mis. 15000
+  note text,
+  created_at timestamptz not null default now(),
+  created_by uuid references auth.users(id),
+  updated_at timestamptz not null default now(),
+  unique (period, source)
+);
+create index if not exists idx_budgets_period on public.budgets(period);
+
+drop trigger if exists trg_budgets_touch on public.budgets;
+drop trigger if exists trg_budgets_touch on public.budgets;
+create trigger trg_budgets_touch before update on public.budgets
+  for each row execute function public.touch_updated_at();
+
+alter table public.budgets enable row level security;
+
+drop policy if exists "budgets: staff read" on public.budgets;
+drop policy if exists "budgets: staff read" on public.budgets;
+create policy "budgets: staff read" on public.budgets
+  for select using (
+    auth.uid() is not null and public.current_role() in
+      ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "budgets: admin write" on public.budgets;
+drop policy if exists "budgets: admin write" on public.budgets;
+create policy "budgets: admin write" on public.budgets
+  for all using (public.current_role() = 'admin')
+  with check (public.current_role() = 'admin');
+
+-- -----------------------------------------------------------------------------
+-- RPC · budget_burn per period (bulan)
+-- -----------------------------------------------------------------------------
+create or replace function public.budget_burn(
+  p_from text default to_char(current_date - interval '6 months', 'YYYY-MM'),
+  p_to text default to_char(current_date, 'YYYY-MM')
+)
+returns table (
+  period text,
+  budget_total numeric,
+  spent_po numeric,                               -- total PO pada bulan itu
+  spent_invoice numeric,                          -- total invoice
+  spent_paid numeric,                             -- total payment out
+  burn_pct numeric,                               -- paid / budget * 100
+  remaining numeric
+)
+language sql stable as $$
+  with months as (
+    select distinct period
+      from (
+        select period from public.budgets where period between p_from and p_to
+        union
+        select to_char(gs, 'YYYY-MM') as period
+          from generate_series(
+            to_date(p_from || '-01','YYYY-MM-DD'),
+            to_date(p_to || '-01','YYYY-MM-DD'),
+            interval '1 month'
+          ) gs
+      ) u
+  ),
+  b as (
+    select period, sum(amount_idr) as budget_total
+      from public.budgets
+     where period between p_from and p_to
+     group by period
+  ),
+  po as (
+    select to_char(po_date, 'YYYY-MM') as period, sum(total) as spent_po
+      from public.purchase_orders
+     where status <> 'cancelled'
+       and po_date >= to_date(p_from || '-01','YYYY-MM-DD')
+     group by to_char(po_date, 'YYYY-MM')
+  ),
+  inv as (
+    select to_char(inv_date, 'YYYY-MM') as period, sum(total) as spent_invoice
+      from public.invoices
+     where status <> 'cancelled'
+       and inv_date >= to_date(p_from || '-01','YYYY-MM-DD')
+     group by to_char(inv_date, 'YYYY-MM')
+  ),
+  pay as (
+    select to_char(pay_date, 'YYYY-MM') as period, sum(amount) as spent_paid
+      from public.payments
+     where pay_date >= to_date(p_from || '-01','YYYY-MM-DD')
+     group by to_char(pay_date, 'YYYY-MM')
+  )
+  select
+    m.period,
+    coalesce(b.budget_total, 0),
+    coalesce(po.spent_po, 0),
+    coalesce(inv.spent_invoice, 0),
+    coalesce(pay.spent_paid, 0),
+    case when coalesce(b.budget_total, 0) > 0
+         then round(coalesce(pay.spent_paid, 0) * 100
+                    / b.budget_total, 2)
+         else null end,
+    coalesce(b.budget_total, 0) - coalesce(pay.spent_paid, 0)
+  from months m
+  left join b   on b.period   = m.period
+  left join po  on po.period  = m.period
+  left join inv on inv.period = m.period
+  left join pay on pay.period = m.period
+  order by m.period;
+$$;
+
+grant execute on function public.budget_burn(text, text) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- RPC · cost_per_portion_daily — realized total invoice ÷ total porsi delivered
+-- -----------------------------------------------------------------------------
+create or replace function public.cost_per_portion_daily(
+  p_from date default (current_date - interval '30 days')::date,
+  p_to date default current_date
+)
+returns table (
+  op_date date,
+  total_porsi int,
+  spent_po numeric,                               -- po value pada tanggal itu (approx bahan baku)
+  cost_per_portion numeric,
+  target numeric
+)
+language sql stable as $$
+  with target as (
+    select max(target_cost_per_portion) as target
+      from public.budgets
+     where target_cost_per_portion is not null
+  ),
+  porsi as (
+    -- prefer delivery actual, fallback ke porsi_counts (planned)
+    select d.delivery_date as op_date, sum(d.total_porsi_delivered) as porsi
+      from public.deliveries d
+     where d.delivery_date between p_from and p_to
+       and d.status in ('delivered','partial')
+     group by d.delivery_date
+  ),
+  -- PO dibandingkan bukan invoice karena invoice bisa beda tanggal
+  po_daily as (
+    select po_date as op_date, sum(total) as spent_po
+      from public.purchase_orders
+     where po_date between p_from and p_to
+       and status <> 'cancelled'
+     group by po_date
+  ),
+  dates as (
+    select gs::date as op_date
+      from generate_series(p_from, p_to, interval '1 day') gs
+  )
+  select
+    d.op_date,
+    coalesce(p.porsi, 0)::int                    as total_porsi,
+    coalesce(pd.spent_po, 0)                     as spent_po,
+    case when coalesce(p.porsi, 0) > 0
+         then round(coalesce(pd.spent_po, 0) / p.porsi, 2)
+         else null end                           as cost_per_portion,
+    (select target from target)                  as target
+  from dates d
+  left join porsi    p  on p.op_date  = d.op_date
+  left join po_daily pd on pd.op_date = d.op_date
+  order by d.op_date;
+$$;
+
+grant execute on function public.cost_per_portion_daily(date, date) to authenticated;
+
+-- =============================================================================
+-- END 0035
+-- =============================================================================
+
+
+-- >>> 0036_supplier_portal.sql ==============================================
+-- =============================================================================
+-- 0036 · Supplier portal expansion
+-- -----------------------------------------------------------------------------
+-- Masalah: supplier hanya punya /forecast. Butuh: ack PO, upload foto delivery,
+-- upload scan invoice, chat thread per PO, lihat status payment.
+--
+-- Desain:
+--   po_acknowledgements     : supplier ack PO (accept/reject + reason)
+--   supplier_messages       : chat thread per PO (supplier ↔ operator)
+--   invoice_uploads         : supplier upload scan invoice sebelum invoice di-approve operator
+--   RPC supplier_po_inbox, supplier_payment_status
+-- =============================================================================
+
+do $$ begin
+  create type public.po_ack_decision as enum ('accepted','rejected','partial','pending'
+  );
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.po_acknowledgements (
+  po_no text primary key references public.purchase_orders(no) on delete cascade,
+  decision public.po_ack_decision not null default 'pending',
+  decided_at timestamptz,
+  decided_by uuid references auth.users(id),
+  supplier_id text references public.suppliers(id),
+  note text,
+  alt_delivery_date date,                         -- usulan tanggal alternatif kalau reject tanggal
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_po_ack_supplier on public.po_acknowledgements(supplier_id, decided_at desc);
+
+drop trigger if exists trg_po_ack_touch on public.po_acknowledgements;
+drop trigger if exists trg_po_ack_touch on public.po_acknowledgements;
+create trigger trg_po_ack_touch before update on public.po_acknowledgements
+  for each row execute function public.touch_updated_at();
+
+alter table public.po_acknowledgements enable row level security;
+
+drop policy if exists "po_ack: staff read" on public.po_acknowledgements;
+drop policy if exists "po_ack: staff read" on public.po_acknowledgements;
+create policy "po_ack: staff read" on public.po_acknowledgements
+  for select using (
+    auth.uid() is not null and public.current_role() in
+      ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "po_ack: supplier read own" on public.po_acknowledgements;
+drop policy if exists "po_ack: supplier read own" on public.po_acknowledgements;
+create policy "po_ack: supplier read own" on public.po_acknowledgements
+  for select using (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  );
+
+drop policy if exists "po_ack: supplier upsert own" on public.po_acknowledgements;
+drop policy if exists "po_ack: supplier upsert own" on public.po_acknowledgements;
+create policy "po_ack: supplier upsert own" on public.po_acknowledgements
+  for insert with check (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+    and exists (
+      select 1 from public.purchase_orders p
+       where p.no = po_no and p.supplier_id = public.current_supplier_id()
+    )
+  );
+
+drop policy if exists "po_ack: supplier update own" on public.po_acknowledgements;
+drop policy if exists "po_ack: supplier update own" on public.po_acknowledgements;
+create policy "po_ack: supplier update own" on public.po_acknowledgements
+  for update using (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  ) with check (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  );
+
+drop policy if exists "po_ack: admin write" on public.po_acknowledgements;
+drop policy if exists "po_ack: admin write" on public.po_acknowledgements;
+create policy "po_ack: admin write" on public.po_acknowledgements
+  for all using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- -----------------------------------------------------------------------------
+-- supplier_messages · chat thread per PO
+-- -----------------------------------------------------------------------------
+create table if not exists public.supplier_messages (
+  id bigserial primary key,
+  po_no text references public.purchase_orders(no) on delete cascade,
+  supplier_id text not null references public.suppliers(id),
+  sender_id uuid references auth.users(id),
+  sender_role public.user_role,
+  body text not null check (length(body) > 0 and length(body) <= 4000),
+  attachment_url text,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_msg_po on public.supplier_messages(po_no, created_at desc);
+create index if not exists idx_msg_supplier on public.supplier_messages(supplier_id, created_at desc);
+
+alter table public.supplier_messages enable row level security;
+
+drop policy if exists "msg: staff read" on public.supplier_messages;
+drop policy if exists "msg: staff read" on public.supplier_messages;
+create policy "msg: staff read" on public.supplier_messages
+  for select using (
+    auth.uid() is not null and public.current_role() in
+      ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "msg: supplier read own" on public.supplier_messages;
+drop policy if exists "msg: supplier read own" on public.supplier_messages;
+create policy "msg: supplier read own" on public.supplier_messages
+  for select using (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  );
+
+drop policy if exists "msg: supplier insert own" on public.supplier_messages;
+drop policy if exists "msg: supplier insert own" on public.supplier_messages;
+create policy "msg: supplier insert own" on public.supplier_messages
+  for insert with check (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+    and sender_id = auth.uid()
+  );
+
+drop policy if exists "msg: staff insert" on public.supplier_messages;
+drop policy if exists "msg: staff insert" on public.supplier_messages;
+create policy "msg: staff insert" on public.supplier_messages
+  for insert with check (
+    public.current_role() in ('admin','operator') and sender_id = auth.uid()
+  );
+
+-- -----------------------------------------------------------------------------
+-- invoice_uploads · scan invoice dari supplier → di-approve operator
+-- -----------------------------------------------------------------------------
+do $$ begin
+  create type public.invoice_upload_status as enum ('pending','approved','rejected'
+  );
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.invoice_uploads (
+  id bigserial primary key,
+  po_no text references public.purchase_orders(no) on delete set null,
+  grn_no text references public.grns(no) on delete set null,
+  supplier_id text not null references public.suppliers(id),
+  invoice_no_supplier text,                       -- no invoice dari supplier (bukan internal)
+  total numeric(14,2) not null check (total > 0),
+  file_url text not null,                         -- storage path PDF/JPG
+  status public.invoice_upload_status not null default 'pending',
+  approved_invoice_no text references public.invoices(no) on delete set null,
+  rejected_reason text,
+  uploaded_at timestamptz not null default now(),
+  uploaded_by uuid references auth.users(id),
+  reviewed_at timestamptz,
+  reviewed_by uuid references auth.users(id)
+);
+create index if not exists idx_inv_upload_sup on public.invoice_uploads(supplier_id, uploaded_at desc);
+create index if not exists idx_inv_upload_status on public.invoice_uploads(status)
+  where status = 'pending';
+
+alter table public.invoice_uploads enable row level security;
+
+drop policy if exists "inv_up: staff read" on public.invoice_uploads;
+drop policy if exists "inv_up: staff read" on public.invoice_uploads;
+create policy "inv_up: staff read" on public.invoice_uploads
+  for select using (
+    auth.uid() is not null and public.current_role() in
+      ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "inv_up: supplier read own" on public.invoice_uploads;
+drop policy if exists "inv_up: supplier read own" on public.invoice_uploads;
+create policy "inv_up: supplier read own" on public.invoice_uploads
+  for select using (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+  );
+
+drop policy if exists "inv_up: supplier insert own" on public.invoice_uploads;
+drop policy if exists "inv_up: supplier insert own" on public.invoice_uploads;
+create policy "inv_up: supplier insert own" on public.invoice_uploads
+  for insert with check (
+    public.current_role() = 'supplier'
+    and supplier_id = public.current_supplier_id()
+    and uploaded_by = auth.uid()
+  );
+
+drop policy if exists "inv_up: staff update" on public.invoice_uploads;
+drop policy if exists "inv_up: staff update" on public.invoice_uploads;
+create policy "inv_up: staff update" on public.invoice_uploads
+  for update using (public.current_role() in ('admin','operator'))
+  with check (public.current_role() in ('admin','operator'));
+
+-- -----------------------------------------------------------------------------
+-- RPC · supplier_po_inbox (untuk supplier dashboard)
+-- -----------------------------------------------------------------------------
+create or replace function public.supplier_po_inbox(p_limit int default 30)
+returns table (
+  po_no text,
+  po_date date,
+  delivery_date date,
+  total numeric,
+  po_status public.po_status,
+  ack_decision public.po_ack_decision,
+  ack_at timestamptz,
+  grn_status public.grn_status,
+  invoice_status public.invoice_status,
+  unread_msg int
+)
+language sql
+security definer
+set search_path = public
+stable as $$
+  select
+    p.no,
+    p.po_date,
+    p.delivery_date,
+    p.total,
+    p.status,
+    coalesce(a.decision, 'pending'::public.po_ack_decision),
+    a.decided_at,
+    (select g.status from public.grns g where g.po_no = p.no
+       order by g.grn_date desc limit 1),
+    (select i.status from public.invoices i where i.po_no = p.no
+       order by i.inv_date desc limit 1),
+    coalesce((select count(*)::int from public.supplier_messages m
+       where m.po_no = p.no
+         and m.sender_role in ('admin','operator')
+         and m.read_at is null), 0)
+  from public.purchase_orders p
+  left join public.po_acknowledgements a on a.po_no = p.no
+  where p.supplier_id = public.current_supplier_id()
+     or public.current_role() in ('admin','operator','viewer')
+  order by p.po_date desc, p.no desc
+  limit greatest(p_limit, 1);
+$$;
+
+grant execute on function public.supplier_po_inbox(int) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- RPC · supplier_payment_status (outstanding per supplier untuk portal)
+-- -----------------------------------------------------------------------------
+create or replace function public.supplier_payment_status()
+returns table (
+  invoice_no text,
+  po_no text,
+  inv_date date,
+  due_date date,
+  total numeric,
+  paid numeric,
+  outstanding numeric,
+  status public.invoice_status
+)
+language sql
+security definer
+set search_path = public
+stable as $$
+  select
+    i.no,
+    i.po_no,
+    i.inv_date,
+    i.due_date,
+    i.total,
+    coalesce((select sum(amount) from public.payments p
+              where p.invoice_no = i.no), 0),
+    i.total - coalesce((select sum(amount) from public.payments p
+                        where p.invoice_no = i.no), 0),
+    i.status
+  from public.invoices i
+  where i.supplier_id = public.current_supplier_id()
+     or public.current_role() in ('admin','operator','viewer')
+  order by i.inv_date desc, i.no desc
+  limit 200;
+$$;
+
+grant execute on function public.supplier_payment_status() to authenticated;
+
+-- =============================================================================
+-- END 0036
+-- =============================================================================
+
+
+-- >>> 0037_global_search.sql ================================================
+-- =============================================================================
+-- 0037 · Global search RPC (cross-table) untuk command palette (cmd-K)
+-- -----------------------------------------------------------------------------
+-- App sudah 14 halaman. Operator sering cari "PO-2026-014" atau "Beras Putih"
+-- atau "SUP-03 Mega Mart" — butuh satu endpoint yang jelajah semua entitas.
+-- =============================================================================
+
+create or replace function public.global_search(
+  p_query text,
+  p_limit int default 20
+)
+returns table (
+  kind text,              -- 'po','grn','invoice','qt','pr','item','supplier','menu','school','delivery'
+  id text,
+  title text,
+  subtitle text,
+  url text,
+  score real
+)
+language sql stable as $$
+  with q as (
+    select trim(coalesce(p_query, '')) as s,
+           ('%' || trim(coalesce(p_query, '')) || '%') as like_s
+  )
+  (
+    select 'po' as kind,
+           p.no as id,
+           p.no as title,
+           s.name || ' · Rp ' || to_char(p.total, 'FM999G999G999') as subtitle,
+           '/procurement' as url,
+           similarity(p.no, (select s from q)) as score
+      from public.purchase_orders p
+      left join public.suppliers s on s.id = p.supplier_id,
+           q
+     where p.no ilike q.like_s or s.name ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  union all
+  (
+    select 'grn',
+           g.no,
+           g.no,
+           coalesce(g.po_no, '—') || ' · ' || g.status::text,
+           '/procurement',
+           similarity(g.no, (select s from q))
+      from public.grns g, q
+     where g.no ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  union all
+  (
+    select 'invoice',
+           i.no,
+           i.no,
+           s.name || ' · Rp ' || to_char(i.total, 'FM999G999G999') ||
+             ' · ' || i.status::text,
+           '/procurement',
+           similarity(i.no, (select s from q))
+      from public.invoices i
+      left join public.suppliers s on s.id = i.supplier_id,
+           q
+     where i.no ilike q.like_s or s.name ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  union all
+  (
+    select 'qt',
+           qt.no,
+           qt.no,
+           s.name || ' · ' || qt.status::text,
+           '/procurement',
+           similarity(qt.no, (select s from q))
+      from public.quotations qt
+      left join public.suppliers s on s.id = qt.supplier_id,
+           q
+     where qt.no ilike q.like_s or s.name ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  union all
+  (
+    select 'pr',
+           pr.no,
+           pr.no,
+           coalesce(pr.notes, pr.status) || ' · ' || pr.need_date::text,
+           '/procurement',
+           similarity(pr.no, (select s from q))
+      from public.purchase_requisitions pr, q
+     where pr.no ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  union all
+  (
+    select 'item',
+           it.code,
+           it.code,
+           coalesce(it.name_en, '') || ' · ' || it.unit || ' · ' || it.category::text,
+           '/stock',
+           similarity(it.code, (select s from q))
+      from public.items it, q
+     where it.code ilike q.like_s or coalesce(it.name_en, '') ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  union all
+  (
+    select 'supplier',
+           sp.id,
+           sp.name,
+           sp.id || ' · ' || sp.type::text || coalesce(' · ' || sp.commodity, ''),
+           '/suppliers/' || sp.id,
+           similarity(sp.name, (select s from q))
+      from public.suppliers sp, q
+     where sp.name ilike q.like_s or sp.id ilike q.like_s
+        or coalesce(sp.commodity, '') ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  union all
+  (
+    select 'menu',
+           m.id::text,
+           'Menu ' || m.id::text || ' · ' || m.name,
+           coalesce(m.name_en, ''),
+           '/menu',
+           similarity(m.name, (select s from q))
+      from public.menus m, q
+     where m.name ilike q.like_s or coalesce(m.name_en, '') ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  union all
+  (
+    select 'school',
+           sc.id,
+           sc.name,
+           sc.id || ' · ' || sc.level::text,
+           '/schools',
+           similarity(sc.name, (select s from q))
+      from public.schools sc, q
+     where sc.name ilike q.like_s or sc.id ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  union all
+  (
+    select 'delivery',
+           d.no,
+           d.no,
+           d.delivery_date::text || ' · ' || d.status::text,
+           '/deliveries',
+           similarity(d.no, (select s from q))
+      from public.deliveries d, q
+     where d.no ilike q.like_s
+     limit greatest(p_limit, 1)
+  )
+  order by score desc nulls last
+  limit greatest(p_limit, 1) * 3;
+$$;
+
+-- pg_trgm diperlukan untuk similarity()
+create extension if not exists pg_trgm;
+
+grant execute on function public.global_search(text, int) to authenticated;
+
+-- =============================================================================
+-- END 0037
+-- =============================================================================
+
+
+-- >>> 0038_suppliers_excel_ref_bridge.sql ===================================
+-- =============================================================================
+-- 0038 · suppliers.excel_ref_id bridge column
+-- -----------------------------------------------------------------------------
+-- Dashboard HTML pakai ID internal SUP-01..14 untuk LTA / contract tracking.
+-- Costing Excel pakai SUP-E01..E17 sebagai master pricing. Dua sistem ini
+-- berjalan paralel — kolom bridge ini jadi penghubung supaya Next.js bisa
+-- reconcile "supplier X di dashboard = supplier Y di price list".
+--
+-- Schema change:
+--   suppliers.excel_ref_id text null (unique when not null)
+--
+-- Seed mapping: hand-curated dari match-by-name. 9 dari 14 HTML supplier aktif
+-- + 2 rejected punya counterpart di Excel. Sisanya (SUP-10..14) leave null
+-- karena tidak ada counterpart di Excel master.
+-- Idempoten: semua step aman re-run.
+-- =============================================================================
+
+-- 1. Add nullable column (idempoten via if not exists)
+alter table public.suppliers
+  add column if not exists excel_ref_id text;
+
+-- 2. Unique partial index (biar boleh null multiple, tapi non-null unique)
+create unique index if not exists suppliers_excel_ref_id_uq
+  on public.suppliers (excel_ref_id)
+  where excel_ref_id is not null;
+
+-- 3. Comment untuk documentation
+comment on column public.suppliers.excel_ref_id is
+  'Bridge to Excel costing master supplier ID (SUP-E01..SUP-E17). Null if supplier tidak ada di Excel (mis. rejected LTA atau belum masuk costing sheet).';
+
+-- 4. Seed mapping — hanya set kalau currently null (tidak overwrite manual edit)
+--    Source: ADJUSTED Costing Sheet Dish 06042026.xlsx · Supplier List sheet.
+do $$
+begin
+  -- HTML SUP-01 "Bulog NTT"                       → Excel SUP-E08 "Bulog"
+  update public.suppliers set excel_ref_id = 'SUP-E08'
+   where id = 'SUP-01' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E08');
+
+  -- HTML SUP-02 "UD Karya Sukses"                 → Excel SUP-E01 "UD Karya Sukses"
+  update public.suppliers set excel_ref_id = 'SUP-E01'
+   where id = 'SUP-02' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E01');
+
+  -- HTML SUP-03 "CV Triantanta Wijaya"            → Excel SUP-E02 "CV Triantanta Jaya (Wijaya)"
+  update public.suppliers set excel_ref_id = 'SUP-E02'
+   where id = 'SUP-03' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E02');
+
+  -- HTML SUP-04 "PT Alger Karya Pratama"          → Excel SUP-E09 "PT Alger Karya Pratama"
+  update public.suppliers set excel_ref_id = 'SUP-E09'
+   where id = 'SUP-04' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E09');
+
+  -- HTML SUP-05 "TLM (Tanaoba Lais Manekat)"      → Excel SUP-E06 "TLM"
+  update public.suppliers set excel_ref_id = 'SUP-E06'
+   where id = 'SUP-05' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E06');
+
+  -- HTML SUP-06 "Toko Maju Lancar"                → Excel SUP-E13 "Toko Maju Lancar"
+  update public.suppliers set excel_ref_id = 'SUP-E13'
+   where id = 'SUP-06' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E13');
+
+  -- HTML SUP-07 "Tunmuni Farmer Group"            → Excel SUP-E11 "Tunmuni Farmers Group"
+  update public.suppliers set excel_ref_id = 'SUP-E11'
+   where id = 'SUP-07' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E11');
+
+  -- HTML SUP-08 "Red & White Cooperatives Nunumeu"→ Excel SUP-E14 "Red & White Cooperatives (Nunumeu)"
+  update public.suppliers set excel_ref_id = 'SUP-E14'
+   where id = 'SUP-08' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E14');
+
+  -- HTML SUP-09 "Pisang Efron (CV Philia)"        → Excel SUP-E10 "CV Philia"
+  update public.suppliers set excel_ref_id = 'SUP-E10'
+   where id = 'SUP-09' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E10');
+
+  -- HTML SUP-R1 "Toko Glory (CV Kaka Ade)"        → Excel SUP-E03 "Toko Glory"
+  update public.suppliers set excel_ref_id = 'SUP-E03'
+   where id = 'SUP-R1' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E03');
+
+  -- HTML SUP-R2 "Kios Louis"                      → Excel SUP-E04 "Kios Louis"
+  update public.suppliers set excel_ref_id = 'SUP-E04'
+   where id = 'SUP-R2' and excel_ref_id is null
+     and exists (select 1 from public.suppliers where id = 'SUP-E04');
+
+  -- NOT MAPPED (no Excel counterpart):
+  --   SUP-10 UD Rempah Timor          (bumbu segar — ga ada di Excel master)
+  --   SUP-11 UD Bumbu Nusantara       (rempah kering — ga ada di Excel master)
+  --   SUP-12 CV Minyak Sehat NTT      (Excel minyak di Aneka SUP-E15 / pieces brand)
+  --   SUP-13 UD Buah Segar Soe        (ga ada di Excel master)
+  --   SUP-14 CV Sayur Dataran Tinggi  (Excel sayuran di Green Young SUP-E07 / beda entitas)
+  --
+  -- UNMAPPED EXCEL SUPPLIERS (no HTML counterpart — ada di costing tapi belum masuk LTA):
+  --   SUP-E05 Blivo             · SUP-E07 Green Young Cooperative
+  --   SUP-E12 CV Nusantara Pangan Distributor · SUP-E15 Aneka
+  --   SUP-E16 CV Sangandolu     · SUP-E17 PS Mart
+
+  raise notice 'Bridge mapping applied: % HTML suppliers now linked to Excel IDs',
+    (select count(*) from public.suppliers where excel_ref_id is not null);
+end $$;
+
+-- =============================================================================
+-- END 0027
+-- =============================================================================
+
+
 commit;
