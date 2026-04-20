@@ -16,7 +16,11 @@
  * Setiap pemanggilan sukses akan di-log ke `bgn_generation_log`.
  */
 import { NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import {
+  buildStyledXlsxBuffer,
+  type StyledColumn,
+  type StyledSheet
+} from "@/lib/excel-export";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import {
@@ -134,42 +138,66 @@ function htmlShell(title: string, bodyInner: string, meta: string): string {
 <meta charset="utf-8" />
 <title>${escHtml(title)} · SPPG Nunumeu Soe</title>
 <style>
+  :root {
+    --navy: #0B1E3F;
+    --gold: #DFB85A;
+    --ink: #111827;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --zebra: #F3F4F6;
+    --ok-fill: #D1FADF; --ok-text: #027A48;
+    --bad-fill: #FEE4E2; --bad-text: #B42318;
+    --warn-fill: #FEF3C7; --warn-text: #92400E;
+    --neu-fill: #E0E7FF; --neu-text: #3730A3;
+  }
   @page { size: A4; margin: 15mm 12mm; }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0b0f14; font-size: 11px; line-height: 1.4; margin: 0; padding: 18px; background: #fafafa; }
-  .page { max-width: 780px; margin: 0 auto; background: #fff; padding: 24px 28px; border: 1px solid #e2e3e6; }
-  h1 { font-size: 14px; margin: 0 0 4px 0; letter-spacing: .02em; text-transform: uppercase; border-bottom: 2px solid #0b0f14; padding-bottom: 6px; }
-  h2 { font-size: 12px; margin: 14px 0 6px 0; color: #1b1e24; }
-  .meta { font-size: 10.5px; color: #4b525c; margin-bottom: 14px; }
+  body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--ink); font-size: 11px; line-height: 1.45; margin: 0; padding: 18px; background: #F9FAFB; }
+  .page { max-width: 820px; margin: 0 auto; background: #fff; padding: 0; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .title-bar { background: var(--navy); color: #fff; padding: 18px 28px 14px; border-bottom: 3px solid var(--gold); }
+  .title-bar h1 { font-size: 15px; margin: 0 0 4px 0; letter-spacing: .04em; text-transform: uppercase; font-weight: 700; color: #fff; }
+  .title-bar .meta { font-size: 10.5px; color: rgba(255,255,255,.82); font-style: italic; margin: 0; }
+  .content { padding: 20px 28px 24px; }
+  h2 { font-size: 12px; margin: 18px 0 8px 0; color: var(--navy); font-weight: 700; letter-spacing: .02em; text-transform: uppercase; border-left: 3px solid var(--gold); padding-left: 8px; }
+  h2:first-of-type { margin-top: 0; }
   table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 10.5px; }
-  th, td { border: 1px solid #b7bbc2; padding: 4px 6px; text-align: left; vertical-align: top; }
-  th { background: #ecedef; font-weight: 700; text-transform: uppercase; font-size: 9.5px; letter-spacing: .04em; }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: "SF Mono", Menlo, monospace; }
-  .footer { margin-top: 22px; font-size: 10px; color: #4b525c; display: flex; justify-content: space-between; }
-  .sig-area { margin-top: 28px; display: flex; gap: 36px; }
-  .sig-box { flex: 1; border-top: 1px dashed #4b525c; padding-top: 4px; text-align: center; font-size: 10px; color: #1b1e24; }
-  .badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 9.5px; font-weight: 700; }
-  .b-ok { background: #d1fae5; color: #065f46; }
-  .b-bad { background: #fee2e2; color: #991b1b; }
-  .b-warn { background: #fef3c7; color: #92400e; }
-  .b-info { background: #dbeafe; color: #1e40af; }
-  .no-print { margin-top: 18px; padding: 10px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; font-size: 11px; }
-  .no-print button { padding: 6px 14px; font-weight: 700; cursor: pointer; background: #0b0f14; color: #fff; border: 0; border-radius: 6px; }
+  th, td { border: 1px solid var(--border); padding: 5px 7px; text-align: left; vertical-align: middle; }
+  thead th { background: var(--navy); color: #fff; font-weight: 700; text-transform: uppercase; font-size: 9.5px; letter-spacing: .05em; border-color: var(--navy); border-bottom: 2px solid var(--gold); }
+  tbody tr:nth-child(even) td { background: var(--zebra); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tfoot td { background: var(--navy); color: #fff; font-weight: 700; border-top: 2px solid var(--gold); border-color: var(--navy); }
+  tfoot td strong { color: #fff; }
+  .footer { margin-top: 22px; padding: 12px 28px 16px; font-size: 9.5px; color: var(--muted); display: flex; justify-content: space-between; border-top: 1px solid var(--border); }
+  .sig-area { margin-top: 32px; display: flex; gap: 36px; }
+  .sig-box { flex: 1; border-top: 1px solid var(--ink); padding-top: 6px; text-align: center; font-size: 10px; color: var(--ink); font-weight: 600; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 9.5px; font-weight: 700; letter-spacing: .02em; }
+  .b-ok { background: var(--ok-fill); color: var(--ok-text); }
+  .b-bad { background: var(--bad-fill); color: var(--bad-text); }
+  .b-warn { background: var(--warn-fill); color: var(--warn-text); }
+  .b-info { background: var(--neu-fill); color: var(--neu-text); }
+  .no-print { margin: 0 auto 14px; max-width: 820px; padding: 10px 14px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 6px; font-size: 11px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .no-print button { padding: 7px 16px; font-weight: 700; cursor: pointer; background: var(--navy); color: #fff; border: 0; border-radius: 6px; font-size: 11px; }
+  .no-print button:hover { background: #1e3a5f; }
   @media print {
     .no-print { display: none; }
     body { background: #fff; padding: 0; }
-    .page { border: 0; padding: 0; }
+    .page { border: 0; box-shadow: none; }
   }
 </style>
 </head>
 <body>
 <div class="no-print">
-  <strong>📄 Dokumen siap cetak.</strong> Klik tombol <button onclick="window.print()">Print / Save as PDF</button> untuk mengekspor ke PDF.
+  <span><strong>Dokumen siap cetak.</strong> Gunakan Print / Save as PDF untuk mengekspor.</span>
+  <button onclick="window.print()">Print / Save as PDF</button>
 </div>
 <div class="page">
-  <h1>${escHtml(title)}</h1>
-  <div class="meta">${meta}</div>
-  ${bodyInner}
+  <div class="title-bar">
+    <h1>${escHtml(title)}</h1>
+    <div class="meta">${meta}</div>
+  </div>
+  <div class="content">
+    ${bodyInner}
+  </div>
   <div class="footer">
     <div>SPPG Nunumeu, Soe — Timor Tengah Selatan, NTT</div>
     <div>SK Ka BGN 401.1/2025</div>
@@ -179,17 +207,31 @@ function htmlShell(title: string, bodyInner: string, meta: string): string {
 </html>`;
 }
 
-function xlsxResponse(
-  wb: XLSX.WorkBook,
-  filename: string
-): { body: Blob; size: number } {
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-  const u8 = new Uint8Array(buf as ArrayBuffer);
-  const blob = new Blob([u8], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  });
-  void filename;
-  return { body: blob, size: u8.byteLength };
+function infoSheet(
+  title: string,
+  from: string,
+  to: string,
+  extra: Array<[string, string | number]> = []
+): StyledSheet {
+  const generatedAt = new Date().toISOString().slice(0, 19).replace("T", " ");
+  return {
+    name: "Info",
+    title: title.toUpperCase(),
+    subtitle: `Periode ${from} s/d ${to} · SK Ka BGN 401.1/2025`,
+    columns: [
+      { key: "k", header: "Field", width: 26, align: "left" },
+      { key: "v", header: "Value", width: 60, align: "left" }
+    ],
+    meta: [
+      ["Periode Awal", from],
+      ["Periode Akhir", to],
+      ["Digenerate", generatedAt],
+      ["Lokasi", "SPPG Nunumeu, Soe — Timor Tengah Selatan, NTT"],
+      ["Kepatuhan", "SK Ka BGN 401.1/2025"],
+      ...extra
+    ],
+    rows: []
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -913,409 +955,412 @@ function renderLamp28cHtml(
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                XLSX builders                               */
+/*                               Styled builders                              */
 /* -------------------------------------------------------------------------- */
 
-function coverSheet(title: string, from: string, to: string, extra: Array<[string, string]> = []): XLSX.WorkSheet {
-  const cover: (string | number)[][] = [
-    [title.toUpperCase()],
-    [],
-    ["Periode Awal", from],
-    ["Periode Akhir", to],
-    ["Digenerate", new Date().toISOString().slice(0, 19).replace("T", " ")],
-    ["Lokasi", "SPPG Nunumeu, Soe — Timor Tengah Selatan, NTT"],
-    ["Kepatuhan", "SK Ka BGN 401.1/2025"],
-    []
-  ];
-  extra.forEach(([k, v]) => cover.push([k, v]));
-  const ws = XLSX.utils.aoa_to_sheet(cover);
-  ws["!cols"] = [{ wch: 24 }, { wch: 60 }];
-  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
-  return ws;
-}
-
-function buildSampelXlsx(
+function buildSampelSheets(
   data: Awaited<ReturnType<typeof loadSampel>>,
   from: string,
   to: string
-): XLSX.WorkBook {
+): StyledSheet[] {
   const staffMap = Object.fromEntries(data.staff.map((s) => [s.id, s]));
   const schMap = Object.fromEntries(data.schools.map((s) => [s.id, s]));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 30a — Log Sampel Makanan", from, to, [
-      ["Total Log", String(data.logs.length)]
-    ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    [
-      "Tanggal",
-      "Seq",
-      "Sekolah",
-      "Tgl Menu",
-      "Petugas",
-      "Sampel Disimpan",
-      "Catatan"
-    ]
-  ];
-  data.logs.forEach((l) => {
+  const rows = data.logs.map((l) => {
     const off = l.officer_id ? staffMap[l.officer_id] : undefined;
     const sch = l.school_id ? schMap[l.school_id] : undefined;
-    aoa.push([
-      l.delivery_date,
-      l.delivery_seq,
-      sch?.name ?? "",
-      l.menu_assign_date ?? "",
-      off?.full_name ?? "",
-      l.sample_kept ? "YA" : "TIDAK",
-      l.notes ?? ""
-    ]);
+    return {
+      date: l.delivery_date,
+      seq: l.delivery_seq,
+      school: sch?.name ?? "",
+      menu: l.menu_assign_date ?? "",
+      officer: off?.full_name ?? "",
+      kept: l.sample_kept ? "YA" : "TIDAK",
+      notes: l.notes ?? ""
+    };
   });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 12 },
-    { wch: 6 },
-    { wch: 28 },
-    { wch: 12 },
-    { wch: 22 },
-    { wch: 10 },
-    { wch: 40 }
+  return [
+    infoSheet("Lampiran 30a — Log Sampel Makanan", from, to, [
+      ["Total Log", data.logs.length]
+    ]),
+    {
+      name: "Sampel",
+      title: `LOG SAMPEL MAKANAN · ${from} s/d ${to}`,
+      subtitle: "Lampiran 30a · SK Ka BGN 401.1/2025",
+      columns: [
+        { key: "date", header: "Tanggal", width: 12, align: "center" },
+        { key: "seq", header: "Seq", width: 6, align: "center", hint: "number" },
+        { key: "school", header: "Sekolah", width: 28, align: "left" },
+        { key: "menu", header: "Tgl Menu", width: 12, align: "center" },
+        { key: "officer", header: "Petugas", width: 22, align: "left" },
+        { key: "kept", header: "Sampel Disimpan", width: 16, align: "center" },
+        { key: "notes", header: "Catatan", width: 40, align: "left" }
+      ],
+      rows,
+      cellHint: (r, k) => {
+        if (k !== "kept") return undefined;
+        return r.kept === "YA" ? "status-ok" : "status-bad";
+      },
+      zebra: true,
+      freezeHeader: true
+    }
   ];
-  XLSX.utils.book_append_sheet(wb, ws, "Sampel");
-  return wb;
 }
 
-function buildOrganoleptikXlsx(
+function buildOrganoleptikSheets(
   data: Awaited<ReturnType<typeof loadOrganoleptik>>,
   from: string,
   to: string
-): XLSX.WorkBook {
+): StyledSheet[] {
   const staffMap = Object.fromEntries(data.staff.map((s) => [s.id, s]));
   const schMap = Object.fromEntries(data.schools.map((s) => [s.id, s]));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 26 — Uji Organoleptik", from, to, [
-      ["Total Uji", String(data.tests.length)]
-    ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    [
-      "Tanggal",
-      "Fase",
-      "Sekolah",
-      "Rasa",
-      "Warna",
-      "Aroma",
-      "Tekstur",
-      "Verdict",
-      "Petugas",
-      "Catatan"
-    ]
-  ];
-  data.tests.forEach((t: OrganolepticTest) => {
+  const rows = data.tests.map((t) => {
     const off = t.officer_id ? staffMap[t.officer_id] : undefined;
     const sch = t.school_id ? schMap[t.school_id] : undefined;
-    aoa.push([
-      t.test_date,
-      t.test_phase,
-      sch?.name ?? "",
-      t.rasa ?? "",
-      t.warna ?? "",
-      t.aroma ?? "",
-      t.tekstur ?? "",
-      t.verdict,
-      off?.full_name ?? "",
-      t.notes ?? ""
-    ]);
+    return {
+      date: t.test_date,
+      phase: t.test_phase,
+      school: sch?.name ?? "",
+      rasa: t.rasa ?? "",
+      warna: t.warna ?? "",
+      aroma: t.aroma ?? "",
+      tekstur: t.tekstur ?? "",
+      verdict: t.verdict,
+      officer: off?.full_name ?? "",
+      notes: t.notes ?? ""
+    };
   });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 12 },
-    { wch: 18 },
-    { wch: 28 },
-    { wch: 6 },
-    { wch: 6 },
-    { wch: 6 },
-    { wch: 8 },
-    { wch: 10 },
-    { wch: 22 },
-    { wch: 30 }
+  return [
+    infoSheet("Lampiran 26 — Uji Organoleptik", from, to, [
+      ["Total Uji", data.tests.length]
+    ]),
+    {
+      name: "Organoleptik",
+      title: `UJI ORGANOLEPTIK · ${from} s/d ${to}`,
+      subtitle:
+        "Skala 1–5: 5=Sangat baik, 1=Sangat buruk · 'aman' = layak konsumsi",
+      columns: [
+        { key: "date", header: "Tanggal", width: 12, align: "center" },
+        { key: "phase", header: "Fase", width: 18, align: "center" },
+        { key: "school", header: "Sekolah", width: 28, align: "left" },
+        { key: "rasa", header: "Rasa", width: 7, align: "center", hint: "number" },
+        { key: "warna", header: "Warna", width: 7, align: "center", hint: "number" },
+        { key: "aroma", header: "Aroma", width: 7, align: "center", hint: "number" },
+        { key: "tekstur", header: "Tekstur", width: 8, align: "center", hint: "number" },
+        { key: "verdict", header: "Verdict", width: 10, align: "center" },
+        { key: "officer", header: "Petugas", width: 22, align: "left" },
+        { key: "notes", header: "Catatan", width: 30, align: "left" }
+      ],
+      rows,
+      cellHint: (r, k) => {
+        if (k !== "verdict") return undefined;
+        return r.verdict === "aman" ? "status-ok" : "status-bad";
+      },
+      zebra: true,
+      freezeHeader: true
+    }
   ];
-  XLSX.utils.book_append_sheet(wb, ws, "Organoleptik");
-  return wb;
 }
 
-function buildTimXlsx(
+function buildTimSheets(
   data: Awaited<ReturnType<typeof loadTim>>,
   from: string,
   to: string
-): XLSX.WorkBook {
-  const wb = XLSX.utils.book_new();
-  const total = data.staff.reduce(
-    (s, r) => s + Number(r.gaji_pokok ?? 0),
-    0
-  );
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 27 — Daftar Tim SPPG", from, to, [
-      ["Total Staff Aktif", String(data.staff.length)],
+): StyledSheet[] {
+  const total = data.staff.reduce((s, r) => s + Number(r.gaji_pokok ?? 0), 0);
+  const rows = data.staff.map((s) => ({
+    seq: s.seq_no ?? "",
+    name: s.full_name,
+    role: sppgRoleLabel(s.role, "ID"),
+    nik: s.nik ?? "",
+    phone: s.phone ?? "",
+    email: s.email ?? "",
+    bank: s.bank_name ?? "",
+    account: s.bank_account ?? "",
+    gaji: Number(s.gaji_pokok)
+  }));
+  return [
+    infoSheet("Lampiran 27 — Daftar Tim SPPG", from, to, [
+      ["Total Staff Aktif", data.staff.length],
       ["Total Gaji Pokok", idr(total)]
     ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    [
-      "#",
-      "Nama Lengkap",
-      "Posisi",
-      "NIK",
-      "HP",
-      "Email",
-      "Bank",
-      "No. Rekening",
-      "Gaji Pokok"
-    ]
+    {
+      name: "Staff",
+      title: "DAFTAR TIM SPPG AKTIF",
+      subtitle: "Lampiran 27 · Struktur + gaji pokok",
+      columns: [
+        { key: "seq", header: "#", width: 5, align: "center", hint: "number" },
+        { key: "name", header: "Nama Lengkap", width: 28, align: "left" },
+        { key: "role", header: "Posisi", width: 22, align: "left" },
+        { key: "nik", header: "NIK", width: 18, align: "left" },
+        { key: "phone", header: "HP", width: 14, align: "left" },
+        { key: "email", header: "Email", width: 24, align: "left" },
+        { key: "bank", header: "Bank", width: 12, align: "left" },
+        { key: "account", header: "No. Rekening", width: 18, align: "left" },
+        {
+          key: "gaji",
+          header: "Gaji Pokok",
+          width: 16,
+          align: "right",
+          hint: "money",
+          numFmt: '"Rp "#,##0'
+        }
+      ],
+      rows,
+      totals: {
+        labelColSpan: 8,
+        labelText: "TOTAL GAJI POKOK",
+        values: { gaji: total }
+      },
+      zebra: true,
+      freezeHeader: true
+    }
   ];
-  data.staff.forEach((s: SppgStaff) => {
-    aoa.push([
-      s.seq_no ?? "",
-      s.full_name,
-      sppgRoleLabel(s.role, "ID"),
-      s.nik ?? "",
-      s.phone ?? "",
-      s.email ?? "",
-      s.bank_name ?? "",
-      s.bank_account ?? "",
-      Number(s.gaji_pokok)
-    ]);
-  });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 4 },
-    { wch: 28 },
-    { wch: 22 },
-    { wch: 18 },
-    { wch: 14 },
-    { wch: 24 },
-    { wch: 12 },
-    { wch: 18 },
-    { wch: 14 }
-  ];
-  XLSX.utils.book_append_sheet(wb, ws, "Staff");
-  return wb;
 }
 
-function buildGajiXlsx(
+function buildGajiSheets(
   data: Awaited<ReturnType<typeof loadGaji>>,
   from: string,
   to: string
-): XLSX.WorkBook {
+): StyledSheet[] {
   const staffMap = Object.fromEntries(data.staff.map((s) => [s.id, s]));
-  const wb = XLSX.utils.book_new();
   const totalNet = data.slips.reduce(
     (s, r) => s + Number(r.penerimaan_bersih ?? 0),
     0
   );
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 28 — Slip Gaji", from, to, [
+  const totalGross = data.slips.reduce(
+    (s, r) => s + Number(r.penerimaan_kotor ?? 0),
+    0
+  );
+  const rows = data.slips.map((sl) => {
+    const st = sl.staff_id ? staffMap[sl.staff_id] : undefined;
+    return {
+      staff: st?.full_name ?? "",
+      role: st ? sppgRoleLabel(st.role, "ID") : "",
+      pokok: Number(sl.gaji_pokok),
+      hari: sl.hari_kerja,
+      tunjangan: Number(sl.tunjangan),
+      insentifH: Number(sl.insentif_kehadiran),
+      insentifK: Number(sl.insentif_kinerja),
+      lain: Number(sl.lain_lain),
+      lemburJam: Number(sl.lembur_jam),
+      lembur: Number(sl.total_lembur),
+      potKeh: Number(sl.potongan_kehadiran),
+      bpjsKes: Number(sl.potongan_bpjs_kes),
+      bpjsTk: Number(sl.potongan_bpjs_tk),
+      potLain: Number(sl.potongan_lain),
+      kotor: Number(sl.penerimaan_kotor),
+      bersih: Number(sl.penerimaan_bersih),
+      status: sl.paid ? "Terbayar" : "Pending"
+    };
+  });
+  const money = { hint: "money" as const, numFmt: '"Rp "#,##0' };
+  return [
+    infoSheet("Lampiran 28 — Slip Gaji", from, to, [
       ["Periode", data.period?.period_label ?? "—"],
-      ["Total Slip", String(data.slips.length)],
+      ["Total Slip", data.slips.length],
+      ["Total Penerimaan Kotor", idr(totalGross)],
       ["Total Penerimaan Bersih", idr(totalNet)]
     ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    [
-      "Staff",
-      "Posisi",
-      "Gaji Pokok",
-      "Hari Kerja",
-      "Tunjangan",
-      "Insentif Kehadiran",
-      "Insentif Kinerja",
-      "Lain-lain",
-      "Lembur (jam)",
-      "Total Lembur",
-      "Potongan Kehadiran",
-      "BPJS Kes",
-      "BPJS TK",
-      "Potongan Lain",
-      "Penerimaan Kotor",
-      "Penerimaan Bersih",
-      "Status"
-    ]
+    {
+      name: "Slip",
+      title: `SLIP GAJI · ${data.period?.period_label ?? from + " s/d " + to}`,
+      subtitle: "Lampiran 28 · Rekap gaji staff SPPG",
+      columns: [
+        { key: "staff", header: "Staff", width: 24, align: "left" },
+        { key: "role", header: "Posisi", width: 20, align: "left" },
+        { key: "pokok", header: "Gaji Pokok", width: 14, align: "right", ...money },
+        { key: "hari", header: "Hari Kerja", width: 10, align: "center", hint: "number" },
+        { key: "tunjangan", header: "Tunjangan", width: 14, align: "right", ...money },
+        { key: "insentifH", header: "Insentif Kehadiran", width: 16, align: "right", ...money },
+        { key: "insentifK", header: "Insentif Kinerja", width: 16, align: "right", ...money },
+        { key: "lain", header: "Lain-lain", width: 14, align: "right", ...money },
+        { key: "lemburJam", header: "Lembur (jam)", width: 12, align: "right", hint: "number", numFmt: "#,##0.0" },
+        { key: "lembur", header: "Total Lembur", width: 14, align: "right", ...money },
+        { key: "potKeh", header: "Pot. Kehadiran", width: 14, align: "right", ...money },
+        { key: "bpjsKes", header: "BPJS Kes", width: 12, align: "right", ...money },
+        { key: "bpjsTk", header: "BPJS TK", width: 12, align: "right", ...money },
+        { key: "potLain", header: "Pot. Lain", width: 12, align: "right", ...money },
+        { key: "kotor", header: "Bruto", width: 14, align: "right", hint: "bold", numFmt: '"Rp "#,##0' },
+        { key: "bersih", header: "Bersih", width: 14, align: "right", hint: "bold", numFmt: '"Rp "#,##0' },
+        { key: "status", header: "Status", width: 12, align: "center" }
+      ],
+      rows,
+      cellHint: (r, k) => {
+        if (k !== "status") return undefined;
+        return r.status === "Terbayar" ? "status-ok" : "status-neutral";
+      },
+      totals: {
+        labelColSpan: 14,
+        labelText: "GRAND TOTAL",
+        values: { kotor: totalGross, bersih: totalNet }
+      },
+      zebra: true,
+      freezeHeader: true
+    }
   ];
-  data.slips.forEach((sl: PayrollSlip) => {
-    const st = sl.staff_id ? staffMap[sl.staff_id] : undefined;
-    aoa.push([
-      st?.full_name ?? "",
-      st ? sppgRoleLabel(st.role, "ID") : "",
-      Number(sl.gaji_pokok),
-      sl.hari_kerja,
-      Number(sl.tunjangan),
-      Number(sl.insentif_kehadiran),
-      Number(sl.insentif_kinerja),
-      Number(sl.lain_lain),
-      Number(sl.lembur_jam),
-      Number(sl.total_lembur),
-      Number(sl.potongan_kehadiran),
-      Number(sl.potongan_bpjs_kes),
-      Number(sl.potongan_bpjs_tk),
-      Number(sl.potongan_lain),
-      Number(sl.penerimaan_kotor),
-      Number(sl.penerimaan_bersih),
-      sl.paid ? "Terbayar" : "Pending"
-    ]);
-  });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [{ wch: 28 }, { wch: 22 }, ...Array(14).fill({ wch: 14 }), { wch: 10 }];
-  XLSX.utils.book_append_sheet(wb, ws, "Slip");
-  return wb;
 }
 
-function buildInsentifKaderXlsx(
+function buildInsentifKaderSheets(
   data: Awaited<ReturnType<typeof loadInsentifKader>>,
   from: string,
   to: string
-): XLSX.WorkBook {
-  const posMap = Object.fromEntries(
+): StyledSheet[] {
+  const posMap: Record<string, Posyandu> = Object.fromEntries(
     data.posyanduList.map((p) => [p.id, p])
   );
-  const staffMap = Object.fromEntries(data.staff.map((s) => [s.id, s]));
-  const wb = XLSX.utils.book_new();
-  const total = data.kader.reduce(
-    (s, r) => s + Number(r.total_amount ?? 0),
-    0
+  const staffMap: Record<string, SppgStaff> = Object.fromEntries(
+    data.staff.map((s) => [s.id, s])
   );
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 29a — Insentif Kader Posyandu", from, to, [
-      ["Total Baris", String(data.kader.length)],
-      ["Grand Total", idr(total)]
-    ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    [
-      "Periode Awal",
-      "Periode Akhir",
-      "Posyandu",
-      "Kader",
-      "Porsi Senin",
-      "Porsi Kamis",
-      "Unit Cost",
-      "Total",
-      "Status"
-    ]
-  ];
-  data.kader.forEach((k: KaderIncentive) => {
+  const total = data.kader.reduce((s, r) => s + Number(r.total_amount ?? 0), 0);
+  const rows = data.kader.map((k: KaderIncentive) => {
     const py = k.posyandu_id ? posMap[k.posyandu_id] : undefined;
     const st = k.kader_staff_id ? staffMap[k.kader_staff_id] : undefined;
-    aoa.push([
-      k.period_start,
-      k.period_end,
-      py?.name ?? "",
-      st?.full_name ?? "",
-      k.porsi_senin,
-      k.porsi_kamis,
-      Number(k.unit_cost),
-      Number(k.total_amount),
-      k.paid ? "Terbayar" : "Pending"
-    ]);
+    return {
+      start: k.period_start,
+      end: k.period_end,
+      posyandu: py?.name ?? "",
+      kader: st?.full_name ?? "",
+      senin: k.porsi_senin,
+      kamis: k.porsi_kamis,
+      unit: Number(k.unit_cost),
+      total: Number(k.total_amount),
+      status: k.paid ? "Terbayar" : "Pending"
+    };
   });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 24 },
-    { wch: 22 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 10 }
+  return [
+    infoSheet("Lampiran 29a — Insentif Kader Posyandu", from, to, [
+      ["Total Baris", data.kader.length],
+      ["Grand Total", idr(total)]
+    ]),
+    {
+      name: "Kader",
+      title: `INSENTIF KADER POSYANDU · ${from} s/d ${to}`,
+      subtitle: "Lampiran 29a · Senin + Kamis",
+      columns: [
+        { key: "start", header: "Periode Awal", width: 12, align: "center" },
+        { key: "end", header: "Periode Akhir", width: 12, align: "center" },
+        { key: "posyandu", header: "Posyandu", width: 24, align: "left" },
+        { key: "kader", header: "Kader", width: 22, align: "left" },
+        { key: "senin", header: "Porsi Senin", width: 12, align: "right", hint: "number" },
+        { key: "kamis", header: "Porsi Kamis", width: 12, align: "right", hint: "number" },
+        {
+          key: "unit",
+          header: "Unit Cost",
+          width: 12,
+          align: "right",
+          hint: "money",
+          numFmt: '"Rp "#,##0'
+        },
+        {
+          key: "total",
+          header: "Total",
+          width: 14,
+          align: "right",
+          hint: "bold",
+          numFmt: '"Rp "#,##0'
+        },
+        { key: "status", header: "Status", width: 12, align: "center" }
+      ],
+      rows,
+      cellHint: (r, k) => {
+        if (k !== "status") return undefined;
+        return r.status === "Terbayar" ? "status-ok" : "status-neutral";
+      },
+      totals: {
+        labelColSpan: 7,
+        labelText: "GRAND TOTAL",
+        values: { total }
+      },
+      zebra: true,
+      freezeHeader: true
+    }
   ];
-  XLSX.utils.book_append_sheet(wb, ws, "Kader");
-  return wb;
 }
 
-function buildInsentifPicXlsx(
+function buildInsentifPicSheets(
   data: Awaited<ReturnType<typeof loadInsentifPic>>,
   from: string,
   to: string
-): XLSX.WorkBook {
-  const psMap = Object.fromEntries(
+): StyledSheet[] {
+  const psMap: Record<string, PicSchool> = Object.fromEntries(
     data.picSchoolList.map((p) => [p.id, p])
   );
-  const staffMap = Object.fromEntries(data.staff.map((s) => [s.id, s]));
-  const schMap = Object.fromEntries(data.schools.map((s) => [s.id, s]));
-  const wb = XLSX.utils.book_new();
-  const total = data.pic.reduce(
-    (s, r) => s + Number(r.total_amount ?? 0),
-    0
+  const staffMap: Record<string, SppgStaff> = Object.fromEntries(
+    data.staff.map((s) => [s.id, s])
   );
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 29b — Insentif PIC Sekolah", from, to, [
-      ["Total Baris", String(data.pic.length)],
-      ["Grand Total", idr(total)]
-    ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    [
-      "Periode Awal",
-      "Periode Akhir",
-      "Sekolah",
-      "PIC",
-      "Total Porsi",
-      "Unit Cost",
-      "Total",
-      "Status"
-    ]
-  ];
-  data.pic.forEach((r: PicIncentive) => {
+  const schMap: Record<string, { id: string; name: string }> =
+    Object.fromEntries(data.schools.map((s) => [s.id, s]));
+  const total = data.pic.reduce((s, r) => s + Number(r.total_amount ?? 0), 0);
+  const rows = data.pic.map((r) => {
     const ps = r.pic_school_id ? psMap[r.pic_school_id] : undefined;
     const sch = ps?.school_id ? schMap[ps.school_id] : undefined;
     const picStaff = ps?.pic_staff_id ? staffMap[ps.pic_staff_id] : undefined;
-    aoa.push([
-      r.period_start,
-      r.period_end,
-      sch?.name ?? "",
-      picStaff?.full_name ?? "",
-      r.total_porsi,
-      Number(r.unit_cost),
-      Number(r.total_amount),
-      r.paid ? "Terbayar" : "Pending"
-    ]);
+    return {
+      start: r.period_start,
+      end: r.period_end,
+      school: sch?.name ?? "",
+      pic: picStaff?.full_name ?? "",
+      porsi: r.total_porsi,
+      unit: Number(r.unit_cost),
+      total: Number(r.total_amount),
+      status: r.paid ? "Terbayar" : "Pending"
+    };
   });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 28 },
-    { wch: 22 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 10 }
+  return [
+    infoSheet("Lampiran 29b — Insentif PIC Sekolah", from, to, [
+      ["Total Baris", data.pic.length],
+      ["Grand Total", idr(total)]
+    ]),
+    {
+      name: "PIC",
+      title: `INSENTIF PIC SEKOLAH · ${from} s/d ${to}`,
+      subtitle: "Lampiran 29b",
+      columns: [
+        { key: "start", header: "Periode Awal", width: 12, align: "center" },
+        { key: "end", header: "Periode Akhir", width: 12, align: "center" },
+        { key: "school", header: "Sekolah", width: 28, align: "left" },
+        { key: "pic", header: "PIC", width: 22, align: "left" },
+        { key: "porsi", header: "Total Porsi", width: 12, align: "right", hint: "number" },
+        {
+          key: "unit",
+          header: "Unit Cost",
+          width: 12,
+          align: "right",
+          hint: "money",
+          numFmt: '"Rp "#,##0'
+        },
+        {
+          key: "total",
+          header: "Total",
+          width: 14,
+          align: "right",
+          hint: "bold",
+          numFmt: '"Rp "#,##0'
+        },
+        { key: "status", header: "Status", width: 12, align: "center" }
+      ],
+      rows,
+      cellHint: (r, k) => {
+        if (k !== "status") return undefined;
+        return r.status === "Terbayar" ? "status-ok" : "status-neutral";
+      },
+      totals: {
+        labelColSpan: 6,
+        labelText: "GRAND TOTAL",
+        values: { total }
+      },
+      zebra: true,
+      freezeHeader: true
+    }
   ];
-  XLSX.utils.book_append_sheet(wb, ws, "PIC");
-  return wb;
 }
 
-function buildKasHarianXlsx(
+function buildKasHarianSheets(
   data: Awaited<ReturnType<typeof loadKasHarian>>,
   from: string,
   to: string
-): XLSX.WorkBook {
+): StyledSheet[] {
   const coaMap = Object.fromEntries(data.coa.map((a) => [a.code, a.name]));
-  const wb = XLSX.utils.book_new();
   const totalMasuk = data.logs.reduce(
     (s, r) => s + Number(r.uang_masuk ?? 0),
     0
@@ -1324,185 +1369,154 @@ function buildKasHarianXlsx(
     (s, r) => s + Number(r.uang_keluar ?? 0),
     0
   );
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 30b — Kas Harian", from, to, [
+  const rows = data.logs.map((l) => ({
+    date: l.log_date,
+    time: l.log_time ?? "",
+    category: l.category ?? "",
+    account: l.category ? coaMap[l.category] ?? "" : "",
+    po: l.po_no ?? "",
+    keterangan: l.keterangan ?? "",
+    masuk: Number(l.uang_masuk),
+    keluar: Number(l.uang_keluar),
+    saldo: l.saldo_akhir != null ? Number(l.saldo_akhir) : ""
+  }));
+  const money = { hint: "money" as const, numFmt: '"Rp "#,##0' };
+  return [
+    infoSheet("Lampiran 30b — Kas Harian", from, to, [
       ["Total Masuk", idr(totalMasuk)],
       ["Total Keluar", idr(totalKeluar)],
       ["Saldo Bersih", idr(totalMasuk - totalKeluar)]
     ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    [
-      "Tanggal",
-      "Waktu",
-      "Kategori",
-      "Nama Akun",
-      "PO",
-      "Keterangan",
-      "Uang Masuk",
-      "Uang Keluar",
-      "Saldo Akhir"
-    ]
+    {
+      name: "Kas",
+      title: `KAS HARIAN · ${from} s/d ${to}`,
+      subtitle: "Lampiran 30b · Arus masuk/keluar harian",
+      columns: [
+        { key: "date", header: "Tanggal", width: 12, align: "center" },
+        { key: "time", header: "Waktu", width: 8, align: "center" },
+        { key: "category", header: "Kategori", width: 10, align: "center" },
+        { key: "account", header: "Nama Akun", width: 28, align: "left" },
+        { key: "po", header: "PO", width: 14, align: "left" },
+        { key: "keterangan", header: "Keterangan", width: 36, align: "left" },
+        { key: "masuk", header: "Masuk", width: 14, align: "right", ...money },
+        { key: "keluar", header: "Keluar", width: 14, align: "right", ...money },
+        { key: "saldo", header: "Saldo", width: 14, align: "right", hint: "bold", numFmt: '"Rp "#,##0' }
+      ],
+      rows,
+      cellHint: (r, k) => {
+        if (k === "masuk" && Number(r.masuk) > 0) return "status-ok";
+        if (k === "keluar" && Number(r.keluar) > 0) return "status-bad";
+        return undefined;
+      },
+      totals: {
+        labelColSpan: 6,
+        labelText: "GRAND TOTAL",
+        values: { masuk: totalMasuk, keluar: totalKeluar, saldo: totalMasuk - totalKeluar }
+      },
+      zebra: true,
+      freezeHeader: true
+    }
   ];
-  data.logs.forEach((l: DailyCashLog) => {
-    aoa.push([
-      l.log_date,
-      l.log_time ?? "",
-      l.category ?? "",
-      l.category ? coaMap[l.category] ?? "" : "",
-      l.po_no ?? "",
-      l.keterangan ?? "",
-      Number(l.uang_masuk),
-      Number(l.uang_keluar),
-      l.saldo_akhir != null ? Number(l.saldo_akhir) : ""
-    ]);
-  });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 12 },
-    { wch: 8 },
-    { wch: 8 },
-    { wch: 28 },
-    { wch: 16 },
-    { wch: 40 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 14 }
-  ];
-  XLSX.utils.book_append_sheet(wb, ws, "Kas");
-  return wb;
 }
 
-function buildPettyCashXlsx(
+function buildPettyCashSheets(
   data: Awaited<ReturnType<typeof loadPettyCash>>,
   from: string,
   to: string
-): XLSX.WorkBook {
-  const wb = XLSX.utils.book_new();
+): StyledSheet[] {
   const totalMasuk = data.txs
     .filter((r) => r.direction === "masuk")
     .reduce((s, r) => s + Number(r.amount ?? 0), 0);
   const totalKeluar = data.txs
     .filter((r) => r.direction === "keluar")
     .reduce((s, r) => s + Number(r.amount ?? 0), 0);
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 30f — Kas Kecil", from, to, [
+  const rows = data.txs.map((r) => ({
+    date: r.tx_date,
+    time: r.tx_time ?? "",
+    direction: r.direction,
+    description: r.description ?? "",
+    amount: Number(r.amount),
+    balance: r.balance_after != null ? Number(r.balance_after) : ""
+  }));
+  return [
+    infoSheet("Lampiran 30f — Kas Kecil", from, to, [
       ["Total Masuk", idr(totalMasuk)],
       ["Total Keluar", idr(totalKeluar)],
       ["Saldo Bersih", idr(totalMasuk - totalKeluar)]
     ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    ["Tanggal", "Waktu", "Arah", "Keterangan", "Jumlah", "Saldo Setelah"]
+    {
+      name: "Petty Cash",
+      title: `KAS KECIL · ${from} s/d ${to}`,
+      subtitle: "Lampiran 30f · Transaksi petty cash",
+      columns: [
+        { key: "date", header: "Tanggal", width: 12, align: "center" },
+        { key: "time", header: "Waktu", width: 8, align: "center" },
+        { key: "direction", header: "Arah", width: 10, align: "center" },
+        { key: "description", header: "Keterangan", width: 42, align: "left" },
+        {
+          key: "amount",
+          header: "Jumlah",
+          width: 14,
+          align: "right",
+          hint: "money",
+          numFmt: '"Rp "#,##0'
+        },
+        {
+          key: "balance",
+          header: "Saldo Setelah",
+          width: 14,
+          align: "right",
+          hint: "bold",
+          numFmt: '"Rp "#,##0'
+        }
+      ],
+      rows,
+      cellHint: (r, k) => {
+        if (k !== "direction") return undefined;
+        return r.direction === "masuk" ? "status-ok" : "status-bad";
+      },
+      totals: {
+        labelColSpan: 4,
+        labelText: "GRAND TOTAL",
+        values: { amount: totalMasuk - totalKeluar, balance: "" }
+      },
+      zebra: true,
+      freezeHeader: true
+    }
   ];
-  data.txs.forEach((r: PettyCash) => {
-    aoa.push([
-      r.tx_date,
-      r.tx_time ?? "",
-      r.direction,
-      r.description ?? "",
-      Number(r.amount),
-      r.balance_after != null ? Number(r.balance_after) : ""
-    ]);
-  });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 12 },
-    { wch: 8 },
-    { wch: 8 },
-    { wch: 40 },
-    { wch: 14 },
-    { wch: 14 }
-  ];
-  XLSX.utils.book_append_sheet(wb, ws, "Petty Cash");
-  return wb;
 }
 
-function buildBukuBesarXlsx(
+function buildBukuBesarSheets(
   data: Awaited<ReturnType<typeof loadBukuBesar>>,
   from: string,
   to: string
-): XLSX.WorkBook {
+): StyledSheet[] {
   const acctName = Object.fromEntries(
     data.accounts.map((a: ChartOfAccount) => [a.code, a.name])
   );
-  const wb = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 30e — Buku Besar + Neraca", from, to, [
-      ["Jumlah Akun", String(data.accounts.length)],
-      ["Jumlah Jurnal", String(data.entries.length)]
-    ]),
-    "Info"
-  );
+  // COA rows
+  const coaRows = data.accounts.map((a) => ({
+    code: a.code,
+    name: a.name,
+    category: a.category,
+    parent: a.parent_code ?? "",
+    active: a.active ? "Ya" : "Tidak",
+    notes: a.notes ?? ""
+  }));
 
-  // COA sheet
-  const coaAoa: (string | number)[][] = [
-    ["Code", "Akun", "Kategori", "Parent", "Aktif", "Catatan"]
-  ];
-  data.accounts.forEach((a: ChartOfAccount) => {
-    coaAoa.push([
-      a.code,
-      a.name,
-      a.category,
-      a.parent_code ?? "",
-      a.active ? "Ya" : "Tidak",
-      a.notes ?? ""
-    ]);
-  });
-  const wsCoa = XLSX.utils.aoa_to_sheet(coaAoa);
-  wsCoa["!cols"] = [
-    { wch: 10 },
-    { wch: 28 },
-    { wch: 12 },
-    { wch: 10 },
-    { wch: 6 },
-    { wch: 30 }
-  ];
-  XLSX.utils.book_append_sheet(wb, wsCoa, "COA");
-
-  // GL sheet
-  const glAoa: (string | number)[][] = [
-    [
-      "Tanggal",
-      "Keterangan",
-      "Debit Code",
-      "Debit Akun",
-      "Credit Code",
-      "Credit Akun",
-      "Jumlah",
-      "Sumber"
-    ]
-  ];
-  data.entries.forEach((e: GlEntry) => {
-    glAoa.push([
-      e.entry_date,
-      e.description ?? "",
-      e.debit_account ?? "",
-      e.debit_account ? acctName[e.debit_account] ?? "" : "",
-      e.credit_account ?? "",
-      e.credit_account ? acctName[e.credit_account] ?? "" : "",
-      Number(e.amount),
-      e.source_type ?? ""
-    ]);
-  });
-  const wsGl = XLSX.utils.aoa_to_sheet(glAoa);
-  wsGl["!cols"] = [
-    { wch: 12 },
-    { wch: 36 },
-    { wch: 10 },
-    { wch: 24 },
-    { wch: 10 },
-    { wch: 24 },
-    { wch: 14 },
-    { wch: 14 }
-  ];
-  XLSX.utils.book_append_sheet(wb, wsGl, "Jurnal");
+  // GL rows + running total
+  const glTotal = data.entries.reduce((s, e) => s + Number(e.amount ?? 0), 0);
+  const glRows = data.entries.map((e) => ({
+    date: e.entry_date,
+    description: e.description ?? "",
+    debitCode: e.debit_account ?? "",
+    debitName: e.debit_account ? acctName[e.debit_account] ?? "" : "",
+    creditCode: e.credit_account ?? "",
+    creditName: e.credit_account ? acctName[e.credit_account] ?? "" : "",
+    amount: Number(e.amount),
+    source: e.source_type ?? ""
+  }));
 
   // Trial balance
   interface TB {
@@ -1513,10 +1527,10 @@ function buildBukuBesarXlsx(
     credit: number;
     balance: number;
   }
-  const rows: Record<string, TB> = {};
+  const tbMap: Record<string, TB> = {};
   for (const a of data.accounts) {
     if (a.parent_code === null) continue;
-    rows[a.code] = {
+    tbMap[a.code] = {
       code: a.code,
       name: a.name,
       category: a.category,
@@ -1527,120 +1541,203 @@ function buildBukuBesarXlsx(
   }
   for (const e of data.entries) {
     const amt = Number(e.amount ?? 0);
-    if (e.debit_account && rows[e.debit_account])
-      rows[e.debit_account].debit += amt;
-    if (e.credit_account && rows[e.credit_account])
-      rows[e.credit_account].credit += amt;
+    if (e.debit_account && tbMap[e.debit_account])
+      tbMap[e.debit_account].debit += amt;
+    if (e.credit_account && tbMap[e.credit_account])
+      tbMap[e.credit_account].credit += amt;
   }
-  for (const r of Object.values(rows)) {
+  for (const r of Object.values(tbMap)) {
     r.balance =
       r.category === "asset" || r.category === "expense"
         ? r.debit - r.credit
         : r.credit - r.debit;
   }
-  const tbAoa: (string | number)[][] = [
-    ["Code", "Akun", "Kategori", "Debit", "Credit", "Saldo"]
-  ];
-  Object.values(rows).forEach((r) => {
-    tbAoa.push([r.code, r.name, r.category, r.debit, r.credit, r.balance]);
-  });
-  const wsTb = XLSX.utils.aoa_to_sheet(tbAoa);
-  wsTb["!cols"] = [
-    { wch: 10 },
-    { wch: 28 },
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 14 }
-  ];
-  XLSX.utils.book_append_sheet(wb, wsTb, "Neraca");
+  const tbValues = Object.values(tbMap);
+  const tbTotalDebit = tbValues.reduce((s, r) => s + r.debit, 0);
+  const tbTotalCredit = tbValues.reduce((s, r) => s + r.credit, 0);
+  const tbRows: Array<Record<string, unknown>> = tbValues.map((r) => ({
+    code: r.code,
+    name: r.name,
+    category: r.category,
+    debit: r.debit,
+    credit: r.credit,
+    balance: r.balance
+  }));
 
-  return wb;
+  const money = { hint: "money" as const, numFmt: '"Rp "#,##0' };
+
+  return [
+    infoSheet("Lampiran 30e — Buku Besar + Neraca", from, to, [
+      ["Jumlah Akun", data.accounts.length],
+      ["Jumlah Jurnal", data.entries.length],
+      ["Total Amount Jurnal", idr(glTotal)]
+    ]),
+    {
+      name: "COA",
+      title: "CHART OF ACCOUNTS",
+      subtitle: "Bagan akun aktif SPPG",
+      columns: [
+        { key: "code", header: "Code", width: 10, align: "left" },
+        { key: "name", header: "Akun", width: 28, align: "left" },
+        { key: "category", header: "Kategori", width: 12, align: "center" },
+        { key: "parent", header: "Parent", width: 10, align: "left" },
+        { key: "active", header: "Aktif", width: 8, align: "center" },
+        { key: "notes", header: "Catatan", width: 30, align: "left" }
+      ],
+      rows: coaRows,
+      cellHint: (r, k) => {
+        if (k !== "active") return undefined;
+        return r.active === "Ya" ? "status-ok" : "status-bad";
+      },
+      zebra: true,
+      freezeHeader: true
+    },
+    {
+      name: "Jurnal",
+      title: `JURNAL UMUM · ${from} s/d ${to}`,
+      subtitle: "General ledger entries",
+      columns: [
+        { key: "date", header: "Tanggal", width: 12, align: "center" },
+        { key: "description", header: "Keterangan", width: 36, align: "left" },
+        { key: "debitCode", header: "Debit", width: 10, align: "left" },
+        { key: "debitName", header: "Akun Debit", width: 22, align: "left" },
+        { key: "creditCode", header: "Credit", width: 10, align: "left" },
+        { key: "creditName", header: "Akun Credit", width: 22, align: "left" },
+        { key: "amount", header: "Jumlah", width: 14, align: "right", ...money },
+        { key: "source", header: "Sumber", width: 12, align: "center" }
+      ],
+      rows: glRows,
+      totals: {
+        labelColSpan: 6,
+        labelText: "GRAND TOTAL",
+        values: { amount: glTotal }
+      },
+      zebra: true,
+      freezeHeader: true
+    },
+    {
+      name: "Neraca",
+      title: "TRIAL BALANCE · NERACA PERCOBAAN",
+      subtitle: "Saldo per akun dari seluruh jurnal periode",
+      columns: [
+        { key: "code", header: "Code", width: 10, align: "left" },
+        { key: "name", header: "Akun", width: 28, align: "left" },
+        { key: "category", header: "Kategori", width: 12, align: "center" },
+        { key: "debit", header: "Debit", width: 14, align: "right", ...money },
+        { key: "credit", header: "Credit", width: 14, align: "right", ...money },
+        {
+          key: "balance",
+          header: "Saldo",
+          width: 14,
+          align: "right",
+          hint: "bold",
+          numFmt: '"Rp "#,##0'
+        }
+      ],
+      rows: tbRows,
+      totals: {
+        labelColSpan: 3,
+        labelText: "GRAND TOTAL",
+        values: {
+          debit: tbTotalDebit,
+          credit: tbTotalCredit,
+          balance: tbTotalDebit - tbTotalCredit
+        }
+      },
+      zebra: true,
+      freezeHeader: true
+    }
+  ];
 }
 
-function buildLamp28cXlsx(
+function buildLamp28cSheets(
   data: Awaited<ReturnType<typeof loadGaji>>,
   from: string,
   to: string
-): XLSX.WorkBook {
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 28c — Log Absensi Harian", from, to, [
+): StyledSheet[] {
+  const rows = data.staff.map((s) => ({
+    seq: s.seq_no ?? "",
+    name: s.full_name,
+    role: sppgRoleLabel(s.role, "ID"),
+    hadir: "",
+    sakit: "",
+    izin: "",
+    alpa: "",
+    off: "",
+    lembur: ""
+  }));
+  return [
+    infoSheet("Lampiran 28c — Log Absensi Harian", from, to, [
       ["Periode", data.period?.period_label ?? "—"],
-      ["Jumlah Staff", String(data.staff.length)]
+      ["Jumlah Staff", data.staff.length],
+      ["Kode", "H=Hadir, S=Sakit, I=Izin, A=Alpa, OFF=Libur"]
     ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    ["#", "Nama", "Posisi", "Hadir", "Sakit", "Izin", "Alpa", "Off", "Lembur (jam)"]
+    {
+      name: "Absensi",
+      title: `LOG ABSENSI HARIAN · ${from} s/d ${to}`,
+      subtitle: "Lampiran 28c · Template rekap absensi periode",
+      columns: [
+        { key: "seq", header: "#", width: 5, align: "center", hint: "number" },
+        { key: "name", header: "Nama", width: 28, align: "left" },
+        { key: "role", header: "Posisi", width: 22, align: "left" },
+        { key: "hadir", header: "Hadir", width: 7, align: "center" },
+        { key: "sakit", header: "Sakit", width: 7, align: "center" },
+        { key: "izin", header: "Izin", width: 7, align: "center" },
+        { key: "alpa", header: "Alpa", width: 7, align: "center" },
+        { key: "off", header: "Off", width: 7, align: "center" },
+        { key: "lembur", header: "Lembur (jam)", width: 12, align: "center" }
+      ],
+      rows,
+      zebra: true,
+      freezeHeader: true
+    }
   ];
-  data.staff.forEach((s: SppgStaff) => {
-    aoa.push([
-      s.seq_no ?? "",
-      s.full_name,
-      sppgRoleLabel(s.role, "ID"),
-      "",
-      "",
-      "",
-      "",
-      "",
-      ""
-    ]);
-  });
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 4 },
-    { wch: 28 },
-    { wch: 22 },
-    { wch: 6 },
-    { wch: 6 },
-    { wch: 6 },
-    { wch: 6 },
-    { wch: 6 },
-    { wch: 12 }
-  ];
-  XLSX.utils.book_append_sheet(wb, ws, "Absensi");
-  return wb;
 }
 
-function buildLamp20Xlsx(from: string, to: string): XLSX.WorkBook {
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(
-    wb,
-    coverSheet("Lampiran 20 — Tanda Terima Bantuan MBG", from, to, [
-      ["Jenis", "Template serah-terima per pengiriman"]
+function buildLamp20Sheets(from: string, to: string): StyledSheet[] {
+  const emptyRow = {
+    date: "",
+    po: "",
+    school: "",
+    menu: "",
+    porsi: "",
+    condition: "",
+    notes: "",
+    sigSender: "",
+    sigReceiver: ""
+  };
+  const rows = Array.from({ length: 20 }, () => ({ ...emptyRow }));
+  return [
+    infoSheet("Lampiran 20 — Tanda Terima Bantuan MBG", from, to, [
+      ["Jenis", "Template serah-terima per pengiriman"],
+      ["Instruksi", "Diisi saat serah-terima makanan ke sekolah"]
     ]),
-    "Info"
-  );
-  const aoa: (string | number)[][] = [
-    [
-      "Tanggal",
-      "PO / Rit",
-      "Sekolah",
-      "Menu Tgl",
-      "Porsi",
-      "Kondisi",
-      "Catatan",
-      "TTD Pengantar",
-      "TTD Penerima"
-    ]
+    {
+      name: "Tanda Terima",
+      title: `TANDA TERIMA BANTUAN MBG · ${from} s/d ${to}`,
+      subtitle: "Lampiran 20 · Template per-pengiriman",
+      columns: [
+        { key: "date", header: "Tanggal", width: 12, align: "center" },
+        { key: "po", header: "PO / Rit", width: 14, align: "left" },
+        { key: "school", header: "Sekolah", width: 24, align: "left" },
+        { key: "menu", header: "Menu Tgl", width: 12, align: "center" },
+        { key: "porsi", header: "Porsi", width: 8, align: "right" },
+        { key: "condition", header: "Kondisi", width: 12, align: "center" },
+        { key: "notes", header: "Catatan", width: 30, align: "left" },
+        { key: "sigSender", header: "TTD Pengantar", width: 16, align: "center" },
+        { key: "sigReceiver", header: "TTD Penerima", width: 16, align: "center" }
+      ],
+      rows,
+      zebra: true,
+      freezeHeader: true,
+      notes: [
+        "Instruksi pengisian:",
+        "1. Tanggal = tanggal pengiriman aktual.",
+        "2. Kondisi = Baik / Rusak (coret salah satu).",
+        "3. Tanda tangan dibubuhkan di kolom TTD saat serah-terima."
+      ]
+    }
   ];
-  for (let i = 0; i < 20; i++) aoa.push(["", "", "", "", "", "", "", "", ""]);
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 24 },
-    { wch: 12 },
-    { wch: 8 },
-    { wch: 12 },
-    { wch: 30 },
-    { wch: 16 },
-    { wch: 16 }
-  ];
-  XLSX.utils.book_append_sheet(wb, ws, "Tanda Terima");
-  return wb;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1686,87 +1783,93 @@ export async function GET(req: Request) {
 
   try {
     let html: string | null = null;
-    let wb: XLSX.WorkBook | null = null;
+    let sheets: StyledSheet[] | null = null;
 
     switch (lampiran) {
       case "20": {
         if (format === "pdf") html = renderLamp20Html(from, to);
-        else wb = buildLamp20Xlsx(from, to);
+        else sheets = buildLamp20Sheets(from, to);
         break;
       }
       case "26": {
         const d = await loadOrganoleptik(ctx);
         if (format === "pdf") html = renderOrganoleptikHtml(d, from, to);
-        else wb = buildOrganoleptikXlsx(d, from, to);
+        else sheets = buildOrganoleptikSheets(d, from, to);
         break;
       }
       case "27": {
         const d = await loadTim(ctx);
         if (format === "pdf") html = renderTimHtml(d);
-        else wb = buildTimXlsx(d, from, to);
+        else sheets = buildTimSheets(d, from, to);
         break;
       }
       case "28": {
         const d = await loadGaji(ctx);
         if (format === "pdf") html = renderGajiHtml(d);
-        else wb = buildGajiXlsx(d, from, to);
+        else sheets = buildGajiSheets(d, from, to);
         break;
       }
       case "28c": {
         const d = await loadGaji(ctx);
         if (format === "pdf") html = renderLamp28cHtml(d, from, to);
-        else wb = buildLamp28cXlsx(d, from, to);
+        else sheets = buildLamp28cSheets(d, from, to);
         break;
       }
       case "29a": {
         const d = await loadInsentifKader(ctx);
         if (format === "pdf") html = renderInsentifKaderHtml(d, from, to);
-        else wb = buildInsentifKaderXlsx(d, from, to);
+        else sheets = buildInsentifKaderSheets(d, from, to);
         break;
       }
       case "29b": {
         const d = await loadInsentifPic(ctx);
         if (format === "pdf") html = renderInsentifPicHtml(d, from, to);
-        else wb = buildInsentifPicXlsx(d, from, to);
+        else sheets = buildInsentifPicSheets(d, from, to);
         break;
       }
       case "30a": {
         const d = await loadSampel(ctx);
         if (format === "pdf") html = renderSampelHtml(d, from, to);
-        else wb = buildSampelXlsx(d, from, to);
+        else sheets = buildSampelSheets(d, from, to);
         break;
       }
       case "30b": {
         const d = await loadKasHarian(ctx);
         if (format === "pdf") html = renderKasHarianHtml(d, from, to);
-        else wb = buildKasHarianXlsx(d, from, to);
+        else sheets = buildKasHarianSheets(d, from, to);
         break;
       }
       case "30e": {
         const d = await loadBukuBesar(ctx);
         if (format === "pdf") html = renderBukuBesarHtml(d, from, to);
-        else wb = buildBukuBesarXlsx(d, from, to);
+        else sheets = buildBukuBesarSheets(d, from, to);
         break;
       }
       case "30f": {
         const d = await loadPettyCash(ctx);
         if (format === "pdf") html = renderPettyCashHtml(d, from, to);
-        else wb = buildPettyCashXlsx(d, from, to);
+        else sheets = buildPettyCashSheets(d, from, to);
         break;
       }
+    }
+
+    const filename = `lampiran-${lampiran}-${from}-${to}.${format === "pdf" ? "html" : "xlsx"}`;
+
+    let xlsxBuffer: Buffer | null = null;
+    if (format === "xlsx" && sheets) {
+      xlsxBuffer = await buildStyledXlsxBuffer({
+        fileName: `lampiran-${lampiran}-${from}-${to}`,
+        sheets
+      });
     }
 
     // Log generation (best-effort — don't fail the response if log fails)
     const sizeBytes =
       format === "pdf"
         ? new TextEncoder().encode(html ?? "").byteLength
-        : wb
-          ? (() => {
-              const b = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-              return (b as ArrayBuffer).byteLength;
-            })()
+        : xlsxBuffer
+          ? xlsxBuffer.byteLength
           : 0;
-    // touch audit log — retrieval of recent is free
     void listBgnGenerationLog;
     try {
       await insertBgnGenerationLog(supabase, {
@@ -1783,8 +1886,6 @@ export async function GET(req: Request) {
       // log tabel belum di-apply — skip silently
     }
 
-    const filename = `lampiran-${lampiran}-${from}-${to}.${format === "pdf" ? "html" : "xlsx"}`;
-
     if (format === "pdf" && html) {
       return new NextResponse(html, {
         status: 200,
@@ -1795,9 +1896,8 @@ export async function GET(req: Request) {
         }
       });
     }
-    if (format === "xlsx" && wb) {
-      const { body } = xlsxResponse(wb, filename);
-      return new NextResponse(body, {
+    if (format === "xlsx" && xlsxBuffer) {
+      return new NextResponse(new Uint8Array(xlsxBuffer), {
         status: 200,
         headers: {
           "Content-Type":

@@ -3,13 +3,30 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { Badge, PageContainer, PageHeader } from "@/components/ui";
-import { DataShell } from "./data-shell";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
+import { DataShell, type DataShellTab } from "./data-shell";
 import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDataPage() {
+const VALID_TABS: readonly DataShellTab[] = [
+  "items",
+  "menus",
+  "suppliers",
+  "schools",
+  "reset"
+];
+
+interface SearchParams {
+  tab?: string;
+}
+
+export default async function AdminDataPage({
+  searchParams
+}: {
+  searchParams: SearchParams;
+}) {
   const supabase = createClient();
   const lang = getLang();
 
@@ -18,6 +35,45 @@ export default async function AdminDataPage() {
   if (profile.role !== "admin" || !profile.active) {
     redirect("/dashboard?err=admin_only");
   }
+
+  const activeTab: DataShellTab = VALID_TABS.includes(
+    searchParams.tab as DataShellTab
+  )
+    ? (searchParams.tab as DataShellTab)
+    : "items";
+
+  const tabs: PageTab[] = [
+    {
+      id: "items",
+      icon: "🥕",
+      label: t("adminData.tabItems", lang),
+      href: "/admin/data?tab=items"
+    },
+    {
+      id: "menus",
+      icon: "🍲",
+      label: t("adminData.tabMenus", lang),
+      href: "/admin/data?tab=menus"
+    },
+    {
+      id: "suppliers",
+      icon: "🤝",
+      label: t("adminData.tabSuppliers", lang),
+      href: "/admin/data?tab=suppliers"
+    },
+    {
+      id: "schools",
+      icon: "🏫",
+      label: t("adminData.tabSchools", lang),
+      href: "/admin/data?tab=schools"
+    },
+    {
+      id: "reset",
+      icon: "🧨",
+      label: t("adminData.tabReset", lang),
+      href: "/admin/data?tab=reset"
+    }
+  ];
 
   const [itemsRes, menusRes, suppliersRes, schoolsRes, countsRes] =
     await Promise.all([
@@ -93,7 +149,10 @@ export default async function AdminDataPage() {
           }
         />
 
+        <PageTabs tabs={tabs} activeId={activeTab} />
+
         <DataShell
+          tab={activeTab}
           items={itemsRes.data ?? []}
           menus={menusRes.data ?? []}
           suppliers={suppliersRes.data ?? []}

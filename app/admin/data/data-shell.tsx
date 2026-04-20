@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import type { Database } from "@/types/database";
 import { ResetPanel } from "./reset-panel";
 import { ItemsPanel } from "./items-panel";
 import { MenusPanel } from "./menus-panel";
 import { SuppliersPanel } from "./suppliers-panel";
 import { SchoolsPanel } from "./schools-panel";
-import { t, type LangKey } from "@/lib/i18n";
-import { useLang } from "@/lib/prefs-context";
 
 type ItemRow = Pick<
   Database["public"]["Tables"]["items"]["Row"],
@@ -61,7 +58,10 @@ export interface DataCounts {
   stock_rows: number;
 }
 
+export type DataShellTab = "items" | "menus" | "suppliers" | "schools" | "reset";
+
 interface Props {
+  tab: DataShellTab;
   items: ItemRow[];
   menus: MenuRow[];
   suppliers: SupplierRow[];
@@ -69,46 +69,9 @@ interface Props {
   counts: DataCounts;
 }
 
-type TabKey = "reset" | "items" | "menus" | "suppliers" | "schools";
-
-const TABS: { key: TabKey; labelKey: LangKey; icon: string }[] = [
-  { key: "items",     labelKey: "adminData.tabItems",     icon: "🥕" },
-  { key: "menus",     labelKey: "adminData.tabMenus",     icon: "🍲" },
-  { key: "suppliers", labelKey: "adminData.tabSuppliers", icon: "🤝" },
-  { key: "schools",   labelKey: "adminData.tabSchools",   icon: "🏫" },
-  { key: "reset",     labelKey: "adminData.tabReset",     icon: "🧨" }
-];
-
-export function DataShell({ items, menus, suppliers, schools, counts }: Props) {
-  const { lang } = useLang();
-  const [tab, setTab] = useState<TabKey>("items");
-
+export function DataShell({ tab, items, menus, suppliers, schools, counts }: Props) {
   return (
     <div>
-      <div className="mb-5 flex flex-wrap gap-2 rounded-2xl bg-white p-2 shadow-card ring-1 ring-ink/5">
-        {TABS.map((tb) => {
-          const isActive = tab === tb.key;
-          const isReset = tb.key === "reset";
-          return (
-            <button
-              key={tb.key}
-              type="button"
-              onClick={() => setTab(tb.key)}
-              className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-[12px] font-bold transition ${
-                isActive
-                  ? isReset
-                    ? "bg-red-600 text-white shadow-card"
-                    : "bg-ink text-white shadow-card"
-                  : "text-ink2 hover:bg-paper hover:text-ink"
-              }`}
-            >
-              <span aria-hidden>{tb.icon}</span>
-              <span>{t(tb.labelKey, lang)}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {tab === "items" && <ItemsPanel initial={items} />}
       {tab === "menus" && <MenusPanel initial={menus} />}
       {tab === "suppliers" && <SuppliersPanel initial={suppliers} />}

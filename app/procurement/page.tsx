@@ -13,6 +13,7 @@ import {
   PageHeader,
   Section
 } from "@/components/ui";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { GrnQcPanel } from "./grn-qc-panel";
 import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
@@ -24,6 +25,13 @@ import {
 } from "./procurement-tables";
 
 export const dynamic = "force-dynamic";
+
+type ProcTabId = "req-qt" | "po" | "grn" | "invoice";
+const VALID_TABS: readonly ProcTabId[] = ["req-qt", "po", "grn", "invoice"];
+
+interface SearchParams {
+  tab?: string;
+}
 
 interface PrRow {
   no: string;
@@ -90,13 +98,50 @@ interface SupplierLite {
   name: string;
 }
 
-export default async function ProcurementPage() {
+export default async function ProcurementPage({
+  searchParams
+}: {
+  searchParams: SearchParams;
+}) {
   const supabase = createClient();
   const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
+
+  const activeTab: ProcTabId = VALID_TABS.includes(
+    searchParams.tab as ProcTabId
+  )
+    ? (searchParams.tab as ProcTabId)
+    : "req-qt";
+
+  const tabs: PageTab[] = [
+    {
+      id: "req-qt",
+      icon: "📝",
+      label: lang === "EN" ? "Requisition & Quotation" : "PR & Penawaran",
+      href: "/procurement?tab=req-qt"
+    },
+    {
+      id: "po",
+      icon: "📦",
+      label: lang === "EN" ? "Purchase Orders" : "Purchase Order",
+      href: "/procurement?tab=po"
+    },
+    {
+      id: "grn",
+      icon: "🚚",
+      label: lang === "EN" ? "Goods Receipt" : "Penerimaan",
+      href: "/procurement?tab=grn"
+    },
+    {
+      id: "invoice",
+      icon: "💳",
+      label: lang === "EN" ? "Invoices & Receipts" : "Invoice & Kwitansi",
+      href: "/procurement?tab=invoice"
+    }
+  ];
 
   // Stage 1: fetch parent tables in parallel (pos, grns, invoices, quotations, suppliers, receipts, ncr)
   const [
@@ -267,175 +312,196 @@ export default async function ProcurementPage() {
           }
         />
 
-        <KpiGrid>
-          <KpiTile
-            icon="📝"
-            label={t("procurement.kpiPOValue", lang)}
-            value={formatIDR(poTotal)}
-            size="md"
-            sub={ti("procurement.kpiDocuments", lang, { n: poCount })}
-          />
-          <KpiTile
-            icon="📦"
-            label={t("procurement.kpiGRN", lang)}
-            value={grnCount.toString()}
-            sub={ti("procurement.kpiOK", lang, {
-              n: grns.filter((g) => g.status === "ok").length
-            })}
-          />
-          <KpiTile
-            icon="💰"
-            label={t("procurement.kpiInvoicePaid", lang)}
-            value={formatIDR(invPaid)}
-            size="md"
-            tone="ok"
-            sub={ti("procurement.kpiInvoicePaidSub", lang, { total: formatIDR(invTotal) })}
-          />
-          <KpiTile
-            icon="⚠️"
-            label={t("procurement.kpiOutstanding", lang)}
-            value={formatIDR(invOutstanding)}
-            size="md"
-            tone={overdueCount > 0 ? "bad" : "warn"}
-            sub={ti("procurement.kpiOverdue", lang, { n: overdueCount })}
-          />
-          <KpiTile
-            icon="🧪"
-            label={t("procurement.kpiNCR", lang)}
-            value={(ncrStats.open_cnt + ncrStats.in_progress_cnt).toString()}
-            tone={
-              ncrStats.critical_open > 0
-                ? "bad"
-                : ncrStats.open_cnt > 0
-                  ? "warn"
-                  : "ok"
-            }
-            sub={ti("procurement.kpiNCRSub", lang, {
-              crit: ncrStats.critical_open,
-              days: ncrStats.avg_resolve_days ?? "—"
-            })}
-          />
-        </KpiGrid>
+        <PageTabs tabs={tabs} activeId={activeTab} />
 
-        <Section
-          title={t("procurement.secPRtitle", lang)}
-          hint={t("procurement.secPRhint", lang)}
-          actions={
-            canWrite ? (
-              <Link
-                href="/procurement/requisition/new"
-                className="rounded-lg bg-gold-gradient px-3 py-1.5 text-[11px] font-black text-primary-strong shadow-card hover:brightness-105"
-              >
-                {t("procurement.btnNewPRshort", lang)}
-              </Link>
-            ) : null
-          }
-        >
-          {prs.length === 0 ? (
-            <EmptyState message={t("procurement.prEmpty", lang)} />
-          ) : (
-            <PrTable rows={prs} />
-          )}
-        </Section>
+        {activeTab === "req-qt" && (
+          <>
+            <Section
+              title={t("procurement.secPRtitle", lang)}
+              hint={t("procurement.secPRhint", lang)}
+              actions={
+                canWrite ? (
+                  <Link
+                    href="/procurement/requisition/new"
+                    className="rounded-lg bg-gold-gradient px-3 py-1.5 text-[11px] font-black text-primary-strong shadow-card hover:brightness-105"
+                  >
+                    {t("procurement.btnNewPRshort", lang)}
+                  </Link>
+                ) : null
+              }
+            >
+              {prs.length === 0 ? (
+                <EmptyState message={t("procurement.prEmpty", lang)} />
+              ) : (
+                <PrTable rows={prs} />
+              )}
+            </Section>
 
-        <Section
-          title={t("procurement.secQTtitle", lang)}
-          hint={t("procurement.secQThint", lang)}
-          actions={
-            canWrite ? (
-              <Link
-                href="/procurement/quotation/new"
-                className="rounded-lg bg-ink px-3 py-1.5 text-[11px] font-black text-white shadow-card hover:bg-ink2"
-              >
-                {t("procurement.btnNewSimple", lang)}
-              </Link>
-            ) : null
-          }
-        >
-          {quotations.length === 0 ? (
-            <EmptyState message={t("procurement.qtEmpty", lang)} />
-          ) : (
-            <QtTable rows={quotations} supplierNames={supplierNameMap} />
-          )}
-        </Section>
+            <Section
+              title={t("procurement.secQTtitle", lang)}
+              hint={t("procurement.secQThint", lang)}
+              actions={
+                canWrite ? (
+                  <Link
+                    href="/procurement/quotation/new"
+                    className="rounded-lg bg-ink px-3 py-1.5 text-[11px] font-black text-white shadow-card hover:bg-ink2"
+                  >
+                    {t("procurement.btnNewSimple", lang)}
+                  </Link>
+                ) : null
+              }
+            >
+              {quotations.length === 0 ? (
+                <EmptyState message={t("procurement.qtEmpty", lang)} />
+              ) : (
+                <QtTable rows={quotations} supplierNames={supplierNameMap} />
+              )}
+            </Section>
+          </>
+        )}
 
-        <Section title={t("procurement.secPOtitle", lang)} hint={t("procurement.secPOhint", lang)}>
-          {pos.length === 0 ? (
-            <EmptyState message={t("procurement.poEmpty", lang)} />
-          ) : (
-            <PoTable
-              rows={pos}
-              supplierNames={supplierNameMap}
-              rowCountByPO={rowCountByPORecord}
-              qtyByPO={qtyByPORecord}
-            />
-          )}
-        </Section>
+        {activeTab === "po" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="📝"
+                label={t("procurement.kpiPOValue", lang)}
+                value={formatIDR(poTotal)}
+                size="md"
+                sub={ti("procurement.kpiDocuments", lang, { n: poCount })}
+              />
+            </KpiGrid>
+            <Section title={t("procurement.secPOtitle", lang)} hint={t("procurement.secPOhint", lang)}>
+              {pos.length === 0 ? (
+                <EmptyState message={t("procurement.poEmpty", lang)} />
+              ) : (
+                <PoTable
+                  rows={pos}
+                  supplierNames={supplierNameMap}
+                  rowCountByPO={rowCountByPORecord}
+                  qtyByPO={qtyByPORecord}
+                />
+              )}
+            </Section>
+          </>
+        )}
 
-        <Section
-          title={t("procurement.secGRNtitle", lang)}
-          hint={t("procurement.secGRNhint", lang)}
-          accent={ncrStats.critical_open > 0 ? "bad" : "default"}
-        >
-          <GrnQcPanel
-            grns={grns}
-            qcAgg={qcAgg}
-            ncrs={ncrs}
-            canWrite={canWrite}
-            supplierIds={poSupplierMap}
-            supplierNames={supplierNameMap}
-          />
-        </Section>
+        {activeTab === "grn" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="📦"
+                label={t("procurement.kpiGRN", lang)}
+                value={grnCount.toString()}
+                sub={ti("procurement.kpiOK", lang, {
+                  n: grns.filter((g) => g.status === "ok").length
+                })}
+              />
+              <KpiTile
+                icon="🧪"
+                label={t("procurement.kpiNCR", lang)}
+                value={(ncrStats.open_cnt + ncrStats.in_progress_cnt).toString()}
+                tone={
+                  ncrStats.critical_open > 0
+                    ? "bad"
+                    : ncrStats.open_cnt > 0
+                      ? "warn"
+                      : "ok"
+                }
+                sub={ti("procurement.kpiNCRSub", lang, {
+                  crit: ncrStats.critical_open,
+                  days: ncrStats.avg_resolve_days ?? "—"
+                })}
+              />
+            </KpiGrid>
+            <Section
+              title={t("procurement.secGRNtitle", lang)}
+              hint={t("procurement.secGRNhint", lang)}
+              accent={ncrStats.critical_open > 0 ? "bad" : "default"}
+            >
+              <GrnQcPanel
+                grns={grns}
+                qcAgg={qcAgg}
+                ncrs={ncrs}
+                canWrite={canWrite}
+                supplierIds={poSupplierMap}
+                supplierNames={supplierNameMap}
+              />
+            </Section>
+          </>
+        )}
 
-        <Section title={t("procurement.secINVtitle", lang)} hint={t("procurement.secINVhint", lang)}>
-          {invoices.length === 0 ? (
-            <EmptyState message={t("procurement.invEmpty", lang)} />
-          ) : (
-            <InvoiceTable rows={invoices} supplierNames={supplierNameMap} />
-          )}
-        </Section>
+        {activeTab === "invoice" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="💰"
+                label={t("procurement.kpiInvoicePaid", lang)}
+                value={formatIDR(invPaid)}
+                size="md"
+                tone="ok"
+                sub={ti("procurement.kpiInvoicePaidSub", lang, { total: formatIDR(invTotal) })}
+              />
+              <KpiTile
+                icon="⚠️"
+                label={t("procurement.kpiOutstanding", lang)}
+                value={formatIDR(invOutstanding)}
+                size="md"
+                tone={overdueCount > 0 ? "bad" : "warn"}
+                sub={ti("procurement.kpiOverdue", lang, { n: overdueCount })}
+              />
+            </KpiGrid>
+            <Section title={t("procurement.secINVtitle", lang)} hint={t("procurement.secINVhint", lang)}>
+              {invoices.length === 0 ? (
+                <EmptyState message={t("procurement.invEmpty", lang)} />
+              ) : (
+                <InvoiceTable rows={invoices} supplierNames={supplierNameMap} />
+              )}
+            </Section>
 
-        <Section
-          title={t("procurement.secReceiptsTitle", lang)}
-          hint={t("procurement.secReceiptsHint", lang)}
-        >
-          {receipts.length === 0 ? (
-            <EmptyState message={t("procurement.receiptsEmpty", lang)} />
-          ) : (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              {receipts.map((r) => (
-                <div
-                  key={r.id}
-                  className="group overflow-hidden rounded-xl bg-paper ring-1 ring-ink/10 transition hover:shadow-card"
-                >
-                  {r.photo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={r.photo_url}
-                      alt={r.ref}
-                      className="h-40 w-full object-cover transition group-hover:scale-[1.02]"
-                    />
-                  ) : (
-                    <div className="flex h-40 items-center justify-center bg-ink/5 text-xs text-ink2/60">
-                      {t("procurement.noPhoto", lang)}
-                    </div>
-                  )}
-                  <div className="p-2 text-[11px]">
-                    <div className="font-mono font-bold text-ink">{r.ref}</div>
-                    <div className="text-ink2/70">
-                      {new Date(r.created_at).toLocaleDateString(lang === "EN" ? "en-US" : "id-ID")}
-                    </div>
-                    {r.note && (
-                      <div className="mt-1 line-clamp-2 text-ink2">
-                        {r.note}
+            <Section
+              title={t("procurement.secReceiptsTitle", lang)}
+              hint={t("procurement.secReceiptsHint", lang)}
+            >
+              {receipts.length === 0 ? (
+                <EmptyState message={t("procurement.receiptsEmpty", lang)} />
+              ) : (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {receipts.map((r) => (
+                    <div
+                      key={r.id}
+                      className="group overflow-hidden rounded-xl bg-paper ring-1 ring-ink/10 transition hover:shadow-card"
+                    >
+                      {r.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={r.photo_url}
+                          alt={r.ref}
+                          className="h-40 w-full object-cover transition group-hover:scale-[1.02]"
+                        />
+                      ) : (
+                        <div className="flex h-40 items-center justify-center bg-ink/5 text-xs text-ink2/60">
+                          {t("procurement.noPhoto", lang)}
+                        </div>
+                      )}
+                      <div className="p-2 text-[11px]">
+                        <div className="font-mono font-bold text-ink">{r.ref}</div>
+                        <div className="text-ink2/70">
+                          {new Date(r.created_at).toLocaleDateString(lang === "EN" ? "en-US" : "id-ID")}
+                        </div>
+                        {r.note && (
+                          <div className="mt-1 line-clamp-2 text-ink2">
+                            {r.note}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </Section>
+              )}
+            </Section>
+          </>
+        )}
       </PageContainer>
     </div>
   );

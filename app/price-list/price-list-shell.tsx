@@ -4,9 +4,9 @@
  * Weekly Price List · Interactive grid shell
  * ---------------------------------------------------------------------------
  * Renders pivoted weekly Rp/kg matrix (supplier × commodity × ingredient × 12
- * weeks). MVP: read-only with inline commodity filter + CSV export. Editing
- * hooks are scaffolded (`onCellBlur`) and will persist via a server action
- * once we wire `upsert_supplier_price` in 0018.
+ * weeks). MVP: read-only with inline commodity filter + styled Excel export.
+ * Editing hooks are scaffolded (`onCellBlur`) and will persist via a server
+ * action once we wire `upsert_supplier_price` in 0018.
  */
 
 import { useMemo, useState, useTransition } from "react";
@@ -22,6 +22,8 @@ import {
 import { upsertSupplierPrice } from "./actions";
 import { t, ti, formatNumber, numberLocale } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
+import { downloadStyledXlsx, type StyledColumn } from "@/lib/excel-export";
+import { InfoBadge } from "@/components/ui";
 
 interface Props {
   periods: PricePeriod[];
@@ -53,11 +55,6 @@ function computeRowStats(row: PriceListMatrixRow) {
   const max = Math.max(...vals);
   const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
   return { min, max, avg };
-}
-
-function csvEscape(v: unknown): string {
-  const s = v == null ? "" : String(v);
-  return `"${s.replace(/"/g, '""')}"`;
 }
 
 export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId, canEdit }: Props) {
@@ -92,42 +89,85 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
     };
   }, [filteredRows]);
 
-  function onExportCSV() {
-    const headers = [
-      t("priceList.colCommodity", lang),
-      t("priceList.colIngredient", lang),
-      t("priceList.colSupplier", lang),
-      ...activeWeeks.map((w) => w.label),
-      t("priceList.colAvg", lang),
-      t("priceList.colMin", lang),
-      t("priceList.colMax", lang)
+  async function onExportXlsx() {
+    const columns: StyledColumn[] = [
+      {
+        key: "commodity",
+        header: t("priceList.colCommodity", lang),
+        align: "left"
+      },
+      {
+        key: "ingredient",
+        header: t("priceList.colIngredient", lang),
+        align: "left"
+      },
+      {
+        key: "supplier",
+        header: t("priceList.colSupplier", lang),
+        align: "left"
+      },
+      ...activeWeeks.map<StyledColumn>((w) => ({
+        key: `w${w.week_no}`,
+        header: w.label.replace(/^Wk \d+: /, `W${w.week_no} `),
+        align: "right",
+        numFmt: '"Rp "#,##0',
+        hint: "money"
+      })),
+      {
+        key: "avg",
+        header: t("priceList.colAvg", lang),
+        align: "right",
+        numFmt: '"Rp "#,##0',
+        hint: "bold"
+      },
+      {
+        key: "min",
+        header: t("priceList.colMin", lang),
+        align: "right",
+        numFmt: '"Rp "#,##0',
+        hint: "status-ok"
+      },
+      {
+        key: "max",
+        header: t("priceList.colMax", lang),
+        align: "right",
+        numFmt: '"Rp "#,##0',
+        hint: "status-bad"
+      }
     ];
-    const lines = [headers.map(csvEscape).join(",")];
-    filteredRows.forEach((r) => {
+
+    const rowsData = filteredRows.map((r) => {
       const stats = computeRowStats(r);
-      const row = [
-        commodityLabel(r.commodity, lang),
-        r.ingredient_name.replace(/^Buah\s*-\s*/i, ""),
-        r.supplier_name,
-        ...WEEK_FIELDS.map((k) => r[k] ?? ""),
-        stats.avg ?? "",
-        stats.min ?? "",
-        stats.max ?? ""
-      ];
-      lines.push(row.map(csvEscape).join(","));
+      const out: Record<string, unknown> = {
+        commodity: commodityLabel(r.commodity, lang),
+        ingredient: r.ingredient_name.replace(/^Buah\s*-\s*/i, ""),
+        supplier: r.supplier_name,
+        avg: stats.avg ?? "",
+        min: stats.min ?? "",
+        max: stats.max ?? ""
+      };
+      for (const w of activeWeeks) {
+        const k = `w${w.week_no}` as WeekField;
+        out[`w${w.week_no}`] = r[k] ?? "";
+      }
+      return out;
     });
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
+
     const periodName = periods.find((p) => p.id === periodId)?.name ?? "period";
-    a.download = `PriceList_${periodName.replace(/\s+/g, "_")}_${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    await downloadStyledXlsx({
+      fileName: `price-list-${periodName.replace(/\s+/g, "-").toLowerCase()}`,
+      sheets: [
+        {
+          name: "Price List",
+          title: `${t("priceList.shellTitle", lang)} · ${periodName}`,
+          subtitle: ti("priceList.weeksCount", lang, { n: activeWeeks.length }),
+          columns,
+          rows: rowsData,
+          zebra: true,
+          freezeHeader: true
+        }
+      ]
+    });
   }
 
   function onCellBlur(
@@ -191,6 +231,10 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
         <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
           <span>💹</span>
           <span>{t("priceList.shellTitle", lang)}</span>
+          <InfoBadge tone="light">
+            {t("priceList.hint", lang)}{" "}
+            <strong>{periods.find((p) => p.id === periodId)?.name}</strong>.
+          </InfoBadge>
         </h2>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <select
@@ -218,19 +262,17 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
           </select>
           <button
             type="button"
-            onClick={onExportCSV}
+            onClick={onExportXlsx}
             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
           >
-            ⬇ CSV
+            ⬇ {t("common.exportExcel", lang)}
           </button>
         </div>
       </div>
 
-      <p className="mt-2 text-xs text-slate-500">
-        {t("priceList.hint", lang)}{" "}
-        <strong>{periods.find((p) => p.id === periodId)?.name}</strong>.
-        {pending && <span className="ml-2 text-blue-600">{t("priceList.saving", lang)}</span>}
-      </p>
+      {pending && (
+        <p className="mt-2 text-xs text-blue-600">{t("priceList.saving", lang)}</p>
+      )}
       {errorMsg && (
         <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
           ⚠ {errorMsg}

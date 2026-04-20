@@ -3,6 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { t } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
+import type { CellHint } from "@/lib/excel-export";
 
 export type SortDir = "asc" | "desc";
 
@@ -17,6 +18,12 @@ export interface SortableColumn<T> {
   searchValue?: (row: T) => string | number | null | undefined;
   exportLabel?: string;
   exportValue?: (row: T) => string | number | boolean | null | undefined;
+  /** Excel number format, e.g. "#,##0", '"Rp "#,##0'. */
+  exportNumFmt?: string;
+  /** Per-column or per-row cell styling hint for the Excel export. */
+  exportHint?: CellHint | ((row: T) => CellHint | undefined);
+  /** Excel column width (characters). */
+  exportWidth?: number;
   render: (row: T, index: number) => ReactNode;
   width?: string;
   title?: string;
@@ -53,6 +60,22 @@ export interface SortableTableProps<T> {
   exportable?: boolean;
   exportFileName?: string;
   exportSheetName?: string;
+  /** Big title row at top of Excel file (merged). */
+  exportTitle?: string;
+  /** Smaller subtitle line under the title. */
+  exportSubtitle?: string;
+  /** Grand total row rendered with navy + gold styling. */
+  exportTotals?:
+    | {
+        labelColSpan?: number;
+        labelText?: string;
+        values: Record<string, number | string>;
+      }
+    | ((rows: T[]) => {
+        labelColSpan?: number;
+        labelText?: string;
+        values: Record<string, number | string>;
+      });
   toolbarExtra?: ReactNode;
   filters?: SortableTableFilter<T>[];
 }
@@ -110,31 +133,74 @@ async function runExport<T>(
   rows: T[],
   columns: SortableColumn<T>[],
   baseFileName: string,
-  sheetName: string
+  sheetName: string,
+  title: string | undefined,
+  subtitle: string | undefined,
+  totalsOpt: SortableTableProps<T>["exportTotals"]
 ) {
-  const XLSX = await import("xlsx");
+  const { downloadStyledXlsx } = await import("@/lib/excel-export");
   const exportCols = columns.filter((c) => c.exportValue || c.sortValue);
-  const headers = exportCols.map((c) => columnHeaderText(c));
-  const data = rows.map((row, idx) =>
-    exportCols.map((c) => {
-      if (c.exportValue) return c.exportValue(row) ?? "";
-      if (c.sortValue) return c.sortValue(row) ?? "";
-      return stripReactNodeToText(c.render(row, idx));
-    })
-  );
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
-  const colWidths = headers.map((h, i) => {
-    const maxLen = Math.max(
-      h.length,
-      ...data.map((r) => String(r[i] ?? "").length)
-    );
-    return { wch: Math.min(40, Math.max(10, maxLen + 2)) };
+
+  const styledColumns = exportCols.map((c) => ({
+    key: c.key,
+    header: columnHeaderText(c),
+    align: c.align ?? "left",
+    numFmt: c.exportNumFmt,
+    width: c.exportWidth,
+    hint:
+      typeof c.exportHint === "function"
+        ? undefined
+        : (c.exportHint as CellHint | undefined)
+  }));
+
+  const rowObjects = rows.map((row, idx) => {
+    const o: Record<string, unknown> = { __row: row, __idx: idx };
+    for (const c of exportCols) {
+      if (c.exportValue) {
+        o[c.key] = c.exportValue(row) ?? "";
+      } else if (c.sortValue) {
+        o[c.key] = c.sortValue(row) ?? "";
+      } else {
+        o[c.key] = stripReactNodeToText(c.render(row, idx));
+      }
+    }
+    return o;
   });
-  (ws as { [k: string]: unknown })["!cols"] = colWidths;
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31) || "Sheet1");
-  const stamp = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `${baseFileName}-${stamp}.xlsx`);
+
+  const hintByKey = new Map<string, (row: T) => CellHint | undefined>();
+  for (const c of exportCols) {
+    if (typeof c.exportHint === "function") {
+      hintByKey.set(c.key, c.exportHint as (row: T) => CellHint | undefined);
+    }
+  }
+
+  const cellHint = hintByKey.size > 0
+    ? (row: Record<string, unknown>, colKey: string) => {
+        const fn = hintByKey.get(colKey);
+        if (!fn) return undefined;
+        return fn(row.__row as T);
+      }
+    : undefined;
+
+  const totals =
+    typeof totalsOpt === "function" ? totalsOpt(rows) : totalsOpt;
+
+  await downloadStyledXlsx({
+    fileName: baseFileName,
+    sheets: [
+      {
+        name: sheetName || "Sheet1",
+        title,
+        subtitle,
+        columns: styledColumns,
+        rows: rowObjects,
+        cellHint,
+        totals,
+        freezeHeader: true,
+        zebra: true
+      }
+    ]
+  });
 }
 
 function DownloadIcon() {
@@ -196,6 +262,9 @@ export function SortableTable<T>({
   exportable = true,
   exportFileName = "export",
   exportSheetName = "Sheet1",
+  exportTitle,
+  exportSubtitle,
+  exportTotals,
   toolbarExtra,
   filters
 }: SortableTableProps<T>) {
@@ -296,7 +365,15 @@ export function SortableTable<T>({
     if (isExporting) return;
     setIsExporting(true);
     try {
-      await runExport(sortedRows, columns, exportFileName, exportSheetName);
+      await runExport(
+        sortedRows,
+        columns,
+        exportFileName,
+        exportSheetName,
+        exportTitle,
+        exportSubtitle,
+        exportTotals
+      );
     } finally {
       setIsExporting(false);
     }

@@ -18,8 +18,10 @@ import {
   KpiGrid,
   KpiTile,
   PageContainer,
+  PageHeader,
   Section
 } from "@/components/ui";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
 import {
   PlanningMatrixTable,
   PlanningDailyTable,
@@ -31,6 +33,13 @@ import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
+type PlanningTabId = "matrix" | "daily" | "forecast";
+const VALID_TABS: readonly PlanningTabId[] = ["matrix", "daily", "forecast"];
+
+interface SearchParams {
+  tab?: string;
+}
+
 interface ItemLite {
   code: string;
   unit: string;
@@ -38,13 +47,44 @@ interface ItemLite {
   price_idr: number | string;
 }
 
-export default async function PlanningPage() {
+export default async function PlanningPage({
+  searchParams
+}: {
+  searchParams: SearchParams;
+}) {
   const supabase = createClient();
   const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
+
+  const activeTab: PlanningTabId = VALID_TABS.includes(
+    searchParams.tab as PlanningTabId
+  )
+    ? (searchParams.tab as PlanningTabId)
+    : "matrix";
+
+  const tabs: PageTab[] = [
+    {
+      id: "matrix",
+      icon: "📊",
+      label: lang === "EN" ? "6-Month Matrix" : "Matrix 6-Bulan",
+      href: "/planning?tab=matrix"
+    },
+    {
+      id: "daily",
+      icon: "📅",
+      label: lang === "EN" ? "Daily Planning" : "Planning Harian",
+      href: "/planning?tab=daily"
+    },
+    {
+      id: "forecast",
+      icon: "⚠️",
+      label: lang === "EN" ? "Shortage Forecast" : "Forecast Shortage",
+      href: "/planning?tab=forecast"
+    }
+  ];
 
   const now = new Date();
   const monthStart = toISODate(new Date(now.getFullYear(), now.getMonth(), 1));
@@ -148,58 +188,77 @@ export default async function PlanningPage() {
       />
 
       <PageContainer>
-        <KpiGrid>
-          <KpiTile
-            icon="📅"
-            label={t("planning.kpiOpDays", lang)}
-            value={`${opDays} / ${daily.length}`}
-            sub={t("planning.kpiOpDaysSub", lang)}
-          />
-          <KpiTile
-            icon="🍽️"
-            label={t("planning.kpiTotalPorsi", lang)}
-            value={formatNumber(totalPorsi, lang)}
-            sub={t("planning.kpiTotalPorsiSub", lang)}
-          />
-          <KpiTile
-            icon="⚖️"
-            label={t("planning.kpiTotalKg", lang)}
-            value={formatKg(totalKg, 0)}
-            sub={t("planning.kpiTotalKgSub", lang)}
-          />
-          <KpiTile
-            icon="💰"
-            label={t("planning.kpiEstSpend", lang)}
-            value={formatIDR(grandTotalCost)}
-            tone="ok"
-            size="md"
-            sub={t("planning.kpiEstSpendSub", lang)}
-          />
-        </KpiGrid>
+        <PageHeader />
+        <PageTabs tabs={tabs} activeId={activeTab} />
 
-        <Section
-          title={ti("planning.matrixTitle", lang, {
-            months: months.length,
-            items: sortedItems.length
-          })}
-          hint={t("planning.matrixHint", lang)}
-        >
-          {sortedItems.length === 0 ? (
-            <EmptyState message={t("planning.matrixEmpty", lang)} />
-          ) : (
-            <PlanningMatrixTable
-              lang={lang}
-              rows={matrixRows}
-              months={months}
-              monthLabels={monthLabels}
-            />
-          )}
-        </Section>
+        {activeTab === "matrix" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="💰"
+                label={t("planning.kpiEstSpend", lang)}
+                value={formatIDR(grandTotalCost)}
+                tone="ok"
+                size="md"
+                sub={t("planning.kpiEstSpendSub", lang)}
+              />
+              <KpiTile
+                icon="⚖️"
+                label={t("planning.kpiTotalKg", lang)}
+                value={formatKg(grandTotalKg, 0)}
+                sub={lang === "EN" ? "across 6 months" : "total 6 bulan"}
+              />
+            </KpiGrid>
+            <Section
+              title={ti("planning.matrixTitle", lang, {
+                months: months.length,
+                items: sortedItems.length
+              })}
+              hint={t("planning.matrixHint", lang)}
+            >
+              {sortedItems.length === 0 ? (
+                <EmptyState message={t("planning.matrixEmpty", lang)} />
+              ) : (
+                <PlanningMatrixTable
+                  lang={lang}
+                  rows={matrixRows}
+                  months={months}
+                  monthLabels={monthLabels}
+                />
+              )}
+            </Section>
+          </>
+        )}
 
-        <Section title={t("planning.dailyTitle", lang)}>
-          <PlanningDailyTable lang={lang} rows={dailyRows} />
-        </Section>
+        {activeTab === "daily" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="📅"
+                label={t("planning.kpiOpDays", lang)}
+                value={`${opDays} / ${daily.length}`}
+                sub={t("planning.kpiOpDaysSub", lang)}
+              />
+              <KpiTile
+                icon="🍽️"
+                label={t("planning.kpiTotalPorsi", lang)}
+                value={formatNumber(totalPorsi, lang)}
+                sub={t("planning.kpiTotalPorsiSub", lang)}
+              />
+              <KpiTile
+                icon="⚖️"
+                label={t("planning.kpiTotalKg", lang)}
+                value={formatKg(totalKg, 0)}
+                sub={t("planning.kpiTotalKgSub", lang)}
+              />
+            </KpiGrid>
+            <Section title={t("planning.dailyTitle", lang)}>
+              <PlanningDailyTable lang={lang} rows={dailyRows} />
+            </Section>
+          </>
+        )}
 
+        {activeTab === "forecast" && (
         <Section
           title={t("planning.forecastTitle", lang)}
           hint={t("planning.forecastHint", lang)}
@@ -383,6 +442,7 @@ export default async function PlanningPage() {
             </div>
           )}
         </Section>
+        )}
       </PageContainer>
     </div>
   );

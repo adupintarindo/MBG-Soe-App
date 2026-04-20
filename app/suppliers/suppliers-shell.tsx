@@ -68,7 +68,6 @@ interface Props {
   suppliers: SupplierRow[];
   supItems: SupItemLink[];
   invoices: InvoiceTx[];
-  actions: SupplierAction[];
   canWriteActions: boolean;
   isSupplierRole: boolean;
 }
@@ -77,7 +76,6 @@ export function SuppliersShell({
   suppliers,
   supItems,
   invoices,
-  actions,
   canWriteActions,
   isSupplierRole
 }: Props) {

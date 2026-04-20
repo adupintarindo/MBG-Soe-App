@@ -3,10 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { toISODate } from "@/lib/engine";
-import { getHoliday, holidaysInRange } from "@/lib/holidays";
+import { getHoliday } from "@/lib/holidays";
 import { CalendarGrid } from "./calendar-grid";
 import { PopulateControls } from "./populate-controls";
 import {
+  InfoBadge,
   LinkButton,
   PageContainer
 } from "@/components/ui";
@@ -184,20 +185,6 @@ export default async function CalendarPage({
       />
 
       <PageContainer>
-        <div className="mb-6 rounded-2xl bg-white p-5 shadow-card">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-crisp text-ink sm:text-[1.75rem]">
-                <span className="shrink-0 text-2xl leading-none">📅</span>
-                <span className="truncate">{t("calendar.title", lang)}</span>
-              </h1>
-              <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink2/80">
-                {t("calendar.headerHint", lang)}
-              </p>
-            </div>
-          </div>
-        </div>
-
         <div className="relative mb-6 rounded-2xl bg-white shadow-card">
           {/* Toolbar */}
           <div className="grid grid-cols-1 items-center gap-3 border-b border-ink/10 px-5 py-4 sm:grid-cols-3">
@@ -307,31 +294,6 @@ export default async function CalendarPage({
             </span>
           </div>
 
-          {holidaysData.length > 0 && (
-            <div className="border-t border-ink/10 px-5 py-4">
-              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="text-[11px] font-black uppercase tracking-wide text-ink2/70">
-                  {t("calendar.holidaysTitle", lang)}
-                </h3>
-                <p className="text-[11px] text-ink2/60">
-                  {t("calendar.holidaysHint", lang)}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {holidaysData.map((h) => (
-                  <span
-                    key={`${h.date}-${h.name}`}
-                    className="inline-flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-900 ring-1 ring-rose-200"
-                  >
-                    <span className="font-mono text-[10px] opacity-70">
-                      {h.date}
-                    </span>
-                    <span>{h.name}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </PageContainer>
     </div>

@@ -19,6 +19,7 @@ import {
   PageHeader,
   Section
 } from "@/components/ui";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
 import {
   StockShortTable,
   StockMasterTable,
@@ -37,6 +38,13 @@ import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
+
+type StockTabId = "position" | "expiry" | "ledger" | "moves";
+const VALID_TABS: readonly StockTabId[] = ["position", "expiry", "ledger", "moves"];
+
+interface SearchParams {
+  tab?: string;
+}
 
 interface StockRow {
   item_code: string;
@@ -62,13 +70,50 @@ interface MoveRow {
   created_at: string;
 }
 
-export default async function StockPage() {
+export default async function StockPage({
+  searchParams
+}: {
+  searchParams: SearchParams;
+}) {
   const supabase = createClient();
   const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
+
+  const activeTab: StockTabId = VALID_TABS.includes(
+    searchParams.tab as StockTabId
+  )
+    ? (searchParams.tab as StockTabId)
+    : "position";
+
+  const tabs: PageTab[] = [
+    {
+      id: "position",
+      icon: "📦",
+      label: lang === "EN" ? "Stock Position" : "Posisi Stok",
+      href: "/stock?tab=position"
+    },
+    {
+      id: "expiry",
+      icon: "⏰",
+      label: lang === "EN" ? "Batch Expiry" : "Batch Expiry",
+      href: "/stock?tab=expiry"
+    },
+    {
+      id: "ledger",
+      icon: "📚",
+      label: lang === "EN" ? "Batch Ledger" : "Batch Ledger",
+      href: "/stock?tab=ledger"
+    },
+    {
+      id: "moves",
+      icon: "🔄",
+      label: lang === "EN" ? "Movements" : "Mutasi",
+      href: "/stock?tab=moves"
+    }
+  ];
 
   const today = toISODate(new Date());
 
@@ -210,126 +255,143 @@ export default async function StockPage() {
           }
         />
 
-        <KpiGrid>
-          <KpiTile
-            icon="📦"
-            label={t("stock.kpiSku", lang)}
-            value={items.length.toString()}
-            sub={ti("stock.kpiSkuSub", lang, { n: items.length - emptyItems })}
-          />
-          <KpiTile
-            icon="💰"
-            label={t("stock.kpiValue", lang)}
-            value={formatIDR(totalValue)}
-            size="md"
-            tone="ok"
-            sub={t("stock.kpiValueSub", lang)}
-          />
-          <KpiTile
-            icon="📉"
-            label={t("stock.kpiEmpty", lang)}
-            value={emptyItems.toString()}
-            tone={emptyItems > 0 ? "warn" : "default"}
-            sub={ti("stock.kpiEmptySub", lang, {
-              pct: ((emptyItems / Math.max(1, items.length)) * 100).toFixed(0)
-            })}
-          />
-          <KpiTile
-            icon="⚠️"
-            label={t("stock.kpiShort", lang)}
-            value={shortCount.toString()}
-            tone={shortCount > 0 ? "bad" : "ok"}
-            sub={t("stock.kpiShortSub", lang)}
-          />
-        </KpiGrid>
+        <PageTabs tabs={tabs} activeId={activeTab} />
 
-        <KpiGrid>
-          <KpiTile
-            icon="⏰"
-            label={t("batch.kpiExpiring", lang)}
-            value={urgentCount.toString()}
-            tone={urgentCount > 0 ? "warn" : "default"}
-            sub={t("batch.kpiExpiringSub", lang)}
-          />
-          <KpiTile
-            icon="🚫"
-            label={t("batch.kpiExpired", lang)}
-            value={expiredCount.toString()}
-            tone={expiredCount > 0 ? "bad" : "default"}
-            sub={t("batch.kpiExpiredSub", lang)}
-          />
-          <KpiTile
-            icon="📊"
-            label={t("batch.kpiBatchTotal", lang)}
-            value={batchRows.length.toString()}
-            sub={t("batch.kpiBatchTotalSub", lang)}
-          />
-          <KpiTile
-            icon="⚖️"
-            label={t("batch.kpiQtyAtRisk", lang)}
-            value={qtyAtRisk.toFixed(1)}
-            tone={qtyAtRisk > 0 ? "warn" : "default"}
-            sub={t("batch.kpiQtyAtRiskSub", lang)}
-          />
-        </KpiGrid>
+        {activeTab === "position" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="📦"
+                label={t("stock.kpiSku", lang)}
+                value={items.length.toString()}
+                sub={ti("stock.kpiSkuSub", lang, { n: items.length - emptyItems })}
+              />
+              <KpiTile
+                icon="💰"
+                label={t("stock.kpiValue", lang)}
+                value={formatIDR(totalValue)}
+                size="md"
+                tone="ok"
+                sub={t("stock.kpiValueSub", lang)}
+              />
+              <KpiTile
+                icon="📉"
+                label={t("stock.kpiEmpty", lang)}
+                value={emptyItems.toString()}
+                tone={emptyItems > 0 ? "warn" : "default"}
+                sub={ti("stock.kpiEmptySub", lang, {
+                  pct: ((emptyItems / Math.max(1, items.length)) * 100).toFixed(0)
+                })}
+              />
+              <KpiTile
+                icon="⚠️"
+                label={t("stock.kpiShort", lang)}
+                value={shortCount.toString()}
+                tone={shortCount > 0 ? "bad" : "ok"}
+                sub={t("stock.kpiShortSub", lang)}
+              />
+            </KpiGrid>
 
-        {shortCount > 0 && (
-          <Section
-            title={ti("stock.shortTitle", lang, { n: shortCount })}
-            hint={t("stock.shortHint", lang)}
-            accent="bad"
-          >
-            <StockShortTable lang={lang} rows={shortRows} />
-          </Section>
+            {shortCount > 0 && (
+              <Section
+                title={ti("stock.shortTitle", lang, { n: shortCount })}
+                hint={t("stock.shortHint", lang)}
+                accent="bad"
+              >
+                <StockShortTable lang={lang} rows={shortRows} />
+              </Section>
+            )}
+
+            <Section
+              title={ti("stock.masterTitle", lang, { n: items.length })}
+              actions={
+                <span className="text-[11px] font-semibold text-ink2/70">
+                  {t("stock.catTotalValue", lang)}{" "}
+                  <b className="text-ink">{formatIDR(totalValue)}</b>
+                </span>
+              }
+            >
+              {items.length === 0 ? (
+                <EmptyState message={t("stock.movesEmpty", lang)} />
+              ) : (
+                <StockMasterTable lang={lang} rows={masterRows} />
+              )}
+            </Section>
+          </>
         )}
 
-        <Section
-          title={ti("batch.expiringTitle", lang, { days: 14 })}
-          hint={t("batch.expiringHint", lang)}
-          accent={expiredCount > 0 ? "bad" : urgentCount > 0 ? "warn" : "default"}
-        >
-          {expiringRows.length === 0 ? (
-            <EmptyState
-              tone="ok"
-              icon="✅"
-              message={t("batch.expiringEmpty", lang)}
-            />
-          ) : (
-            <ExpiringBatchTable lang={lang} rows={expiringRows} />
-          )}
-        </Section>
+        {activeTab === "expiry" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="⏰"
+                label={t("batch.kpiExpiring", lang)}
+                value={urgentCount.toString()}
+                tone={urgentCount > 0 ? "warn" : "default"}
+                sub={t("batch.kpiExpiringSub", lang)}
+              />
+              <KpiTile
+                icon="🚫"
+                label={t("batch.kpiExpired", lang)}
+                value={expiredCount.toString()}
+                tone={expiredCount > 0 ? "bad" : "default"}
+                sub={t("batch.kpiExpiredSub", lang)}
+              />
+              <KpiTile
+                icon="⚖️"
+                label={t("batch.kpiQtyAtRisk", lang)}
+                value={qtyAtRisk.toFixed(1)}
+                tone={qtyAtRisk > 0 ? "warn" : "default"}
+                sub={t("batch.kpiQtyAtRiskSub", lang)}
+              />
+            </KpiGrid>
+            <Section
+              title={ti("batch.expiringTitle", lang, { days: 14 })}
+              hint={t("batch.expiringHint", lang)}
+              accent={expiredCount > 0 ? "bad" : urgentCount > 0 ? "warn" : "default"}
+            >
+              {expiringRows.length === 0 ? (
+                <EmptyState
+                  tone="ok"
+                  icon="✅"
+                  message={t("batch.expiringEmpty", lang)}
+                />
+              ) : (
+                <ExpiringBatchTable lang={lang} rows={expiringRows} />
+              )}
+            </Section>
+          </>
+        )}
 
-        <Section
-          title={ti("stock.masterTitle", lang, { n: items.length })}
-          actions={
-            <span className="text-[11px] font-semibold text-ink2/70">
-              {t("stock.catTotalValue", lang)}{" "}
-              <b className="text-ink">{formatIDR(totalValue)}</b>
-            </span>
-          }
-        >
-          {items.length === 0 ? (
-            <EmptyState message={t("stock.movesEmpty", lang)} />
-          ) : (
-            <StockMasterTable lang={lang} rows={masterRows} />
-          )}
-        </Section>
+        {activeTab === "ledger" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="📊"
+                label={t("batch.kpiBatchTotal", lang)}
+                value={batchRows.length.toString()}
+                sub={t("batch.kpiBatchTotalSub", lang)}
+              />
+            </KpiGrid>
+            <Section title={ti("batch.allTitle", lang, { n: batchRows.length })}>
+              {batchRows.length === 0 ? (
+                <EmptyState message={t("batch.allEmpty", lang)} />
+              ) : (
+                <BatchTable lang={lang} rows={batchRows} />
+              )}
+            </Section>
+          </>
+        )}
 
-        <Section title={ti("batch.allTitle", lang, { n: batchRows.length })}>
-          {batchRows.length === 0 ? (
-            <EmptyState message={t("batch.allEmpty", lang)} />
-          ) : (
-            <BatchTable lang={lang} rows={batchRows} />
-          )}
-        </Section>
-
-        <Section title={t("stock.movesTitle", lang)}>
-          {moves.length === 0 ? (
-            <EmptyState message={t("stock.movesEmpty", lang)} />
-          ) : (
-            <StockMovesTable lang={lang} rows={moveRows} />
-          )}
-        </Section>
+        {activeTab === "moves" && (
+          <Section title={t("stock.movesTitle", lang)}>
+            {moves.length === 0 ? (
+              <EmptyState message={t("stock.movesEmpty", lang)} />
+            ) : (
+              <StockMovesTable lang={lang} rows={moveRows} />
+            )}
+          </Section>
+        )}
       </PageContainer>
     </div>
   );

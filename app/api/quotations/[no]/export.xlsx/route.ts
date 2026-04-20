@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import { buildStyledXlsxBuffer } from "@/lib/excel-export";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 
@@ -70,110 +70,116 @@ export async function GET(
   const supplier = suppliers.find((s) => s.id === qt.supplier_id);
   const itemByCode = new Map(items.map((i) => [i.code, i]));
 
-  // Header block (two-column A/B)
-  const aoa: (string | number | null)[][] = [
-    ["QUOTATION / RFQ · MBG SOE"],
-    [],
-    ["No Quotation", qt.no],
-    ["Tanggal", qt.quote_date],
-    ["Berlaku s/d", qt.valid_until ?? ""],
-    ["Tanggal Butuh", qt.need_date ?? ""],
-    ["Status", qt.status],
-    [],
-    ["Kepada Supplier"],
-    ["Nama", supplier?.name ?? qt.supplier_id],
-    ["PIC", supplier?.pic ?? ""],
-    ["Telepon", supplier?.phone ?? ""],
-    ["Email", supplier?.email ?? ""],
-    ["Alamat", supplier?.address ?? ""],
-    [],
-    ["Catatan", qt.notes ?? ""],
-    [],
-    [
-      "#",
-      "Kode Item",
-      "Nama Item",
-      "Qty Diminta",
-      "Unit",
-      "Harga Saran (IDR)",
-      "Harga Final (IDR)",
-      "Qty Final",
-      "Subtotal (IDR)",
-      "Catatan Supplier"
-    ]
-  ];
-
-  for (const r of rows) {
+  const itemRows = rows.map((r) => {
     const it = itemByCode.get(r.item_code);
-    aoa.push([
-      r.line_no,
-      r.item_code,
-      it?.name_en ?? r.item_code,
-      Number(r.qty),
-      r.unit,
-      r.price_suggested != null ? Number(r.price_suggested) : "",
-      r.price_quoted != null ? Number(r.price_quoted) : "",
-      r.qty_quoted != null ? Number(r.qty_quoted) : "",
-      Number(r.subtotal) || "",
-      r.note ?? ""
-    ]);
-  }
+    return {
+      line: r.line_no,
+      code: r.item_code,
+      name: it?.name_en ?? r.item_code,
+      qty: Number(r.qty),
+      unit: r.unit,
+      priceSuggested:
+        r.price_suggested != null ? Number(r.price_suggested) : "",
+      priceQuoted: r.price_quoted != null ? Number(r.price_quoted) : "",
+      qtyQuoted: r.qty_quoted != null ? Number(r.qty_quoted) : "",
+      subtotal: Number(r.subtotal) || "",
+      note: r.note ?? ""
+    };
+  });
 
-  aoa.push([]);
-  aoa.push(["", "", "", "", "", "", "", "TOTAL", Number(qt.total), ""]);
-  aoa.push([]);
-  aoa.push(["Instruksi Supplier"]);
-  aoa.push([
-    "Isi kolom 'Harga Final' dan 'Qty Final' di tiap baris kalau ada perubahan."
-  ]);
-  aoa.push([
-    "Kalau item tidak tersedia, kosongkan harga/qty final dan catat alasan di kolom 'Catatan Supplier'."
-  ]);
-  aoa.push([
-    "Kirim kembali file ini (atau tanda tangan scan) ke tim procurement."
-  ]);
-  aoa.push([]);
-  aoa.push(["Tanda Tangan Supplier", "", "", "Tanda Tangan Operator"]);
-  aoa.push(["", "", "", ""]);
-  aoa.push([
-    "Nama: ______________",
-    "",
-    "",
-    "Nama: ______________"
-  ]);
-  aoa.push([
-    "Tanggal: ___________",
-    "",
-    "",
-    "Tanggal: ___________"
-  ]);
+  const buffer = await buildStyledXlsxBuffer({
+    fileName: qt.no,
+    sheets: [
+      {
+        name: "Quotation",
+        title: `QUOTATION / RFQ · ${qt.no}`,
+        subtitle: `Tanggal ${qt.quote_date} · Status ${qt.status.toUpperCase()}`,
+        columns: [
+          { key: "line", header: "#", width: 5, align: "center" },
+          { key: "code", header: "Kode Item", width: 14, align: "left" },
+          { key: "name", header: "Nama Item", width: 30, align: "left" },
+          {
+            key: "qty",
+            header: "Qty Diminta",
+            width: 12,
+            align: "right",
+            hint: "number",
+            numFmt: "#,##0.00"
+          },
+          { key: "unit", header: "Unit", width: 8, align: "center" },
+          {
+            key: "priceSuggested",
+            header: "Harga Saran",
+            width: 16,
+            align: "right",
+            hint: "money",
+            numFmt: '"Rp "#,##0'
+          },
+          {
+            key: "priceQuoted",
+            header: "Harga Final",
+            width: 16,
+            align: "right",
+            hint: "money",
+            numFmt: '"Rp "#,##0'
+          },
+          {
+            key: "qtyQuoted",
+            header: "Qty Final",
+            width: 12,
+            align: "right",
+            hint: "number",
+            numFmt: "#,##0.00"
+          },
+          {
+            key: "subtotal",
+            header: "Subtotal",
+            width: 18,
+            align: "right",
+            hint: "money",
+            numFmt: '"Rp "#,##0'
+          },
+          { key: "note", header: "Catatan Supplier", width: 28, align: "left" }
+        ],
+        meta: [
+          ["No Quotation", qt.no],
+          ["Tanggal", qt.quote_date],
+          ["Berlaku s/d", qt.valid_until ?? "—"],
+          ["Tanggal Butuh", qt.need_date ?? "—"],
+          ["Status", qt.status],
+          ["Supplier", supplier?.name ?? qt.supplier_id],
+          ["PIC", supplier?.pic ?? "—"],
+          ["Telepon", supplier?.phone ?? "—"],
+          ["Email", supplier?.email ?? "—"],
+          ["Alamat", supplier?.address ?? "—"],
+          ["Catatan", qt.notes ?? "—"]
+        ],
+        rows: itemRows,
+        totals: {
+          labelColSpan: 8,
+          labelText: "TOTAL",
+          values: { subtotal: Number(qt.total) }
+        },
+        zebra: true,
+        freezeHeader: true,
+        notes: [
+          "Instruksi Supplier:",
+          "1. Isi kolom 'Harga Final' dan 'Qty Final' di tiap baris kalau ada perubahan.",
+          "2. Kalau item tidak tersedia, kosongkan harga/qty final dan catat alasan di kolom 'Catatan Supplier'.",
+          "3. Kirim kembali file ini (atau tanda tangan scan) ke tim procurement."
+        ],
+        signatures: [
+          { left: "Tanda Tangan Supplier", right: "Tanda Tangan Operator" },
+          { left: " ", right: " " },
+          { left: " ", right: " " },
+          { left: "Nama: ______________", right: "Nama: ______________" },
+          { left: "Tanggal: ___________", right: "Tanggal: ___________" }
+        ]
+      }
+    ]
+  });
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-  // Column widths
-  ws["!cols"] = [
-    { wch: 5 },
-    { wch: 14 },
-    { wch: 28 },
-    { wch: 12 },
-    { wch: 8 },
-    { wch: 16 },
-    { wch: 16 },
-    { wch: 12 },
-    { wch: 18 },
-    { wch: 24 }
-  ];
-
-  // Merge title
-  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }];
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Quotation");
-
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-  const u8 = new Uint8Array(buf as ArrayBuffer);
-
-  return new NextResponse(u8, {
+  return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
       "Content-Type":

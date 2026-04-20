@@ -12,6 +12,7 @@ import {
   PageHeader,
   Section
 } from "@/components/ui";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
 import {
   BomTable,
   CommodityTable,
@@ -23,13 +24,30 @@ import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-export default async function MenuMasterPage() {
+type MenuTabId = "cycle" | "commodity";
+const VALID_TABS: readonly MenuTabId[] = ["cycle", "commodity"];
+
+interface SearchParams {
+  tab?: string;
+}
+
+export default async function MenuMasterPage({
+  searchParams
+}: {
+  searchParams: SearchParams;
+}) {
   const supabase = createClient();
   const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
+
+  const activeTab: MenuTabId = VALID_TABS.includes(
+    searchParams.tab as MenuTabId
+  )
+    ? (searchParams.tab as MenuTabId)
+    : "cycle";
 
   // Fetch all menus + BOM + items + supplier_items in parallel
   const [menusRes, bomRes, itemsRes, supItemsRes] = await Promise.all([
@@ -147,6 +165,21 @@ export default async function MenuMasterPage() {
       ? menuStats.reduce((s, x) => s + x.costPerPorsi, 0) / menuStats.length
       : 0;
 
+  const tabs: PageTab[] = [
+    {
+      id: "cycle",
+      icon: "🍲",
+      label: lang === "EN" ? "Menu Cycle" : "Siklus Menu",
+      href: "/menu?tab=cycle"
+    },
+    {
+      id: "commodity",
+      icon: "📋",
+      label: lang === "EN" ? "Commodity Master" : "Master Komoditas",
+      href: "/menu?tab=commodity"
+    }
+  ];
+
   return (
     <div>
       <Nav
@@ -172,6 +205,10 @@ export default async function MenuMasterPage() {
           }
         />
 
+        <PageTabs tabs={tabs} activeId={activeTab} />
+
+        {activeTab === "cycle" && (
+          <>
         <KpiGrid>
           <KpiTile
             label={t("menu.kpiActive", lang)}
@@ -189,11 +226,6 @@ export default async function MenuMasterPage() {
             size="md"
             tone="ok"
             sub={t("menu.kpiAvgCostSub", lang)}
-          />
-          <KpiTile
-            label={t("menu.kpiCommodity", lang)}
-            value={totalItems.toString()}
-            sub={ti("menu.kpiCommoditySub", lang, { n: categories.length })}
           />
         </KpiGrid>
 
@@ -260,30 +292,43 @@ export default async function MenuMasterPage() {
           </div>
         </Section>
 
-        <Section
-          title={ti("menu.commodityTitle", lang, { n: totalItems })}
-          hint={t("menu.commodityHint", lang)}
-        >
-          <CommodityTable
-            lang={lang}
-            rows={items.map(
-              (it): CommodityRow => ({
-                code: it.code,
-                displayCode: it.code.replace(/^Buah\s*-\s*/i, ""),
-                category: it.category,
-                unit: it.unit,
-                price_idr: Number(it.price_idr),
-                vol_weekly: Number(it.vol_weekly),
-                supplier_count: supCountByItem.get(it.code) ?? 0,
-                active: it.active
-              })
-            )}
-          />
-        </Section>
-
         <p className="mt-8 text-center text-[11px] text-ink2/60">
           {ti("menu.footer", lang, { n: menus.length })}
         </p>
+          </>
+        )}
+
+        {activeTab === "commodity" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                label={t("menu.kpiCommodity", lang)}
+                value={totalItems.toString()}
+                sub={ti("menu.kpiCommoditySub", lang, { n: categories.length })}
+              />
+            </KpiGrid>
+            <Section
+              title={ti("menu.commodityTitle", lang, { n: totalItems })}
+              hint={t("menu.commodityHint", lang)}
+            >
+              <CommodityTable
+                lang={lang}
+                rows={items.map(
+                  (it): CommodityRow => ({
+                    code: it.code,
+                    displayCode: it.code.replace(/^Buah\s*-\s*/i, ""),
+                    category: it.category,
+                    unit: it.unit,
+                    price_idr: Number(it.price_idr),
+                    vol_weekly: Number(it.vol_weekly),
+                    supplier_count: supCountByItem.get(it.code) ?? 0,
+                    active: it.active
+                  })
+                )}
+              />
+            </Section>
+          </>
+        )}
       </PageContainer>
     </div>
   );

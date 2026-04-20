@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import { buildStyledXlsxBuffer, type StyledColumn } from "@/lib/excel-export";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 
@@ -99,66 +99,9 @@ export async function GET(req: Request) {
   const daily = (dailyRes.data ?? []) as DailyRow[];
   const monthly = (monthlyRes.data ?? []) as MonthlyRow[];
 
-  const wb = XLSX.utils.book_new();
   const generatedAt = new Date().toISOString().slice(0, 19).replace("T", " ");
 
-  // === Sheet 1: Cover / Info ===
-  const cover: (string | number)[][] = [
-    ["FORECAST KEBUTUHAN SUPPLIER · MBG SOE"],
-    [],
-    ["Supplier", supMeta?.name ?? targetSupplierId ?? ""],
-    ["PIC", supMeta?.pic ?? ""],
-    ["Telepon", supMeta?.phone ?? ""],
-    ["Email", supMeta?.email ?? ""],
-    ["Komoditas", supMeta?.commodity ?? ""],
-    [],
-    ["Horizon", "90 hari ke depan"],
-    ["Digenerate", generatedAt],
-    [],
-    ["Catatan"],
-    [
-      "Sumber data per baris: assigned = menu sudah di-assign operator; custom = menu custom tanggal itu; cycle = estimasi berdasarkan rotasi siklus default."
-    ],
-    [
-      "Qty bersifat estimasi. Angka final akan muncul di quotation/PO yang dikirim tim procurement."
-    ],
-    [
-      "Tolong sampaikan ke tim procurement kalau ada komoditas yang sedang tidak tersedia supaya kami bisa re-alokasi ke supplier lain."
-    ]
-  ];
-  const wsCover = XLSX.utils.aoa_to_sheet(cover);
-  wsCover["!cols"] = [{ wch: 20 }, { wch: 80 }];
-  wsCover["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
-  XLSX.utils.book_append_sheet(wb, wsCover, "Info");
-
-  // === Sheet 2: Harian ===
-  const dailyAoa: (string | number)[][] = [
-    ["Tanggal", "Kode Item", "Nama Item", "Qty", "Unit", "Kategori", "Sumber"]
-  ];
-  for (const r of daily) {
-    dailyAoa.push([
-      r.op_date,
-      r.item_code,
-      r.item_name,
-      Number(r.qty),
-      r.unit,
-      r.category,
-      r.source
-    ]);
-  }
-  const wsDaily = XLSX.utils.aoa_to_sheet(dailyAoa);
-  wsDaily["!cols"] = [
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 28 },
-    { wch: 12 },
-    { wch: 8 },
-    { wch: 14 },
-    { wch: 10 }
-  ];
-  XLSX.utils.book_append_sheet(wb, wsDaily, "Harian");
-
-  // === Sheet 3: Mingguan (pivot item × week) ===
+  // === Sheet 3: Weekly pivot (item × week) ===
   const weekSet = new Set<string>();
   const itemMap = new Map<
     string,
@@ -182,69 +125,176 @@ export async function GET(req: Request) {
   const itemsArr = Array.from(itemMap.values()).sort((a, b) =>
     a.name.localeCompare(b.name)
   );
-  const weeklyAoa: (string | number)[][] = [
-    ["Kode", "Nama Item", "Unit", ...weeks, "Total 90d"]
+
+  const weeklyCols: StyledColumn[] = [
+    { key: "code", header: "Kode", width: 14, align: "left" },
+    { key: "name", header: "Nama Item", width: 30, align: "left" },
+    { key: "unit", header: "Unit", width: 8, align: "center" },
+    ...weeks.map<StyledColumn>((w) => ({
+      key: `wk-${w}`,
+      header: w,
+      width: 12,
+      align: "right",
+      hint: "number",
+      numFmt: "#,##0.0"
+    })),
+    {
+      key: "total",
+      header: "Total 90d",
+      width: 14,
+      align: "right",
+      hint: "bold",
+      numFmt: "#,##0"
+    }
   ];
-  for (const it of itemsArr) {
-    const row: (string | number)[] = [it.code, it.name, it.unit];
+
+  const weeklyRows = itemsArr.map((it) => {
+    const r: Record<string, unknown> = {
+      code: it.code,
+      name: it.name,
+      unit: it.unit
+    };
     let total = 0;
     for (const w of weeks) {
       const v = weeklyCell.get(`${it.code}|${w}`) ?? 0;
-      row.push(v);
+      r[`wk-${w}`] = v;
       total += v;
     }
-    row.push(total);
-    weeklyAoa.push(row);
-  }
-  const wsWeekly = XLSX.utils.aoa_to_sheet(weeklyAoa);
-  wsWeekly["!cols"] = [
-    { wch: 14 },
-    { wch: 28 },
-    { wch: 8 },
-    ...weeks.map(() => ({ wch: 11 })),
-    { wch: 12 }
-  ];
-  XLSX.utils.book_append_sheet(wb, wsWeekly, "Mingguan");
-
-  // === Sheet 4: Bulanan ===
-  const monthlyAoa: (string | number)[][] = [
-    ["Bulan", "Kode Item", "Nama Item", "Unit", "Qty Total", "Hari Operasional"]
-  ];
-  for (const r of monthly) {
-    monthlyAoa.push([
-      r.month,
-      r.item_code,
-      r.item_name,
-      r.unit,
-      Number(r.qty_total),
-      r.days_count
-    ]);
-  }
-  const wsMonthly = XLSX.utils.aoa_to_sheet(monthlyAoa);
-  wsMonthly["!cols"] = [
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 28 },
-    { wch: 8 },
-    { wch: 14 },
-    { wch: 16 }
-  ];
-  XLSX.utils.book_append_sheet(wb, wsMonthly, "Bulanan");
-
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-  const u8 = new Uint8Array(buf as ArrayBuffer);
+    r.total = total;
+    return r;
+  });
 
   const filename = `forecast-${(supMeta?.name ?? targetSupplierId ?? "supplier")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")}-90d.xlsx`;
+    .replace(/^-+|-+$/g, "")}-90d`;
 
-  return new NextResponse(u8, {
+  const buffer = await buildStyledXlsxBuffer({
+    fileName: filename,
+    sheets: [
+      {
+        name: "Info",
+        title: "FORECAST KEBUTUHAN SUPPLIER · MBG SOE",
+        subtitle: "Proyeksi kebutuhan harian/mingguan/bulanan 90 hari ke depan",
+        columns: [
+          { key: "k", header: "Field", width: 22, align: "left" },
+          { key: "v", header: "Value", width: 80, align: "left" }
+        ],
+        meta: [
+          ["Supplier", supMeta?.name ?? targetSupplierId ?? ""],
+          ["PIC", supMeta?.pic ?? ""],
+          ["Telepon", supMeta?.phone ?? ""],
+          ["Email", supMeta?.email ?? ""],
+          ["Komoditas", supMeta?.commodity ?? ""],
+          ["Horizon", "90 hari ke depan"],
+          ["Digenerate", generatedAt]
+        ],
+        rows: [
+          {
+            k: "Catatan",
+            v: "Sumber: assigned = menu sudah di-assign operator; custom = menu custom; cycle = estimasi berdasarkan rotasi siklus default."
+          },
+          {
+            k: "",
+            v: "Qty bersifat estimasi. Angka final akan muncul di quotation/PO yang dikirim tim procurement."
+          },
+          {
+            k: "",
+            v: "Hubungi tim procurement kalau ada komoditas yang sedang tidak tersedia supaya kami bisa re-alokasi ke supplier lain."
+          }
+        ]
+      },
+      {
+        name: "Harian",
+        title: `Forecast Harian · 90 Hari · ${supMeta?.name ?? ""}`,
+        columns: [
+          { key: "date", header: "Tanggal", width: 12, align: "center" },
+          { key: "code", header: "Kode Item", width: 14, align: "left" },
+          { key: "name", header: "Nama Item", width: 30, align: "left" },
+          {
+            key: "qty",
+            header: "Qty",
+            width: 12,
+            align: "right",
+            hint: "number",
+            numFmt: "#,##0.00"
+          },
+          { key: "unit", header: "Unit", width: 8, align: "center" },
+          { key: "category", header: "Kategori", width: 14, align: "left" },
+          { key: "source", header: "Sumber", width: 12, align: "center" }
+        ],
+        rows: daily.map((r) => ({
+          date: r.op_date,
+          code: r.item_code,
+          name: r.item_name,
+          qty: Number(r.qty),
+          unit: r.unit,
+          category: r.category,
+          source: r.source
+        })),
+        cellHint: (row, key) => {
+          if (key !== "source") return undefined;
+          if (row.source === "assigned") return "status-ok";
+          if (row.source === "custom") return "status-neutral";
+          if (row.source === "cycle") return "status-bad";
+          return undefined;
+        },
+        zebra: true,
+        freezeHeader: true
+      },
+      {
+        name: "Mingguan",
+        title: `Forecast Mingguan · Pivot Item × ISO Week · ${supMeta?.name ?? ""}`,
+        columns: weeklyCols,
+        rows: weeklyRows,
+        zebra: true,
+        freezeHeader: true
+      },
+      {
+        name: "Bulanan",
+        title: `Forecast Bulanan · 3 Bulan · ${supMeta?.name ?? ""}`,
+        columns: [
+          { key: "month", header: "Bulan", width: 12, align: "center" },
+          { key: "code", header: "Kode Item", width: 14, align: "left" },
+          { key: "name", header: "Nama Item", width: 30, align: "left" },
+          { key: "unit", header: "Unit", width: 8, align: "center" },
+          {
+            key: "qty",
+            header: "Qty Total",
+            width: 14,
+            align: "right",
+            hint: "number",
+            numFmt: "#,##0"
+          },
+          {
+            key: "days",
+            header: "Hari Operasional",
+            width: 16,
+            align: "right",
+            hint: "number",
+            numFmt: "#,##0"
+          }
+        ],
+        rows: monthly.map((r) => ({
+          month: r.month,
+          code: r.item_code,
+          name: r.item_name,
+          unit: r.unit,
+          qty: Number(r.qty_total),
+          days: r.days_count
+        })),
+        zebra: true,
+        freezeHeader: true
+      }
+    ]
+  });
+
+  return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `attachment; filename="${filename}.xlsx"`,
       "Cache-Control": "no-store"
     }
   });

@@ -18,6 +18,38 @@ export function PageContainer({ children }: { children: ReactNode }) {
   );
 }
 
+/* ---------- InfoBadge — exclamation circle with hover tooltip ---------- */
+
+interface InfoBadgeProps {
+  children: ReactNode;
+  tone?: "light" | "dark";
+  className?: string;
+}
+
+export function InfoBadge({ children, tone = "light", className = "" }: InfoBadgeProps) {
+  const trigger =
+    tone === "dark"
+      ? "border border-white/40 text-white/85 hover:bg-white/15 hover:text-white focus-visible:ring-white/40"
+      : "border border-ink/20 bg-white text-ink2 hover:bg-ink/[0.04] hover:text-ink focus-visible:ring-accent-strong/40";
+  return (
+    <span className={`group/info relative inline-flex align-middle ${className}`}>
+      <button
+        type="button"
+        aria-label="Info"
+        className={`inline-flex h-[18px] w-[18px] items-center justify-center rounded-full text-[11px] font-black leading-none outline-none transition focus-visible:ring-2 ${trigger}`}
+      >
+        !
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none invisible absolute left-1/2 top-full z-50 mt-2 w-max max-w-[260px] -translate-x-1/2 rounded-lg bg-ink px-3 py-2 text-left text-[11.5px] font-medium normal-case leading-snug tracking-normal text-white/95 opacity-0 shadow-card transition group-hover/info:visible group-hover/info:opacity-100 group-focus-within/info:visible group-focus-within/info:opacity-100"
+      >
+        {children}
+      </span>
+    </span>
+  );
+}
+
 interface PageHeaderProps {
   icon?: string;
   title?: string;
@@ -40,13 +72,10 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
                 <span className="shrink-0 text-2xl leading-none">{icon}</span>
               )}
               <span className="truncate">{title}</span>
+              {subtitle && <InfoBadge tone="light">{subtitle}</InfoBadge>}
             </h1>
           )}
-          {subtitle && (
-            <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink2/80">
-              {subtitle}
-            </p>
-          )}
+          {!title && subtitle && <InfoBadge tone="light">{subtitle}</InfoBadge>}
         </div>
       )}
       {actions && (
@@ -92,13 +121,15 @@ export function Section({
     <section
       className={`mb-6 overflow-hidden rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${className}`}
     >
-      {(title || actions) && (
+      {(title || actions || hint) && (
         <header className="relative flex flex-wrap items-center justify-center gap-3 bg-ink px-4 py-1.5 text-center">
           {title && (
-            <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
-              {title}
+            <h2 className="inline-flex items-center gap-2 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
+              <span>{title}</span>
+              {hint && <InfoBadge tone="dark">{hint}</InfoBadge>}
             </h2>
           )}
+          {!title && hint && <InfoBadge tone="dark">{hint}</InfoBadge>}
           {actions && (
             <div className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-wrap items-center gap-2">
               {actions}
@@ -106,14 +137,7 @@ export function Section({
           )}
         </header>
       )}
-      <div className={noPad ? "" : "p-5"}>
-        {hint && (
-          <p className="mb-4 text-[12px] leading-relaxed text-ink2/70">
-            {hint}
-          </p>
-        )}
-        {children}
-      </div>
+      <div className={noPad ? "" : "p-5"}>{children}</div>
     </section>
   );
 }

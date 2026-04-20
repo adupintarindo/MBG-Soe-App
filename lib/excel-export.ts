@@ -73,6 +73,10 @@ export interface StyledSheet {
   };
   freezeHeader?: boolean;
   zebra?: boolean;
+  /** Italic merged rows rendered BELOW the totals (instructions, disclaimers). */
+  notes?: string[];
+  /** Optional signature block (two columns) at the very bottom. */
+  signatures?: Array<{ left: string; right?: string }>;
 }
 
 export interface StyledWorkbookOptions {
@@ -318,25 +322,29 @@ function buildSheet(workbook: ExcelJS.Workbook, sheet: StyledSheet): void {
     cursor += 1;
   }
 
-  // Header row
-  const headerRow = ws.getRow(cursor);
-  sheet.columns.forEach((col, i) => {
-    const cell = headerRow.getCell(i + 1);
-    cell.value = col.header;
-    cell.font = headerFont;
-    cell.alignment = alignCenter;
-    cell.fill = headerFill;
-    cell.border = {
-      top: { style: "thin", color: { argb: NAVY } },
-      bottom: { style: "medium", color: { argb: GOLD } },
-      left: { style: "thin", color: { argb: NAVY } },
-      right: { style: "thin", color: { argb: NAVY } }
-    };
-  });
-  headerRow.height = 22;
-  cursor += 1;
+  // Header row — skip when sheet is pure meta (cover/info page, no rows)
+  const hasTable =
+    sheet.rows.length > 0 || !sheet.meta || sheet.meta.length === 0;
+  if (hasTable) {
+    const headerRow = ws.getRow(cursor);
+    sheet.columns.forEach((col, i) => {
+      const cell = headerRow.getCell(i + 1);
+      cell.value = col.header;
+      cell.font = headerFont;
+      cell.alignment = alignCenter;
+      cell.fill = headerFill;
+      cell.border = {
+        top: { style: "thin", color: { argb: NAVY } },
+        bottom: { style: "medium", color: { argb: GOLD } },
+        left: { style: "thin", color: { argb: NAVY } },
+        right: { style: "thin", color: { argb: NAVY } }
+      };
+    });
+    headerRow.height = 22;
+    cursor += 1;
+  }
 
-  if (sheet.freezeHeader) {
+  if (sheet.freezeHeader && hasTable) {
     ws.views = [{ state: "frozen", ySplit: cursor - 1 }];
   }
 
@@ -427,14 +435,51 @@ function buildSheet(workbook: ExcelJS.Workbook, sheet: StyledSheet): void {
     cursor += 1;
   }
 
-  // Empty state
-  if (sheet.rows.length === 0) {
+  // Empty state — only shown when there's no meta block standing in as content
+  if (sheet.rows.length === 0 && (!sheet.meta || sheet.meta.length === 0)) {
     ws.mergeCells(startBody, 1, startBody, colCount);
     const cell = ws.getCell(startBody, 1);
     cell.value = "Tidak ada data.";
     cell.font = { ...bodyFont, italic: true, color: { argb: MUTED_TEXT } };
     cell.alignment = alignCenter;
     ws.getRow(startBody).height = 26;
+  }
+
+  // Notes block (italic merged rows below the table)
+  if (sheet.notes && sheet.notes.length > 0) {
+    cursor += 1;
+    for (const note of sheet.notes) {
+      ws.mergeCells(cursor, 1, cursor, colCount);
+      const cell = ws.getCell(cursor, 1);
+      cell.value = note;
+      cell.font = { ...bodyFont, italic: true, color: { argb: MUTED_TEXT } };
+      cell.alignment = alignLeft;
+      ws.getRow(cursor).height = 18;
+      cursor += 1;
+    }
+  }
+
+  // Signature block (two columns at bottom)
+  if (sheet.signatures && sheet.signatures.length > 0 && colCount >= 2) {
+    cursor += 2;
+    const half = Math.ceil(colCount / 2);
+    for (const sig of sheet.signatures) {
+      if (half > 1) ws.mergeCells(cursor, 1, cursor, half);
+      const left = ws.getCell(cursor, 1);
+      left.value = sig.left;
+      left.font = { ...bodyFont, bold: /Tanda Tangan/i.test(sig.left) };
+      left.alignment = alignLeft;
+
+      if (sig.right !== undefined) {
+        if (colCount > half) ws.mergeCells(cursor, half + 1, cursor, colCount);
+        const right = ws.getCell(cursor, half + 1);
+        right.value = sig.right;
+        right.font = { ...bodyFont, bold: /Tanda Tangan/i.test(sig.right) };
+        right.alignment = alignLeft;
+      }
+      ws.getRow(cursor).height = 18;
+      cursor += 1;
+    }
   }
 }
 

@@ -176,6 +176,7 @@ export function ScheduleTable({
         r.operasional
           ? t("dashboard.badgeOp", lang)
           : t("dashboard.badgeNonOpLong", lang),
+      exportHint: (r) => (r.operasional ? "status-ok" : "status-bad"),
       render: (r) =>
         r.operasional ? (
           <Badge tone="ok">{t("dashboard.badgeOp", lang)}</Badge>
@@ -199,6 +200,8 @@ export function ScheduleTable({
       align: "center",
       sortValue: (r) => r.schools,
       exportValue: (r) => r.schools,
+      exportHint: "number",
+      exportNumFmt: "#,##0",
       render: (r) => clickableCell(r, r.schools, "schools", "ink")
     },
     {
@@ -207,6 +210,8 @@ export function ScheduleTable({
       align: "center",
       sortValue: (r) => r.students,
       exportValue: (r) => r.students,
+      exportHint: "number",
+      exportNumFmt: "#,##0",
       render: (r) => clickableCell(r, r.students, "schools", "emerald")
     },
     {
@@ -215,6 +220,8 @@ export function ScheduleTable({
       align: "center",
       sortValue: (r) => r.pregnant,
       exportValue: (r) => r.pregnant,
+      exportHint: "number",
+      exportNumFmt: "#,##0",
       render: (r) => clickableCell(r, r.pregnant, "pregnant", "pink")
     },
     {
@@ -223,6 +230,8 @@ export function ScheduleTable({
       align: "center",
       sortValue: (r) => r.toddler,
       exportValue: (r) => r.toddler,
+      exportHint: "number",
+      exportNumFmt: "#,##0",
       render: (r) => clickableCell(r, r.toddler, "toddler", "amber")
     },
     {
@@ -231,6 +240,8 @@ export function ScheduleTable({
       align: "center",
       sortValue: (r) => r.kecil,
       exportValue: (r) => r.kecil,
+      exportHint: "number",
+      exportNumFmt: "#,##0",
       render: (r) => (
         <span className="font-mono text-xs">
           {formatNumber(r.kecil, lang)}
@@ -243,6 +254,8 @@ export function ScheduleTable({
       align: "center",
       sortValue: (r) => r.besar,
       exportValue: (r) => r.besar,
+      exportHint: "number",
+      exportNumFmt: "#,##0",
       render: (r) => (
         <span className="font-mono text-xs">
           {formatNumber(r.besar, lang)}
@@ -255,6 +268,8 @@ export function ScheduleTable({
       align: "center",
       sortValue: (r) => r.total,
       exportValue: (r) => r.total,
+      exportHint: "bold",
+      exportNumFmt: "#,##0",
       render: (r) => (
         <span className="font-mono text-xs font-black">
           {formatNumber(r.total, lang)}
@@ -297,6 +312,20 @@ export function ScheduleTable({
         exportable
         exportFileName="menu-schedule"
         exportSheetName="Menu Schedule"
+        exportTitle={t("dashboard.scheduleTitle", lang)}
+        exportTotals={{
+          labelColSpan: 4,
+          labelText: t("common.grandTotal", lang),
+          values: {
+            schools: totals.schools,
+            students: totals.students,
+            pregnant: totals.pregnant,
+            toddler: totals.toddler,
+            kecil: totals.kecil,
+            besar: totals.besar,
+            total: totals.total
+          }
+        }}
         toolbarExtra={dateToolbar}
         footer={
           <tr className="border-t-2 border-ink bg-ink">
@@ -733,6 +762,8 @@ export function VolumeMatrixTable({
     sortValue: (r) => r.monthly[m] ?? 0,
     exportValue: (r) => r.monthly[m] ?? 0,
     exportLabel: monthLabels[m] ?? m,
+    exportHint: "number",
+    exportNumFmt: "#,##0.0",
     render: (r) => {
       const v = r.monthly[m] ?? 0;
       const rowMax = Math.max(1, ...months.map((x) => r.monthly[x] ?? 0));
@@ -804,6 +835,8 @@ export function VolumeMatrixTable({
       align: "right",
       sortValue: (r) => r.total,
       exportValue: (r) => r.total,
+      exportHint: "bold",
+      exportNumFmt: "#,##0",
       render: (r) => {
         const share = maxItemTotal > 0 ? r.total / maxItemTotal : 0;
         return (
@@ -841,6 +874,7 @@ export function VolumeMatrixTable({
       exportable
       exportFileName="volume-matrix"
       exportSheetName="Volume Matrix"
+      exportTitle={t("dashboard.volumeTitle", lang)}
       filters={[categoryFilter]}
     />
   );
@@ -898,6 +932,8 @@ export function PlanningTable({
       align: "right",
       sortValue: (r) => r.porsi_total,
       exportValue: (r) => r.porsi_total,
+      exportHint: "number",
+      exportNumFmt: "#,##0",
       render: (r) => (
         <span className="font-mono text-xs">
           {formatNumber(r.porsi_total, lang)}
@@ -910,6 +946,8 @@ export function PlanningTable({
       align: "right",
       sortValue: (r) => r.total_kg,
       exportValue: (r) => Number(r.total_kg),
+      exportHint: "number",
+      exportNumFmt: "#,##0.0",
       render: (r) => (
         <span className="font-mono text-xs">
           {formatKg(Number(r.total_kg), 1)}
@@ -922,6 +960,8 @@ export function PlanningTable({
       align: "right",
       sortValue: (r) => r.short_items,
       exportValue: (r) => r.short_items,
+      exportHint: (r) => (r.short_items > 0 ? "status-bad" : "status-ok"),
+      exportNumFmt: "#,##0",
       render: (r) => (
         <span
           className={`font-mono text-xs font-black ${
@@ -949,6 +989,16 @@ export function PlanningTable({
       exportable
       exportFileName="planning"
       exportSheetName="Planning"
+      exportTitle={t("dashboard.planningTitle", lang)}
+      exportTotals={{
+        labelColSpan: 2,
+        labelText: t("common.grandTotal", lang),
+        values: {
+          porsi: totalPorsi,
+          kg: Number(totalKg.toFixed(1)),
+          short: totalShort
+        }
+      }}
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td
@@ -1016,6 +1066,8 @@ export function StockAlertTable({
       align: "right",
       sortValue: (r) => r.required,
       exportValue: (r) => Number(r.required),
+      exportHint: "number",
+      exportNumFmt: "#,##0.00",
       render: (r) => (
         <span className="font-mono text-xs">
           {Number(r.required).toFixed(2)}
@@ -1028,6 +1080,8 @@ export function StockAlertTable({
       align: "right",
       sortValue: (r) => r.on_hand,
       exportValue: (r) => Number(r.on_hand),
+      exportHint: "number",
+      exportNumFmt: "#,##0.00",
       render: (r) => (
         <span className="font-mono text-xs">
           {Number(r.on_hand).toFixed(2)}
@@ -1040,6 +1094,7 @@ export function StockAlertTable({
       align: "right",
       sortValue: (r) => r.gap,
       exportValue: (r) => `${Number(r.gap).toFixed(2)} ${r.unit}`,
+      exportHint: "status-bad",
       render: (r) => (
         <span className="font-mono text-xs font-black text-red-700">
           {Number(r.gap).toFixed(2)} {r.unit}
@@ -1063,6 +1118,16 @@ export function StockAlertTable({
       exportable
       exportFileName="stock-alert"
       exportSheetName="Stock Alert"
+      exportTitle={t("dashboard.stockAlertTitle", lang)}
+      exportTotals={{
+        labelColSpan: 2,
+        labelText: t("common.grandTotal", lang),
+        values: {
+          req: Number(totalRequired.toFixed(2)),
+          onhand: Number(totalOnHand.toFixed(2)),
+          gap: Number(totalGap.toFixed(2))
+        }
+      }}
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td
@@ -1134,6 +1199,8 @@ export function SupplierSpendTable({
       align: "center",
       sortValue: (r) => r.invoice_count,
       exportValue: (r) => r.invoice_count,
+      exportHint: "number",
+      exportNumFmt: "#,##0",
       render: (r) => (
         <span className="font-mono text-xs">{r.invoice_count}</span>
       )
@@ -1141,9 +1208,11 @@ export function SupplierSpendTable({
     {
       key: "spend",
       label: t("dashboard.tblTotalSpend", lang),
-      align: "left",
+      align: "right",
       sortValue: (r) => r.total_spend,
       exportValue: (r) => Number(r.total_spend),
+      exportHint: "money",
+      exportNumFmt: '"Rp "#,##0',
       render: (r) => (
         <IDR value={Number(r.total_spend)} className="text-xs font-black" />
       )
@@ -1164,6 +1233,15 @@ export function SupplierSpendTable({
       exportable
       exportFileName="supplier-spend"
       exportSheetName="Supplier Spend"
+      exportTitle={t("dashboard.supplierSpendTitle", lang)}
+      exportTotals={{
+        labelColSpan: 3,
+        labelText: t("common.grandTotal", lang),
+        values: {
+          invoices: totalInvoices,
+          spend: totalSpend
+        }
+      }}
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td

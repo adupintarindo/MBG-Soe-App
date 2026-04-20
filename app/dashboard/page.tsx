@@ -24,7 +24,7 @@ import {
   type StockAlertRow,
   type SupplierSpendRow
 } from "@/components/dashboard-tables";
-import { porsiBreakdown } from "@/lib/bgn";
+import { porsiBreakdown, schoolsBreakdown } from "@/lib/bgn";
 import {
   formatIDR,
   formatKg,
@@ -36,10 +36,17 @@ import {
   topSuppliersBySpend,
   dailyPlanning,
   dashboardKpis,
+  monthlyCashflow,
+  budgetBurn,
+  costPerPortionDaily,
   type MonthlyRequirement,
   type TopSupplier,
-  type DailyPlan
+  type DailyPlan,
+  type CashflowRow,
+  type BudgetBurnRow,
+  type CostPerPortionRow
 } from "@/lib/engine";
+import { DashboardAnalytics } from "@/components/dashboard-analytics";
 import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
@@ -83,7 +90,11 @@ export default async function DashboardPage() {
     planning,
     txRowsRaw,
     suppliers,
-    attendanceRows
+    attendanceRows,
+    cashflow,
+    budgetRows,
+    costPorsi,
+    schoolsToday
   ] = await Promise.all([
     dashboardKpis(supabase).catch(() => ({
       students_total: 0,
@@ -118,7 +129,11 @@ export default async function DashboardPage() {
       .from("school_attendance")
       .select("att_date, school_id, qty")
       .gte("att_date", today)
-      .then((r) => r.data ?? [])
+      .then((r) => r.data ?? []),
+    monthlyCashflow(supabase).catch(() => [] as CashflowRow[]),
+    budgetBurn(supabase).catch(() => [] as BudgetBurnRow[]),
+    costPerPortionDaily(supabase).catch(() => [] as CostPerPortionRow[]),
+    schoolsBreakdown(supabase, today).catch(() => [])
   ]);
 
   // ---- portion counts + beneficiary breakdown per horizon date ----
@@ -359,6 +374,71 @@ export default async function DashboardPage() {
     total_spend: Number(s.total_spend)
   }));
 
+  // ---- Analytics payload (client-side tabbed charts) ----
+  const beneficiaryDays = scheduleRows.map((r) => ({
+    op_date: r.op_date,
+    dateLabel: r.dateLabel,
+    operasional: r.operasional,
+    schools: r.schools,
+    students: r.students,
+    pregnant: r.pregnant,
+    toddler: r.toddler,
+    total: r.total
+  }));
+
+  const beneficiaryTodayList = (schoolsToday ?? []).map((s) => ({
+    school_name: s.school_name,
+    level: s.level,
+    qty: s.qty
+  }));
+
+  const commodityRows = [...itemTotals.entries()].map(([code, total_kg]) => ({
+    code,
+    total_kg
+  }));
+
+  const stockGapRows = shortItems.map((s) => ({
+    item_code: s.item_code,
+    required: Number(s.required),
+    on_hand: Number(s.on_hand),
+    gap: Number(s.gap),
+    unit: s.unit
+  }));
+
+  const supplierRows = topSup.map((s) => ({
+    supplier_name: s.supplier_name,
+    total_spend: Number(s.total_spend),
+    invoice_count: Number(s.invoice_count)
+  }));
+
+  const cashflowRows = (cashflow ?? []).map((c) => ({
+    period: c.period,
+    cash_in: Number(c.cash_in),
+    cash_out: Number(c.cash_out),
+    net: Number(c.net)
+  }));
+
+  const currentBudget = (() => {
+    if (!budgetRows || budgetRows.length === 0) return null;
+    const monthKey = monthStart.slice(0, 7);
+    const row =
+      budgetRows.find((b) => b.period.startsWith(monthKey)) ??
+      budgetRows[budgetRows.length - 1];
+    return {
+      period: row.period,
+      budget_total: Number(row.budget_total),
+      spent_po: Number(row.spent_po),
+      spent_invoice: Number(row.spent_invoice),
+      spent_paid: Number(row.spent_paid)
+    };
+  })();
+
+  const costPerPortionRows = (costPorsi ?? []).map((c) => ({
+    op_date: c.op_date,
+    cost_per_portion: Number(c.cost_per_portion ?? 0),
+    target: c.target != null ? Number(c.target) : null
+  }));
+
   return (
     <div>
       <Nav
@@ -518,6 +598,18 @@ export default async function DashboardPage() {
             </ul>
           )}
         </Section>
+
+        <DashboardAnalytics
+          lang={lang}
+          beneficiary={beneficiaryDays}
+          beneficiaryToday={beneficiaryTodayList}
+          commodities={commodityRows}
+          stockGaps={stockGapRows}
+          topSuppliers={supplierRows}
+          cashflow={cashflowRows}
+          budget={currentBudget}
+          costPerPortion={costPerPortionRows}
+        />
 
         <p className="mt-8 text-center text-[11px] text-ink2/60">
           {t("dashboard.footer", lang)}

@@ -18,6 +18,7 @@ import {
   PageHeader,
   Section
 } from "@/components/ui";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import {
@@ -28,6 +29,18 @@ import {
 } from "./payments-tables";
 
 export const dynamic = "force-dynamic";
+
+type PayTabId = "outstanding" | "cashflow" | "payments" | "receipts";
+const VALID_TABS: readonly PayTabId[] = [
+  "outstanding",
+  "cashflow",
+  "payments",
+  "receipts"
+];
+
+interface SearchParams {
+  tab?: string;
+}
 
 interface PaymentRow {
   no: string;
@@ -50,13 +63,50 @@ interface ReceiptRow {
   note: string | null;
 }
 
-export default async function PaymentsPage() {
+export default async function PaymentsPage({
+  searchParams
+}: {
+  searchParams: SearchParams;
+}) {
   const supabase = createClient();
   const lang = getLang();
 
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
+
+  const activeTab: PayTabId = VALID_TABS.includes(
+    searchParams.tab as PayTabId
+  )
+    ? (searchParams.tab as PayTabId)
+    : "outstanding";
+
+  const tabs: PageTab[] = [
+    {
+      id: "outstanding",
+      icon: "⚠️",
+      label: lang === "EN" ? "Outstanding" : "Outstanding",
+      href: "/payments?tab=outstanding"
+    },
+    {
+      id: "cashflow",
+      icon: "💹",
+      label: lang === "EN" ? "Cashflow" : "Arus Kas",
+      href: "/payments?tab=cashflow"
+    },
+    {
+      id: "payments",
+      icon: "📤",
+      label: lang === "EN" ? "Payments" : "Pembayaran",
+      href: "/payments?tab=payments"
+    },
+    {
+      id: "receipts",
+      icon: "📥",
+      label: lang === "EN" ? "Receipts" : "Penerimaan",
+      href: "/payments?tab=receipts"
+    }
+  ];
 
   const canWrite = profile.role === "admin" || profile.role === "operator";
 
@@ -130,99 +180,114 @@ export default async function PaymentsPage() {
           }
         />
 
-        <KpiGrid>
-          <KpiTile
-            icon="⚠️"
-            label={t("pay.kpiOutstanding", lang)}
-            value={formatIDR(outstandingTotal)}
-            size="md"
-            tone={outstandingTotal > 0 ? "warn" : "ok"}
-            sub={ti("pay.kpiOutstandingSub", lang, {})}
-          />
-          <KpiTile
-            icon="📥"
-            label={t("pay.kpiCashIn", lang)}
-            value={formatIDR(cashIn30)}
-            size="md"
-            tone="ok"
-            sub={t("pay.kpiCashInSub", lang)}
-          />
-          <KpiTile
-            icon="📤"
-            label={t("pay.kpiCashOut", lang)}
-            value={formatIDR(cashOut30)}
-            size="md"
-            tone="bad"
-            sub={t("pay.kpiCashOutSub", lang)}
-          />
-          <KpiTile
-            icon="💹"
-            label={t("pay.kpiNet", lang)}
-            value={formatIDR(net30)}
-            size="md"
-            tone={net30 >= 0 ? "ok" : "bad"}
-            sub={t("pay.kpiNetSub", lang)}
-          />
-        </KpiGrid>
+        <PageTabs tabs={tabs} activeId={activeTab} />
 
-        <Section
-          title={t("pay.outstandingTitle", lang)}
-          accent={outstanding.length > 0 ? "warn" : "default"}
-        >
-          {outstanding.length === 0 ? (
-            <EmptyState tone="ok" icon="✅" message={t("pay.outstandingEmpty", lang)} />
-          ) : (
-            <OutstandingTable lang={lang} rows={outstanding} />
-          )}
-        </Section>
+        {activeTab === "outstanding" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="⚠️"
+                label={t("pay.kpiOutstanding", lang)}
+                value={formatIDR(outstandingTotal)}
+                size="md"
+                tone={outstandingTotal > 0 ? "warn" : "ok"}
+                sub={ti("pay.kpiOutstandingSub", lang, {})}
+              />
+            </KpiGrid>
+            <Section
+              title={t("pay.outstandingTitle", lang)}
+              accent={outstanding.length > 0 ? "warn" : "default"}
+            >
+              {outstanding.length === 0 ? (
+                <EmptyState tone="ok" icon="✅" message={t("pay.outstandingEmpty", lang)} />
+              ) : (
+                <OutstandingTable lang={lang} rows={outstanding} />
+              )}
+            </Section>
+          </>
+        )}
 
-        <Section title={t("pay.cashflowTitle", lang)}>
-          {cashflow.length === 0 ? (
-            <EmptyState message={t("common.noData", lang)} />
-          ) : (
-            <CashflowTable lang={lang} rows={cashflow} />
-          )}
-        </Section>
+        {activeTab === "cashflow" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="📥"
+                label={t("pay.kpiCashIn", lang)}
+                value={formatIDR(cashIn30)}
+                size="md"
+                tone="ok"
+                sub={t("pay.kpiCashInSub", lang)}
+              />
+              <KpiTile
+                icon="📤"
+                label={t("pay.kpiCashOut", lang)}
+                value={formatIDR(cashOut30)}
+                size="md"
+                tone="bad"
+                sub={t("pay.kpiCashOutSub", lang)}
+              />
+              <KpiTile
+                icon="💹"
+                label={t("pay.kpiNet", lang)}
+                value={formatIDR(net30)}
+                size="md"
+                tone={net30 >= 0 ? "ok" : "bad"}
+                sub={t("pay.kpiNetSub", lang)}
+              />
+            </KpiGrid>
+            <Section title={t("pay.cashflowTitle", lang)}>
+              {cashflow.length === 0 ? (
+                <EmptyState message={t("common.noData", lang)} />
+              ) : (
+                <CashflowTable lang={lang} rows={cashflow} />
+              )}
+            </Section>
+          </>
+        )}
 
-        <Section title={t("pay.recentTitle", lang)}>
-          {payments.length === 0 ? (
-            <EmptyState message={t("pay.recentEmpty", lang)} />
-          ) : (
-            <PaymentsTable
-              lang={lang}
-              rows={payments.map((p) => ({
-                no: p.no,
-                invoice_no: p.invoice_no,
-                supplier_id: p.supplier_id,
-                pay_date: p.pay_date,
-                amount: Number(p.amount),
-                method: p.method,
-                reference: p.reference,
-                note: p.note
-              }))}
-            />
-          )}
-        </Section>
+        {activeTab === "payments" && (
+          <Section title={t("pay.recentTitle", lang)}>
+            {payments.length === 0 ? (
+              <EmptyState message={t("pay.recentEmpty", lang)} />
+            ) : (
+              <PaymentsTable
+                lang={lang}
+                rows={payments.map((p) => ({
+                  no: p.no,
+                  invoice_no: p.invoice_no,
+                  supplier_id: p.supplier_id,
+                  pay_date: p.pay_date,
+                  amount: Number(p.amount),
+                  method: p.method,
+                  reference: p.reference,
+                  note: p.note
+                }))}
+              />
+            )}
+          </Section>
+        )}
 
-        <Section title={t("pay.receiptsTitle", lang)}>
-          {receipts.length === 0 ? (
-            <EmptyState message={t("pay.receiptsEmpty", lang)} />
-          ) : (
-            <ReceiptsTable
-              lang={lang}
-              rows={receipts.map((r) => ({
-                no: r.no,
-                receipt_date: r.receipt_date,
-                source: r.source,
-                source_name: r.source_name,
-                amount: Number(r.amount),
-                period: r.period,
-                reference: r.reference,
-                note: r.note
-              }))}
-            />
-          )}
-        </Section>
+        {activeTab === "receipts" && (
+          <Section title={t("pay.receiptsTitle", lang)}>
+            {receipts.length === 0 ? (
+              <EmptyState message={t("pay.receiptsEmpty", lang)} />
+            ) : (
+              <ReceiptsTable
+                lang={lang}
+                rows={receipts.map((r) => ({
+                  no: r.no,
+                  receipt_date: r.receipt_date,
+                  source: r.source,
+                  source_name: r.source_name,
+                  amount: Number(r.amount),
+                  period: r.period,
+                  reference: r.reference,
+                  note: r.note
+                }))}
+              />
+            )}
+          </Section>
+        )}
       </PageContainer>
     </div>
   );

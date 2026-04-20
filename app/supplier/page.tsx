@@ -17,6 +17,7 @@ import {
   PageHeader,
   Section
 } from "@/components/ui";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import {
@@ -28,7 +29,18 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function SupplierPage() {
+type SupTabId = "inbox" | "payment" | "uploads";
+const VALID_TABS: readonly SupTabId[] = ["inbox", "payment", "uploads"];
+
+interface SearchParams {
+  tab?: string;
+}
+
+export default async function SupplierPage({
+  searchParams
+}: {
+  searchParams: SearchParams;
+}) {
   const lang = getLang();
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
@@ -110,6 +122,33 @@ export default async function SupplierPage() {
 
   const isSupplier = profile.role === "supplier";
 
+  const activeTab: SupTabId = VALID_TABS.includes(
+    searchParams.tab as SupTabId
+  )
+    ? (searchParams.tab as SupTabId)
+    : "inbox";
+
+  const tabs: PageTab[] = [
+    {
+      id: "inbox",
+      icon: "📬",
+      label: lang === "EN" ? "PO Inbox" : "Inbox PO",
+      href: "/supplier?tab=inbox"
+    },
+    {
+      id: "payment",
+      icon: "💰",
+      label: lang === "EN" ? "Payment Status" : "Status Pembayaran",
+      href: "/supplier?tab=payment"
+    },
+    {
+      id: "uploads",
+      icon: "📄",
+      label: lang === "EN" ? "Invoice Uploads" : "Upload Invoice",
+      href: "/supplier?tab=uploads"
+    }
+  ];
+
   return (
     <div>
       <Nav
@@ -150,77 +189,94 @@ export default async function SupplierPage() {
           }
         />
 
-        <KpiGrid>
-          <KpiTile
-            icon="📬"
-            label={t("sup.inboxTitle", lang)}
-            value={inbox.length.toString()}
-            sub={
-              pendingAck > 0
-                ? `${pendingAck} ${t("sup.ackPending", lang).toLowerCase()}`
-                : t("sup.ackAccepted", lang)
-            }
-            tone={pendingAck > 0 ? "warn" : "ok"}
-          />
-          <KpiTile
-            icon="💬"
-            label={t("sup.colUnread", lang)}
-            value={unreadMsgs.toString()}
-            tone={unreadMsgs > 0 ? "warn" : "default"}
-          />
-          <KpiTile
-            icon="💰"
-            label={t("sup.paymentStatusTitle", lang)}
-            value={`Rp ${Math.round(totalOutstanding).toLocaleString("id-ID")}`}
-            size="md"
-            tone={totalOutstanding > 0 ? "bad" : "ok"}
-            sub={`${payments.length} invoice`}
-          />
-          <KpiTile
-            icon="📄"
-            label={t("sup.uploadTitle", lang)}
-            value={uploads.length.toString()}
-            sub={
-              pendingUploads > 0
-                ? `${pendingUploads} ${t("sup.ackPending", lang).toLowerCase()}`
-                : "-"
-            }
-            tone={pendingUploads > 0 ? "warn" : "default"}
-          />
-        </KpiGrid>
+        <PageTabs tabs={tabs} activeId={activeTab} />
 
-        <Section title={t("sup.inboxTitle", lang)}>
-          {inbox.length === 0 ? (
-            <EmptyState message={t("common.noData", lang)} />
-          ) : (
-            <SupplierInboxTable lang={lang} rows={inbox} />
-          )}
-        </Section>
+        {activeTab === "inbox" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="📬"
+                label={t("sup.inboxTitle", lang)}
+                value={inbox.length.toString()}
+                sub={
+                  pendingAck > 0
+                    ? `${pendingAck} ${t("sup.ackPending", lang).toLowerCase()}`
+                    : t("sup.ackAccepted", lang)
+                }
+                tone={pendingAck > 0 ? "warn" : "ok"}
+              />
+              <KpiTile
+                icon="💬"
+                label={t("sup.colUnread", lang)}
+                value={unreadMsgs.toString()}
+                tone={unreadMsgs > 0 ? "warn" : "default"}
+              />
+            </KpiGrid>
+            <Section title={t("sup.inboxTitle", lang)}>
+              {inbox.length === 0 ? (
+                <EmptyState message={t("common.noData", lang)} />
+              ) : (
+                <SupplierInboxTable lang={lang} rows={inbox} />
+              )}
+            </Section>
+          </>
+        )}
 
-        <Section title={t("sup.paymentStatusTitle", lang)}>
-          {payments.length === 0 ? (
-            <EmptyState message={t("common.noData", lang)} />
-          ) : (
-            <SupplierPaymentTable lang={lang} rows={payments} />
-          )}
-        </Section>
+        {activeTab === "payment" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="💰"
+                label={t("sup.paymentStatusTitle", lang)}
+                value={`Rp ${Math.round(totalOutstanding).toLocaleString("id-ID")}`}
+                size="md"
+                tone={totalOutstanding > 0 ? "bad" : "ok"}
+                sub={`${payments.length} invoice`}
+              />
+            </KpiGrid>
+            <Section title={t("sup.paymentStatusTitle", lang)}>
+              {payments.length === 0 ? (
+                <EmptyState message={t("common.noData", lang)} />
+              ) : (
+                <SupplierPaymentTable lang={lang} rows={payments} />
+              )}
+            </Section>
+          </>
+        )}
 
-        <Section title={t("sup.uploadTitle", lang)}>
-          {uploads.length === 0 ? (
-            <EmptyState
-              icon="📭"
-              message={
-                isSupplier
-                  ? lang === "EN"
-                    ? "No invoice scans uploaded yet."
-                    : "Belum ada scan invoice diupload."
-                  : t("common.noData", lang)
-              }
-            />
-          ) : (
-            <SupplierUploadsTable lang={lang} rows={uploads} />
-          )}
-        </Section>
+        {activeTab === "uploads" && (
+          <>
+            <KpiGrid>
+              <KpiTile
+                icon="📄"
+                label={t("sup.uploadTitle", lang)}
+                value={uploads.length.toString()}
+                sub={
+                  pendingUploads > 0
+                    ? `${pendingUploads} ${t("sup.ackPending", lang).toLowerCase()}`
+                    : "-"
+                }
+                tone={pendingUploads > 0 ? "warn" : "default"}
+              />
+            </KpiGrid>
+            <Section title={t("sup.uploadTitle", lang)}>
+              {uploads.length === 0 ? (
+                <EmptyState
+                  icon="📭"
+                  message={
+                    isSupplier
+                      ? lang === "EN"
+                        ? "No invoice scans uploaded yet."
+                        : "Belum ada scan invoice diupload."
+                      : t("common.noData", lang)
+                  }
+                />
+              ) : (
+                <SupplierUploadsTable lang={lang} rows={uploads} />
+              )}
+            </Section>
+          </>
+        )}
       </PageContainer>
     </div>
   );

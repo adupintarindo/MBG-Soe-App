@@ -10,7 +10,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
-import { PageContainer } from "@/components/ui";
+import { PageContainer, Section } from "@/components/ui";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { PriceListShell } from "./price-list-shell";
 import type { PriceListMatrixRow, PricePeriod, PriceWeek } from "./types";
 import { t } from "@/lib/i18n";
@@ -18,7 +19,18 @@ import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
 
-export default async function PriceListPage() {
+type PriceTabId = "active" | "history" | "settings";
+const VALID_TABS: readonly PriceTabId[] = ["active", "history", "settings"];
+
+interface SearchParams {
+  tab?: string;
+}
+
+export default async function PriceListPage({
+  searchParams
+}: {
+  searchParams: SearchParams;
+}) {
   const profile = await getSessionProfile();
   if (!profile) redirect("/login");
   if (!profile.active) redirect("/dashboard");
@@ -56,6 +68,48 @@ export default async function PriceListPage() {
     profile.role === "admin" ||
     profile.role === "operator" ||
     profile.role === "ahli_gizi";
+  const isAdmin = profile.role === "admin";
+
+  const activeTab: PriceTabId = VALID_TABS.includes(
+    searchParams.tab as PriceTabId
+  )
+    ? (searchParams.tab as PriceTabId)
+    : "active";
+
+  const tabs: PageTab[] = [
+    {
+      id: "active",
+      icon: "💹",
+      label: lang === "EN" ? "Active Period" : "Periode Aktif",
+      href: "/price-list?tab=active"
+    },
+    {
+      id: "history",
+      icon: "📜",
+      label: lang === "EN" ? "Period History" : "Riwayat Periode",
+      href: "/price-list?tab=history"
+    },
+    ...(isAdmin
+      ? [
+          {
+            id: "settings",
+            icon: "⚙️",
+            label: lang === "EN" ? "Period Settings" : "Setting Periode",
+            href: "/price-list?tab=settings"
+          }
+        ]
+      : [])
+  ];
+
+  // Scoped data per tab
+  const historyPeriods = periods.filter((p) => !p.active);
+  const activePeriods = activePeriod ? [activePeriod] : [];
+  const activeRows = rows.filter(
+    (r) => r.period_id === (activePeriod?.id ?? -1)
+  );
+  const historyRows = rows.filter((r) =>
+    historyPeriods.some((p) => p.id === r.period_id)
+  );
 
   return (
     <>
@@ -76,13 +130,89 @@ export default async function PriceListPage() {
           </div>
         )}
 
-        <PriceListShell
-          periods={periods}
-          weeks={weeks}
-          rows={rows}
-          currentPeriodId={activePeriod?.id ?? null}
-          canEdit={canEdit}
-        />
+        <PageTabs tabs={tabs} activeId={activeTab} />
+
+        {activeTab === "active" && (
+          <PriceListShell
+            periods={activePeriods}
+            weeks={weeks}
+            rows={activeRows}
+            currentPeriodId={activePeriod?.id ?? null}
+            canEdit={canEdit}
+          />
+        )}
+
+        {activeTab === "history" && (
+          historyPeriods.length === 0 ? (
+            <Section title={lang === "EN" ? "Period History" : "Riwayat Periode"}>
+              <div className="px-4 py-8 text-center text-sm text-ink2/70">
+                {lang === "EN"
+                  ? "No historical periods yet."
+                  : "Belum ada periode historis."}
+              </div>
+            </Section>
+          ) : (
+            <PriceListShell
+              periods={historyPeriods}
+              weeks={weeks}
+              rows={historyRows}
+              currentPeriodId={historyPeriods[0]?.id ?? null}
+              canEdit={false}
+            />
+          )
+        )}
+
+        {activeTab === "settings" && isAdmin && (
+          <Section
+            title={lang === "EN" ? "Price Periods" : "Periode Harga"}
+            hint={
+              lang === "EN"
+                ? "Manage active/inactive period ranges."
+                : "Kelola rentang periode aktif/non-aktif."
+            }
+          >
+            {periods.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-ink2/70">
+                {lang === "EN" ? "No periods defined." : "Belum ada periode."}
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="bg-paper text-[11px] font-bold uppercase text-ink2/70">
+                  <tr>
+                    <th className="px-4 py-2 text-left">#</th>
+                    <th className="px-4 py-2 text-left">
+                      {lang === "EN" ? "Start" : "Mulai"}
+                    </th>
+                    <th className="px-4 py-2 text-left">
+                      {lang === "EN" ? "End" : "Selesai"}
+                    </th>
+                    <th className="px-4 py-2 text-left">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {periods.map((p) => (
+                    <tr key={p.id} className="border-t border-ink/5">
+                      <td className="px-4 py-2 font-mono">{p.id}</td>
+                      <td className="px-4 py-2">{p.start_date}</td>
+                      <td className="px-4 py-2">{p.end_date ?? "—"}</td>
+                      <td className="px-4 py-2">
+                        {p.active ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                            ● {lang === "EN" ? "Active" : "Aktif"}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-ink/10 px-2 py-0.5 text-[11px] font-bold text-ink2">
+                            {lang === "EN" ? "Inactive" : "Non-aktif"}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Section>
+        )}
       </PageContainer>
     </>
   );

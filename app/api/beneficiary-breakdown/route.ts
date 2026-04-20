@@ -14,7 +14,7 @@
  *   workbook dengan 3 sheet: Sekolah, Ibu Hamil, Balita.
  */
 import { NextResponse } from "next/server";
-import * as XLSX from "xlsx";
+import { buildStyledXlsxBuffer } from "@/lib/excel-export";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import {
@@ -158,7 +158,7 @@ export async function GET(request: Request) {
   };
 
   if (format === "xlsx") {
-    return buildXlsxResponse(payload);
+    return await buildXlsxResponse(payload);
   }
 
   return NextResponse.json(payload);
@@ -180,118 +180,146 @@ function ageFromDob(dob: string | null): string {
   return rem > 0 ? `${years} thn ${rem} bln` : `${years} thn`;
 }
 
-function buildXlsxResponse(data: BreakdownResponse): NextResponse {
-  const wb = XLSX.utils.book_new();
-
-  // Sheet 1 — Sekolah
-  const schoolsRows: (string | number)[][] = [
-    ["No", "Nama Sekolah", "Jenjang", "Jumlah Porsi", "Jumlah Siswa"]
-  ];
-  data.schools.forEach((s, i) => {
-    schoolsRows.push([i + 1, s.school_name, s.level, s.qty, s.students]);
-  });
+async function buildXlsxResponse(
+  data: BreakdownResponse
+): Promise<NextResponse> {
   const totalQty = data.schools.reduce((a, s) => a + s.qty, 0);
   const totalStudents = data.schools.reduce((a, s) => a + s.students, 0);
-  schoolsRows.push(["", "TOTAL", "", totalQty, totalStudents]);
-  const sheetSchools = XLSX.utils.aoa_to_sheet(schoolsRows);
-  sheetSchools["!cols"] = [
-    { wch: 5 },
-    { wch: 32 },
-    { wch: 10 },
-    { wch: 14 },
-    { wch: 14 }
-  ];
-  XLSX.utils.book_append_sheet(wb, sheetSchools, "Sekolah");
 
-  // Sheet 2 — Ibu Hamil / Menyusui
-  const bumilRows: (string | number)[][] = [
-    [
-      "No",
-      "Nama Lengkap",
-      "NIK",
-      "Fase",
-      "Usia Kehamilan (minggu)",
-      "Usia Anak (bulan)",
-      "Umur",
-      "Posyandu",
-      "Alamat",
-      "Telepon"
+  const buffer = await buildStyledXlsxBuffer({
+    fileName: `rincian-penerima-${data.date}`,
+    sheets: [
+      {
+        name: "Sekolah",
+        title: `RINCIAN SEKOLAH · ${data.date}`,
+        subtitle: "Daftar sekolah penerima manfaat pada tanggal operasional",
+        columns: [
+          { key: "no", header: "No", width: 6, align: "center" },
+          { key: "name", header: "Nama Sekolah", width: 36, align: "left" },
+          { key: "level", header: "Jenjang", width: 12, align: "center" },
+          {
+            key: "qty",
+            header: "Jumlah Porsi",
+            width: 14,
+            align: "right",
+            numFmt: "#,##0",
+            hint: "number"
+          },
+          {
+            key: "students",
+            header: "Jumlah Siswa",
+            width: 14,
+            align: "right",
+            numFmt: "#,##0",
+            hint: "number"
+          }
+        ],
+        rows: data.schools.map((s, i) => ({
+          no: i + 1,
+          name: s.school_name,
+          level: s.level,
+          qty: s.qty,
+          students: s.students
+        })),
+        totals: {
+          labelColSpan: 3,
+          labelText: "GRAND TOTAL",
+          values: { qty: totalQty, students: totalStudents }
+        },
+        zebra: true,
+        freezeHeader: true
+      },
+      {
+        name: "Ibu Hamil",
+        title: `RINCIAN IBU HAMIL & MENYUSUI · ${data.date}`,
+        subtitle: "Daftar ibu hamil/menyusui penerima manfaat",
+        columns: [
+          { key: "no", header: "No", width: 6, align: "center" },
+          { key: "name", header: "Nama Lengkap", width: 30, align: "left" },
+          { key: "nik", header: "NIK", width: 20, align: "left" },
+          { key: "phase", header: "Fase", width: 12, align: "center" },
+          {
+            key: "gest",
+            header: "Usia Kehamilan (minggu)",
+            width: 18,
+            align: "right",
+            hint: "number"
+          },
+          {
+            key: "child",
+            header: "Usia Anak (bulan)",
+            width: 16,
+            align: "right",
+            hint: "number"
+          },
+          { key: "age", header: "Umur", width: 8, align: "right", hint: "number" },
+          { key: "posyandu", header: "Posyandu", width: 22, align: "left" },
+          { key: "address", header: "Alamat", width: 40, align: "left" },
+          { key: "phone", header: "Telepon", width: 18, align: "left" }
+        ],
+        rows: data.pregnant.map((b, i) => ({
+          no: i + 1,
+          name: b.full_name,
+          nik: b.nik ?? "",
+          phase: b.phase === "hamil" ? "Hamil" : "Menyusui",
+          gest: b.gestational_week ?? "",
+          child: b.child_age_months ?? "",
+          age: b.age ?? "",
+          posyandu: b.posyandu_name ?? "",
+          address: b.address ?? "",
+          phone: b.phone ?? ""
+        })),
+        cellHint: (row, key) => {
+          if (key !== "phase") return undefined;
+          return row.phase === "Hamil" ? "status-neutral" : "status-ok";
+        },
+        zebra: true,
+        freezeHeader: true
+      },
+      {
+        name: "Balita",
+        title: `RINCIAN BALITA · ${data.date}`,
+        subtitle: "Daftar balita penerima manfaat",
+        columns: [
+          { key: "no", header: "No", width: 6, align: "center" },
+          { key: "name", header: "Nama Lengkap", width: 30, align: "left" },
+          { key: "nik", header: "NIK", width: 20, align: "left" },
+          { key: "dob", header: "Tanggal Lahir", width: 14, align: "center" },
+          { key: "age", header: "Usia", width: 14, align: "center" },
+          { key: "gender", header: "Jenis Kelamin", width: 14, align: "center" },
+          { key: "mother", header: "Nama Ibu", width: 26, align: "left" },
+          { key: "posyandu", header: "Posyandu", width: 22, align: "left" },
+          { key: "address", header: "Alamat", width: 40, align: "left" },
+          { key: "phone", header: "Telepon", width: 18, align: "left" }
+        ],
+        rows: data.toddler.map((b, i) => ({
+          no: i + 1,
+          name: b.full_name,
+          nik: b.nik ?? "",
+          dob: b.dob ?? "",
+          age: ageFromDob(b.dob),
+          gender:
+            b.gender === "L"
+              ? "Laki-laki"
+              : b.gender === "P"
+                ? "Perempuan"
+                : "",
+          mother: b.mother_name ?? "",
+          posyandu: b.posyandu_name ?? "",
+          address: b.address ?? "",
+          phone: b.phone ?? ""
+        })),
+        cellHint: (row, key) => {
+          if (key !== "gender") return undefined;
+          if (row.gender === "Laki-laki") return "status-neutral";
+          if (row.gender === "Perempuan") return "status-ok";
+          return undefined;
+        },
+        zebra: true,
+        freezeHeader: true
+      }
     ]
-  ];
-  data.pregnant.forEach((b, i) => {
-    bumilRows.push([
-      i + 1,
-      b.full_name,
-      b.nik ?? "",
-      b.phase === "hamil" ? "Hamil" : "Menyusui",
-      b.gestational_week ?? "",
-      b.child_age_months ?? "",
-      b.age ?? "",
-      b.posyandu_name ?? "",
-      b.address ?? "",
-      b.phone ?? ""
-    ]);
   });
-  const sheetBumil = XLSX.utils.aoa_to_sheet(bumilRows);
-  sheetBumil["!cols"] = [
-    { wch: 5 },
-    { wch: 28 },
-    { wch: 18 },
-    { wch: 10 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 8 },
-    { wch: 18 },
-    { wch: 40 },
-    { wch: 16 }
-  ];
-  XLSX.utils.book_append_sheet(wb, sheetBumil, "Ibu Hamil");
-
-  // Sheet 3 — Balita
-  const balitaRows: (string | number)[][] = [
-    [
-      "No",
-      "Nama Lengkap",
-      "NIK",
-      "Tanggal Lahir",
-      "Usia",
-      "Jenis Kelamin",
-      "Nama Ibu",
-      "Posyandu",
-      "Alamat",
-      "Telepon"
-    ]
-  ];
-  data.toddler.forEach((b, i) => {
-    balitaRows.push([
-      i + 1,
-      b.full_name,
-      b.nik ?? "",
-      b.dob ?? "",
-      ageFromDob(b.dob),
-      b.gender === "L" ? "Laki-laki" : b.gender === "P" ? "Perempuan" : "",
-      b.mother_name ?? "",
-      b.posyandu_name ?? "",
-      b.address ?? "",
-      b.phone ?? ""
-    ]);
-  });
-  const sheetBalita = XLSX.utils.aoa_to_sheet(balitaRows);
-  sheetBalita["!cols"] = [
-    { wch: 5 },
-    { wch: 28 },
-    { wch: 18 },
-    { wch: 14 },
-    { wch: 14 },
-    { wch: 12 },
-    { wch: 24 },
-    { wch: 18 },
-    { wch: 40 },
-    { wch: 16 }
-  ];
-  XLSX.utils.book_append_sheet(wb, sheetBalita, "Balita");
-
-  const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
 
   return new NextResponse(new Uint8Array(buffer), {
     status: 200,
