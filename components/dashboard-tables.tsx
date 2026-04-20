@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import {
   SortableTable,
@@ -7,7 +8,7 @@ import {
   type SortableTableFilter
 } from "@/components/sortable-table";
 import { formatKg } from "@/lib/engine";
-import { t, formatNumber, type Lang } from "@/lib/i18n";
+import { t, formatNumber, ti, type Lang } from "@/lib/i18n";
 
 const displayCode = (code: string) => code.replace(/^Buah\s*-\s*/i, "");
 
@@ -18,6 +19,9 @@ export type ScheduleRow = {
   menu_name: string | null;
   operasional: boolean;
   schools: number;
+  students: number;
+  pregnant: number;
+  toddler: number;
   kecil: number;
   besar: number;
   total: number;
@@ -30,6 +34,116 @@ export function ScheduleTable({
   rows: ScheduleRow[];
   lang: Lang;
 }) {
+  const dateBounds = useMemo(() => {
+    if (rows.length === 0) return { min: "", max: "" };
+    let min = rows[0].op_date;
+    let max = rows[0].op_date;
+    for (const r of rows) {
+      if (r.op_date < min) min = r.op_date;
+      if (r.op_date > max) max = r.op_date;
+    }
+    return { min, max };
+  }, [rows]);
+
+  const [from, setFrom] = useState<string>("");
+  const [to, setTo] = useState<string>("");
+
+  const effectiveFrom = from || dateBounds.min;
+  const effectiveTo = to || dateBounds.max;
+
+  const filteredRows = useMemo(() => {
+    if (!effectiveFrom && !effectiveTo) return rows;
+    return rows.filter((r) => {
+      if (effectiveFrom && r.op_date < effectiveFrom) return false;
+      if (effectiveTo && r.op_date > effectiveTo) return false;
+      return true;
+    });
+  }, [rows, effectiveFrom, effectiveTo]);
+
+  const rangeActive =
+    (from && from !== dateBounds.min) || (to && to !== dateBounds.max);
+
+  const dateToolbar = (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <label className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2">
+        <span>{t("dashboard.hppFrom", lang)}</span>
+        <input
+          type="date"
+          value={from}
+          min={dateBounds.min || undefined}
+          max={effectiveTo || dateBounds.max || undefined}
+          onChange={(e) => setFrom(e.target.value)}
+          className="rounded-md border border-ink/10 bg-paper px-2 py-1 font-mono text-[11px] font-semibold text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+        />
+      </label>
+      <label className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2">
+        <span>{t("dashboard.hppTo", lang)}</span>
+        <input
+          type="date"
+          value={to}
+          min={effectiveFrom || dateBounds.min || undefined}
+          max={dateBounds.max || undefined}
+          onChange={(e) => setTo(e.target.value)}
+          className="rounded-md border border-ink/10 bg-paper px-2 py-1 font-mono text-[11px] font-semibold text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+        />
+      </label>
+      {rangeActive && (
+        <button
+          type="button"
+          onClick={() => {
+            setFrom("");
+            setTo("");
+          }}
+          className="rounded-md border border-ink/10 bg-paper px-2 py-1 text-[11px] font-semibold text-ink2 transition hover:bg-ink/[0.04]"
+        >
+          {t("common.reset", lang)}
+        </button>
+      )}
+    </div>
+  );
+
+  const [breakdownOpen, setBreakdownOpen] = useState<{
+    date: string;
+    dateLabel: string;
+    tab: BreakdownTab;
+  } | null>(null);
+
+  const openBreakdown = (row: ScheduleRow, tab: BreakdownTab) => {
+    if (!row.operasional) return;
+    setBreakdownOpen({ date: row.op_date, dateLabel: row.dateLabel, tab });
+  };
+
+  const clickableCell = (
+    row: ScheduleRow,
+    value: number,
+    tab: BreakdownTab,
+    tone: "ink" | "emerald" | "pink" | "amber"
+  ) => {
+    if (!row.operasional || value === 0) {
+      return (
+        <span className="font-mono text-xs text-ink2/60">
+          {formatNumber(value, lang)}
+        </span>
+      );
+    }
+    const toneCls = {
+      ink: "text-ink hover:bg-ink/5 hover:text-ink",
+      emerald: "text-emerald-800 hover:bg-emerald-50",
+      pink: "text-pink-800 hover:bg-pink-50",
+      amber: "text-amber-800 hover:bg-amber-50"
+    }[tone];
+    return (
+      <button
+        type="button"
+        onClick={() => openBreakdown(row, tab)}
+        className={`rounded px-2 py-0.5 font-mono text-xs font-bold underline-offset-2 transition hover:underline ${toneCls}`}
+        title={t("dashboard.breakdownDownload", lang)}
+      >
+        {formatNumber(value, lang)}
+      </button>
+    );
+  };
+
   const columns: SortableColumn<ScheduleRow>[] = [
     {
       key: "no",
@@ -85,11 +199,31 @@ export function ScheduleTable({
       align: "center",
       sortValue: (r) => r.schools,
       exportValue: (r) => r.schools,
-      render: (r) => (
-        <span className="font-mono text-xs">
-          {formatNumber(r.schools, lang)}
-        </span>
-      )
+      render: (r) => clickableCell(r, r.schools, "schools", "ink")
+    },
+    {
+      key: "students",
+      label: t("dashboard.tblStudents", lang),
+      align: "center",
+      sortValue: (r) => r.students,
+      exportValue: (r) => r.students,
+      render: (r) => clickableCell(r, r.students, "schools", "emerald")
+    },
+    {
+      key: "pregnant",
+      label: t("dashboard.tblPregnant", lang),
+      align: "center",
+      sortValue: (r) => r.pregnant,
+      exportValue: (r) => r.pregnant,
+      render: (r) => clickableCell(r, r.pregnant, "pregnant", "pink")
+    },
+    {
+      key: "toddler",
+      label: t("dashboard.tblToddler", lang),
+      align: "center",
+      sortValue: (r) => r.toddler,
+      exportValue: (r) => r.toddler,
+      render: (r) => clickableCell(r, r.toddler, "toddler", "amber")
     },
     {
       key: "kecil",
@@ -129,50 +263,445 @@ export function ScheduleTable({
     }
   ];
 
-  const totals = rows.reduce(
+  const totals = filteredRows.reduce(
     (acc, r) => ({
       schools: acc.schools + r.schools,
+      students: acc.students + r.students,
+      pregnant: acc.pregnant + r.pregnant,
+      toddler: acc.toddler + r.toddler,
       kecil: acc.kecil + r.kecil,
       besar: acc.besar + r.besar,
       total: acc.total + r.total
     }),
-    { schools: 0, kecil: 0, besar: 0, total: 0 }
+    {
+      schools: 0,
+      students: 0,
+      pregnant: 0,
+      toddler: 0,
+      kecil: 0,
+      besar: 0,
+      total: 0
+    }
   );
 
   return (
-    <SortableTable<ScheduleRow>
-      tableClassName="text-sm tabular-nums"
-      rowKey={(r) => r.op_date}
-      initialSort={{ key: "date", dir: "asc" }}
-      columns={columns}
-      rows={rows}
-      searchable
-      exportable
-      exportFileName="menu-schedule"
-      exportSheetName="Menu Schedule"
-      footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
-          <td
-            colSpan={4}
-            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+    <>
+      <SortableTable<ScheduleRow>
+        tableClassName="text-[11px] tabular-nums [&_th]:!px-1.5 [&_td]:!px-1.5"
+        dense
+        rowKey={(r) => r.op_date}
+        initialSort={{ key: "date", dir: "asc" }}
+        columns={columns}
+        rows={filteredRows}
+        searchable
+        exportable
+        exportFileName="menu-schedule"
+        exportSheetName="Menu Schedule"
+        toolbarExtra={dateToolbar}
+        footer={
+          <tr className="border-t-2 border-ink bg-ink">
+            <td
+              colSpan={4}
+              className="py-1.5 px-1.5 text-center text-[10.5px] font-black uppercase tracking-wide text-white"
+            >
+              {t("common.grandTotal", lang)}
+            </td>
+            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
+              {formatNumber(totals.schools, lang)}
+            </td>
+            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
+              {formatNumber(totals.students, lang)}
+            </td>
+            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
+              {formatNumber(totals.pregnant, lang)}
+            </td>
+            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
+              {formatNumber(totals.toddler, lang)}
+            </td>
+            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
+              {formatNumber(totals.kecil, lang)}
+            </td>
+            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
+              {formatNumber(totals.besar, lang)}
+            </td>
+            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
+              {formatNumber(totals.total, lang)}
+            </td>
+          </tr>
+        }
+      />
+      {breakdownOpen && (
+        <ScheduleBreakdownModal
+          date={breakdownOpen.date}
+          dateLabel={breakdownOpen.dateLabel}
+          initialTab={breakdownOpen.tab}
+          lang={lang}
+          onClose={() => setBreakdownOpen(null)}
+        />
+      )}
+    </>
+  );
+}
+
+type BreakdownTab = "schools" | "pregnant" | "toddler";
+
+interface BreakdownData {
+  date: string;
+  operasional: boolean;
+  schools: Array<{
+    school_id: string;
+    school_name: string;
+    level: string;
+    qty: number;
+    students: number;
+  }>;
+  pregnant: Array<{
+    id: string;
+    full_name: string;
+    phase: "hamil" | "menyusui";
+    gestational_week: number | null;
+    child_age_months: number | null;
+    age: number | null;
+    posyandu_name: string | null;
+    address: string | null;
+  }>;
+  toddler: Array<{
+    id: string;
+    full_name: string;
+    dob: string | null;
+    gender: "L" | "P" | null;
+    mother_name: string | null;
+    posyandu_name: string | null;
+    address: string | null;
+  }>;
+}
+
+function ScheduleBreakdownModal({
+  date,
+  dateLabel,
+  initialTab,
+  lang,
+  onClose
+}: {
+  date: string;
+  dateLabel: string;
+  initialTab: BreakdownTab;
+  lang: Lang;
+  onClose: () => void;
+}) {
+  const [tab, setTab] = useState<BreakdownTab>(initialTab);
+  const [data, setData] = useState<BreakdownData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/beneficiary-breakdown?date=${date}`)
+      .then((r) => r.json())
+      .then((json: BreakdownData) => {
+        if (!cancelled) setData(json);
+      })
+      .catch(() => {
+        if (!cancelled) setData(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [date]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  async function handleDownload() {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const res = await fetch(
+        `/api/beneficiary-breakdown?date=${date}&format=xlsx`
+      );
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rincian-penerima-${date}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  const tabs: Array<{ id: BreakdownTab; label: string; count: number }> = [
+    {
+      id: "schools",
+      label: t("dashboard.breakdownSchools", lang),
+      count: data?.schools.length ?? 0
+    },
+    {
+      id: "pregnant",
+      label: t("dashboard.breakdownPregnant", lang),
+      count: data?.pregnant.length ?? 0
+    },
+    {
+      id: "toddler",
+      label: t("dashboard.breakdownToddler", lang),
+      count: data?.toddler.length ?? 0
+    }
+  ];
+
+  const ageFromDob = (dob: string | null): string => {
+    if (!dob) return "—";
+    const d = new Date(dob);
+    const now = new Date();
+    const months =
+      (now.getFullYear() - d.getFullYear()) * 12 +
+      (now.getMonth() - d.getMonth());
+    if (months < 12) return `${months} bln`;
+    const years = Math.floor(months / 12);
+    const rem = months % 12;
+    return rem > 0 ? `${years} thn ${rem} bln` : `${years} thn`;
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-cardlg ring-1 ring-ink/10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-start justify-between gap-4 border-b border-ink/10 bg-primary-gradient px-5 py-3 text-white">
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-wide">
+              {ti("dashboard.breakdownTitle", lang, { date: dateLabel })}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("dashboard.breakdownClose", lang)}
+            className="rounded-md px-2 py-1 text-white/80 transition hover:bg-white/10 hover:text-white"
           >
-            {t("common.grandTotal", lang)}
-          </td>
-          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
-            {formatNumber(totals.schools, lang)}
-          </td>
-          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
-            {formatNumber(totals.kecil, lang)}
-          </td>
-          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
-            {formatNumber(totals.besar, lang)}
-          </td>
-          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
-            {formatNumber(totals.total, lang)}
-          </td>
-        </tr>
-      }
-    />
+            ✕
+          </button>
+        </header>
+
+        <nav className="flex border-b border-ink/10 bg-paper px-2">
+          {tabs.map((tb) => {
+            const active = tab === tb.id;
+            return (
+              <button
+                key={tb.id}
+                type="button"
+                onClick={() => setTab(tb.id)}
+                className={`relative flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition ${
+                  active
+                    ? "text-primary"
+                    : "text-ink2/70 hover:text-ink"
+                }`}
+              >
+                <span>{tb.label}</span>
+                <span
+                  className={`inline-flex min-w-[22px] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-mono font-bold ${
+                    active
+                      ? "bg-primary text-white"
+                      : "bg-ink/10 text-ink2"
+                  }`}
+                >
+                  {tb.count}
+                </span>
+                {active && (
+                  <span className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-primary" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="flex-1 overflow-auto px-5 py-4">
+          {loading ? (
+            <div className="flex h-40 items-center justify-center text-xs text-ink2">
+              {t("dashboard.breakdownLoading", lang)}
+            </div>
+          ) : !data || !data.operasional ? (
+            <div className="flex h-40 items-center justify-center text-xs text-ink2">
+              {t("dashboard.breakdownEmptyOp", lang)}
+            </div>
+          ) : tab === "schools" ? (
+            <table className="w-full text-xs tabular-nums">
+              <thead className="border-b border-ink/10 text-[10px] font-bold uppercase tracking-wide text-ink2">
+                <tr>
+                  <th className="px-2 py-1.5 text-left">
+                    {t("dashboard.breakdownColName", lang)}
+                  </th>
+                  <th className="px-2 py-1.5 text-center">
+                    {t("dashboard.breakdownColLevel", lang)}
+                  </th>
+                  <th className="px-2 py-1.5 text-right">
+                    {t("dashboard.breakdownColQty", lang)}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.schools.map((s) => (
+                  <tr key={s.school_id} className="border-b border-ink/5">
+                    <td className="px-2 py-1.5 font-semibold text-ink">
+                      {s.school_name}
+                    </td>
+                    <td className="px-2 py-1.5 text-center text-ink2">
+                      {s.level}
+                    </td>
+                    <td className="px-2 py-1.5 text-right font-mono font-bold">
+                      {formatNumber(s.qty, lang)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-ink/20">
+                  <td className="px-2 py-1.5 text-left text-[10px] font-black uppercase tracking-wide text-ink2">
+                    {t("common.grandTotal", lang)}
+                  </td>
+                  <td />
+                  <td className="px-2 py-1.5 text-right font-mono text-xs font-black text-ink">
+                    {formatNumber(
+                      data.schools.reduce((s, r) => s + r.qty, 0),
+                      lang
+                    )}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          ) : tab === "pregnant" ? (
+            <table className="w-full text-xs">
+              <thead className="border-b border-ink/10 text-[10px] font-bold uppercase tracking-wide text-ink2">
+                <tr>
+                  <th className="px-2 py-1.5 text-left">
+                    {t("dashboard.breakdownColName", lang)}
+                  </th>
+                  <th className="px-2 py-1.5 text-center">
+                    {t("dashboard.breakdownColPhase", lang)}
+                  </th>
+                  <th className="px-2 py-1.5 text-center">
+                    {t("dashboard.breakdownColAge", lang)}
+                  </th>
+                  <th className="px-2 py-1.5 text-left">
+                    {t("dashboard.breakdownColPosyandu", lang)}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.pregnant.map((b) => (
+                  <tr key={b.id} className="border-b border-ink/5">
+                    <td className="px-2 py-1.5 font-semibold text-ink">
+                      {b.full_name}
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      <Badge
+                        tone={b.phase === "hamil" ? "info" : "warn"}
+                        className="text-[10px]"
+                      >
+                        {b.phase === "hamil" ? "Hamil" : "Menyusui"}
+                      </Badge>
+                    </td>
+                    <td className="px-2 py-1.5 text-center font-mono text-ink2">
+                      {b.age ?? "—"}
+                    </td>
+                    <td className="px-2 py-1.5 text-ink2">
+                      {b.posyandu_name ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <table className="w-full text-xs">
+              <thead className="border-b border-ink/10 text-[10px] font-bold uppercase tracking-wide text-ink2">
+                <tr>
+                  <th className="px-2 py-1.5 text-left">
+                    {t("dashboard.breakdownColName", lang)}
+                  </th>
+                  <th className="px-2 py-1.5 text-center">
+                    {t("dashboard.breakdownColAge", lang)}
+                  </th>
+                  <th className="px-2 py-1.5 text-left">
+                    {t("dashboard.breakdownColMother", lang)}
+                  </th>
+                  <th className="px-2 py-1.5 text-left">
+                    {t("dashboard.breakdownColPosyandu", lang)}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.toddler.map((b) => (
+                  <tr key={b.id} className="border-b border-ink/5">
+                    <td className="px-2 py-1.5 font-semibold text-ink">
+                      {b.full_name}
+                    </td>
+                    <td className="px-2 py-1.5 text-center font-mono text-ink2">
+                      {ageFromDob(b.dob)}
+                    </td>
+                    <td className="px-2 py-1.5 text-ink2">
+                      {b.mother_name ?? "—"}
+                    </td>
+                    <td className="px-2 py-1.5 text-ink2">
+                      {b.posyandu_name ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <footer className="flex items-center justify-end gap-2 border-t border-ink/10 bg-paper px-5 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-ink/10 bg-white px-4 py-1.5 text-xs font-bold text-ink2 transition hover:bg-ink/[0.04]"
+          >
+            {t("dashboard.breakdownClose", lang)}
+          </button>
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading || loading || !data?.operasional}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-xs font-bold text-white shadow-card transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M5 21h14" />
+            </svg>
+            {t("dashboard.breakdownDownload", lang)}
+          </button>
+        </footer>
+      </div>
+    </div>
   );
 }
 
@@ -421,24 +950,20 @@ export function PlanningTable({
       exportFileName="planning"
       exportSheetName="Planning"
       footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
+        <tr className="border-t-2 border-ink bg-ink">
           <td
             colSpan={2}
-            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+            className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white"
           >
             {t("common.grandTotal", lang)}
           </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {formatNumber(totalPorsi, lang)}
           </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {formatKg(totalKg, 1)}
           </td>
-          <td
-            className={`py-2 px-3 text-right font-mono text-xs font-black ${
-              totalShort > 0 ? "text-red-700" : "text-emerald-700"
-            }`}
-          >
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {totalShort}
           </td>
         </tr>
@@ -539,20 +1064,20 @@ export function StockAlertTable({
       exportFileName="stock-alert"
       exportSheetName="Stock Alert"
       footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
+        <tr className="border-t-2 border-ink bg-ink">
           <td
             colSpan={2}
-            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+            className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white"
           >
             {t("common.grandTotal", lang)}
           </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {totalRequired.toFixed(2)}
           </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {totalOnHand.toFixed(2)}
           </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-red-700">
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {totalGap.toFixed(2)}
           </td>
         </tr>
@@ -640,18 +1165,22 @@ export function SupplierSpendTable({
       exportFileName="supplier-spend"
       exportSheetName="Supplier Spend"
       footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
+        <tr className="border-t-2 border-ink bg-ink">
           <td
             colSpan={3}
-            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+            className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white"
           >
             {t("common.grandTotal", lang)}
           </td>
-          <td className="py-2 px-3 text-center font-mono text-xs font-black text-ink">
+          <td className="py-2 px-3 text-center font-mono text-xs font-black text-white">
             {formatNumber(totalInvoices, lang)}
           </td>
           <td className="py-2 px-3 text-left">
-            <IDR value={totalSpend} className="text-xs font-black text-ink" />
+            <IDR
+              value={totalSpend}
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
+            />
           </td>
         </tr>
       }

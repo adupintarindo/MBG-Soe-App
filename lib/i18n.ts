@@ -25,7 +25,7 @@ export const LANG_KEYS = {
   themeLight: { ID: "Mode terang", EN: "Light mode" },
   themeDark: { ID: "Mode gelap", EN: "Dark mode" },
   tabDashboard: { ID: "Dashboard", EN: "Dashboard" },
-  tabSchools: { ID: "Sekolah", EN: "Schools" },
+  tabSchools: { ID: "Penerima Manfaat", EN: "Beneficiaries" },
   tabMenu: { ID: "Master Menu", EN: "Menu Master" },
   tabCalendar: { ID: "Kalender Menu", EN: "Menu Calendar" },
   tabPlanning: { ID: "Rencana Kebutuhan", EN: "Planning" },
@@ -191,8 +191,8 @@ export const LANG_KEYS = {
   "dashboard.tblKebutuhan": { ID: "Kebutuhan", EN: "Required" },
   "dashboard.tblShort": { ID: "Short", EN: "Short" },
   "dashboard.badgeNonOp": { ID: "NON-OP", EN: "NON-OP" },
-  "dashboard.badgeOp": { ID: "OPERASIONAL", EN: "OPERATIONAL" },
-  "dashboard.badgeNonOpLong": { ID: "NON-OPERASIONAL", EN: "NON-OPERATIONAL" },
+  "dashboard.badgeOp": { ID: "OP", EN: "OP" },
+  "dashboard.badgeNonOpLong": { ID: "NON-OP", EN: "NON-OP" },
   "dashboard.tblStatus": { ID: "Status", EN: "Status" },
   "dashboard.scheduleTitle": {
     ID: "Jadwal Menu dan Porsi",
@@ -208,10 +208,29 @@ export const LANG_KEYS = {
   },
   "dashboard.tblDayDate": { ID: "Hari, Tanggal", EN: "Day, Date" },
   "dashboard.tblMenuName": { ID: "Nama Menu", EN: "Menu Name" },
-  "dashboard.tblSchools": { ID: "Sekolah Menerima", EN: "Schools Served" },
+  "dashboard.tblSchools": { ID: "Sekolah", EN: "Schools" },
+  "dashboard.tblStudents": { ID: "Siswa", EN: "Students" },
+  "dashboard.tblPregnant": { ID: "Bumil/Busui", EN: "Pregnant/Nursing" },
+  "dashboard.tblToddler": { ID: "Balita", EN: "Toddlers" },
   "dashboard.tblPorsiKecil": { ID: "Porsi Kecil", EN: "Small Portion" },
   "dashboard.tblPorsiBesar": { ID: "Porsi Besar", EN: "Large Portion" },
   "dashboard.tblPorsiTotal": { ID: "Total Porsi", EN: "Total Portion" },
+  "dashboard.breakdownTitle": { ID: "Rincian Penerima — {date}", EN: "Beneficiary Breakdown — {date}" },
+  "dashboard.breakdownSchools": { ID: "Sekolah", EN: "Schools" },
+  "dashboard.breakdownPregnant": { ID: "Ibu Hamil/Menyusui", EN: "Pregnant/Nursing Mothers" },
+  "dashboard.breakdownToddler": { ID: "Balita", EN: "Toddlers" },
+  "dashboard.breakdownDownload": { ID: "Unduh Excel", EN: "Download Excel" },
+  "dashboard.breakdownClose": { ID: "Tutup", EN: "Close" },
+  "dashboard.breakdownLoading": { ID: "Memuat rincian…", EN: "Loading details…" },
+  "dashboard.breakdownEmptyOp": { ID: "Hari ini tidak operasional.", EN: "Non-operational day." },
+  "dashboard.breakdownColName": { ID: "Nama", EN: "Name" },
+  "dashboard.breakdownColLevel": { ID: "Jenjang", EN: "Level" },
+  "dashboard.breakdownColQty": { ID: "Porsi", EN: "Portions" },
+  "dashboard.breakdownColPhase": { ID: "Fase", EN: "Phase" },
+  "dashboard.breakdownColPosyandu": { ID: "Posyandu", EN: "Posyandu" },
+  "dashboard.breakdownColAge": { ID: "Usia", EN: "Age" },
+  "dashboard.breakdownColDob": { ID: "Tgl Lahir", EN: "Birth Date" },
+  "dashboard.breakdownColMother": { ID: "Nama Ibu", EN: "Mother's Name" },
   "dashboard.stockAlertTitle": { ID: "Alert Stok Hari Ini", EN: "Today's Stock Alert" },
   "dashboard.stockAlertHintOk": { ID: "Semua kebutuhan tercover.", EN: "All requirements covered." },
   "dashboard.stockAlertHintBad": { ID: "{n} item | gap {gap}", EN: "{n} items | gap {gap}" },
@@ -742,6 +761,54 @@ export const LANG_KEYS = {
     EN: "Effective Servings = (Small × 0.7) + (Large × 1.0) + (Teachers × 1.0). Small covers PAUD/TK and SD grades 1–3. Large covers SD grades 4–6, SMP, SMA, SMK."
   },
   "schools.footnoteLabel": { ID: "Porsi Efektif", EN: "Effective Servings" },
+
+  // ---------------- Penerima Manfaat (/schools tabs) ----------------
+  "penerima.pageTitle": { ID: "Penerima Manfaat", EN: "Beneficiaries" },
+  "penerima.pageSubtitle": {
+    ID: "Sekolah, ibu hamil/menyusui, dan balita penerima makanan bergizi.",
+    EN: "Schools, pregnant/nursing mothers, and toddlers receiving nutritious meals."
+  },
+  "penerima.tabSekolah": { ID: "Sekolah", EN: "Schools" },
+  "penerima.tabBumil": { ID: "Ibu Hamil/Menyusui", EN: "Pregnant/Nursing" },
+  "penerima.tabBalita": { ID: "Balita", EN: "Toddlers" },
+
+  "penerima.bumilTitle": {
+    ID: "Daftar Ibu Hamil & Menyusui",
+    EN: "Pregnant & Nursing Mothers Roster"
+  },
+  "penerima.bumilHint": {
+    ID: "Ibu hamil dan menyusui penerima porsi besar. Data dikelola lewat Posyandu setempat.",
+    EN: "Pregnant and nursing mothers receiving large portions. Managed via local Posyandu."
+  },
+  "penerima.bumilTotal": { ID: "Total Aktif", EN: "Total Active" },
+  "penerima.bumilHamil": { ID: "Hamil", EN: "Pregnant" },
+  "penerima.bumilMenyusui": { ID: "Menyusui", EN: "Nursing" },
+
+  "penerima.balitaTitle": { ID: "Daftar Balita", EN: "Toddler Roster" },
+  "penerima.balitaHint": {
+    ID: "Balita (0–59 bulan) penerima porsi kecil. Data dikelola lewat Posyandu setempat.",
+    EN: "Toddlers (0–59 months) receiving small portions. Managed via local Posyandu."
+  },
+  "penerima.balitaTotal": { ID: "Total Aktif", EN: "Total Active" },
+  "penerima.balitaLaki": { ID: "Laki-laki", EN: "Male" },
+  "penerima.balitaPerempuan": { ID: "Perempuan", EN: "Female" },
+  "penerima.balitaUnder2": { ID: "Usia < 2 thn", EN: "Age < 2 yrs" },
+
+  "penerima.colName": { ID: "Nama", EN: "Name" },
+  "penerima.colPhase": { ID: "Fase", EN: "Phase" },
+  "penerima.colDetailFase": { ID: "Rincian", EN: "Detail" },
+  "penerima.colAge": { ID: "Umur", EN: "Age" },
+  "penerima.colPosyandu": { ID: "Posyandu", EN: "Posyandu" },
+  "penerima.colPhone": { ID: "Telepon", EN: "Phone" },
+  "penerima.colAddress": { ID: "Alamat", EN: "Address" },
+  "penerima.colGender": { ID: "Jenis Kelamin", EN: "Gender" },
+  "penerima.colDob": { ID: "Tanggal Lahir", EN: "Date of Birth" },
+  "penerima.colMother": { ID: "Nama Ibu", EN: "Mother's Name" },
+  "penerima.phaseHamil": { ID: "Hamil", EN: "Pregnant" },
+  "penerima.phaseMenyusui": { ID: "Menyusui", EN: "Nursing" },
+  "penerima.genderL": { ID: "Laki-laki", EN: "Male" },
+  "penerima.genderP": { ID: "Perempuan", EN: "Female" },
+
   "schools.attTitle": {
     ID: "Perkiraan Kehadiran Siswa 7 Hari Ke Depan",
     EN: "Expected Student Attendance Next 7 Days"

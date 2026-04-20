@@ -74,7 +74,7 @@ const TABS: TabCard[] = [
     group: "run",
     show: (r) => canWriteStock(r) || r === "viewer" || r === "ahli_gizi"
   },
-  { href: "/schools", labelKey: "tabSchools", icon: "🏫", group: "run", show: () => true },
+  { href: "/schools", labelKey: "tabSchools", icon: "🫶", group: "run", show: () => true },
 
   // Finance — cost per portion & budget
   {

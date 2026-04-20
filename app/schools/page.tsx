@@ -7,17 +7,24 @@ import {
   PageHeader,
   Section
 } from "@/components/ui";
+import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { SchoolAttendancePanel } from "./attendance-panel";
 import {
   SchoolsRosterTable,
   type SchoolRosterRow
 } from "./schools-roster-table";
+import { TabBumil } from "./tab-bumil";
+import { TabBalita } from "./tab-balita";
 import { GenerateManifestButton } from "@/app/deliveries/generate-manifest";
 import { toISODate } from "@/lib/engine";
 import { t, formatNumber } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
+
+type PenerimaTabId = "sekolah" | "bumil" | "balita";
+
+const VALID_TABS: readonly PenerimaTabId[] = ["sekolah", "bumil", "balita"];
 
 function nextSevenDateISO(): string[] {
   const today = new Date();
@@ -42,8 +49,6 @@ const LEVEL_COLOR: Record<string, string> = {
   SMK: "bg-indigo-50 text-indigo-900 ring-indigo-200"
 };
 
-// Porsi weight: SD kelas1-3 = 0.7 (kecil), SD kelas4-6 = 1.0 (besar)
-// PAUD = 0.7, SMP/SMA/SMK = 1.0, guru = 1.0
 function porsiEff(s: {
   level: string;
   students: number;
@@ -67,13 +72,96 @@ function porsiEff(s: {
   return { kecil, besar, guru, total, eff: Math.round(eff * 10) / 10 };
 }
 
-export default async function SchoolsPage() {
+interface SearchParams {
+  tab?: string;
+}
+
+export default async function SchoolsPage({
+  searchParams
+}: {
+  searchParams: SearchParams;
+}) {
   const supabase = createClient();
   const lang = getLang();
 
-  const days = nextSevenDateISO();
+  const profile = await getSessionProfile();
+  if (!profile) redirect("/login");
+  if (!profile.active) redirect("/dashboard");
 
-  // Range untuk non_op_days: dari hari ini sampai 18 bulan ke depan.
+  const activeTab: PenerimaTabId = VALID_TABS.includes(
+    searchParams.tab as PenerimaTabId
+  )
+    ? (searchParams.tab as PenerimaTabId)
+    : "sekolah";
+
+  const tabs: PageTab[] = [
+    {
+      id: "sekolah",
+      icon: "🏫",
+      label: t("penerima.tabSekolah", lang),
+      href: "/schools?tab=sekolah"
+    },
+    {
+      id: "bumil",
+      icon: "🤰",
+      label: t("penerima.tabBumil", lang),
+      href: "/schools?tab=bumil"
+    },
+    {
+      id: "balita",
+      icon: "🍼",
+      label: t("penerima.tabBalita", lang),
+      href: "/schools?tab=balita"
+    }
+  ];
+
+  return (
+    <div>
+      <Nav
+        email={profile.email}
+        role={profile.role}
+        fullName={profile.full_name}
+      />
+
+      <PageContainer>
+        <PageHeader
+          icon="🫶"
+          title={t("penerima.pageTitle", lang)}
+          subtitle={t("penerima.pageSubtitle", lang)}
+          actions={
+            activeTab === "sekolah" &&
+            (profile.role === "admin" || profile.role === "operator") ? (
+              <GenerateManifestButton date={toISODate(new Date())} />
+            ) : null
+          }
+        />
+
+        <PageTabs tabs={tabs} activeId={activeTab} />
+
+        {activeTab === "sekolah" && (
+          <SekolahTab supabase={supabase} lang={lang} role={profile.role} />
+        )}
+        {activeTab === "bumil" && (
+          <TabBumil supabase={supabase} lang={lang} />
+        )}
+        {activeTab === "balita" && (
+          <TabBalita supabase={supabase} lang={lang} />
+        )}
+      </PageContainer>
+    </div>
+  );
+}
+
+async function SekolahTab({
+  supabase,
+  lang,
+  role
+}: {
+  supabase: ReturnType<typeof createClient>;
+  lang: ReturnType<typeof getLang>;
+  role: string;
+}) {
+  const days = nextSevenDateISO();
   const todayISO = new Date().toISOString().slice(0, 10);
   const farFuture = (() => {
     const d = new Date();
@@ -81,8 +169,7 @@ export default async function SchoolsPage() {
     return d.toISOString().slice(0, 10);
   })();
 
-  const [profile, schoolsResult, attendanceResult, nonOpResult] = await Promise.all([
-    getSessionProfile(),
+  const [schoolsResult, attendanceResult, nonOpResult] = await Promise.all([
     supabase
       .from("schools")
       .select(
@@ -102,13 +189,10 @@ export default async function SchoolsPage() {
       .order("op_date")
   ]);
 
-  if (!profile) redirect("/login");
-  if (!profile.active) redirect("/dashboard");
-
   const schools = schoolsResult.data ?? [];
   const attendance = attendanceResult.data ?? [];
   const nonOpDays = nonOpResult.data ?? [];
-  const canEdit = profile.role === "admin" || profile.role === "operator";
+  const canEdit = role === "admin" || role === "operator";
 
   const totals = schools.reduce(
     (acc, s) => {
@@ -133,97 +217,81 @@ export default async function SchoolsPage() {
   }
 
   return (
-    <div>
-      <Nav
-        email={profile.email}
-        role={profile.role}
-        fullName={profile.full_name}
+    <>
+      <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+        {["PAUD/TK", "SD", "SMP", "SMA", "SMK"].map((lvl) => {
+          const d = byLevel.get(lvl) ?? { count: 0, students: 0 };
+          return (
+            <div
+              key={lvl}
+              className="rounded-2xl bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-cardlg"
+            >
+              <span
+                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${LEVEL_COLOR[lvl]}`}
+              >
+                {lvl}
+              </span>
+              <div className="mt-2 text-2xl font-black text-ink">{d.count}</div>
+              <div className="text-[11px] font-semibold text-ink2/70">
+                {formatNumber(d.students, lang)} {t("schools.studentsSuffix", lang)}
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
+      <SchoolAttendancePanel
+        schools={schools
+          .filter((s) => s.active)
+          .map((s) => ({
+            id: s.id,
+            name: s.name,
+            level: s.level,
+            students: Number(s.students),
+            kelas13: Number(s.kelas13 ?? 0),
+            kelas46: Number(s.kelas46 ?? 0)
+          }))}
+        attendance={attendance.map((a) => ({
+          school_id: a.school_id,
+          att_date: a.att_date,
+          qty: Number(a.qty)
+        }))}
+        nonOpDays={nonOpDays.map((r) => ({
+          op_date: r.op_date,
+          reason: r.reason
+        }))}
+        canEdit={canEdit}
       />
 
-      <PageContainer>
-        <PageHeader
-          actions={
-            canEdit ? <GenerateManifestButton date={toISODate(new Date())} /> : null
-          }
-        />
-        {/* Summary by level */}
-        <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
-          {["PAUD/TK", "SD", "SMP", "SMA", "SMK"].map((lvl) => {
-            const d = byLevel.get(lvl) ?? { count: 0, students: 0 };
-            return (
-              <div
-                key={lvl}
-                className="rounded-2xl bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-cardlg"
-              >
-                <span
-                  className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${LEVEL_COLOR[lvl]}`}
-                >
-                  {lvl}
-                </span>
-                <div className="mt-2 text-2xl font-black text-ink">
-                  {d.count}
-                </div>
-                <div className="text-[11px] font-semibold text-ink2/70">
-                  {formatNumber(d.students, lang)} {t("schools.studentsSuffix", lang)}
-                </div>
-              </div>
-            );
-          })}
-        </section>
-
-        <SchoolAttendancePanel
-          schools={schools
-            .filter((s) => s.active)
-            .map((s) => ({
+      <Section
+        title={t("schools.rosterTitle", lang)}
+        hint={t("schools.rosterHint", lang)}
+      >
+        <SchoolsRosterTable
+          rows={schools.map<SchoolRosterRow>((s) => {
+            const p = porsiEff(s);
+            return {
               id: s.id,
               name: s.name,
+              address: s.address,
               level: s.level,
               students: Number(s.students),
-              kelas13: Number(s.kelas13 ?? 0),
-              kelas46: Number(s.kelas46 ?? 0)
-            }))}
-          attendance={attendance.map((a) => ({
-            school_id: a.school_id,
-            att_date: a.att_date,
-            qty: Number(a.qty)
-          }))}
-          nonOpDays={nonOpDays.map((r) => ({
-            op_date: r.op_date,
-            reason: r.reason
-          }))}
-          canEdit={canEdit}
+              kecil: p.kecil,
+              besar: p.besar,
+              guru: p.guru,
+              eff: p.eff,
+              distance_km: Number(s.distance_km ?? 0),
+              pic: s.pic,
+              phone: s.phone,
+              active: !!s.active
+            };
+          })}
+          totals={totals}
         />
-
-        <Section
-          title={t("schools.rosterTitle", lang)}
-          hint={t("schools.rosterHint", lang)}
-        >
-          <SchoolsRosterTable
-            rows={schools.map<SchoolRosterRow>((s) => {
-              const p = porsiEff(s);
-              return {
-                id: s.id,
-                name: s.name,
-                address: s.address,
-                level: s.level,
-                students: Number(s.students),
-                kecil: p.kecil,
-                besar: p.besar,
-                guru: p.guru,
-                eff: p.eff,
-                distance_km: Number(s.distance_km ?? 0),
-                pic: s.pic,
-                phone: s.phone,
-                active: !!s.active
-              };
-            })}
-            totals={totals}
-          />
-          <p className="mt-4 text-[11px] text-ink2/70">
-            {t("schools.footnote", lang)}
-          </p>
-        </Section>
-      </PageContainer>
-    </div>
+        <p className="mt-4 text-[11px] text-ink2/70">
+          {t("schools.footnote", lang)}
+        </p>
+      </Section>
+    </>
   );
 }

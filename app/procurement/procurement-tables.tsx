@@ -273,15 +273,19 @@ export function QtTable({
       exportSheetName="Quotations"
       initialSort={{ key: "date", dir: "desc" }}
       footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
+        <tr className="border-t-2 border-ink bg-ink">
           <td
             colSpan={5}
-            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+            className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white"
           >
             {t("common.grandTotal", lang)}
           </td>
           <td className="py-2 px-3 text-left">
-            <IDR value={totalQt} className="text-xs font-black text-ink" />
+            <IDR
+              value={totalQt}
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
+            />
           </td>
           <td colSpan={3}></td>
         </tr>
@@ -405,21 +409,25 @@ export function PoTable({
       exportSheetName="POs"
       initialSort={{ key: "date", dir: "desc" }}
       footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
+        <tr className="border-t-2 border-ink bg-ink">
           <td
             colSpan={4}
-            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+            className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white"
           >
             {t("common.grandTotal", lang)}
           </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {formatNumber(totalItems, lang)}
           </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {formatNumber(totalQty, lang, { maximumFractionDigits: 1 })}
           </td>
           <td className="py-2 px-3 text-left">
-            <IDR value={totalPo} className="text-xs font-black text-ink" />
+            <IDR
+              value={totalPo}
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
+            />
           </td>
           <td colSpan={2}></td>
         </tr>
@@ -519,15 +527,19 @@ export function InvoiceTable({
       exportSheetName="Invoices"
       initialSort={{ key: "date", dir: "desc" }}
       footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
+        <tr className="border-t-2 border-ink bg-ink">
           <td
             colSpan={4}
-            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+            className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white"
           >
             {t("common.grandTotal", lang)}
           </td>
           <td className="py-2 px-3 text-left">
-            <IDR value={totalInv} className="text-xs font-black text-ink" />
+            <IDR
+              value={totalInv}
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
+            />
           </td>
           <td colSpan={2}></td>
         </tr>
@@ -635,14 +647,14 @@ export function PrQuotationsTable({
       variant="dark"
       initialSort={{ key: "no", dir: "asc" }}
       footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
+        <tr className="border-t-2 border-ink bg-ink">
           <td
             colSpan={3}
-            className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink"
+            className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white"
           >
             {t("common.grandTotal", lang)}
           </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {formatNumber(totalPrQt, lang)}
           </td>
           <td colSpan={2}></td>

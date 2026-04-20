@@ -505,6 +505,117 @@ export async function listPicSchool(
   return (data ?? []) as PicSchool[];
 }
 
+/* ----------------------------- Beneficiaries ------------------------------ */
+
+export type PregnantPhase = "hamil" | "menyusui";
+
+export interface BeneficiaryPregnant {
+  id: string;
+  full_name: string;
+  nik: string | null;
+  phase: PregnantPhase;
+  gestational_week: number | null;
+  child_age_months: number | null;
+  age: number | null;
+  posyandu_id: string | null;
+  address: string | null;
+  phone: string | null;
+  notes: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BeneficiaryToddler {
+  id: string;
+  full_name: string;
+  nik: string | null;
+  dob: string | null;
+  gender: "L" | "P" | null;
+  mother_name: string | null;
+  posyandu_id: string | null;
+  address: string | null;
+  phone: string | null;
+  notes: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function listBeneficiaryPregnant(
+  supabase: Client,
+  opts: { active?: boolean } = {}
+): Promise<BeneficiaryPregnant[]> {
+  let q = asAny(supabase).from("beneficiary_pregnant").select("*");
+  if (opts.active !== undefined) q = q.eq("active", opts.active);
+  const { data, error } = await q.order("full_name");
+  if (error) throw error;
+  return (data ?? []) as BeneficiaryPregnant[];
+}
+
+export async function listBeneficiaryToddler(
+  supabase: Client,
+  opts: { active?: boolean } = {}
+): Promise<BeneficiaryToddler[]> {
+  let q = asAny(supabase).from("beneficiary_toddler").select("*");
+  if (opts.active !== undefined) q = q.eq("active", opts.active);
+  const { data, error } = await q.order("full_name");
+  if (error) throw error;
+  return (data ?? []) as BeneficiaryToddler[];
+}
+
+export interface PorsiBreakdown {
+  schools_count: number;
+  students_total: number;
+  pregnant_count: number;
+  toddler_count: number;
+  operasional: boolean;
+}
+
+export async function porsiBreakdown(
+  supabase: Client,
+  date: string
+): Promise<PorsiBreakdown | null> {
+  const { data, error } = await asAny(supabase).rpc("porsi_breakdown", {
+    p_date: date
+  });
+  if (error) throw error;
+  const row = (data ?? [])[0];
+  if (!row) return null;
+  return {
+    schools_count: Number(row.schools_count ?? 0),
+    students_total: Number(row.students_total ?? 0),
+    pregnant_count: Number(row.pregnant_count ?? 0),
+    toddler_count: Number(row.toddler_count ?? 0),
+    operasional: Boolean(row.operasional)
+  };
+}
+
+export interface SchoolBreakdownRow {
+  school_id: string;
+  school_name: string;
+  level: string;
+  qty: number;
+  students: number;
+}
+
+export async function schoolsBreakdown(
+  supabase: Client,
+  date: string
+): Promise<SchoolBreakdownRow[]> {
+  const { data, error } = await asAny(supabase).rpc("schools_breakdown", {
+    p_date: date
+  });
+  if (error) throw error;
+  return (data ?? []).map((r: Record<string, unknown>) => ({
+    school_id: String(r.school_id),
+    school_name: String(r.school_name),
+    level: String(r.level),
+    qty: Number(r.qty ?? 0),
+    students: Number(r.students ?? 0)
+  }));
+}
+
 /* ----------------------------- BGN Generation Log ------------------------- */
 
 export async function listBgnGenerationLog(

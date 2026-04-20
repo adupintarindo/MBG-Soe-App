@@ -24,6 +24,7 @@ import {
   type StockAlertRow,
   type SupplierSpendRow
 } from "@/components/dashboard-tables";
+import { porsiBreakdown } from "@/lib/bgn";
 import {
   formatIDR,
   formatKg,
@@ -72,12 +73,6 @@ export default async function DashboardPage() {
   );
   const mrStart = monthStart; // 4-month matrix starts this month
 
-  // ---- HPP date range (default last 7 days ending today) ----
-  const sevenAgo = new Date(now);
-  sevenAgo.setDate(sevenAgo.getDate() - 6);
-  const hppFrom = isISODate(sp.hpp_from) ? sp.hpp_from : toISODate(sevenAgo);
-  const hppTo = isISODate(sp.hpp_to) ? sp.hpp_to : today;
-
   // ---- parallel fetches ----
   const [
     kpis,
@@ -88,8 +83,7 @@ export default async function DashboardPage() {
     planning,
     txRowsRaw,
     suppliers,
-    attendanceRows,
-    hppRows
+    attendanceRows
   ] = await Promise.all([
     dashboardKpis(supabase).catch(() => ({
       students_total: 0,
@@ -124,23 +118,30 @@ export default async function DashboardPage() {
       .from("school_attendance")
       .select("att_date, school_id, qty")
       .gte("att_date", today)
-      .then((r) => r.data ?? []),
-    costPerPortionDaily(supabase, hppFrom, hppTo).catch(
-      () => [] as CostPerPortionRow[]
-    )
+      .then((r) => r.data ?? [])
   ]);
 
-  // ---- portion counts per horizon date ----
+  // ---- portion counts + beneficiary breakdown per horizon date ----
   const porsiByDate = new Map<
     string,
     { kecil: number; besar: number; total: number }
   >();
+  const breakdownByDate = new Map<
+    string,
+    {
+      schools_count: number;
+      students_total: number;
+      pregnant_count: number;
+      toddler_count: number;
+    }
+  >();
   await Promise.all(
     planning.map(async (p) => {
-      const { data } = await supabase.rpc("porsi_counts", {
-        p_date: p.op_date
-      });
-      const row = (data ?? [])[0] as
+      const [pcRes, bdRes] = await Promise.all([
+        supabase.rpc("porsi_counts", { p_date: p.op_date }),
+        porsiBreakdown(supabase, p.op_date).catch(() => null)
+      ]);
+      const row = (pcRes.data ?? [])[0] as
         | { besar: number; kecil: number; total: number }
         | undefined;
       if (row) {
@@ -148,6 +149,14 @@ export default async function DashboardPage() {
           kecil: Number(row.kecil ?? 0),
           besar: Number(row.besar ?? 0),
           total: Number(row.total ?? 0)
+        });
+      }
+      if (bdRes) {
+        breakdownByDate.set(p.op_date, {
+          schools_count: bdRes.schools_count,
+          students_total: bdRes.students_total,
+          pregnant_count: bdRes.pregnant_count,
+          toddler_count: bdRes.toddler_count
         });
       }
     })
@@ -173,33 +182,6 @@ export default async function DashboardPage() {
   // ---- derived ----
   const shortItems = shortages.filter((s) => Number(s.gap) > 0);
   const totalGap = shortItems.reduce((s, x) => s + Number(x.gap || 0), 0);
-
-  // ---- HPP aggregation (weighted average across period) ----
-  const hppSorted = [...hppRows].sort((a, b) =>
-    a.op_date.localeCompare(b.op_date)
-  );
-  const hppTotalPorsi = hppSorted.reduce(
-    (s, r) => s + Number(r.total_porsi || 0),
-    0
-  );
-  const hppTotalSpent = hppSorted.reduce(
-    (s, r) => s + Number(r.spent_po || 0),
-    0
-  );
-  const hppAvg = hppTotalPorsi > 0 ? hppTotalSpent / hppTotalPorsi : 0;
-  const hppActiveDays = hppSorted.filter(
-    (r) => Number(r.total_porsi || 0) > 0
-  ).length;
-
-  // ---- day-of-week label for date inputs (local time, not UTC) ----
-  const dayNameFromISO = (iso: string): string => {
-    const [y, m, d] = iso.split("-").map(Number);
-    if (!y || !m || !d) return "";
-    const dow = new Date(y, m - 1, d).getDay();
-    return DAYS.long[lang][dow] ?? "";
-  };
-  const hppFromDay = dayNameFromISO(hppFrom);
-  const hppToDay = dayNameFromISO(hppTo);
 
   // Transaction log with supplier names
   const supplierMap = new Map(suppliers.map((s) => [s.id, s.name]));
@@ -323,12 +305,16 @@ export default async function DashboardPage() {
     const dayName = DAYS.long[lang][d.getDay()];
     const dateLabel = `${dayName}, ${d.getDate()} ${MONTHS.long[lang][d.getMonth()]} ${d.getFullYear()}`;
     const porsi = porsiByDate.get(p.op_date);
+    const bd = breakdownByDate.get(p.op_date);
     return {
       op_date: p.op_date,
       dateLabel,
       menu_name: p.menu_name,
       operasional: p.operasional,
-      schools: schoolsPerDate.get(p.op_date)?.size ?? 0,
+      schools: bd?.schools_count ?? schoolsPerDate.get(p.op_date)?.size ?? 0,
+      students: bd?.students_total ?? 0,
+      pregnant: bd?.pregnant_count ?? 0,
+      toddler: bd?.toddler_count ?? 0,
       kecil: porsi?.kecil ?? 0,
       besar: porsi?.besar ?? 0,
       total: porsi?.total ?? p.porsi_total
@@ -421,130 +407,6 @@ export default async function DashboardPage() {
             palette="violet"
           />
         </KpiGrid>
-
-        {/* HPP / Cost per Portion · period picker */}
-        <Section title={t("dashboard.hppTitle", lang)}>
-          <form
-            method="get"
-            className="mb-3 inline-flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 ring-1 ring-ink/10"
-          >
-            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-ink2">
-              <span>{t("dashboard.hppFrom", lang)}</span>
-              <span className="flex flex-col">
-                <input
-                  type="date"
-                  name="hpp_from"
-                  defaultValue={hppFrom}
-                  max={hppTo}
-                  className="rounded-md bg-white px-2 py-1 font-mono text-xs font-semibold text-ink ring-1 ring-ink/15 focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <span className="mt-0.5 font-sans text-[10px] font-semibold normal-case tracking-normal text-primary">
-                  {hppFromDay}
-                </span>
-              </span>
-            </label>
-            <span className="text-ink2/50">–</span>
-            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-ink2">
-              <span>{t("dashboard.hppTo", lang)}</span>
-              <span className="flex flex-col">
-                <input
-                  type="date"
-                  name="hpp_to"
-                  defaultValue={hppTo}
-                  min={hppFrom}
-                  className="rounded-md bg-white px-2 py-1 font-mono text-xs font-semibold text-ink ring-1 ring-ink/15 focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <span className="mt-0.5 font-sans text-[10px] font-semibold normal-case tracking-normal text-primary">
-                  {hppToDay}
-                </span>
-              </span>
-            </label>
-            <button
-              type="submit"
-              className="rounded-md bg-primary px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white transition hover:brightness-110"
-            >
-              {t("dashboard.hppApply", lang)}
-            </button>
-          </form>
-
-          <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <KpiTile
-              icon="💵"
-              label={t("dashboard.hppAvg", lang)}
-              value={hppTotalPorsi > 0 ? formatIDR(Math.round(hppAvg)) : "—"}
-              palette="emerald"
-              size="sm"
-            />
-            <KpiTile
-              icon="🍛"
-              label={t("dashboard.hppTotalPorsi", lang)}
-              value={formatNumber(hppTotalPorsi, lang)}
-              palette="blue"
-              size="sm"
-            />
-            <KpiTile
-              icon="🧾"
-              label={t("dashboard.hppTotalSpent", lang)}
-              value={formatIDR(hppTotalSpent)}
-              palette="amber"
-              size="sm"
-            />
-          </div>
-
-          {hppTotalPorsi === 0 ? (
-            <div className="flex items-center justify-center gap-2 rounded-lg bg-slate-50 px-4 py-3 text-[12px] text-ink2 ring-1 ring-ink/10">
-              <span>🗒️</span>
-              <span>{t("dashboard.hppEmpty", lang)}</span>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-lg ring-1 ring-ink/10">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-ink/10 bg-slate-50 text-left text-[10px] uppercase tracking-wide text-ink2">
-                    <th className="px-3 py-2 font-bold">
-                      {t("dashboard.hppColDate", lang)}
-                    </th>
-                    <th className="px-3 py-2 text-right font-bold">
-                      {t("dashboard.hppColPorsi", lang)}
-                    </th>
-                    <th className="px-3 py-2 text-right font-bold">
-                      {t("dashboard.hppColSpent", lang)}
-                    </th>
-                    <th className="px-3 py-2 text-right font-bold">
-                      {t("dashboard.hppColHpp", lang)}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hppSorted.map((r) => {
-                    const porsi = Number(r.total_porsi || 0);
-                    const spent = Number(r.spent_po || 0);
-                    const cpp = porsi > 0 ? spent / porsi : 0;
-                    return (
-                      <tr
-                        key={r.op_date}
-                        className="border-b border-ink/5 last:border-0"
-                      >
-                        <td className="px-3 py-1.5 font-mono text-[11px]">
-                          {r.op_date}
-                        </td>
-                        <td className="px-3 py-1.5 text-right font-mono">
-                          {formatNumber(porsi, lang)}
-                        </td>
-                        <td className="px-3 py-1.5 text-right font-mono">
-                          {formatIDR(spent)}
-                        </td>
-                        <td className="px-3 py-1.5 text-right font-mono font-black">
-                          {porsi > 0 ? formatIDR(Math.round(cpp)) : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Section>
 
         {/* Menu & Portion Schedule · 10 days */}
         <Section

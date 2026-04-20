@@ -3,7 +3,11 @@
 import { useMemo, useState } from "react";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
-import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  SortableTable,
+  type SortableColumn,
+  type SortableTableFilter
+} from "@/components/sortable-table";
 import { IDR, Section } from "@/components/ui";
 
 export type TxRow = {
@@ -39,70 +43,80 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
   const { lang } = useLang();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("");
 
-  const filtered = useMemo(() => {
+  const dateRangeFiltered = useMemo(() => {
     return rows.filter((r) => {
       if (dateFrom && r.tx_date < dateFrom) return false;
       if (dateTo && r.tx_date > dateTo) return false;
-      if (typeFilter && r.tx_type !== typeFilter) return false;
       return true;
     });
-  }, [rows, dateFrom, dateTo, typeFilter]);
+  }, [rows, dateFrom, dateTo]);
 
-  const totalAmount = filtered.reduce(
+  const totalAmount = dateRangeFiltered.reduce(
     (s, r) => s + Number(r.amount ?? 0),
     0
   );
 
-  function reset() {
-    setDateFrom("");
-    setDateTo("");
-    setTypeFilter("");
-  }
+  const rangeActive = dateFrom !== "" || dateTo !== "";
 
-  return (
-    <Section title={t("tx.title", lang)}>
-      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-paper p-3 ring-1 ring-ink/5">
+  const dateToolbar = (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <label className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2">
+        <span>{t("dashboard.hppFrom", lang)}</span>
         <input
           type="date"
           value={dateFrom}
+          max={dateTo || undefined}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="rounded-lg bg-white px-2 py-1.5 text-xs text-ink ring-1 ring-ink/10"
+          className="rounded-md border border-ink/10 bg-paper px-2 py-1 font-mono text-[11px] font-semibold text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
         />
-        <span className="text-ink2/70">–</span>
+      </label>
+      <label className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-ink2">
+        <span>{t("dashboard.hppTo", lang)}</span>
         <input
           type="date"
           value={dateTo}
+          min={dateFrom || undefined}
           onChange={(e) => setDateTo(e.target.value)}
-          className="rounded-lg bg-white px-2 py-1.5 text-xs text-ink ring-1 ring-ink/10"
+          className="rounded-md border border-ink/10 bg-paper px-2 py-1 font-mono text-[11px] font-semibold text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
         />
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="rounded-lg bg-white px-2 py-1.5 text-xs text-ink ring-1 ring-ink/10"
-        >
-          <option value="">{t("tx.allTypes", lang)}</option>
-          <option value="po">{t("tx.typePO", lang)}</option>
-          <option value="grn">{t("tx.typeGRN", lang)}</option>
-          <option value="invoice">{t("tx.typeInvoice", lang)}</option>
-          <option value="payment">{t("tx.typePayment", lang)}</option>
-          <option value="adjustment">{t("tx.typeAdjustment", lang)}</option>
-          <option value="receipt">{t("tx.typeReceipt", lang)}</option>
-        </select>
+      </label>
+      {rangeActive && (
         <button
-          onClick={reset}
-          className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-ink ring-1 ring-ink/10 hover:bg-ink/5"
+          type="button"
+          onClick={() => {
+            setDateFrom("");
+            setDateTo("");
+          }}
+          className="rounded-md border border-ink/10 bg-paper px-2 py-1 text-[11px] font-semibold text-ink2 transition hover:bg-ink/[0.04]"
         >
           {t("common.reset", lang)}
         </button>
-      </div>
+      )}
+    </div>
+  );
 
+  const typeFilter: SortableTableFilter<TxRow> = {
+    key: "type",
+    label: t("tx.allTypes", lang),
+    getValue: (r) => r.tx_type,
+    options: [
+      { value: "po", label: t("tx.typePO", lang) },
+      { value: "grn", label: t("tx.typeGRN", lang) },
+      { value: "invoice", label: t("tx.typeInvoice", lang) },
+      { value: "payment", label: t("tx.typePayment", lang) },
+      { value: "adjustment", label: t("tx.typeAdjustment", lang) },
+      { value: "receipt", label: t("tx.typeReceipt", lang) }
+    ]
+  };
+
+  return (
+    <Section title={t("tx.title", lang)}>
       <p className="mb-2 text-[11px] text-ink2/70">
-        {ti("tx.nRows", lang, { n: filtered.length })}
+        {ti("tx.nRows", lang, { n: dateRangeFiltered.length })}
       </p>
 
-      {filtered.length === 0 ? (
+      {dateRangeFiltered.length === 0 && !rangeActive ? (
         <div className="rounded-xl bg-ink/5 p-4 text-center text-sm text-ink2">
           {t("tx.empty", lang)}
         </div>
@@ -113,18 +127,27 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
             rowKey={(r) => r.id}
             initialSort={{ key: "date", dir: "desc" }}
             columns={txColumns(lang)}
-            rows={filtered}
+            rows={dateRangeFiltered}
             searchable
+            exportable
+            exportFileName="transactions"
+            exportSheetName="Transactions"
+            toolbarExtra={dateToolbar}
+            filters={[typeFilter]}
             footer={
-              <tr className="border-t-2 border-ink/30 bg-slate-50 font-black">
+              <tr className="border-t-2 border-ink bg-ink font-black">
                 <td
-                  colSpan={5}
-                  className="px-3 py-2 text-right text-[11px] uppercase tracking-wide text-ink"
+                  colSpan={6}
+                  className="px-3 py-2 text-center text-[11px] uppercase tracking-wide text-white"
                 >
                   {t("tx.grandTotal", lang)}
                 </td>
                 <td className="px-3 py-2 text-left">
-                  <IDR value={totalAmount} />
+                  <IDR
+                    value={totalAmount}
+                    className="text-white"
+                    prefixClassName="text-white/70"
+                  />
                 </td>
               </tr>
             }
@@ -137,6 +160,15 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
 
 function txColumns(lang: "ID" | "EN"): SortableColumn<TxRow>[] {
   return [
+    {
+      key: "no",
+      label: t("dashboard.tblNo", lang),
+      width: "48px",
+      sortable: false,
+      render: (_r, i) => (
+        <span className="font-mono text-[11px] text-ink2">{i + 1}</span>
+      )
+    },
     {
       key: "date",
       label: t("tx.colDate", lang),

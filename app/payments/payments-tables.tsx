@@ -145,26 +145,32 @@ export function OutstandingTable({
       columns={columns}
       rows={rows}
       footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
-          <td className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink">
+        <tr className="border-t-2 border-ink bg-ink">
+          <td className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white">
             {t("common.grandTotal", lang)}
           </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-ink">
+          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {totalCount}
           </td>
           <td className="py-2 px-3 text-left">
-            <IDR value={totalInvoice} className="text-xs font-black text-ink" />
+            <IDR
+              value={totalInvoice}
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
+            />
           </td>
           <td className="py-2 px-3 text-left">
             <IDR
               value={totalPaid}
-              className="text-xs font-black text-emerald-700"
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
             />
           </td>
           <td className="py-2 px-3 text-left">
             <IDR
               value={totalOutstanding}
-              className="text-xs font-black text-red-700"
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
             />
           </td>
           <td></td>
@@ -245,25 +251,29 @@ export function CashflowTable({
       columns={columns}
       rows={rows}
       footer={
-        <tr className="border-t-2 border-ink/30 bg-slate-50">
-          <td className="py-2 px-3 text-right text-[11px] font-black uppercase tracking-wide text-ink">
+        <tr className="border-t-2 border-ink bg-ink">
+          <td className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white">
             {t("common.grandTotal", lang)}
           </td>
           <td className="py-2 px-3 text-left">
             <IDR
               value={totalIn}
-              className="text-xs font-black text-emerald-700"
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
             />
           </td>
           <td className="py-2 px-3 text-left">
-            <IDR value={totalOut} className="text-xs font-black text-red-700" />
+            <IDR
+              value={totalOut}
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
+            />
           </td>
           <td className="py-2 px-3 text-left">
             <IDR
               value={totalNet}
-              className={`text-xs font-black ${
-                totalNet >= 0 ? "text-emerald-700" : "text-red-700"
-              }`}
+              className="text-xs font-black text-white"
+              prefixClassName="text-white/70"
             />
           </td>
           <td></td>

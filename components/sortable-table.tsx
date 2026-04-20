@@ -417,7 +417,7 @@ export function SortableTable<T>({
                     aria-sort={ariaSort}
                     title={c.title}
                     style={c.width ? { width: c.width } : undefined}
-                    className={`px-3 ${rowPad} ${ALIGN_CLS[c.align ?? "center"]} ${
+                    className={`whitespace-nowrap px-3 ${rowPad} ${ALIGN_CLS[c.align ?? "center"]} ${
                       sortable
                         ? "cursor-pointer select-none transition hover:brightness-110"
                         : ""
@@ -498,7 +498,7 @@ export function SortableTable<T>({
                       return (
                         <td
                           key={c.key}
-                          className={`px-3 ${rowPad} ${ALIGN_CLS[c.align ?? "center"]} ${tdExtra}`}
+                          className={`whitespace-nowrap px-3 ${rowPad} ${ALIGN_CLS[c.align ?? "center"]} ${tdExtra}`}
                         >
                           {c.render(row, i)}
                         </td>
