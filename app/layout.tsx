@@ -3,6 +3,8 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { PrefsProvider } from "@/lib/prefs-context";
 import { PwaRegistrar } from "@/components/pwa-registrar";
+import { ToastProvider, ToastBridge } from "@/components/toast";
+import { ShortcutHelp } from "@/components/shortcut-help";
 
 const PREFS_INIT_SCRIPT = `(() => {
   try {
@@ -88,8 +90,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-paper text-ink antialiased dark:bg-d-bg dark:text-d-text">
         <PrefsProvider>
-          {children}
-          <PwaRegistrar />
+          <ToastProvider>
+            {children}
+            <ToastBridge />
+            <ShortcutHelp />
+            <PwaRegistrar />
+          </ToastProvider>
         </PrefsProvider>
       </body>
     </html>

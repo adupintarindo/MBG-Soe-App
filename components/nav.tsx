@@ -8,6 +8,7 @@ import { canInvite, canWriteMenu, canWriteStock } from "@/lib/roles";
 import { type Lang, type LangKey, t, DAYS, MONTHS } from "@/lib/i18n";
 import { usePrefs } from "@/lib/prefs-context";
 import { CommandPalette } from "./command-palette";
+import { NotificationBell } from "./notification-bell";
 
 interface MenuToday {
   id: number | null;
@@ -283,49 +284,24 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
     >
       <div className="mx-auto max-w-7xl px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-5">
         {/* === Top row: brand + utility chips === */}
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5">
-          <div className="flex items-center gap-3">
+        <div className="mb-4 flex flex-nowrap items-center justify-between gap-3 sm:mb-5">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-gradient text-white shadow-cardlg ring-1 ring-white/10 dark:bg-primary-gradient-dark dark:shadow-cardlg-dark dark:ring-gold/30">
               <span className="text-lg" aria-hidden>🍱</span>
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-black tracking-tight text-primary dark:text-white sm:text-2xl">
-                {t("appTitle", lang)}
+              <h1 className="truncate text-sm font-black tracking-tight text-primary dark:text-white sm:text-base">
+                SPPG Nunumeu, Soe #3
               </h1>
-              <p className="truncate text-[12px] font-semibold text-primary-2 dark:text-d-text">
-                {t("brandSub", lang)}
-              </p>
-              <p className="hidden truncate text-[11px] font-medium text-primary-2/70 dark:text-d-text-2 sm:block">
-                {t("brandRegion", lang)}
-              </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
             <Chip icon="📆" text={formatDate(now, lang)} hideOnMobile suppressHydrationWarning />
             <Chip icon="🕐" text={formatTimeWITA(now)} mono suppressHydrationWarning />
 
-            <CommandPalette
-              renderTrigger={(openPalette) => (
-                <button
-                  type="button"
-                  onClick={openPalette}
-                  aria-label={t("cmdk.trigger", lang)}
-                  className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-primary-2 shadow-card transition hover:bg-primary hover:text-white dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark dark:hover:bg-accent-strong"
-                >
-                  <span aria-hidden>🔍</span>
-                  <span className="hidden sm:inline">
-                    {t("cmdk.trigger", lang)}
-                  </span>
-                  <kbd className="hidden rounded bg-ink/10 px-1.5 py-0.5 font-mono text-[10px] sm:inline">
-                    ⌘K
-                  </kbd>
-                </button>
-              )}
-            />
-
             <div
-              className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold shadow-card dark:bg-d-surface-2 dark:shadow-card-dark"
+              className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-[11px] font-bold shadow-card dark:bg-d-surface-2 dark:shadow-card-dark"
               title={status.text}
               suppressHydrationWarning
             >
@@ -342,7 +318,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
             </div>
 
             {/* Theme toggle */}
-            <div className="inline-flex items-center gap-1 rounded-full bg-white p-1 shadow-card dark:bg-d-surface-2 dark:shadow-card-dark">
+            <div className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white p-1 shadow-card dark:bg-d-surface-2 dark:shadow-card-dark">
               <button
                 type="button"
                 onClick={() => setTheme("light")}
@@ -372,7 +348,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
             </div>
 
             {/* Language toggle */}
-            <div className="inline-flex items-center rounded-full bg-white p-1 text-[11px] font-black shadow-card dark:bg-d-surface-2 dark:shadow-card-dark">
+            <div className="inline-flex shrink-0 items-center rounded-full bg-white p-1 text-[11px] font-black shadow-card dark:bg-d-surface-2 dark:shadow-card-dark">
               <button
                 type="button"
                 onClick={() => setLang("ID")}
@@ -399,7 +375,7 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
               </button>
             </div>
 
-            <form action="/auth/signout" method="post" className="inline-flex">
+            <form action="/auth/signout" method="post" className="inline-flex shrink-0">
               <button
                 type="submit"
                 title={`${displayName} · ${email} — ${t("signOut", lang)}`}
@@ -414,6 +390,27 @@ export function Nav({ email, role, fullName, menuToday }: NavProps) {
                 <span aria-hidden>⎋</span>
               </button>
             </form>
+
+            <CommandPalette
+              renderTrigger={(openPalette) => (
+                <button
+                  type="button"
+                  onClick={openPalette}
+                  aria-label={t("cmdk.trigger", lang)}
+                  className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-primary-2 shadow-card transition hover:bg-primary hover:text-white dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark dark:hover:bg-accent-strong"
+                >
+                  <span aria-hidden>🔍</span>
+                  <span className="hidden sm:inline">
+                    {t("cmdk.trigger", lang)}
+                  </span>
+                  <kbd className="hidden rounded bg-ink/10 px-1.5 py-0.5 font-mono text-[10px] sm:inline">
+                    ⌘K
+                  </kbd>
+                </button>
+              )}
+            />
+
+            <NotificationBell />
           </div>
         </div>
 
@@ -474,7 +471,7 @@ function Chip({
 }) {
   return (
     <div
-      className={`inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-primary shadow-card dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark ${
+      className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-primary shadow-card dark:bg-d-surface-2 dark:text-d-text dark:shadow-card-dark ${
         hideOnMobile ? "hidden md:inline-flex" : ""
       }`}
     >
