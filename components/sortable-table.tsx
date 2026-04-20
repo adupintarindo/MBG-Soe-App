@@ -478,7 +478,7 @@ export function SortableTable<T>({
             </caption>
           )}
           <thead className={theadCls}>
-            <tr className="font-display text-[10.5px] font-bold uppercase tracking-[0.1em]">
+            <tr className="font-display text-[11px] font-bold tracking-wide">
               {columns.map((c) => {
                 const sortable = c.sortable !== false;
                 const active = sortKey === c.key && sortable;

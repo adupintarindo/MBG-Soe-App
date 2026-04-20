@@ -6,8 +6,6 @@ import { formatDateLong } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -113,38 +111,6 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="🧪"
-          label={lang === "EN" ? "Tests (30d)" : "Uji 30 Hari"}
-          value={tests.length.toString()}
-          size="md"
-          tone="info"
-        />
-        <KpiTile
-          icon="✅"
-          label={lang === "EN" ? "Safe Rate" : "Tingkat Aman"}
-          value={`${amanRate.toFixed(0)}%`}
-          size="md"
-          tone={amanRate >= 95 ? "ok" : amanRate >= 80 ? "warn" : "bad"}
-          sub={`${amanCount}/${tests.length}`}
-        />
-        <KpiTile
-          icon="⚠️"
-          label={lang === "EN" ? "Unsafe" : "Tidak Aman"}
-          value={unsafeCount.toString()}
-          size="md"
-          tone={unsafeCount === 0 ? "ok" : "bad"}
-        />
-        <KpiTile
-          icon="⭐"
-          label={lang === "EN" ? "Avg Score (1–5)" : "Skor Rata-rata"}
-          value={((avgRasa + avgWarna + avgAroma + avgTekstur) / 4).toFixed(2)}
-          size="md"
-          sub={`R:${avgRasa.toFixed(1)} W:${avgWarna.toFixed(1)} A:${avgAroma.toFixed(1)} T:${avgTekstur.toFixed(1)}`}
-        />
-      </KpiGrid>
-
       <Section
         title={lang === "EN" ? "Phase Breakdown" : "Fase Pengujian"}
         hint={

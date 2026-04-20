@@ -15,8 +15,6 @@ import {
 } from "@/lib/engine";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   PageContainer,
   PageHeader,
   Section
@@ -268,26 +266,6 @@ export default async function PlanningPage({
 
         {activeTab === "daily" && (
           <>
-            <KpiGrid>
-              <KpiTile
-                icon="📅"
-                label={t("planning.kpiOpDays", lang)}
-                value={`${opDays} / ${daily.length}`}
-                sub={t("planning.kpiOpDaysSub", lang)}
-              />
-              <KpiTile
-                icon="🍽️"
-                label={t("planning.kpiTotalPorsi", lang)}
-                value={formatNumber(totalPorsi, lang)}
-                sub={t("planning.kpiTotalPorsiSub", lang)}
-              />
-              <KpiTile
-                icon="⚖️"
-                label={t("planning.kpiTotalKg", lang)}
-                value={formatKg(totalKg, 0)}
-                sub={t("planning.kpiTotalKgSub", lang)}
-              />
-            </KpiGrid>
             <Section title={t("planning.dailyTitle", lang)} hint={t("planning.dailyHint", lang)}>
               <PlanningDailyTable lang={lang} rows={dailyRows} />
             </Section>

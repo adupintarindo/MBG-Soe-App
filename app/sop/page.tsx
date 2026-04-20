@@ -6,8 +6,6 @@ import { SOPS, type SOP } from "@/lib/sops";
 import { sopComplianceSummary } from "@/lib/engine";
 import {
   Badge,
-  KpiGrid,
-  KpiTile,
   PageContainer,
   PageHeader,
   Section

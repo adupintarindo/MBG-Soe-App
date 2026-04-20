@@ -5,8 +5,6 @@ import type { Lang } from "@/lib/i18n";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -122,45 +120,6 @@ export async function AbsensiTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="📅"
-          label={lang === "EN" ? "Active Period" : "Periode Aktif"}
-          value={latestPeriod?.period_label ?? "—"}
-          size="md"
-          sub={
-            latestPeriod
-              ? `${formatDateShort(latestPeriod.start_date)} → ${formatDateShort(latestPeriod.end_date)}`
-              : lang === "EN"
-                ? "No period"
-                : "Belum ada"
-          }
-        />
-        <KpiTile
-          icon="✅"
-          label={lang === "EN" ? "Present Days" : "Hari Hadir"}
-          value={totalHadir.toString()}
-          size="md"
-          tone="ok"
-          sub={`${staff.length} ${lang === "EN" ? "staff" : "staff"}`}
-        />
-        <KpiTile
-          icon="❌"
-          label={lang === "EN" ? "Absent + Sick" : "Alpa + Sakit"}
-          value={(totalAlpa + totalSakit).toString()}
-          size="md"
-          tone={totalAlpa > 0 ? "bad" : "warn"}
-          sub={`A:${totalAlpa} · S:${totalSakit}`}
-        />
-        <KpiTile
-          icon="⏰"
-          label={lang === "EN" ? "Overtime (h)" : "Total Lembur (jam)"}
-          value={totalLembur.toFixed(1)}
-          size="md"
-          tone="info"
-        />
-      </KpiGrid>
-
       <Section
         title={
           lang === "EN"

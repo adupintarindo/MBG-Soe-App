@@ -12,8 +12,6 @@ import {
 } from "@/lib/engine";
 import {
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -70,50 +68,6 @@ export async function AnggaranTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="💰"
-          label={lang === "EN" ? "Total Budget" : "Total Anggaran"}
-          value={formatIDR(totalBudget)}
-          size="md"
-          sub={activeBurn?.period ?? "—"}
-        />
-        <KpiTile
-          icon="📉"
-          label={lang === "EN" ? "Cash Paid" : "Realisasi Bayar"}
-          value={formatIDR(spentPaid)}
-          size="md"
-          tone="bad"
-          sub={lang === "EN" ? "burn to date" : "burn to date"}
-        />
-        <KpiTile
-          icon="🔥"
-          label="Burn %"
-          value={`${burnPct.toFixed(1)}%`}
-          tone={burnPct > 90 ? "bad" : burnPct > 70 ? "warn" : "ok"}
-          sub={lang === "EN" ? "paid ÷ budget" : "paid ÷ budget"}
-        />
-        <KpiTile
-          icon="🍱"
-          label={lang === "EN" ? "Cost per Portion" : "Biaya per Porsi"}
-          value={formatIDR(Math.round(avgCpp))}
-          tone={
-            target > 0 && avgCpp > target
-              ? "bad"
-              : target > 0 && avgCpp > 0
-                ? "ok"
-                : "default"
-          }
-          sub={
-            target > 0
-              ? `Target ${formatIDR(target)}`
-              : lang === "EN"
-                ? "last 30 days"
-                : "30 hari terakhir"
-          }
-        />
-      </KpiGrid>
-
       <Section
         title={lang === "EN" ? "Budget Master" : "Master Anggaran"}
         hint={

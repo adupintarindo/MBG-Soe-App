@@ -5,8 +5,6 @@ import type { Lang } from "@/lib/i18n";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -204,47 +202,6 @@ export async function GeneratorLampiranTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="📄"
-          label={lang === "EN" ? "Total Forms" : "Jumlah Lampiran"}
-          value={LAMPIRAN_LIST.length.toString()}
-          size="md"
-          tone="info"
-          sub={lang === "EN" ? "SK Ka BGN 401.1/2025" : "SK Ka BGN 401.1/2025"}
-        />
-        <KpiTile
-          icon="⬇️"
-          label={lang === "EN" ? "Generated Today" : "Dibuat Hari Ini"}
-          value={todayGen.toString()}
-          size="md"
-          tone="ok"
-        />
-        <KpiTile
-          icon="📦"
-          label={lang === "EN" ? "Recent Files" : "File Terbaru"}
-          value={recentLogs.length.toString()}
-          size="md"
-          sub={`${uniqueLampiran} ${lang === "EN" ? "unique forms" : "lampiran unik"}`}
-        />
-        <KpiTile
-          icon="🔐"
-          label={lang === "EN" ? "Your Role" : "Role Anda"}
-          value={role.toUpperCase()}
-          size="md"
-          tone={canGenerate ? "ok" : "warn"}
-          sub={
-            canGenerate
-              ? lang === "EN"
-                ? "Can generate"
-                : "Bisa generate"
-              : lang === "EN"
-                ? "Read-only"
-                : "Hanya baca"
-          }
-        />
-      </KpiGrid>
-
       {(Object.keys(byCategory) as LampiranDef["category"][]).map((cat) => {
         const list = byCategory[cat];
         if (list.length === 0) return null;

@@ -6,8 +6,6 @@ import { formatIDR } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   Section
 } from "@/components/ui";
 import {
@@ -117,47 +115,6 @@ export async function NeracaTab({ supabase, lang }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="🏦"
-          label={lang === "EN" ? "Total Assets (MTD)" : "Total Aset (MTD)"}
-          value={formatIDR(totalAsset)}
-          size="md"
-          tone="info"
-        />
-        <KpiTile
-          icon="📋"
-          label={lang === "EN" ? "Liab. + Equity" : "Liabilitas + Ekuitas"}
-          value={formatIDR(liabPlusEquity)}
-          size="md"
-          tone={isBalanced ? "ok" : "warn"}
-          sub={
-            isBalanced
-              ? lang === "EN"
-                ? "Balanced ✓"
-                : "Seimbang ✓"
-              : lang === "EN"
-                ? "Imbalance detected"
-                : "Tidak seimbang"
-          }
-        />
-        <KpiTile
-          icon="💰"
-          label={lang === "EN" ? "Revenue (MTD)" : "Pendapatan (MTD)"}
-          value={formatIDR(totalRevenue)}
-          size="md"
-          tone="ok"
-        />
-        <KpiTile
-          icon="💸"
-          label={lang === "EN" ? "Net Income" : "Laba/Rugi Bersih"}
-          value={formatIDR(netIncome)}
-          size="md"
-          tone={netIncome >= 0 ? "ok" : "bad"}
-          sub={lang === "EN" ? "Revenue − Expense" : "Pendapatan − Beban"}
-        />
-      </KpiGrid>
-
       {accounts.length === 0 ? (
         <Section
           title={lang === "EN" ? "Trial Balance" : "Neraca (Month-to-Date)"}

@@ -6,8 +6,6 @@ import { formatIDR } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -79,36 +77,6 @@ export async function TimSppgTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="👥"
-          label={lang === "EN" ? "Total Staff (active)" : "Total Staff Aktif"}
-          value={totalStaff.toString()}
-          size="md"
-          tone="info"
-        />
-        <KpiTile
-          icon="🎖️"
-          label={lang === "EN" ? "Core Team" : "Tim Inti"}
-          value={coreStaffCount.toString()}
-          size="md"
-          sub={lang === "EN" ? "Lead + Supervisors + Cook" : "Kepala + Pengawas + Juru Masak"}
-        />
-        <KpiTile
-          icon="🤝"
-          label={lang === "EN" ? "Volunteers" : "Relawan Rakyat"}
-          value={relawanCount.toString()}
-          size="md"
-        />
-        <KpiTile
-          icon="💰"
-          label={lang === "EN" ? "Payroll / mo" : "Total Gaji Pokok/bln"}
-          value={formatIDR(totalPayroll)}
-          size="md"
-          tone="warn"
-        />
-      </KpiGrid>
-
       <Section
         title={
           lang === "EN" ? "SPPG Team Roster (Lamp. 27)" : "Daftar Tim SPPG (Lamp. 27)"

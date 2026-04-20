@@ -6,8 +6,6 @@ import { formatIDR } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -79,37 +77,6 @@ export async function InsentifTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="🎁"
-          label={lang === "EN" ? "Kader Incentive" : "Insentif Kader"}
-          value={formatIDR(totalKader)}
-          size="md"
-          tone="info"
-          sub={`${totalPorsiKader.toLocaleString()} ${lang === "EN" ? "portions" : "porsi"}`}
-        />
-        <KpiTile
-          icon="🏫"
-          label={lang === "EN" ? "PIC Incentive" : "Insentif PIC Sekolah"}
-          value={formatIDR(totalPic)}
-          size="md"
-          tone="info"
-          sub={`${totalPorsiPic.toLocaleString()} ${lang === "EN" ? "portions" : "porsi"}`}
-        />
-        <KpiTile
-          icon="🏥"
-          label={lang === "EN" ? "Posyandu Active" : "Posyandu Aktif"}
-          value={posyanduList.filter((p) => p.active).length.toString()}
-          size="md"
-        />
-        <KpiTile
-          icon="📎"
-          label={lang === "EN" ? "PIC Mapped" : "PIC Terdaftar"}
-          value={picSchoolList.filter((p) => p.active).length.toString()}
-          size="md"
-        />
-      </KpiGrid>
-
       <Section
         title={
           lang === "EN"

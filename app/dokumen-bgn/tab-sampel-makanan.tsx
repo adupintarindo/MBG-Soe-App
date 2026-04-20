@@ -5,8 +5,6 @@ import type { Lang } from "@/lib/i18n";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -65,45 +63,6 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="🧪"
-          label={lang === "EN" ? "Logs (30d)" : "Log 30 Hari"}
-          value={logs.length.toString()}
-          size="md"
-          tone="info"
-        />
-        <KpiTile
-          icon="📅"
-          label={lang === "EN" ? "Today" : "Hari Ini"}
-          value={todayLogs.length.toString()}
-          size="md"
-          sub={todayIso}
-        />
-        <KpiTile
-          icon="🧊"
-          label={lang === "EN" ? "Sample Kept" : "Sampel Disimpan"}
-          value={`${sampleComplianceRate.toFixed(0)}%`}
-          size="md"
-          tone={
-            sampleComplianceRate >= 100
-              ? "ok"
-              : sampleComplianceRate >= 90
-                ? "warn"
-                : "bad"
-          }
-          sub={`${sampleKeptCount}/${logs.length}`}
-        />
-        <KpiTile
-          icon="✍️"
-          label={lang === "EN" ? "Officer Signed" : "Ttd Petugas"}
-          value={`${logs.length > 0 ? ((signedCount / logs.length) * 100).toFixed(0) : 0}%`}
-          size="md"
-          tone={signedCount === logs.length ? "ok" : "warn"}
-          sub={`${signedCount}/${logs.length}`}
-        />
-      </KpiGrid>
-
       <Section
         title={
           lang === "EN"

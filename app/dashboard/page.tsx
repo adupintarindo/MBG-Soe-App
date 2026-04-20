@@ -6,8 +6,6 @@ import { TransactionLog, type TxRow } from "@/components/transaction-log";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   NoticeCard,
   PageContainer,
   Section
@@ -492,42 +490,6 @@ export default async function DashboardPage({
       />
 
       <PageContainer>
-        <KpiGrid>
-          <KpiTile
-            icon="👥"
-            label={t("dashboard.kpiStudents", lang)}
-            value={formatNumber(kpis.students_total, lang)}
-            palette="blue"
-          />
-          <KpiTile
-            icon="🏫"
-            label={t("dashboard.kpiSchoolsActive", lang)}
-            value={kpis.schools_active.toString()}
-            palette="emerald"
-          />
-          <KpiTile
-            icon="🍽️"
-            label={t("dashboard.kpiMenuToday", lang)}
-            value={
-              <span
-                className="block text-[13px] leading-snug"
-                title={kpis.menu_today_name || "—"}
-              >
-                {kpis.menu_today_name || "—"}
-              </span>
-            }
-            size="sm"
-            tone="default"
-            palette="amber"
-          />
-          <KpiTile
-            icon="🤝"
-            label={t("dashboard.kpiSuppliersActive", lang)}
-            value={kpis.suppliers_active.toString()}
-            palette="violet"
-          />
-        </KpiGrid>
-
         {/* Menu & Portion Schedule · 10 days */}
         <Section
           banner

@@ -6,8 +6,6 @@ import { formatIDR, formatDateLong } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -70,35 +68,6 @@ export async function BukuBesarTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="📚"
-          label={lang === "EN" ? "Accounts (active)" : "Akun Aktif"}
-          value={accounts.length.toString()}
-          size="md"
-        />
-        <KpiTile
-          icon="🧾"
-          label={lang === "EN" ? "Entries (30d)" : "Jurnal (30h)"}
-          value={entries.length.toString()}
-          size="md"
-        />
-        <KpiTile
-          icon="💸"
-          label={lang === "EN" ? "Expense (30d)" : "Beban (30h)"}
-          value={formatIDR(rollup.expense ?? 0)}
-          size="md"
-          tone="bad"
-        />
-        <KpiTile
-          icon="💰"
-          label={lang === "EN" ? "Revenue (30d)" : "Pendapatan (30h)"}
-          value={formatIDR(rollup.revenue ?? 0)}
-          size="md"
-          tone="ok"
-        />
-      </KpiGrid>
-
       <Section
         title={lang === "EN" ? "Chart of Accounts" : "Chart of Accounts (Bagan Akun)"}
         hint={

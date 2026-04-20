@@ -6,8 +6,6 @@ import { formatIDR, formatDateShort, formatDateLong } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -72,43 +70,6 @@ export async function GajiTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="🗓️"
-          label={lang === "EN" ? "Active Period" : "Periode Aktif"}
-          value={latestPeriod?.period_label ?? "—"}
-          size="md"
-          sub={
-            latestPeriod
-              ? `${formatDateShort(latestPeriod.start_date)} → ${formatDateShort(latestPeriod.end_date)}`
-              : lang === "EN"
-                ? "No period yet"
-                : "Belum ada periode"
-          }
-        />
-        <KpiTile
-          icon="🧾"
-          label={lang === "EN" ? "Slips" : "Slip Gaji"}
-          value={slips.length.toString()}
-          size="md"
-          sub={`${paidCount} ${lang === "EN" ? "paid" : "terbayar"}`}
-        />
-        <KpiTile
-          icon="💰"
-          label={lang === "EN" ? "Gross Total" : "Penerimaan Kotor"}
-          value={formatIDR(totalBruto)}
-          size="md"
-          tone="info"
-        />
-        <KpiTile
-          icon="💵"
-          label={lang === "EN" ? "Net Total" : "Penerimaan Bersih"}
-          value={formatIDR(totalNetto)}
-          size="md"
-          tone="ok"
-        />
-      </KpiGrid>
-
       <Section
         title={
           lang === "EN"

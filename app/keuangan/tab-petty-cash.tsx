@@ -6,8 +6,6 @@ import { formatIDR, formatDateLong } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -46,36 +44,6 @@ export async function PettyCashTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="📥"
-          label={lang === "EN" ? "In (60d)" : "Masuk (60h)"}
-          value={formatIDR(totalMasuk)}
-          size="md"
-          tone="ok"
-        />
-        <KpiTile
-          icon="📤"
-          label={lang === "EN" ? "Out (60d)" : "Keluar (60h)"}
-          value={formatIDR(totalKeluar)}
-          size="md"
-          tone="bad"
-        />
-        <KpiTile
-          icon="💴"
-          label={lang === "EN" ? "Balance" : "Saldo Kas Kecil"}
-          value={formatIDR(saldo)}
-          size="md"
-          tone={saldo >= 0 ? "ok" : "bad"}
-        />
-        <KpiTile
-          icon="🧾"
-          label={lang === "EN" ? "Tx Count" : "Jumlah Transaksi"}
-          value={txs.length.toString()}
-          size="md"
-        />
-      </KpiGrid>
-
       <Section
         title={lang === "EN" ? "Petty Cash (Lamp. 30f)" : "Kas Kecil (Lamp. 30f)"}
         hint={

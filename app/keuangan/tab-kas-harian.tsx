@@ -6,8 +6,6 @@ import { formatIDR, formatDateLong } from "@/lib/engine";
 import {
   Badge,
   EmptyState,
-  KpiGrid,
-  KpiTile,
   LinkButton,
   Section
 } from "@/components/ui";
@@ -50,37 +48,6 @@ export async function KasHarianTab({ supabase, lang, role }: Props) {
 
   return (
     <>
-      <KpiGrid>
-        <KpiTile
-          icon="📥"
-          label={lang === "EN" ? "In (30d)" : "Uang Masuk (30h)"}
-          value={formatIDR(totalMasuk)}
-          size="md"
-          tone="ok"
-        />
-        <KpiTile
-          icon="📤"
-          label={lang === "EN" ? "Out (30d)" : "Uang Keluar (30h)"}
-          value={formatIDR(totalKeluar)}
-          size="md"
-          tone="bad"
-        />
-        <KpiTile
-          icon="⚖️"
-          label={lang === "EN" ? "Net Flow" : "Saldo Bersih"}
-          value={formatIDR(saldo)}
-          size="md"
-          tone={saldo >= 0 ? "ok" : "bad"}
-        />
-        <KpiTile
-          icon="📆"
-          label={lang === "EN" ? "Today's Tx" : "Transaksi Hari Ini"}
-          value={todayTxCount.toString()}
-          size="md"
-          sub={todayIso}
-        />
-      </KpiGrid>
-
       <Section
         title={lang === "EN" ? "Daily Cash Log (Lamp. 30b)" : "Kas Harian (Lamp. 30b)"}
         hint={
