@@ -144,6 +144,8 @@ export function OutstandingTable({
       initialSort={{ key: "out", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={460}
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white">
@@ -250,6 +252,8 @@ export function CashflowTable({
       initialSort={{ key: "period", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={440}
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white">
@@ -369,6 +373,8 @@ export function PaymentsTable({
       initialSort={{ key: "date", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={480}
     />
   );
 }
@@ -453,6 +459,8 @@ export function ReceiptsTable({
       initialSort={{ key: "date", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={480}
     />
   );
 }

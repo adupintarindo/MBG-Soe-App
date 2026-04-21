@@ -94,6 +94,7 @@ interface SectionProps {
   children: ReactNode;
   noPad?: boolean;
   banner?: boolean;
+  icon?: ReactNode;
 }
 
 const ACCENT_BORDER: Record<NonNullable<SectionProps["accent"]>, string> = {
@@ -112,14 +113,34 @@ export function Section({
   className = "",
   children,
   noPad = false,
-  banner: _banner = false
+  banner = false,
+  icon
 }: SectionProps) {
-  void _banner;
+  const hasHeader = !!(title || actions || hint);
+
   return (
     <section
       className={`mb-6 rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${className}`}
     >
-      {(title || actions || hint) && (
+      {hasHeader && banner && (
+        <header className="flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-ink/5 bg-paper px-4 py-3 sm:px-5">
+          {title && (
+            <h2 className="flex min-w-0 items-center gap-2 font-display text-[15px] font-extrabold tracking-crisp text-ink">
+              {icon && (
+                <span aria-hidden className="shrink-0 text-lg leading-none">
+                  {icon}
+                </span>
+              )}
+              <span className="truncate">{title}</span>
+              {hint && <InfoBadge tone="light">{hint}</InfoBadge>}
+            </h2>
+          )}
+          {actions && (
+            <div className="flex flex-wrap items-center gap-2">{actions}</div>
+          )}
+        </header>
+      )}
+      {hasHeader && !banner && (
         <header className="relative z-20 flex flex-wrap items-center justify-center gap-3 rounded-t-2xl bg-ink px-4 py-1.5 text-center">
           {title && (
             <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
@@ -335,6 +356,7 @@ export function CategoryBadge({
   const icon = CATEGORY_ICON[cat] ?? CATEGORY_ICON.LAIN;
   const pad = size === "sm" ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[10px]";
   const iconSize = size === "sm" ? "text-[11px]" : "text-[12px]";
+  const label = toTitleCase(cat);
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full font-bold ring-1 ${pad} ${color} ${className}`}
@@ -342,9 +364,22 @@ export function CategoryBadge({
       <span aria-hidden className={`${iconSize} leading-none`}>
         {icon}
       </span>
-      {cat}
+      {label}
     </span>
   );
+}
+
+function toTitleCase(raw: string): string {
+  return raw
+    .split(/([_\s])/)
+    .map((part) =>
+      part === "_" || part === " "
+        ? part === "_"
+          ? " "
+          : part
+        : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+    )
+    .join("");
 }
 
 /* ---------- Empty state ---------- */

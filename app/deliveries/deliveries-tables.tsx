@@ -211,6 +211,8 @@ export function DeliveryManifestTable({
         initialSort={{ key: "order", dir: "asc" }}
         columns={columns}
         rows={delivery.stops}
+        stickyHeader
+        bodyMaxHeight={440}
       />
     </div>
   );
@@ -326,6 +328,8 @@ export function DeliveryHistoryTable({
       columns={columns}
       rows={rows}
       searchable
+      stickyHeader
+      bodyMaxHeight={500}
     />
   );
 }

@@ -14,7 +14,8 @@ import {
   BomTable,
   CommodityTable,
   type BomTableRow,
-  type CommodityRow
+  type CommodityRow,
+  type MenuDetail
 } from "@/components/menu-tables";
 import { t, ti } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
@@ -64,7 +65,7 @@ export default async function MenuMasterPage({
       .order("code"),
     supabase
       .from("supplier_items")
-      .select("supplier_id, item_code, is_main, suppliers(id, name)")
+      .select("supplier_id, item_code, is_main, price_idr, suppliers(id, name)")
   ]);
 
   interface ItemRow {
@@ -97,6 +98,7 @@ export default async function MenuMasterPage({
     supplier_id: string;
     item_code: string;
     is_main: boolean;
+    price_idr: number | string | null;
     suppliers: { id: string; name: string } | { id: string; name: string }[] | null;
   }
 
@@ -134,15 +136,22 @@ export default async function MenuMasterPage({
   }
   for (const list of bomByMenu.values()) list.sort((a, b) => b.grams - a.grams);
 
-  // Collect supplier sources per item (id + name, main first)
+  // Collect supplier sources per item (id + name, main first) + price table
   type SupLink = { id: string; name: string; is_main: boolean };
   const suppliersByItem = new Map<string, SupLink[]>();
+  const supplierPricesByItem = new Map<string, { price: number; is_main: boolean }[]>();
   for (const s of supItems) {
     const rel = Array.isArray(s.suppliers) ? s.suppliers[0] : s.suppliers;
     if (!rel) continue;
     const list = suppliersByItem.get(s.item_code) ?? [];
     list.push({ id: rel.id, name: rel.name, is_main: s.is_main });
     suppliersByItem.set(s.item_code, list);
+    const p = Number(s.price_idr ?? 0);
+    if (p > 0) {
+      const prices = supplierPricesByItem.get(s.item_code) ?? [];
+      prices.push({ price: p, is_main: s.is_main });
+      supplierPricesByItem.set(s.item_code, prices);
+    }
   }
   for (const list of suppliersByItem.values()) {
     list.sort((a, b) => {
@@ -151,17 +160,71 @@ export default async function MenuMasterPage({
     });
   }
 
-  // Compute per-menu totals
+  // Reference price: items.price_idr if > 0, else main-supplier price, else avg of supplier prices
+  const referencePriceByCode = new Map<string, number>();
+  for (const it of items) {
+    const basePrice = Number(it.price_idr ?? 0);
+    if (basePrice > 0) {
+      referencePriceByCode.set(it.code, basePrice);
+      continue;
+    }
+    const sp = supplierPricesByItem.get(it.code) ?? [];
+    if (sp.length === 0) {
+      referencePriceByCode.set(it.code, 0);
+      continue;
+    }
+    const main = sp.find((p) => p.is_main);
+    if (main) {
+      referencePriceByCode.set(it.code, main.price);
+    } else {
+      const avg = sp.reduce((a, b) => a + b.price, 0) / sp.length;
+      referencePriceByCode.set(it.code, avg);
+    }
+  }
+
+  // Invert bomByMenu → menu cycle_days per item
+  const menusByItem = new Map<string, number[]>();
+  for (const m of menus) {
+    const list = bomByMenu.get(m.id) ?? [];
+    for (const row of list) {
+      const arr = menusByItem.get(row.item_code) ?? [];
+      if (!arr.includes(m.cycle_day)) arr.push(m.cycle_day);
+      menusByItem.set(row.item_code, arr);
+    }
+  }
+  for (const arr of menusByItem.values()) arr.sort((a, b) => a - b);
+
+  // Compute per-menu totals — use referencePriceByCode (falls back to supplier prices)
   const menuStats = menus.map((m) => {
     const list = bomByMenu.get(m.id) ?? [];
     const totalGrams = list.reduce((s, r) => s + r.grams, 0);
     const costPerPorsi = list.reduce((s, r) => {
-      const it = itemByCode.get(r.item_code);
-      const price = Number(it?.price_idr ?? 0);
+      const price = referencePriceByCode.get(r.item_code) ?? 0;
       return s + (r.grams / 1000) * price;
     }, 0);
     return { menu: m, rows: list, totalGrams, costPerPorsi };
   });
+
+  // Menu details (shared between cycle cards + commodity H-chip modal)
+  const menuDetailsByDay: Record<number, MenuDetail> = {};
+  for (const { menu, rows, costPerPorsi } of menuStats) {
+    menuDetailsByDay[menu.cycle_day] = {
+      id: menu.id,
+      cycleDay: menu.cycle_day,
+      name: menu.name,
+      nameEn: menu.name_en,
+      costPerPorsi,
+      rows: rows.map(
+        (r): BomTableRow => ({
+          item_code: r.item_code,
+          category: itemByCode.get(r.item_code)?.category ?? "LAIN",
+          small: r.tiered ? r.kecil : r.grams,
+          large: r.tiered ? r.besar : r.grams,
+          tiered: r.tiered
+        })
+      )
+    };
+  }
 
   const categories = Array.from(new Set(items.map((i) => i.category))).sort();
   const totalItems = items.length;
@@ -285,14 +348,15 @@ export default async function MenuMasterPage({
             >
               <CommodityTable
                 lang={lang}
+                menuDetailsByDay={menuDetailsByDay}
                 rows={items.map(
                   (it): CommodityRow => ({
                     code: it.code,
                     displayCode: it.code.replace(/^Buah\s*-\s*/i, ""),
                     category: it.category,
                     unit: it.unit,
-                    price_idr: Number(it.price_idr),
-                    vol_weekly: Number(it.vol_weekly),
+                    price_idr: referencePriceByCode.get(it.code) ?? 0,
+                    usedInMenus: menusByItem.get(it.code) ?? [],
                     suppliers: suppliersByItem.get(it.code) ?? [],
                     active: it.active
                   })

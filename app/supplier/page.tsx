@@ -183,7 +183,7 @@ export default async function SupplierPage({
 
         {activeTab === "inbox" && (
           <>
-            <Section title={t("sup.inboxTitle", lang)} hint={t("sup.inboxHint", lang)}>
+            <Section banner icon="📥" title={t("sup.inboxTitle", lang)} hint={t("sup.inboxHint", lang)}>
               {inbox.length === 0 ? (
                 <EmptyState message={t("common.noData", lang)} />
               ) : (
@@ -195,7 +195,7 @@ export default async function SupplierPage({
 
         {activeTab === "payment" && (
           <>
-            <Section title={t("sup.paymentStatusTitle", lang)} hint={t("sup.paymentStatusHint", lang)}>
+            <Section banner icon="💳" title={t("sup.paymentStatusTitle", lang)} hint={t("sup.paymentStatusHint", lang)}>
               {payments.length === 0 ? (
                 <EmptyState message={t("common.noData", lang)} />
               ) : (
@@ -207,7 +207,7 @@ export default async function SupplierPage({
 
         {activeTab === "uploads" && (
           <>
-            <Section title={t("sup.uploadTitle", lang)} hint={t("sup.uploadHint", lang)}>
+            <Section banner icon="📤" title={t("sup.uploadTitle", lang)} hint={t("sup.uploadHint", lang)}>
               {uploads.length === 0 ? (
                 <EmptyState
                   icon="📭"

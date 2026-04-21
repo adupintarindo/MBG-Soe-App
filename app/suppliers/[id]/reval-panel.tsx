@@ -302,6 +302,8 @@ export function RevalPanel({
               initialSort={{ key: "eval", dir: "desc" }}
               columns={cols}
               rows={history}
+              stickyHeader
+              bodyMaxHeight={440}
             />
           );
         })()

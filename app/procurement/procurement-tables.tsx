@@ -159,6 +159,8 @@ export function PrTable({ rows }: { rows: PrRow[] }) {
       exportFileName="pr"
       exportSheetName="PR"
       initialSort={{ key: "created", dir: "desc" }}
+      stickyHeader
+      bodyMaxHeight={500}
     />
   );
 }
@@ -273,6 +275,8 @@ export function QtTable({
       exportFileName="quotations"
       exportSheetName="Quotations"
       initialSort={{ key: "date", dir: "desc" }}
+      stickyHeader
+      bodyMaxHeight={500}
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td
@@ -414,6 +418,8 @@ export function PoTable({
       exportFileName="purchase-orders"
       exportSheetName="POs"
       initialSort={{ key: "date", dir: "desc" }}
+      stickyHeader
+      bodyMaxHeight={500}
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td
@@ -537,6 +543,8 @@ export function InvoiceTable({
       exportFileName="invoices"
       exportSheetName="Invoices"
       initialSort={{ key: "date", dir: "desc" }}
+      stickyHeader
+      bodyMaxHeight={500}
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td

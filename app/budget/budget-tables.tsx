@@ -104,6 +104,8 @@ export function BurnTable({
       initialSort={{ key: "period", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={440}
     />
   );
 }
@@ -204,6 +206,8 @@ export function CPPTable({
       initialSort={{ key: "date", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={460}
     />
   );
 }
@@ -284,6 +288,8 @@ export function BudgetsTable({
       initialSort={{ key: "period", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={460}
     />
   );
 }

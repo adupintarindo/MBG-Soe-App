@@ -80,6 +80,8 @@ export function InvitesTable({ rows }: { rows: InviteRow[] }) {
       rowKey={(r) => r.id}
       initialSort={{ key: "expires", dir: "desc" }}
       searchable
+      stickyHeader
+      bodyMaxHeight={480}
     />
   );
 }

@@ -173,6 +173,8 @@ export function SchoolsRosterTable({
       exportable
       exportFileName="schools"
       exportSheetName="Schools"
+      stickyHeader
+      bodyMaxHeight={520}
       footer={
         <tr className="border-t-2 border-ink/20 bg-paper">
           <td colSpan={3} className="py-2 pr-3 font-black text-ink">

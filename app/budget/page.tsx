@@ -97,7 +97,7 @@ export default async function BudgetPage() {
           }
         />
 
-        <Section title={t("bud.burnTitle", lang)} hint={t("bud.burnHint", lang)}>
+        <Section banner icon="🔥" title={t("bud.burnTitle", lang)} hint={t("bud.burnHint", lang)}>
           {burn.length === 0 ? (
             <EmptyState message={t("common.noData", lang)} />
           ) : (
@@ -105,7 +105,7 @@ export default async function BudgetPage() {
           )}
         </Section>
 
-        <Section title={t("bud.cppTitle", lang)} hint={t("bud.cppHint", lang)}>
+        <Section banner icon="🍱" title={t("bud.cppTitle", lang)} hint={t("bud.cppHint", lang)}>
           {cpp.length === 0 ? (
             <EmptyState message={t("common.noData", lang)} />
           ) : (
@@ -113,7 +113,7 @@ export default async function BudgetPage() {
           )}
         </Section>
 
-        <Section title={t("bud.budgetsTitle", lang)} hint={t("bud.budgetsHint", lang)}>
+        <Section banner icon="💰" title={t("bud.budgetsTitle", lang)} hint={t("bud.budgetsHint", lang)}>
           {budgetRows.length === 0 ? (
             <EmptyState
               icon="💡"

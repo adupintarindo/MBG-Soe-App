@@ -326,6 +326,8 @@ export function ScheduleTable({
         initialSort={{ key: "date", dir: "asc" }}
         columns={columns}
         rows={filteredRows}
+        stickyHeader
+        bodyMaxHeight={460}
         searchable
         exportable
         exportFileName="menu-schedule"
@@ -923,9 +925,9 @@ export function VolumeMatrixTable({
       return lang === "EN" ? "All" : "Semua";
     }
     const upper = raw.toUpperCase();
-    if (upper === "SAYUR_HIJAU" || upper === "SAYUR HIJAU") return "S. HIJAU";
-    const first = upper.split(/[_\s]/)[0];
-    return first;
+    if (upper === "SAYUR_HIJAU" || upper === "SAYUR HIJAU") return "S. Hijau";
+    const first = upper.split(/[_\s]/)[0].toLowerCase();
+    return first.charAt(0).toUpperCase() + first.slice(1);
   };
 
   const categoryTabs: Array<{ id: string; label: string; icon: string }> = [
@@ -978,6 +980,8 @@ export function VolumeMatrixTable({
         initialSort={{ key: "total", dir: "desc" }}
         columns={columns}
         rows={filteredRows}
+        stickyHeader
+        bodyMaxHeight={480}
         searchable
         exportable
         exportFileName="volume-matrix"
@@ -1116,6 +1120,8 @@ export function PlanningTable({
       initialSort={{ key: "date", dir: "asc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={440}
       searchable
       exportable
       exportFileName="planning"
@@ -1150,6 +1156,243 @@ export function PlanningTable({
         </tr>
       }
     />
+  );
+}
+
+// ============== Procurement schedule (shopping list per day) ==============
+export type ProcurementItemRow = {
+  item_code: string;
+  category: string;
+  qty: number;
+  unit: string;
+  price_idr: number;
+  subtotal: number;
+};
+
+export type ProcurementDayGroup = {
+  op_date: string;
+  dateLabel: string;
+  dateShort: string;
+  menu_name: string | null;
+  porsi_total: number;
+  rows: ProcurementItemRow[];
+  subtotal: number;
+};
+
+export function ProcurementScheduleTable({
+  groups,
+  lang
+}: {
+  groups: ProcurementDayGroup[];
+  lang: Lang;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const [activeDate, setActiveDate] = useState<string>(
+    groups[0]?.op_date ?? ""
+  );
+  const active = useMemo(
+    () => groups.find((g) => g.op_date === activeDate) ?? null,
+    [groups, activeDate]
+  );
+
+  const columns: SortableColumn<ProcurementItemRow>[] = useMemo(
+    () => [
+      {
+        key: "no",
+        label: t("dashboard.tblNo", lang),
+        width: "48px",
+        sortable: false,
+        render: (_r, i) => (
+          <span className="font-mono text-[11px] text-ink2">{i + 1}</span>
+        )
+      },
+      {
+        key: "item",
+        label: t("dashboard.procurementColItem", lang),
+        align: "left",
+        sortValue: (r) => displayCode(r.item_code),
+        searchValue: (r) => `${displayCode(r.item_code)} ${r.category}`,
+        exportValue: (r) => displayCode(r.item_code),
+        render: (r) => (
+          <span className="font-semibold">{displayCode(r.item_code)}</span>
+        )
+      },
+      {
+        key: "category",
+        label: t("dashboard.procurementColCategory", lang),
+        align: "center",
+        sortValue: (r) => r.category,
+        searchValue: (r) => r.category,
+        exportValue: (r) => r.category,
+        render: (r) => (
+          <div className="flex justify-center">
+            <CategoryBadge category={r.category} size="sm" />
+          </div>
+        )
+      },
+      {
+        key: "qty",
+        label: t("dashboard.procurementColQty", lang),
+        align: "right",
+        sortValue: (r) => r.qty,
+        exportValue: (r) => r.qty,
+        exportHint: "number",
+        exportNumFmt: "#,##0.00",
+        render: (r) => (
+          <span className="font-mono text-xs">
+            {formatNumber(r.qty, lang, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
+            <span className="ml-1 text-[10px] text-ink2">{r.unit}</span>
+          </span>
+        )
+      },
+      {
+        key: "price",
+        label: t("dashboard.procurementColPrice", lang),
+        align: "right",
+        sortValue: (r) => r.price_idr,
+        exportValue: (r) => r.price_idr,
+        exportHint: "money",
+        exportNumFmt: '"Rp "#,##0',
+        render: (r) => (
+          <IDR value={r.price_idr} className="text-[11px] text-ink2" />
+        )
+      },
+      {
+        key: "subtotal",
+        label: t("dashboard.procurementColSubtotal", lang),
+        align: "right",
+        sortValue: (r) => r.subtotal,
+        exportValue: (r) => r.subtotal,
+        exportHint: "bold",
+        exportNumFmt: '"Rp "#,##0',
+        render: (r) => (
+          <IDR value={r.subtotal} className="text-[11px] font-black" />
+        )
+      }
+    ],
+    [lang]
+  );
+
+  if (!mounted || groups.length === 0) {
+    return (
+      <div className="rounded-xl bg-ink/5 p-6 text-center text-sm text-ink2">
+        {groups.length === 0
+          ? t("dashboard.procurementEmpty", lang)
+          : t("dashboard.procurementLoading", lang)}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <nav
+        aria-label={t("dashboard.procurementTitle", lang)}
+        className="mb-4 flex w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-2xl bg-white/80 p-1.5 shadow-card ring-1 ring-primary/5 dark:bg-d-surface/70 dark:ring-d-border/30"
+      >
+        {groups.map((g) => {
+          const isActive = g.op_date === activeDate;
+          const dow = new Date(g.op_date + "T00:00:00").getDay();
+          const holidayName = getHoliday(g.op_date);
+          const nonOp = g.rows.length === 0 || dow === 0 || !!holidayName;
+          const reason = holidayName
+            ? holidayName
+            : dow === 0
+              ? lang === "EN"
+                ? "Sunday"
+                : "Minggu"
+              : g.rows.length === 0
+                ? lang === "EN"
+                  ? "No menu"
+                  : "Tidak operasional"
+                : "";
+          return (
+            <button
+              key={g.op_date}
+              type="button"
+              onClick={() => setActiveDate(g.op_date)}
+              aria-pressed={isActive}
+              title={nonOp ? `${g.dateLabel} · ${reason}` : g.dateLabel}
+              className={`inline-flex flex-1 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-[11px] font-bold transition ${
+                isActive
+                  ? "bg-primary-gradient text-white shadow-card ring-1 ring-gold/40 dark:bg-primary-gradient-dark"
+                  : nonOp
+                    ? "bg-red-50 text-red-700/80 ring-1 ring-red-200/60 hover:bg-red-100/70 dark:bg-red-900/20 dark:text-red-300/80 dark:ring-red-500/20"
+                    : "bg-paper/60 text-primary hover:bg-white hover:shadow-card dark:bg-d-surface-2/60 dark:text-d-text dark:hover:bg-d-surface-2"
+              }`}
+            >
+              <span aria-hidden className="text-[11px]">
+                {nonOp ? "⛔" : "📅"}
+              </span>
+              <span className={`truncate ${nonOp && !isActive ? "line-through decoration-red-400/60 decoration-[1.5px]" : ""}`}>
+                {g.dateShort}
+              </span>
+              <span
+                className={`rounded-full px-1 font-mono text-[9.5px] font-bold leading-tight ${
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : nonOp
+                      ? "bg-red-200/70 text-red-700 dark:bg-red-500/25 dark:text-red-200"
+                      : "bg-ink/10 text-ink2"
+                }`}
+              >
+                {g.rows.length}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {active && (
+        <>
+          <div className="mb-3 rounded-xl bg-primary-gradient px-4 py-2.5 text-white">
+            <div className="min-w-0">
+              <div className="text-[9.5px] font-bold uppercase tracking-wide text-white/70">
+                {active.dateLabel}
+              </div>
+              <div className="truncate text-sm font-black">
+                {active.menu_name ?? "—"}
+              </div>
+            </div>
+          </div>
+
+          <SortableTable<ProcurementItemRow>
+            rowKey={(r) => r.item_code}
+            initialSort={{ key: "subtotal", dir: "desc" }}
+            columns={columns}
+            rows={active.rows}
+            searchable
+            exportable
+            exportFileName={`jadwal-belanja-${active.op_date}`}
+            exportSheetName="Procurement"
+            exportTitle={`${t("dashboard.procurementTitle", lang)} — ${active.dateLabel}`}
+            exportSubtitle={active.menu_name ?? undefined}
+            exportTotals={{
+              labelColSpan: 5,
+              labelText: t("common.grandTotal", lang),
+              values: { subtotal: active.subtotal }
+            }}
+            footer={
+              <tr className="border-t-2 border-ink bg-ink">
+                <td colSpan={6} className="py-2 px-3">
+                  <div className="flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-wide text-white">
+                    <span>{t("common.grandTotal", lang)}</span>
+                    <IDR
+                      value={active.subtotal}
+                      className="text-xs font-black text-white"
+                      prefixClassName="text-white/70"
+                    />
+                  </div>
+                </td>
+              </tr>
+            }
+          />
+        </>
+      )}
+    </div>
   );
 }
 
@@ -1249,6 +1492,8 @@ export function StockAlertTable({
       initialSort={{ key: "gap", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={440}
       searchable
       exportable
       exportFileName="stock-alert"

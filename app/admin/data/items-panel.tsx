@@ -489,6 +489,8 @@ export function ItemsPanel({ initial }: { initial: Row[] }) {
               rows={filtered}
               rowKey={(r) => r.code}
               initialSort={{ key: "code", dir: "asc" }}
+              stickyHeader
+              bodyMaxHeight={540}
             />
           );
         })()

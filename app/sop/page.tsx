@@ -83,7 +83,7 @@ export default async function SopPage() {
       <PageContainer>
         <PageHeader />
 
-        <Section title={t("sop.tocTitle", lang)} hint={t("sop.tocHint", lang)}>
+        <Section banner icon="📚" title={t("sop.tocTitle", lang)} hint={t("sop.tocHint", lang)}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {(["OPERASIONAL", "HIGIENE"] as const).map((cat) => (
               <div key={cat}>

@@ -164,6 +164,8 @@ export function BumilRosterTable({
       exportFileName="ibu-hamil-menyusui"
       exportSheetName="Ibu Hamil & Menyusui"
       filters={[phaseFilter, posyFilter]}
+      stickyHeader
+      bodyMaxHeight={500}
     />
   );
 }

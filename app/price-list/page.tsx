@@ -14,6 +14,7 @@ import { PageContainer, Section } from "@/components/ui";
 import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { PriceListShell } from "./price-list-shell";
 import type { PriceListMatrixRow, PricePeriod, PriceWeek } from "./types";
+import { demoPeriod, demoWeeks, demoRows } from "./demo-data";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import { formatDateShort } from "@/lib/engine";
@@ -59,16 +60,26 @@ export default async function PriceListPage({
     sb.from("v_price_list_matrix").select("*").order("commodity", { ascending: true })
   ]);
 
-  const periods = (periodsRes.data ?? []) as PricePeriod[];
-  const weeks = (weeksRes.data ?? []) as PriceWeek[];
-  const rows = (matrixRes.data ?? []) as PriceListMatrixRow[];
+  let periods = (periodsRes.data ?? []) as PricePeriod[];
+  let weeks = (weeksRes.data ?? []) as PriceWeek[];
+  let rows = (matrixRes.data ?? []) as PriceListMatrixRow[];
+
+  // When DB is empty, inject demo data so stakeholders can preview layout.
+  // Replaced automatically once real price_periods rows exist.
+  const isDemo = periods.length === 0 || rows.length === 0;
+  if (isDemo) {
+    periods = [demoPeriod];
+    weeks = demoWeeks;
+    rows = demoRows;
+  }
 
   const activePeriod = periods.find((p) => p.active) ?? periods[0] ?? null;
 
   const canEdit =
-    profile.role === "admin" ||
-    profile.role === "operator" ||
-    profile.role === "ahli_gizi";
+    !isDemo &&
+    (profile.role === "admin" ||
+      profile.role === "operator" ||
+      profile.role === "ahli_gizi");
   const isAdmin = profile.role === "admin";
 
   const activeTab: PriceTabId = VALID_TABS.includes(

@@ -643,6 +643,8 @@ export function SuppliersPanel({ initial }: { initial: Row[] }) {
               rows={filtered}
               rowKey={(r) => r.id}
               initialSort={{ key: "id", dir: "asc" }}
+              stickyHeader
+              bodyMaxHeight={540}
             />
           );
         })()

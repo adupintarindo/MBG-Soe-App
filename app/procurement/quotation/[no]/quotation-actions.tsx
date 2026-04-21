@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 
@@ -21,7 +20,6 @@ export function QuotationActions({
 }) {
   const { lang } = useLang();
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -30,16 +28,14 @@ export function QuotationActions({
     setError(null);
     setBusy(true);
     try {
-      const { error: err } = await supabase
-        .from("quotations")
-        .update({
-          status: next,
-          responded_at:
-            next === "responded" ? new Date().toISOString() : undefined
-        } as never)
-        .eq("no", qtNo);
-      if (err) {
-        setError(err.message);
+      const res = await fetch(`/api/quotations/${encodeURIComponent(qtNo)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next })
+      });
+      const json = (await res.json()) as { ok: boolean; error?: string };
+      if (!res.ok || !json.ok) {
+        setError(json.error ?? "failed");
         return;
       }
       startTransition(() => router.refresh());
@@ -53,16 +49,20 @@ export function QuotationActions({
     setError(null);
     setBusy(true);
     try {
-      const { data, error: err } = await supabase.rpc(
-        "convert_quotation_to_po",
-        { p_qt_no: qtNo }
+      const res = await fetch(
+        `/api/quotations/${encodeURIComponent(qtNo)}/convert`,
+        { method: "POST" }
       );
-      if (err) {
-        setError(err.message);
+      const json = (await res.json()) as {
+        ok: boolean;
+        po_no?: string;
+        error?: string;
+      };
+      if (!res.ok || !json.ok || !json.po_no) {
+        setError(json.error ?? "failed");
         return;
       }
-      const poNo = data as unknown as string;
-      alert(ti("qtActions.convertSuccess", lang, { po: poNo }));
+      alert(ti("qtActions.convertSuccess", lang, { po: json.po_no }));
       startTransition(() => router.refresh());
     } finally {
       setBusy(false);

@@ -326,7 +326,7 @@ export default async function SupplierPoDetailPage({ params }: PageProps) {
         )}
 
         <Section
-          title={`💬 ${t("sup.messagesTitle", lang).replace("{po}", po.no)}`}
+          title={t("sup.messagesTitle", lang).replace("{po}", po.no)}
           hint={
             lang === "EN"
               ? "Two-way thread between SPPG and supplier tied to this PO. Use for clarifications and updates."

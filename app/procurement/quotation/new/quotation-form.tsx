@@ -19,6 +19,12 @@ interface ItemLite {
   category: string;
   active: boolean;
 }
+interface SupplierItemLink {
+  supplier_id: string;
+  item_code: string;
+  is_main: boolean;
+  price_idr: number | null;
+}
 
 interface DraftRow {
   item_code: string;
@@ -26,10 +32,18 @@ interface DraftRow {
   qty: string;
   price_suggested: string;
   note: string;
+  supplier_id: string;
 }
 
 function emptyRow(): DraftRow {
-  return { item_code: "", unit: "kg", qty: "", price_suggested: "", note: "" };
+  return {
+    item_code: "",
+    unit: "kg",
+    qty: "",
+    price_suggested: "",
+    note: "",
+    supplier_id: ""
+  };
 }
 
 function todayIso() {
@@ -45,20 +59,17 @@ function plusDays(iso: string, n: number) {
 
 export function QuotationForm({
   suppliers,
-  items
+  items,
+  supplierItems
 }: {
   suppliers: SupplierLite[];
   items: ItemLite[];
+  supplierItems: SupplierItemLink[];
 }) {
   const { lang } = useLang();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
-  const [supplierId, setSupplierId] = useState(suppliers[0]?.id ?? "");
-  const [quoteDate, setQuoteDate] = useState(todayIso());
-  const [validUntil, setValidUntil] = useState(plusDays(todayIso(), 7));
-  const [needDate, setNeedDate] = useState(plusDays(todayIso(), 3));
-  const [notes, setNotes] = useState("");
   const [rows, setRows] = useState<DraftRow[]>([emptyRow()]);
   const [seedDate, setSeedDate] = useState(plusDays(todayIso(), 3));
   const [seeding, setSeeding] = useState(false);
@@ -72,6 +83,38 @@ export function QuotationForm({
     return m;
   }, [items]);
 
+  // Map item_code → ordered candidate supplier_ids (is_main first, then cheapest, then rest)
+  const supplierOptionsByItem = useMemo(() => {
+    const m = new Map<string, string[]>();
+    const byItem = new Map<string, SupplierItemLink[]>();
+    for (const l of supplierItems) {
+      const arr = byItem.get(l.item_code) ?? [];
+      arr.push(l);
+      byItem.set(l.item_code, arr);
+    }
+    const activeIds = new Set(suppliers.map((s) => s.id));
+    for (const [code, list] of byItem) {
+      const sorted = list
+        .filter((l) => activeIds.has(l.supplier_id))
+        .slice()
+        .sort((a, b) => {
+          if (a.is_main !== b.is_main) return a.is_main ? -1 : 1;
+          const pa = a.price_idr ?? Number.POSITIVE_INFINITY;
+          const pb = b.price_idr ?? Number.POSITIVE_INFINITY;
+          return pa - pb;
+        })
+        .map((l) => l.supplier_id);
+      m.set(code, sorted);
+    }
+    return m;
+  }, [supplierItems, suppliers]);
+
+  function autoPickSupplier(code: string): string {
+    const candidates = supplierOptionsByItem.get(code);
+    if (candidates && candidates.length > 0) return candidates[0];
+    return suppliers[0]?.id ?? "";
+  }
+
   const total = rows.reduce((s, r) => {
     const q = Number(r.qty);
     const p = Number(r.price_suggested);
@@ -79,15 +122,29 @@ export function QuotationForm({
     return s + q * p;
   }, 0);
 
+  // Group preview: show how many suppliers will receive a file
+  const supplierGroups = useMemo(() => {
+    const groups = new Map<string, DraftRow[]>();
+    for (const r of rows) {
+      if (!r.item_code || Number(r.qty) <= 0 || !r.supplier_id) continue;
+      const arr = groups.get(r.supplier_id) ?? [];
+      arr.push(r);
+      groups.set(r.supplier_id, arr);
+    }
+    return groups;
+  }, [rows]);
+
   function updateRow(idx: number, patch: Partial<DraftRow>) {
     setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
   }
 
   function onItemPick(idx: number, code: string) {
     const it = itemByCode.get(code);
+    const sup = code ? autoPickSupplier(code) : "";
     updateRow(idx, {
       item_code: code,
-      unit: it?.unit ?? "kg"
+      unit: it?.unit ?? "kg",
+      supplier_id: sup
     });
   }
 
@@ -121,7 +178,6 @@ export function QuotationForm({
         setError(t("qtNew.errNoDemand", lang));
         return;
       }
-      setNeedDate(seedDate);
       setRows(
         seeded.map((s) => ({
           item_code: s.item_code,
@@ -129,7 +185,8 @@ export function QuotationForm({
           qty: String(s.qty),
           price_suggested:
             s.price_suggested != null ? String(s.price_suggested) : "",
-          note: ""
+          note: "",
+          supplier_id: autoPickSupplier(s.item_code)
         }))
       );
     } finally {
@@ -139,59 +196,96 @@ export function QuotationForm({
 
   async function submit() {
     setError(null);
-    if (!supplierId) {
-      setError(t("qtNew.errPickSup", lang));
-      return;
-    }
-    const cleanRows = rows.filter((r) => r.item_code && Number(r.qty) > 0);
+    const cleanRows = rows.filter(
+      (r) => r.item_code && Number(r.qty) > 0 && r.supplier_id
+    );
     if (cleanRows.length === 0) {
       setError(t("qtNew.errMinRow", lang));
       return;
     }
+
+    const unassigned = rows.filter(
+      (r) => r.item_code && Number(r.qty) > 0 && !r.supplier_id
+    );
+    if (unassigned.length > 0) {
+      setError(t("qtNew.errRowNoSup", lang));
+      return;
+    }
+
+    // Group by supplier
+    const grouped = new Map<string, DraftRow[]>();
+    for (const r of cleanRows) {
+      const arr = grouped.get(r.supplier_id) ?? [];
+      arr.push(r);
+      grouped.set(r.supplier_id, arr);
+    }
+
     setSaving(true);
     try {
-      const insertQ = {
-        supplier_id: supplierId,
-        quote_date: quoteDate,
-        valid_until: validUntil || null,
-        need_date: needDate || null,
-        notes: notes || null,
-        status: "draft" as const
-      };
-      const { data: qtData, error: qtErr } = await supabase
-        .from("quotations")
-        .insert(insertQ as never)
-        .select("no")
-        .single();
-      if (qtErr || !qtData) {
-        setError(qtErr?.message ?? t("qtNew.errFail", lang));
-        return;
-      }
-      const qtNo = (qtData as { no: string }).no;
+      const quoteDate = todayIso();
+      const validUntil = plusDays(quoteDate, 7);
+      const needDate = seedDate;
 
-      const rowInserts = cleanRows.map((r, i) => ({
-        qt_no: qtNo,
-        line_no: i + 1,
-        item_code: r.item_code,
-        qty: Number(r.qty),
-        unit: r.unit || "kg",
-        price_suggested:
-          r.price_suggested === "" ? null : Number(r.price_suggested),
-        note: r.note || null
-      }));
-      const { error: rowErr } = await supabase
-        .from("quotation_rows")
-        .insert(rowInserts as never);
-      if (rowErr) {
-        setError(
-          ti("qtNew.errRowFail", lang, { no: qtNo, msg: rowErr.message })
-        );
-        return;
+      const createdNos: string[] = [];
+      for (const [supId, supRows] of grouped) {
+        const payload = {
+          supplier_id: supId,
+          quote_date: quoteDate,
+          valid_until: validUntil,
+          need_date: needDate,
+          notes: null,
+          status: "draft" as const,
+          rows: supRows.map((r) => ({
+            item_code: r.item_code,
+            unit: r.unit || "kg",
+            qty: Number(r.qty),
+            price_suggested:
+              r.price_suggested === "" ? null : Number(r.price_suggested),
+            note: r.note || null
+          }))
+        };
+
+        const res = await fetch("/api/quotations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const json = (await res.json()) as {
+          ok: boolean;
+          no?: string;
+          error?: string;
+        };
+        if (!res.ok || !json.ok || !json.no) {
+          const msg = json.error ?? t("qtNew.errFail", lang);
+          setError(
+            json.no ? ti("qtNew.errRowFail", lang, { no: json.no, msg }) : msg
+          );
+          return;
+        }
+        createdNos.push(json.no);
       }
 
-      startTransition(() => {
-        router.push(`/procurement/quotation/${encodeURIComponent(qtNo)}`);
-      });
+      // Trigger downloads — one XLSX per quotation
+      for (const no of createdNos) {
+        const a = document.createElement("a");
+        a.href = `/api/quotations/${encodeURIComponent(no)}/export.xlsx`;
+        a.download = `${no}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        await new Promise((r) => setTimeout(r, 250));
+      }
+
+      if (createdNos.length === 1) {
+        const only = createdNos[0];
+        startTransition(() => {
+          router.push(`/procurement/quotation/${encodeURIComponent(only)}`);
+        });
+      } else {
+        startTransition(() => {
+          router.push("/procurement?tab=quotations");
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -199,85 +293,12 @@ export function QuotationForm({
 
   return (
     <div className="divide-y divide-ink/10">
-      {/* Step 1 · Header */}
+      {/* Step 1 · Seed from Menu */}
       <div className="space-y-3 p-5">
         <h3 className="text-sm font-black uppercase tracking-wide text-ink2">
-          {t("qtNew.step1Title", lang)}
+          {t("qtNew.step1SeedTitle", lang)}
         </h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-bold text-ink2">
-              {t("qtNew.fldSupplier", lang)}
-            </span>
-            <select
-              value={supplierId}
-              onChange={(e) => setSupplierId(e.target.value)}
-              className="w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
-            >
-              <option value="">{t("qtNew.optPickSup", lang)}</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.status})
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-bold text-ink2">
-              {t("qtNew.fldQuoteDate", lang)}
-            </span>
-            <input
-              type="date"
-              value={quoteDate}
-              onChange={(e) => setQuoteDate(e.target.value)}
-              className="w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-bold text-ink2">
-              {t("qtNew.fldValidUntil", lang)}
-            </span>
-            <input
-              type="date"
-              value={validUntil}
-              onChange={(e) => setValidUntil(e.target.value)}
-              className="w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-bold text-ink2">
-              {t("qtNew.fldNeedDate", lang)}
-            </span>
-            <input
-              type="date"
-              value={needDate}
-              onChange={(e) => setNeedDate(e.target.value)}
-              className="w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
-            />
-          </label>
-        </div>
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-bold text-ink2">
-            {t("qtNew.fldNotes", lang)}
-          </span>
-          <input
-            type="text"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder={t("qtNew.phNotes", lang)}
-            className="w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
-          />
-        </label>
-      </div>
-
-      {/* Step 2 · Seed helper */}
-      <div className="space-y-3 bg-paper/40 p-5">
-        <h3 className="text-sm font-black uppercase tracking-wide text-ink2">
-          {t("qtNew.step2Title", lang)}
-        </h3>
-        <p className="text-[11px] text-ink2/70">
-          {t("qtNew.step2Desc", lang)}
-        </p>
+        <p className="text-[11px] text-ink2/70">{t("qtNew.step2Desc", lang)}</p>
         <div className="flex flex-wrap items-end gap-2">
           <label className="block">
             <span className="mb-1 block text-[11px] font-bold text-ink2">
@@ -308,11 +329,11 @@ export function QuotationForm({
         </div>
       </div>
 
-      {/* Step 3 · Rows */}
+      {/* Step 2 · Rows */}
       <div className="space-y-3 p-5">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-black uppercase tracking-wide text-ink2">
-            {t("qtNew.step3Title", lang)}
+            {t("qtNew.step2ItemsTitle", lang)}
           </h3>
           <button
             type="button"
@@ -324,7 +345,7 @@ export function QuotationForm({
         </div>
 
         <div className="overflow-x-auto rounded-xl ring-1 ring-ink/10">
-          <table className="w-full min-w-[800px] text-xs">
+          <table className="w-full min-w-[900px] text-xs">
             <thead className="bg-paper">
               <tr className="text-left text-[10px] font-black uppercase tracking-wide text-ink2">
                 <th className="px-3 py-2">{t("qtNew.colNo", lang)}</th>
@@ -333,6 +354,7 @@ export function QuotationForm({
                 <th className="px-3 py-2">{t("qtNew.colUnit", lang)}</th>
                 <th className="px-3 py-2 text-center">{t("qtNew.colPriceSug", lang)}</th>
                 <th className="px-3 py-2 text-center">{t("qtNew.colSubtotal", lang)}</th>
+                <th className="px-3 py-2">{t("qtNew.colSupplier", lang)}</th>
                 <th className="px-3 py-2">{t("qtNew.colNote", lang)}</th>
                 <th className="px-3 py-2"></th>
               </tr>
@@ -342,6 +364,13 @@ export function QuotationForm({
                 const q = Number(r.qty) || 0;
                 const p = Number(r.price_suggested) || 0;
                 const sub = q * p;
+                const preferred = r.item_code
+                  ? (supplierOptionsByItem.get(r.item_code) ?? [])
+                  : [];
+                const preferredSet = new Set(preferred);
+                const others = suppliers
+                  .map((s) => s.id)
+                  .filter((id) => !preferredSet.has(id));
                 return (
                   <tr key={idx} className="border-t border-ink/5">
                     <td className="px-3 py-2 font-mono text-ink2">{idx + 1}</td>
@@ -354,7 +383,7 @@ export function QuotationForm({
                         <option value="">{t("qtNew.optPickItem", lang)}</option>
                         {items.map((it) => (
                           <option key={it.code} value={it.code}>
-                            {it.code} · {it.name_en ?? it.code}
+                            {it.code}
                           </option>
                         ))}
                       </select>
@@ -398,6 +427,45 @@ export function QuotationForm({
                       {sub > 0 ? formatIDR(sub) : "—"}
                     </td>
                     <td className="px-3 py-2">
+                      <select
+                        value={r.supplier_id}
+                        onChange={(e) =>
+                          updateRow(idx, { supplier_id: e.target.value })
+                        }
+                        className="w-56 rounded-lg border border-ink/20 bg-white px-2 py-1 text-xs"
+                      >
+                        <option value="">
+                          {t("qtNew.optPickSup", lang)}
+                        </option>
+                        {preferred.length > 0 && (
+                          <optgroup label={t("qtNew.optgrpMatch", lang)}>
+                            {preferred.map((id) => {
+                              const s = suppliers.find((x) => x.id === id);
+                              if (!s) return null;
+                              return (
+                                <option key={id} value={id}>
+                                  {s.name}
+                                </option>
+                              );
+                            })}
+                          </optgroup>
+                        )}
+                        {others.length > 0 && (
+                          <optgroup label={t("qtNew.optgrpOther", lang)}>
+                            {others.map((id) => {
+                              const s = suppliers.find((x) => x.id === id);
+                              if (!s) return null;
+                              return (
+                                <option key={id} value={id}>
+                                  {s.name}
+                                </option>
+                              );
+                            })}
+                          </optgroup>
+                        )}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
                       <input
                         type="text"
                         value={r.note}
@@ -428,31 +496,61 @@ export function QuotationForm({
                 <td className="px-3 py-2 text-left font-mono font-black text-ink">
                   {formatIDR(total)}
                 </td>
-                <td colSpan={2}></td>
+                <td colSpan={3}></td>
               </tr>
             </tfoot>
           </table>
         </div>
       </div>
 
-      {/* Step 4 · Submit */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-paper/40 p-5">
-        <div className="text-[11px] text-ink2/70">
-          {t("qtNew.helperSubmit", lang)}
+      {/* Step 3 · Submit */}
+      <div className="space-y-3 bg-paper/40 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[11px] text-ink2/70">
+            {supplierGroups.size > 0
+              ? ti("qtNew.helperGroup", lang, {
+                  n: String(supplierGroups.size)
+                })
+              : t("qtNew.helperSubmitNew", lang)}
+          </div>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={saving || supplierGroups.size === 0}
+            className="rounded-xl bg-ink px-5 py-3 text-sm font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
+          >
+            {saving
+              ? t("qtNew.btnSaving", lang)
+              : supplierGroups.size > 1
+                ? ti("qtNew.btnSaveMulti", lang, {
+                    n: String(supplierGroups.size)
+                  })
+                : t("qtNew.btnSave", lang)}
+          </button>
         </div>
         {error && (
           <div className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-800 ring-1 ring-red-200">
             {error}
           </div>
         )}
-        <button
-          type="button"
-          onClick={submit}
-          disabled={saving}
-          className="rounded-xl bg-ink px-5 py-3 text-sm font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
-        >
-          {saving ? t("qtNew.btnSaving", lang) : t("qtNew.btnSave", lang)}
-        </button>
+        {supplierGroups.size > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {Array.from(supplierGroups.entries()).map(([supId, supRows]) => {
+              const s = suppliers.find((x) => x.id === supId);
+              return (
+                <span
+                  key={supId}
+                  className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-ink ring-1 ring-ink/15"
+                >
+                  {s?.name ?? supId}
+                  <span className="rounded-full bg-ink/10 px-1.5 py-0.5 font-mono">
+                    {supRows.length}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

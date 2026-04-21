@@ -143,6 +143,8 @@ export function PlanningMatrixTable({
       searchPlaceholder={
         lang === "EN" ? "Search ingredient..." : "Cari bahan..."
       }
+      stickyHeader
+      bodyMaxHeight={500}
     />
   );
 }
@@ -419,6 +421,8 @@ export function PlanningDailyTable({
       searchPlaceholder={
         lang === "EN" ? "Search menu / date..." : "Cari menu / tanggal..."
       }
+      stickyHeader
+      bodyMaxHeight={500}
     />
   );
 }

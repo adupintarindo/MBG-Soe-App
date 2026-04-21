@@ -205,11 +205,8 @@ export function GrnQcPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-[13px] text-ink2">
-          {ti("grnQc.summary", lang, { n: grns.length, qc: qcAgg.length, ncr: activeNcr.length })}
-        </div>
-        {canWrite && (
+      {canWrite && (
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => setOpenNcr(true)}
@@ -217,8 +214,8 @@ export function GrnQcPanel({
           >
             {t("grnQc.btnNewNcr", lang)}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {grns.length === 0 ? (
         <EmptyState message={t("grnQc.emptyGrn", lang)} />
@@ -240,6 +237,8 @@ export function GrnQcPanel({
           exportFileName="grns"
           exportSheetName="GRNs"
           initialSort={{ key: "date", dir: "desc" }}
+          stickyHeader
+          bodyMaxHeight={500}
         />
       )}
 
@@ -262,6 +261,8 @@ export function GrnQcPanel({
             exportFileName="ncr-log"
             exportSheetName="NCR"
             initialSort={{ key: "reported", dir: "desc" }}
+            stickyHeader
+            bodyMaxHeight={460}
           />
         </div>
       )}

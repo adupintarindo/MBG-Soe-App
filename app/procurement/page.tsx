@@ -21,14 +21,33 @@ import {
   PrTable,
   QtTable
 } from "./procurement-tables";
+import {
+  buildDeliveryLines,
+  groupLinesByDelivery,
+  summarizeByDay,
+  type ItemLite,
+  type MenuLite,
+  type MenuBomRow,
+  type MenuAssignRow,
+  type PorsiByDate
+} from "@/lib/delivery-engine";
+import { getHoliday } from "@/lib/holidays";
+import { DeliveryScheduleView } from "./delivery-schedule-view";
 
 export const dynamic = "force-dynamic";
 
-type ProcTabId = "req-qt" | "po" | "grn" | "invoice";
-const VALID_TABS: readonly ProcTabId[] = ["req-qt", "po", "grn", "invoice"];
+type ProcTabId = "req-qt" | "po" | "grn" | "invoice" | "jadwal";
+const VALID_TABS: readonly ProcTabId[] = [
+  "req-qt",
+  "po",
+  "grn",
+  "invoice",
+  "jadwal"
+];
 
 interface SearchParams {
   tab?: string;
+  month?: string;
 }
 
 interface PrRow {
@@ -138,6 +157,12 @@ export default async function ProcurementPage({
       icon: "💳",
       label: lang === "EN" ? "Invoices & Receipts" : "Invoice & Kwitansi",
       href: "/procurement?tab=invoice"
+    },
+    {
+      id: "jadwal",
+      icon: "🗓️",
+      label: t("procurement.tabJadwal", lang),
+      href: "/procurement?tab=jadwal"
     }
   ];
 
@@ -266,6 +291,154 @@ export default async function ProcurementPage({
     qtyByPORecord[r.po_no] = (qtyByPORecord[r.po_no] ?? 0) + Number(r.qty);
   }
 
+  // --------------------------------------------------------------------------
+  // Jadwal Pengiriman — build delivery schedule for the target month.
+  // Heavy-ish: fetch only when the tab is active to keep other tabs snappy.
+  // --------------------------------------------------------------------------
+  let jadwalPayload: {
+    year: number;
+    month: number;
+    groups: ReturnType<typeof groupLinesByDelivery>;
+    daySummaries: Array<ReturnType<typeof summarizeByDay> extends Map<string, infer V> ? V : never>;
+  } | null = null;
+
+  if (activeTab === "jadwal") {
+    const now = new Date();
+    const parseMonth = (
+      raw: string | undefined
+    ): { year: number; month: number } => {
+      if (raw) {
+        const m = /^(\d{4})-(\d{1,2})$/.exec(raw);
+        if (m) {
+          const y = Number(m[1]);
+          const mo = Number(m[2]);
+          if (mo >= 1 && mo <= 12) return { year: y, month: mo };
+        }
+      }
+      return { year: now.getFullYear(), month: now.getMonth() + 1 };
+    };
+    const { year, month } = parseMonth(searchParams.month);
+
+    // Fetch range = cooking dates covering the whole grid (6 weeks ≈ -6..+6 days
+    // buffer beyond month bounds, since delivery_date may fall earlier than cooking).
+    const gridStart = new Date(year, month - 1, 1);
+    gridStart.setDate(gridStart.getDate() - 10);
+    const gridEnd = new Date(year, month, 0);
+    gridEnd.setDate(gridEnd.getDate() + 10);
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+    const [menusRes, bomRes, itemsRes, assignsRes, schoolsRes, nonOpRes] =
+      await Promise.all([
+        supabase
+          .from("menus")
+          .select("id, name, name_en")
+          .eq("active", true)
+          .order("id"),
+        supabase
+          .from("menu_bom")
+          .select("menu_id, item_code, grams_per_porsi"),
+        supabase
+          .from("items")
+          .select("code, name_en, unit, category")
+          .eq("active", true),
+        supabase
+          .from("menu_assign")
+          .select("assign_date, menu_id")
+          .gte("assign_date", fmt(gridStart))
+          .lte("assign_date", fmt(gridEnd)),
+        supabase
+          .from("schools")
+          .select("students, guru")
+          .eq("active", true),
+        supabase
+          .from("non_op_days")
+          .select("op_date")
+          .gte("op_date", fmt(gridStart))
+          .lte("op_date", fmt(gridEnd))
+      ]);
+
+    const menus = (menusRes.data ?? []) as MenuLite[];
+    const menuBom = (bomRes.data ?? []).map(
+      (b): MenuBomRow => ({
+        menu_id: b.menu_id as number,
+        item_code: b.item_code as string,
+        grams_per_porsi: Number(b.grams_per_porsi)
+      })
+    );
+    const items = (itemsRes.data ?? []).map(
+      (i): ItemLite => ({
+        code: i.code as string,
+        name_en: (i.name_en as string | null) ?? null,
+        unit: i.unit as string,
+        category: i.category as string
+      })
+    );
+    const assigns = (assignsRes.data ?? []) as MenuAssignRow[];
+    const schoolsLite = (schoolsRes.data ?? []) as Array<{
+      students: number;
+      guru: number;
+    }>;
+    const nonOpSet = new Set(
+      (nonOpRes.data ?? []).map((r) => r.op_date as string)
+    );
+
+    // Planned porsi per op-day = Σ(students + guru) across active schools.
+    // Skip weekends, holidays, non_op_days (no cooking).
+    const porsiPerOpDay = schoolsLite.reduce(
+      (sum, s) => sum + (Number(s.students) || 0) + (Number(s.guru) || 0),
+      0
+    );
+    const porsiByDate: PorsiByDate = {};
+    for (const a of assigns) {
+      if (nonOpSet.has(a.assign_date)) continue;
+      const d = new Date(a.assign_date + "T00:00:00");
+      const dow = d.getDay();
+      if (dow === 0 || dow === 6) continue;
+      if (getHoliday(a.assign_date)) continue;
+      porsiByDate[a.assign_date] = porsiPerOpDay;
+    }
+
+    const lines = buildDeliveryLines({
+      assigns,
+      menus,
+      menuBom,
+      items,
+      porsiByDate
+    });
+    const groups = groupLinesByDelivery(lines);
+
+    // Trim to current month's delivery_date window (visible grid).
+    const monthGridFirst = new Date(year, month - 1, 1);
+    const dow0 = monthGridFirst.getDay();
+    const leadOffset = dow0 === 0 ? -6 : 1 - dow0;
+    const gridFirst = new Date(monthGridFirst);
+    gridFirst.setDate(monthGridFirst.getDate() + leadOffset);
+    const monthGridLast = new Date(year, month, 0);
+    const dowL = monthGridLast.getDay();
+    const tailOffset = dowL === 0 ? 0 : 7 - dowL;
+    const gridLast = new Date(monthGridLast);
+    gridLast.setDate(monthGridLast.getDate() + tailOffset);
+    const gridFirstIso = fmt(gridFirst);
+    const gridLastIso = fmt(gridLast);
+
+    const visibleGroups = groups.filter(
+      (g) =>
+        g.delivery_date >= gridFirstIso && g.delivery_date <= gridLastIso
+    );
+    const summaryMap = summarizeByDay(visibleGroups);
+    const daySummaries = Array.from(summaryMap.values()).sort((a, b) =>
+      a.delivery_date.localeCompare(b.delivery_date)
+    );
+
+    jadwalPayload = {
+      year,
+      month,
+      groups: visibleGroups,
+      daySummaries
+    };
+  }
+
   return (
     <div>
       <Nav
@@ -279,13 +452,6 @@ export default async function ProcurementPage({
           actions={
             canWrite ? (
               <div className="flex flex-wrap items-center gap-2">
-                <LinkButton
-                  href="/procurement/requisition/new"
-                  variant="gold"
-                  size="sm"
-                >
-                  {t("procurement.btnNewPR", lang)}
-                </LinkButton>
                 <LinkButton
                   href="/procurement/quotation/new"
                   variant="primary"
@@ -305,16 +471,6 @@ export default async function ProcurementPage({
             <Section
               title={t("procurement.secPRtitle", lang)}
               hint={t("procurement.secPRhint", lang)}
-              actions={
-                canWrite ? (
-                  <Link
-                    href="/procurement/requisition/new"
-                    className="rounded-lg bg-gold-gradient px-3 py-1.5 text-[11px] font-black text-primary-strong shadow-card hover:brightness-105"
-                  >
-                    {t("procurement.btnNewPRshort", lang)}
-                  </Link>
-                ) : null
-              }
             >
               {prs.length === 0 ? (
                 <EmptyState message={t("procurement.prEmpty", lang)} />
@@ -348,7 +504,7 @@ export default async function ProcurementPage({
 
         {activeTab === "po" && (
           <>
-            <Section title={t("procurement.secPOtitle", lang)} hint={t("procurement.secPOhint", lang)}>
+            <Section banner icon="📄" title={t("procurement.secPOtitle", lang)} hint={t("procurement.secPOhint", lang)}>
               {pos.length === 0 ? (
                 <EmptyState message={t("procurement.poEmpty", lang)} />
               ) : (
@@ -382,9 +538,24 @@ export default async function ProcurementPage({
           </>
         )}
 
+        {activeTab === "jadwal" && jadwalPayload && (
+          <Section
+            title={t("delivery.secTitle", lang)}
+            hint={t("delivery.secHint", lang)}
+          >
+            <DeliveryScheduleView
+              lang={lang}
+              year={jadwalPayload.year}
+              month={jadwalPayload.month}
+              groups={jadwalPayload.groups}
+              daySummaries={jadwalPayload.daySummaries}
+            />
+          </Section>
+        )}
+
         {activeTab === "invoice" && (
           <>
-            <Section title={t("procurement.secINVtitle", lang)} hint={t("procurement.secINVhint", lang)}>
+            <Section banner icon="🧾" title={t("procurement.secINVtitle", lang)} hint={t("procurement.secINVhint", lang)}>
               {invoices.length === 0 ? (
                 <EmptyState message={t("procurement.invEmpty", lang)} />
               ) : (

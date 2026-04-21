@@ -37,7 +37,7 @@ const TABS: TabCard[] = [
   // Home
   { href: "/dashboard", labelKey: "tabDashboard", icon: "📊", group: "home", show: () => true },
 
-  // Plan — what to cook & when
+  // Plan — what to cook & when × who receives it → requirements
   { href: "/menu", labelKey: "tabMenu", icon: "🍲", group: "plan", show: () => true },
   {
     href: "/calendar",
@@ -46,11 +46,12 @@ const TABS: TabCard[] = [
     group: "plan",
     show: (r) => canWriteMenu(r) || r === "viewer"
   },
+  { href: "/schools", labelKey: "tabSchools", icon: "🫶", group: "plan", show: () => true },
   { href: "/planning", labelKey: "tabPlanning", icon: "📋", group: "plan", show: () => true },
 
   // Buy — source, price, order, pay
-  { href: "/price-list", labelKey: "tabPriceList", icon: "💹", group: "buy", show: () => true },
   { href: "/suppliers", labelKey: "tabSuppliers", icon: "🤝", group: "buy", show: () => true },
+  { href: "/price-list", labelKey: "tabPriceList", icon: "💹", group: "buy", show: () => true },
   {
     href: "/procurement",
     labelKey: "tabProcurement",
@@ -74,8 +75,6 @@ const TABS: TabCard[] = [
     group: "run",
     show: (r) => canWriteStock(r) || r === "viewer" || r === "ahli_gizi"
   },
-  { href: "/schools", labelKey: "tabSchools", icon: "🫶", group: "run", show: () => true },
-
   // Finance — cost per portion & budget
   {
     href: "/keuangan",

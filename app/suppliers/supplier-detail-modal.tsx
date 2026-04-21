@@ -618,11 +618,10 @@ function CommodityPanel({
                 key: "commodity",
                 label: t("supModal.colCommodity", lang),
                 align: "left",
-                sortValue: (si) =>
-                  itemNameMap.get(si.item_code)?.name_en ?? si.item_code,
+                sortValue: (si) => si.item_code,
                 render: (si) => {
                   const info = itemNameMap.get(si.item_code);
-                  const name = info?.name_en ?? si.item_code;
+                  const name = si.item_code;
                   const category = info?.category ?? "";
                   return (
                     <div>
@@ -708,6 +707,8 @@ function CommodityPanel({
                 initialSort={{ key: "commodity", dir: "asc" }}
                 columns={commodityCols}
                 rows={supItems}
+                stickyHeader
+                bodyMaxHeight={420}
               />
             );
           })()}
@@ -740,7 +741,7 @@ function CommodityPanel({
               <option value="">{t("supModal.chooseCommodity", lang)}</option>
               {filteredItems.map((it) => (
                 <option key={it.code} value={it.code}>
-                  {it.name_en} ({it.code} · {it.unit})
+                  {it.code} · {it.unit}
                 </option>
               ))}
             </Select>
@@ -831,6 +832,8 @@ function TransactionPanel({ rows }: { rows: TxRow[] }) {
           initialSort={{ key: "date", dir: "desc" }}
           columns={columns}
           rows={rows}
+          stickyHeader
+          bodyMaxHeight={420}
         />
       )}
     </section>

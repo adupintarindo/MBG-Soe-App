@@ -4,7 +4,6 @@ import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { TransactionLog, type TxRow } from "@/components/transaction-log";
 import {
-  Badge,
   EmptyState,
   KpiGrid,
   KpiTile,
@@ -15,25 +14,23 @@ import {
 import {
   ScheduleTable,
   VolumeMatrixTable,
-  PlanningTable,
-  StockAlertTable,
+  ProcurementScheduleTable,
   SupplierSpendTable,
   type ScheduleRow,
   type VolumeRow,
-  type PlanRow,
-  type StockAlertRow,
+  type ProcurementDayGroup,
   type SupplierSpendRow
 } from "@/components/dashboard-tables";
 import { porsiBreakdown, schoolsBreakdown } from "@/lib/bgn";
 import {
-  formatIDR,
-  formatKg,
   formatDateID,
   stockShortageForDate,
   toISODate,
   monthlyRequirements,
   dailyPlanning,
   dashboardKpis,
+  requirementForDate,
+  type Requirement,
   monthlyCashflow,
   budgetBurn,
   costPerPortionDaily,
@@ -259,7 +256,6 @@ export default async function DashboardPage({
       ? DEMO_SHORTAGES
       : shortages;
   const shortItems = effectiveShortages.filter((s) => Number(s.gap) > 0);
-  const totalGap = shortItems.reduce((s, x) => s + Number(x.gap || 0), 0);
 
   // Transaction log with supplier names
   const supplierMap = new Map(suppliers.map((s) => [s.id, s.name]));
@@ -457,23 +453,58 @@ export default async function DashboardPage({
     )
   }));
 
-  const planRows: PlanRow[] = planning.map((p) => ({
-    op_date: p.op_date,
-    menu_name: p.menu_name,
-    operasional: p.operasional,
-    porsi_total: p.porsi_total,
-    total_kg: Number(p.total_kg),
-    short_items: p.short_items
-  }));
+  // ---- Procurement schedule: next 10 operational days × item × qty × price ----
+  const procurementDays = planning
+    .filter((p) => p.op_date >= today && p.operasional)
+    .sort((a, b) => a.op_date.localeCompare(b.op_date))
+    .slice(0, 10);
 
-  const stockAlertRows: StockAlertRow[] = shortItems.slice(0, 10).map((s) => ({
-    item_code: s.item_code,
-    category: commodityCategory(s.item_code),
-    required: Number(s.required),
-    on_hand: Number(s.on_hand),
-    gap: Number(s.gap),
-    unit: s.unit
-  }));
+  const reqsByDate = new Map<string, Requirement[]>();
+  await Promise.all(
+    procurementDays.map(async (p) => {
+      try {
+        const reqs = await requirementForDate(supabase, p.op_date);
+        reqsByDate.set(p.op_date, reqs);
+      } catch {
+        reqsByDate.set(p.op_date, []);
+      }
+    })
+  );
+
+  const procurementGroups: ProcurementDayGroup[] = procurementDays.map((p) => {
+    const reqs = reqsByDate.get(p.op_date) ?? [];
+    const d = new Date(p.op_date + "T00:00:00");
+    const dayName = DAYS.long[lang][d.getDay()];
+    const dayShort = DAYS.short[lang][d.getDay()];
+    const dateLabel = `${dayName}, ${d.getDate()} ${MONTHS.long[lang][d.getMonth()]} ${d.getFullYear()}`;
+    const dateShort = `${dayShort}, ${d.getDate()} ${MONTHS.short[lang][d.getMonth()]}`;
+    const porsi = porsiByDate.get(p.op_date);
+    const rows = reqs
+      .map((r) => {
+        const qty = Number(r.qty ?? 0);
+        const price = Number(r.price_idr ?? 0);
+        return {
+          item_code: r.item_code,
+          category: (r.category ?? commodityCategory(r.item_code)) as string,
+          qty,
+          unit: r.unit ?? "kg",
+          price_idr: price,
+          subtotal: qty * price
+        };
+      })
+      .filter((r) => r.qty > 0)
+      .sort((a, b) => b.subtotal - a.subtotal);
+    const subtotal = rows.reduce((s, r) => s + r.subtotal, 0);
+    return {
+      op_date: p.op_date,
+      dateLabel,
+      dateShort,
+      menu_name: p.menu_name,
+      porsi_total: porsi?.total ?? p.porsi_total,
+      rows,
+      subtotal
+    };
+  });
 
   const supplierSpendRows: SupplierSpendRow[] = topSup.map((s) => ({
     supplier_id: s.supplier_id,
@@ -636,7 +667,6 @@ export default async function DashboardPage({
 
         {/* Menu & Portion Schedule · 10 days */}
         <Section
-          banner
           title={t("dashboard.scheduleTitle", lang)}
           hint={t("dashboard.scheduleHint", lang)}
         >
@@ -673,27 +703,11 @@ export default async function DashboardPage({
 
         <div className="mb-6 grid grid-cols-1 gap-6">
           <Section
-            title={t("dashboard.stockAlertTitle", lang)}
-            hint={
-              shortItems.length > 0
-                ? ti("dashboard.stockAlertHintBad", lang, {
-                    n: shortItems.length,
-                    gap: formatKg(totalGap)
-                  })
-                : t("dashboard.stockAlertHintOk", lang)
-            }
-            accent={shortItems.length > 0 ? "bad" : "ok"}
+            title={t("dashboard.procurementTitle", lang)}
+            hint={t("dashboard.procurementHint", lang)}
             className="mb-0"
           >
-            {shortItems.length === 0 ? (
-              <EmptyState
-                icon="✅"
-                tone="ok"
-                message={t("dashboard.stockAlertEmpty", lang)}
-              />
-            ) : (
-              <StockAlertTable rows={stockAlertRows} lang={lang} />
-            )}
+            <ProcurementScheduleTable groups={procurementGroups} lang={lang} />
           </Section>
         </div>
 

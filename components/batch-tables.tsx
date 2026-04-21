@@ -139,6 +139,8 @@ export function ExpiringBatchTable({
       initialSort={{ key: "status", dir: "asc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={460}
     />
   );
 }
@@ -239,6 +241,8 @@ export function BatchTable({
       columns={columns}
       rows={rows}
       searchable
+      stickyHeader
+      bodyMaxHeight={500}
     />
   );
 }

@@ -176,6 +176,8 @@ export function SupplierInboxTable({
       rows={rows}
       searchable
       searchPlaceholder={lang === "EN" ? "Search PO..." : "Cari PO..."}
+      stickyHeader
+      bodyMaxHeight={480}
     />
   );
 }
@@ -298,6 +300,8 @@ export function SupplierPaymentTable({
       initialSort={{ key: "inv_date", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={480}
     />
   );
 }
@@ -420,6 +424,8 @@ export function SupplierUploadsTable({
       initialSort={{ key: "uploaded_at", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={460}
     />
   );
 }

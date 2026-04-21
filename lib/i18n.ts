@@ -245,6 +245,25 @@ export const LANG_KEYS = {
     ID: "Tidak ada kekurangan untuk hari ini.",
     EN: "No shortages for today."
   },
+  "dashboard.procurementTitle": { ID: "Jadwal Belanja", EN: "Procurement Schedule" },
+  "dashboard.procurementHint": {
+    ID: "Daftar belanja komoditas untuk 10 hari operasional ke depan, dikelompokkan per tanggal menu.",
+    EN: "Commodity shopping list for the next 10 operational days, grouped by menu date."
+  },
+  "dashboard.procurementEmpty": {
+    ID: "Belum ada menu operasional dalam 10 hari ke depan.",
+    EN: "No operational menus in the next 10 days."
+  },
+  "dashboard.procurementLoading": {
+    ID: "Memuat jadwal belanja…",
+    EN: "Loading procurement schedule…"
+  },
+  "dashboard.procurementColItem": { ID: "Komoditas", EN: "Commodity" },
+  "dashboard.procurementColCategory": { ID: "Kategori", EN: "Category" },
+  "dashboard.procurementColQty": { ID: "Jumlah", EN: "Quantity" },
+  "dashboard.procurementColPrice": { ID: "Harga Satuan", EN: "Unit Price" },
+  "dashboard.procurementColSubtotal": { ID: "Subtotal", EN: "Subtotal" },
+  "dashboard.procurementDaySubtotal": { ID: "Subtotal hari ini", EN: "Day subtotal" },
   "dashboard.tblItem": { ID: "Item", EN: "Item" },
   "dashboard.tblButuh": { ID: "Butuh", EN: "Needed" },
   "dashboard.tblAda": { ID: "Ada", EN: "On hand" },
@@ -380,6 +399,48 @@ export const LANG_KEYS = {
   "procurement.receiptsEmpty": { ID: "Belum ada foto bukti.", EN: "No proof photos yet." },
   "procurement.noPhoto": { ID: "(tanpa foto)", EN: "(no photo)" },
 
+  // ---------------- Jadwal Pengiriman (Delivery Schedule) ----------------
+  "procurement.tabJadwal": { ID: "Jadwal Kirim", EN: "Delivery Schedule" },
+  "delivery.secTitle": { ID: "Jadwal Pengiriman Bahan Baku", EN: "Inbound Delivery Schedule" },
+  "delivery.secHint": {
+    ID: "Pemetaan tanggal kirim → tanggal masak. Kering 1–2×/bln · Ikan 2×/bln · Sayur H-1 · Ayam/Telur/Tahu H-2 · Minggu tutup.",
+    EN: "Delivery → cooking date mapping. Dry 1–2×/mo · Fish 2×/mo · Veg H-1 · Chicken/Egg/Tofu H-2 · Sundays closed."
+  },
+  "delivery.empty": {
+    ID: "Belum ada jadwal pengiriman untuk bulan ini.",
+    EN: "No delivery schedule for this month yet."
+  },
+  "delivery.viewCalendar": { ID: "Kalender", EN: "Calendar" },
+  "delivery.viewTable": { ID: "Tabel", EN: "Table" },
+  "delivery.prevMonth": { ID: "Bulan sebelumnya", EN: "Previous month" },
+  "delivery.nextMonth": { ID: "Bulan berikutnya", EN: "Next month" },
+  "delivery.today": { ID: "Hari ini", EN: "Today" },
+  "delivery.legend": { ID: "Legenda kategori", EN: "Category legend" },
+  "delivery.catDry": { ID: "Kering (1–2×/bln)", EN: "Dry (1–2×/mo)" },
+  "delivery.catVeg": { ID: "Sayur & Buah (H-1)", EN: "Veg & Fruit (H-1)" },
+  "delivery.catFish": { ID: "Ikan (2×/bln)", EN: "Fish (2×/mo)" },
+  "delivery.catProtein": { ID: "Ayam/Telur/Tahu (H-2)", EN: "Poultry/Egg/Tofu (H-2)" },
+  "delivery.closed": { ID: "Tutup", EN: "Closed" },
+  "delivery.colDate": { ID: "Tgl Kirim", EN: "Delivery Date" },
+  "delivery.colCategory": { ID: "Kategori", EN: "Category" },
+  "delivery.colItem": { ID: "Bahan", EN: "Item" },
+  "delivery.colQty": { ID: "Qty (kg/lt)", EN: "Qty (kg/lt)" },
+  "delivery.colFor": { ID: "Untuk Masak", EN: "For Cooking" },
+  "delivery.colMenu": { ID: "Menu", EN: "Menu" },
+  "delivery.modalTitle": { ID: "Pengiriman · {date}", EN: "Delivery · {date}" },
+  "delivery.modalSubtitle": {
+    ID: "{n} bahan · {kg} kg · melayani masak: {dates}",
+    EN: "{n} items · {kg} kg · serves cooking: {dates}"
+  },
+  "delivery.modalClose": { ID: "Tutup", EN: "Close" },
+  "delivery.noDelivery": { ID: "Tidak ada pengiriman", EN: "No delivery" },
+  "delivery.noCooking": { ID: "Tidak masak", EN: "No cooking" },
+  "delivery.qtyUnit": { ID: "{qty} kg", EN: "{qty} kg" },
+  "delivery.statTotalDays": { ID: "Hari Kirim", EN: "Delivery Days" },
+  "delivery.statTotalItems": { ID: "Total Line", EN: "Total Lines" },
+  "delivery.statTotalKg": { ID: "Total Qty (kg)", EN: "Total Qty (kg)" },
+  "delivery.itemsLabel": { ID: "bahan", EN: "items" },
+
   // ---------------- GRN QC Panel ----------------
   "grnQc.summary": { ID: "{n} GRN | {qc} dengan QC | {ncr} NCR aktif", EN: "{n} GRNs | {qc} with QC | {ncr} active NCRs" },
   "grnQc.btnNewNcr": { ID: "+ Non-Conformance", EN: "+ Non-Conformance" },
@@ -456,6 +517,36 @@ export const LANG_KEYS = {
   },
   "stock.colHarga": { ID: "Harga", EN: "Price" },
   "stock.colNilai": { ID: "Nilai", EN: "Value" },
+  "stock.valueOpen": {
+    ID: "Lihat rincian nilai stok",
+    EN: "View stock value breakdown"
+  },
+  "stock.valueModalTitle": {
+    ID: "Rincian Nilai Stok · {code}",
+    EN: "Stock Value Breakdown · {code}"
+  },
+  "stock.valueFormula": {
+    ID: "{qty} {unit} × {price} = {value}",
+    EN: "{qty} {unit} × {price} = {value}"
+  },
+  "stock.valueBatchesTitle": {
+    ID: "Komposisi Batch ({n})",
+    EN: "Batch Composition ({n})"
+  },
+  "stock.valueBatchesEmpty": {
+    ID: "Tidak ada batch aktif — nilai dihitung langsung dari total qty × harga satuan.",
+    EN: "No active batches — value computed from total qty × unit price."
+  },
+  "stock.valueColBatch": { ID: "Batch / GRN", EN: "Batch / GRN" },
+  "stock.valueColSupplier": { ID: "Supplier", EN: "Supplier" },
+  "stock.valueColReceived": { ID: "Masuk", EN: "Received" },
+  "stock.valueColExpiry": { ID: "Kadaluarsa", EN: "Expiry" },
+  "stock.valueColRemaining": { ID: "Sisa", EN: "Remaining" },
+  "stock.valueColValue": { ID: "Nilai", EN: "Value" },
+  "stock.valueClose": { ID: "Tutup", EN: "Close" },
+  "stock.valueNoBatch": { ID: "(tanpa kode)", EN: "(no code)" },
+  "stock.valueNoExpiry": { ID: "—", EN: "—" },
+  "stock.valueTotalLabel": { ID: "Total Nilai", EN: "Total Value" },
   "stock.colVolWeekly": { ID: "Vol Mingguan", EN: "Weekly Vol" },
   "stock.statusShort": { ID: "Kurang {gap}", EN: "Short {gap}" },
   "stock.statusEmpty": { ID: "Kosong", EN: "Empty" },
@@ -1027,10 +1118,11 @@ export const LANG_KEYS = {
   },
   "menu.commodityTitle": { ID: "Master Komoditas ({n} item)", EN: "Commodity Master ({n} items)" },
   "menu.commodityHint": {
-    ID: "Harga referensi | Volume mingguan | Sumber supplier",
-    EN: "Reference price | Weekly volume | Supplier sources"
+    ID: "Harga referensi | Dipakai di menu apa saja | Sumber supplier",
+    EN: "Reference price | Used in which menus | Supplier sources"
   },
   "menu.colPrice": { ID: "Harga (IDR)", EN: "Price (IDR)" },
+  "menu.colUsedIn": { ID: "Dipakai di Menu", EN: "Used in Menus" },
   "menu.totalLabel": { ID: "Total", EN: "Total" },
   "menu.perPorsi": { ID: "/porsi", EN: "/serving" },
   "menu.footer": {
@@ -2127,6 +2219,39 @@ export const LANG_KEYS = {
   },
   "qtNew.btnSave": { ID: "💾 Simpan Draft Quotation", EN: "💾 Save Draft Quotation" },
   "qtNew.btnSaving": { ID: "Menyimpan…", EN: "Saving…" },
+  "qtNew.step1SeedTitle": {
+    ID: "1. Seed dari Menu",
+    EN: "1. Seed from Menu"
+  },
+  "qtNew.step2ItemsTitle": {
+    ID: "2. Item yang Diminta",
+    EN: "2. Requested Items"
+  },
+  "qtNew.colSupplier": { ID: "Supplier", EN: "Supplier" },
+  "qtNew.optgrpMatch": {
+    ID: "Supplier penyedia item ini",
+    EN: "Suppliers that carry this item"
+  },
+  "qtNew.optgrpOther": {
+    ID: "Supplier lain",
+    EN: "Other suppliers"
+  },
+  "qtNew.errRowNoSup": {
+    ID: "Ada baris tanpa supplier — pilih supplier di tiap baris sebelum simpan.",
+    EN: "Some rows have no supplier — pick a supplier per row before saving."
+  },
+  "qtNew.helperSubmitNew": {
+    ID: "Isi item dulu. Draft quotation akan dibuat per supplier, lalu .xlsx terunduh otomatis.",
+    EN: "Add items first. One draft quotation per supplier will be created, then .xlsx auto-downloads."
+  },
+  "qtNew.helperGroup": {
+    ID: "{n} supplier akan menerima 1 file .xlsx masing-masing.",
+    EN: "{n} suppliers will each receive 1 .xlsx file."
+  },
+  "qtNew.btnSaveMulti": {
+    ID: "💾 Simpan + Unduh {n} File",
+    EN: "💾 Save + Download {n} Files"
+  },
 
   // ---------------- Quotation detail ----------------
   "qtDetail.title": { ID: "Quotation #{no}", EN: "Quotation #{no}" },

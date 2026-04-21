@@ -114,7 +114,7 @@ export default async function StockPage({
 
   const today = toISODate(new Date());
 
-  const [stockRes, itemsRes, movesRes, shortages, batchesRes, expiring] =
+  const [stockRes, itemsRes, movesRes, shortages, batchesRes, expiring, suppliersRes] =
     await Promise.all([
       supabase.from("stock").select("item_code, qty, updated_at"),
       supabase
@@ -137,7 +137,8 @@ export default async function StockPage({
         .gt("qty_remaining", 0)
         .order("expiry_date", { ascending: true, nullsFirst: false })
         .limit(300),
-      expiringBatches(supabase, 14).catch(() => [] as ExpiringBatch[])
+      expiringBatches(supabase, 14).catch(() => [] as ExpiringBatch[]),
+      supabase.from("suppliers").select("id, name")
     ]);
 
   const stock = (stockRes.data ?? []) as StockRow[];
@@ -227,6 +228,18 @@ export default async function StockPage({
     created_at: m.created_at
   }));
 
+  // Build lookups for the StockMasterTable value-breakdown modal.
+  const batchesByItem: Record<string, typeof batchRows> = {};
+  for (const b of batchRows) {
+    const arr = batchesByItem[b.item_code] ?? [];
+    arr.push(b);
+    batchesByItem[b.item_code] = arr;
+  }
+  const supplierNames: Record<string, string> = {};
+  for (const s of (suppliersRes.data ?? []) as Array<{ id: string; name: string }>) {
+    supplierNames[s.id] = s.name;
+  }
+
   return (
     <div>
       <Nav
@@ -265,7 +278,12 @@ export default async function StockPage({
               {items.length === 0 ? (
                 <EmptyState message={t("stock.movesEmpty", lang)} />
               ) : (
-                <StockMasterTable lang={lang} rows={masterRows} />
+                <StockMasterTable
+                  lang={lang}
+                  rows={masterRows}
+                  batchesByItem={batchesByItem}
+                  supplierNames={supplierNames}
+                />
               )}
             </Section>
           </>
@@ -293,7 +311,7 @@ export default async function StockPage({
 
         {activeTab === "ledger" && (
           <>
-            <Section title={ti("batch.allTitle", lang, { n: batchRows.length })} hint={t("batch.allHint", lang)}>
+            <Section banner icon="🗃️" title={ti("batch.allTitle", lang, { n: batchRows.length })} hint={t("batch.allHint", lang)}>
               {batchRows.length === 0 ? (
                 <EmptyState message={t("batch.allEmpty", lang)} />
               ) : (
@@ -304,7 +322,7 @@ export default async function StockPage({
         )}
 
         {activeTab === "moves" && (
-          <Section title={t("stock.movesTitle", lang)} hint={t("stock.movesHint", lang)}>
+          <Section banner icon="🔄" title={t("stock.movesTitle", lang)} hint={t("stock.movesHint", lang)}>
             {moves.length === 0 ? (
               <EmptyState message={t("stock.movesEmpty", lang)} />
             ) : (

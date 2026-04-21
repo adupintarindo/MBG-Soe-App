@@ -71,6 +71,8 @@ export function SupplierItemsTable({
       initialSort={{ key: "item", dir: "asc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={420}
     />
   );
 }
@@ -129,6 +131,8 @@ export function SupplierCertsTable({
       initialSort={{ key: "valid", dir: "asc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={360}
     />
   );
 }

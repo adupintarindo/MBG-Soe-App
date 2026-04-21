@@ -21,10 +21,9 @@ import {
 } from "./types";
 import { upsertSupplierPrice } from "./actions";
 import { t, ti, formatNumber, numberLocale } from "@/lib/i18n";
-import { formatDateShort } from "@/lib/engine";
 import { useLang } from "@/lib/prefs-context";
 import { downloadStyledXlsx, type StyledColumn } from "@/lib/excel-export";
-import { InfoBadge } from "@/components/ui";
+import { Section } from "@/components/ui";
 
 interface Props {
   periods: PricePeriod[];
@@ -226,85 +225,100 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
     });
   }
 
-  return (
-    <div className="rounded-2xl bg-white p-4 shadow ring-1 ring-slate-200">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
-          <span>💹</span>
-          <span>{t("priceList.shellTitle", lang)}</span>
-          <InfoBadge tone="light">
-            {t("priceList.hint", lang)}{" "}
-            <strong>{periods.find((p) => p.id === periodId)?.name}</strong>.
-          </InfoBadge>
-        </h2>
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <select
-            value={periodId ?? ""}
-            onChange={(e) => setPeriodId(Number(e.target.value) || null)}
-            className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs"
-          >
-            {periods.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={commodity}
-            onChange={(e) => setCommodity(e.target.value as PriceCommodity | "")}
-            className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs"
-          >
-            <option value="">{t("priceList.allCommodities", lang)}</option>
-            {(Object.keys(COMMODITY_LABELS) as PriceCommodity[]).map((k) => (
-              <option key={k} value={k}>
-                {commodityLabel(k, lang)}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={onExportXlsx}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-          >
-            ⬇ {t("common.exportExcel", lang)}
-          </button>
-        </div>
-      </div>
+  const activePeriodName = periods.find((p) => p.id === periodId)?.name;
 
+  const controls = (
+    <>
+      <select
+        value={periodId ?? ""}
+        onChange={(e) => setPeriodId(Number(e.target.value) || null)}
+        className="rounded-md border border-ink/10 bg-white py-1.5 pl-2.5 pr-7 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+      >
+        {periods.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+      <select
+        value={commodity}
+        onChange={(e) => setCommodity(e.target.value as PriceCommodity | "")}
+        className="rounded-md border border-ink/10 bg-white py-1.5 pl-2.5 pr-7 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+      >
+        <option value="">{t("priceList.allCommodities", lang)}</option>
+        {(Object.keys(COMMODITY_LABELS) as PriceCommodity[]).map((k) => (
+          <option key={k} value={k}>
+            {commodityLabel(k, lang)}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={onExportXlsx}
+        className="inline-flex items-center gap-1 rounded-md bg-primary-gradient px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-card transition hover:brightness-110"
+      >
+        ⬇ {t("common.exportExcel", lang)}
+      </button>
+    </>
+  );
+
+  return (
+    <Section
+      title={t("priceList.shellTitle", lang)}
+      hint={
+        activePeriodName ? (
+          <>
+            {t("priceList.hint", lang)} <strong>{activePeriodName}</strong>.
+          </>
+        ) : (
+          t("priceList.hint", lang)
+        )
+      }
+      actions={controls}
+      noPad
+    >
       {pending && (
-        <p className="mt-2 text-xs text-blue-600">{t("priceList.saving", lang)}</p>
+        <p className="px-5 pt-3 text-xs text-accent-strong">
+          {t("priceList.saving", lang)}
+        </p>
       )}
       {errorMsg && (
-        <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
+        <div className="mx-5 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
           ⚠ {errorMsg}
         </div>
       )}
 
       <div className="mt-3 overflow-auto" style={{ maxHeight: "70vh" }}>
         <table className="min-w-[1400px] border-collapse text-xs">
-          <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700">
+          <thead className="sticky top-0 z-10 bg-primary-gradient text-white/95 [&>tr]:border-b-2 [&>tr]:border-gold/70">
             <tr>
-              <th className="sticky left-0 z-20 bg-slate-100 px-2 py-1.5 text-left">
+              <th className="sticky left-0 z-20 bg-primary-gradient px-3 py-2 text-left font-display text-[11px] font-bold uppercase tracking-[0.05em]">
                 {t("priceList.colCommodity", lang)}
               </th>
-              <th className="sticky left-[120px] z-20 bg-slate-100 px-2 py-1.5 text-left">
+              <th className="sticky left-[120px] z-20 bg-primary-gradient px-3 py-2 text-left font-display text-[11px] font-bold uppercase tracking-[0.05em]">
                 {t("priceList.colIngredient", lang)}
               </th>
-              <th className="sticky left-[260px] z-20 bg-slate-100 px-2 py-1.5 text-left">
+              <th className="sticky left-[260px] z-20 bg-primary-gradient px-3 py-2 text-left font-display text-[11px] font-bold uppercase tracking-[0.05em]">
                 {t("priceList.colSupplier", lang)}
               </th>
               {activeWeeks.map((w) => (
                 <th
                   key={w.id}
                   title={`${w.start_date} – ${w.end_date}`}
-                  className="min-w-[72px] px-1 py-1.5 text-center font-medium"
+                  className="min-w-[72px] px-1 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]"
                 >
                   {w.label.replace(/^Wk \d+: /, "")}
                 </th>
               ))}
-              <th className="px-2 py-1.5 text-center">{t("priceList.colAvg", lang)}</th>
-              <th className="px-2 py-1.5 text-center">{t("priceList.colMin", lang)}</th>
-              <th className="px-2 py-1.5 text-center">{t("priceList.colMax", lang)}</th>
+              <th className="px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
+                {t("priceList.colAvg", lang)}
+              </th>
+              <th className="px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
+                {t("priceList.colMin", lang)}
+              </th>
+              <th className="px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
+                {t("priceList.colMax", lang)}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -312,7 +326,7 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
               <tr>
                 <td
                   colSpan={activeWeeks.length + 6}
-                  className="px-4 py-8 text-center text-slate-400"
+                  className="px-4 py-10 text-center text-sm text-ink2/60"
                 >
                   {t("priceList.empty", lang)}
                 </td>
@@ -321,22 +335,30 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
             {filteredRows.map((r) => {
               const stats = computeRowStats(r);
               return (
-                <tr key={`${r.supplier_id}-${r.commodity}-${r.ingredient_name}`} className="border-t border-slate-100">
+                <tr
+                  key={`${r.supplier_id}-${r.commodity}-${r.ingredient_name}`}
+                  className="border-t border-ink/5"
+                >
                   <td
                     className={`sticky left-0 z-10 px-2 py-1.5 font-semibold ring-1 ${COMMODITY_COLORS[r.commodity]}`}
                   >
                     {commodityLabel(r.commodity, lang)}
                   </td>
-                  <td className="sticky left-[120px] z-10 bg-white px-2 py-1.5 font-medium text-slate-800">
+                  <td className="sticky left-[120px] z-10 bg-white px-2 py-1.5 font-medium text-ink">
                     {r.ingredient_name.replace(/^Buah\s*-\s*/i, "")}
                   </td>
-                  <td className="sticky left-[260px] z-10 bg-white px-2 py-1.5 text-slate-700">
+                  <td className="sticky left-[260px] z-10 bg-white px-2 py-1.5 text-ink2">
                     {r.supplier_name}
                   </td>
                   {activeWeeks.map((w) => {
                     const v = r[`w${w.week_no}` as WeekField];
                     let bg = "bg-white";
-                    if (v != null && stats.min != null && stats.max != null && stats.min !== stats.max) {
+                    if (
+                      v != null &&
+                      stats.min != null &&
+                      stats.max != null &&
+                      stats.min !== stats.max
+                    ) {
                       if (v === stats.min) bg = "bg-emerald-50";
                       else if (v === stats.max) bg = "bg-rose-50";
                     }
@@ -346,7 +368,11 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                         suppressContentEditableWarning
                         contentEditable={canEdit}
                         onBlur={(e) =>
-                          onCellBlur(r, `w${w.week_no}` as WeekField, e.currentTarget.textContent ?? "")
+                          onCellBlur(
+                            r,
+                            `w${w.week_no}` as WeekField,
+                            e.currentTarget.textContent ?? ""
+                          )
                         }
                         className={`${bg} min-w-[72px] px-1 py-1.5 text-right tabular-nums`}
                       >
@@ -354,9 +380,15 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                       </td>
                     );
                   })}
-                  <td className="px-2 py-1.5 text-left font-semibold text-slate-800">{fmtRp(stats.avg, lang)}</td>
-                  <td className="px-2 py-1.5 text-left text-emerald-700">{fmtRp(stats.min, lang)}</td>
-                  <td className="px-2 py-1.5 text-left text-rose-700">{fmtRp(stats.max, lang)}</td>
+                  <td className="px-2 py-1.5 text-left font-semibold text-ink">
+                    {fmtRp(stats.avg, lang)}
+                  </td>
+                  <td className="px-2 py-1.5 text-left text-emerald-700">
+                    {fmtRp(stats.min, lang)}
+                  </td>
+                  <td className="px-2 py-1.5 text-left text-rose-700">
+                    {fmtRp(stats.max, lang)}
+                  </td>
                 </tr>
               );
             })}
@@ -364,20 +396,22 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
         </table>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+      <div className="flex flex-wrap gap-4 border-t border-ink/10 bg-paper px-5 py-2.5 text-[11px] text-ink2/80">
         <span>
-          <strong>{summary.rows}</strong> {t("priceList.summaryRows", lang)} ·{" "}
-          <strong>
+          <strong className="text-ink">{summary.rows}</strong>{" "}
+          {t("priceList.summaryRows", lang)} ·{" "}
+          <strong className="text-ink">
             {summary.filled}/{summary.totalCells}
           </strong>{" "}
-          {t("priceList.summaryFilled", lang)} (<strong>{summary.pct}%</strong>)
+          {t("priceList.summaryFilled", lang)} (
+          <strong className="text-ink">{summary.pct}%</strong>)
         </span>
         <span>{ti("priceList.weeksCount", lang, { n: activeWeeks.length })}</span>
         <span>{t("priceList.legend", lang)}</span>
         {!canEdit && (
-          <span className="text-slate-400">{t("priceList.readOnly", lang)}</span>
+          <span className="text-ink2/50">{t("priceList.readOnly", lang)}</span>
         )}
       </div>
-    </div>
+    </Section>
   );
 }

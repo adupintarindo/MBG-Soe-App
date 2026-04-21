@@ -28,6 +28,12 @@ interface ItemLite {
   category: string;
   active: boolean;
 }
+interface SupplierItemLink {
+  supplier_id: string;
+  item_code: string;
+  is_main: boolean;
+  price_idr: number | null;
+}
 
 export default async function NewQuotationPage() {
   const lang = getLang();
@@ -36,7 +42,7 @@ export default async function NewQuotationPage() {
   if (!profile) redirect("/login");
   if (!WRITE_ROLES.has(profile.role)) redirect("/procurement");
 
-  const [supRes, itemsRes] = await Promise.all([
+  const [supRes, itemsRes, linksRes] = await Promise.all([
     supabase
       .from("suppliers")
       .select("id, name, status")
@@ -46,11 +52,15 @@ export default async function NewQuotationPage() {
       .from("items")
       .select("code, name_en, unit, category, active")
       .eq("active", true)
-      .order("code")
+      .order("code"),
+    supabase
+      .from("supplier_items")
+      .select("supplier_id, item_code, is_main, price_idr")
   ]);
 
   const suppliers = (supRes.data ?? []) as SupplierLite[];
   const items = (itemsRes.data ?? []) as ItemLite[];
+  const supplierItems = (linksRes.data ?? []) as SupplierItemLink[];
 
   return (
     <div>
@@ -72,7 +82,11 @@ export default async function NewQuotationPage() {
         />
 
         <Section noPad>
-          <QuotationForm suppliers={suppliers} items={items} />
+          <QuotationForm
+            suppliers={suppliers}
+            items={items}
+            supplierItems={supplierItems}
+          />
         </Section>
       </PageContainer>
     </div>

@@ -200,6 +200,8 @@ export function AuditTable({ rows }: { rows: AuditEvent[] }) {
       initialSort={{ key: "ts", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={520}
     />
   );
 }

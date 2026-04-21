@@ -165,7 +165,7 @@ function DocList({
   }[];
 }) {
   return (
-    <Section title={`${icon} ${title}`} hint={hint} className="mb-0">
+    <Section banner icon={icon} title={title} hint={hint} className="mb-0">
       {docs.length === 0 ? (
         <EmptyState message={t("docgen.empty", lang)} />
       ) : (

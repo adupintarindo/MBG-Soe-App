@@ -1,8 +1,10 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
 import { t, ti, formatNumber, type Lang, type LangKey } from "@/lib/i18n";
+import { formatIDR } from "@/lib/engine";
 
 const REASON_KEY: Record<string, LangKey> = {
   receipt: "stock.reasonReceipt",
@@ -87,6 +89,8 @@ export function StockShortTable({
       initialSort={{ key: "gap", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={440}
     />
   );
 }
@@ -103,13 +107,29 @@ export type StockMasterRow = {
   shortGap: number | null;
 };
 
+export type StockValueBatch = {
+  id: number;
+  batch_code: string | null;
+  grn_no: string | null;
+  supplier_id: string | null;
+  qty_remaining: number;
+  unit: string;
+  received_date: string | null;
+  expiry_date: string | null;
+};
+
 export function StockMasterTable({
   rows,
-  lang
+  lang,
+  batchesByItem,
+  supplierNames
 }: {
   rows: StockMasterRow[];
   lang: Lang;
+  batchesByItem?: Record<string, StockValueBatch[]>;
+  supplierNames?: Record<string, string>;
 }) {
+  const [valueModal, setValueModal] = useState<StockMasterRow | null>(null);
   const columns: SortableColumn<StockMasterRow>[] = [
     {
       key: "no",
@@ -164,7 +184,32 @@ export function StockMasterTable({
       label: t("stock.colNilai", lang),
       align: "left",
       sortValue: (r) => r.value,
-      render: (r) => <IDR value={r.value} className="text-xs" />
+      exportValue: (r) => Number(r.value.toFixed(2)),
+      exportNumFmt: '"Rp "#,##0',
+      render: (r) => (
+        <button
+          type="button"
+          onClick={() => setValueModal(r)}
+          aria-label={t("stock.valueOpen", lang)}
+          title={t("stock.valueOpen", lang)}
+          className="inline-flex items-center gap-1.5 rounded-md border border-ink/10 bg-white px-2 py-0.5 text-ink transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+        >
+          <IDR value={r.value} className="text-xs" />
+          <svg
+            aria-hidden
+            viewBox="0 0 24 24"
+            className="h-3 w-3 text-ink2/70"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      )
     },
     {
       key: "weekly",
@@ -212,14 +257,193 @@ export function StockMasterTable({
   ];
 
   return (
-    <SortableTable<StockMasterRow>
-      tableClassName="text-sm"
-      rowKey={(r) => r.code}
-      initialSort={{ key: "value", dir: "desc" }}
-      columns={columns}
-      rows={rows}
-      searchable
-    />
+    <>
+      <SortableTable<StockMasterRow>
+        tableClassName="text-sm"
+        rowKey={(r) => r.code}
+        initialSort={{ key: "value", dir: "desc" }}
+        columns={columns}
+        rows={rows}
+        searchable
+        stickyHeader
+        bodyMaxHeight={520}
+      />
+      {valueModal && (
+        <StockValueModal
+          row={valueModal}
+          lang={lang}
+          batches={batchesByItem?.[valueModal.code] ?? []}
+          supplierNames={supplierNames ?? {}}
+          onClose={() => setValueModal(null)}
+        />
+      )}
+    </>
+  );
+}
+
+function StockValueModal({
+  row,
+  lang,
+  batches,
+  supplierNames,
+  onClose
+}: {
+  row: StockMasterRow;
+  lang: Lang;
+  batches: StockValueBatch[];
+  supplierNames: Record<string, string>;
+  onClose: () => void;
+}) {
+  const sortedBatches = useMemo(
+    () =>
+      [...batches].sort((a, b) => {
+        // Expiry nulls last, then by expiry ascending, then received_date
+        const aExp = a.expiry_date ?? "9999-12-31";
+        const bExp = b.expiry_date ?? "9999-12-31";
+        if (aExp !== bExp) return aExp.localeCompare(bExp);
+        return (a.received_date ?? "").localeCompare(b.received_date ?? "");
+      }),
+    [batches]
+  );
+
+  const batchesValue = sortedBatches.reduce(
+    (s, b) => s + b.qty_remaining * row.price_idr,
+    0
+  );
+  const totalBatchQty = sortedBatches.reduce((s, b) => s + b.qty_remaining, 0);
+
+  const formulaText = ti("stock.valueFormula", lang, {
+    qty: formatNumber(row.qty, lang, { maximumFractionDigits: 2 }),
+    unit: row.unit,
+    price: formatIDR(row.price_idr),
+    value: formatIDR(row.value)
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-ink/10 bg-primary-gradient px-5 py-4 text-white">
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-black">
+              {ti("stock.valueModalTitle", lang, { code: row.code })}
+            </h3>
+            <p className="mt-0.5 text-[11.5px] text-white/85">{formulaText}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded-lg bg-white/10 px-3 py-1 text-[11px] font-bold text-white ring-1 ring-white/25 hover:bg-white/20"
+          >
+            {t("stock.valueClose", lang)} ✕
+          </button>
+        </div>
+
+        <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
+          <h4 className="mb-2 text-[11px] font-black uppercase tracking-wide text-ink2/80">
+            {ti("stock.valueBatchesTitle", lang, { n: sortedBatches.length })}
+          </h4>
+
+          {sortedBatches.length === 0 ? (
+            <div className="rounded-lg bg-paper/60 px-4 py-6 text-center text-[11.5px] text-ink2/70 ring-1 ring-ink/5">
+              {t("stock.valueBatchesEmpty", lang)}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-lg ring-1 ring-ink/5">
+              <table className="w-full text-[11.5px]">
+                <thead className="bg-paper/60 text-[10.5px] uppercase text-ink2">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-bold">
+                      {t("stock.valueColBatch", lang)}
+                    </th>
+                    <th className="px-3 py-2 text-left font-bold">
+                      {t("stock.valueColSupplier", lang)}
+                    </th>
+                    <th className="px-3 py-2 text-center font-bold">
+                      {t("stock.valueColReceived", lang)}
+                    </th>
+                    <th className="px-3 py-2 text-center font-bold">
+                      {t("stock.valueColExpiry", lang)}
+                    </th>
+                    <th className="px-3 py-2 text-right font-bold">
+                      {t("stock.valueColRemaining", lang)}
+                    </th>
+                    <th className="px-3 py-2 text-right font-bold">
+                      {t("stock.valueColValue", lang)}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-ink/5">
+                  {sortedBatches.map((b) => {
+                    const val = b.qty_remaining * row.price_idr;
+                    const supName =
+                      (b.supplier_id && supplierNames[b.supplier_id]) ||
+                      b.supplier_id ||
+                      "—";
+                    return (
+                      <tr key={b.id} className="hover:bg-paper/40">
+                        <td className="px-3 py-2">
+                          <div className="font-mono font-bold text-ink">
+                            {b.batch_code ?? t("stock.valueNoBatch", lang)}
+                          </div>
+                          {b.grn_no && (
+                            <div className="mt-0.5 font-mono text-[10px] text-ink2/70">
+                              {b.grn_no}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-ink2">{supName}</td>
+                        <td className="px-3 py-2 text-center tabular-nums text-ink2">
+                          {b.received_date ?? "—"}
+                        </td>
+                        <td className="px-3 py-2 text-center tabular-nums text-ink2">
+                          {b.expiry_date ?? t("stock.valueNoExpiry", lang)}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums font-bold text-ink">
+                          {formatNumber(b.qty_remaining, lang, {
+                            maximumFractionDigits: 2
+                          })}{" "}
+                          <span className="text-ink2/60">{b.unit}</span>
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-ink">
+                          {formatIDR(val)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot className="bg-paper/40">
+                  <tr className="border-t border-ink/10">
+                    <td
+                      colSpan={4}
+                      className="px-3 py-2 text-right text-[11px] font-black uppercase text-ink2"
+                    >
+                      {t("stock.valueTotalLabel", lang)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-black text-ink">
+                      {formatNumber(totalBatchQty, lang, {
+                        maximumFractionDigits: 2
+                      })}{" "}
+                      <span className="text-ink2/60">{row.unit}</span>
+                    </td>
+                    <td className="px-3 py-2 text-right font-black text-ink">
+                      {formatIDR(batchesValue)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -328,6 +552,8 @@ export function StockMovesTable({
       initialSort={{ key: "time", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={480}
     />
   );
 }

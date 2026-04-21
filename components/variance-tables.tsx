@@ -132,6 +132,8 @@ export function VariancePerItemTable({
       initialSort={{ key: "pct", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={460}
     />
   );
 }
@@ -222,6 +224,8 @@ export function VarianceByMenuTable({
       initialSort={{ key: "cost", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={460}
     />
   );
 }

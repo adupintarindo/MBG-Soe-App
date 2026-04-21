@@ -176,6 +176,8 @@ export function BalitaRosterTable({
       exportFileName="balita"
       exportSheetName="Balita"
       filters={[genderFilter, posyFilter]}
+      stickyHeader
+      bodyMaxHeight={500}
     />
   );
 }

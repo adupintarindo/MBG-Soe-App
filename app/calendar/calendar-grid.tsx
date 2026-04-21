@@ -897,7 +897,7 @@ function KombinasiSelect({
         <option value="">{placeholder}</option>
         {options.map((it) => (
           <option key={it.code} value={it.code}>
-            {it.name_en ?? it.code}
+            {it.code}
           </option>
         ))}
       </select>

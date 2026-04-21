@@ -172,7 +172,7 @@ export default async function PrDetailPage({
         />
 
         {pr.notes && (
-          <Section title={t("prDetail.notesTitle", lang)} hint={t("prDetail.notesHint", lang)}>
+          <Section banner icon="📝" title={t("prDetail.notesTitle", lang)} hint={t("prDetail.notesHint", lang)}>
             <p className="text-sm italic text-ink2">{pr.notes}</p>
           </Section>
         )}
@@ -193,7 +193,7 @@ export default async function PrDetailPage({
               itemByCode={Object.fromEntries(
                 Array.from(itemByCode.entries()).map(([k, v]) => [
                   k,
-                  { name: v.name_en ?? v.code, unit: v.unit }
+                  { name: v.code, unit: v.unit }
                 ])
               )}
               suppliers={suppliers}
