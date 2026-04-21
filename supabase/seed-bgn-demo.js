@@ -282,18 +282,35 @@ async function main() {
 
   // ---- 7. GL entry -------------------------------------------------------
   console.log("→ gl_entry");
-  const { data: coa } = await sb.from("chart_of_accounts").select("code,name,kind");
+  const { data: coa } = await sb.from("chart_of_accounts").select("code,name,category");
   const { count: glCount } = await sb.from("gl_entry").select("*", { count: "exact", head: true });
   if ((glCount ?? 0) < 10 && coa?.length) {
-    const kas = coa.find((c) => c.code === "1100") ?? coa[0];
-    const bank = coa.find((c) => c.code === "1110") ?? coa[0];
-    const bebans = coa.filter((c) => c.kind === "beban" || c.code?.startsWith("5"));
-    const pendapatans = coa.filter((c) => c.kind === "pendapatan" || c.code?.startsWith("4"));
+    const kas = coa.find((c) => c.code === "1010") ?? coa.find((c) => c.category === "asset") ?? coa[0];
+    const bank = coa.find((c) => c.code === "1020") ?? kas;
+    const bebans = coa.filter((c) => c.category === "expense");
+    const pendapatans = coa.filter((c) => c.category === "revenue");
     const rows = [];
-    for (let i = 25; i >= 1; i--) {
-      if (Math.random() > 0.7) continue;
-      const isBeban = Math.random() < 0.75;
-      if (isBeban && bebans.length) {
+    // Hibah bulanan di awal period
+    if (pendapatans.length) {
+      rows.push({
+        entry_date: iso(addDays(today, -55)),
+        description: "Penerimaan Hibah BGN bulan sebelumnya",
+        debit_account: bank.code,
+        credit_account: pendapatans[0].code,
+        amount: 120_000_000,
+        source_type: "manual"
+      });
+      rows.push({
+        entry_date: iso(addDays(today, -28)),
+        description: "Penerimaan Hibah BGN bulan berjalan",
+        debit_account: bank.code,
+        credit_account: pendapatans[0].code,
+        amount: 125_000_000,
+        source_type: "manual"
+      });
+    }
+    for (let i = 28; i >= 1; i--) {
+      if (Math.random() < 0.55 && bebans.length) {
         const b = pick(bebans);
         rows.push({
           entry_date: iso(addDays(today, -i)),
@@ -301,16 +318,6 @@ async function main() {
           debit_account: b.code,
           credit_account: (Math.random() < 0.5 ? kas : bank).code,
           amount: randInt(250_000, 4_500_000),
-          source_type: "manual"
-        });
-      } else if (pendapatans.length) {
-        const p = pick(pendapatans);
-        rows.push({
-          entry_date: iso(addDays(today, -i)),
-          description: `Penerimaan ${p.name}`,
-          debit_account: (Math.random() < 0.5 ? kas : bank).code,
-          credit_account: p.code,
-          amount: randInt(2_000_000, 12_000_000),
           source_type: "manual"
         });
       }

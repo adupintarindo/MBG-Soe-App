@@ -64,6 +64,7 @@ type SearchParams = {
   from?: string;
   to?: string;
   demoStock?: string;
+  demoForecast?: string;
   demo?: string;
 };
 
@@ -530,8 +531,11 @@ export default async function DashboardPage({
       ? demoCostPerPortion(today)
       : costPerPortionRows;
 
+  const demoForecast = sp.demoForecast === "1" || sp.demoForecast === "true";
   const upcomingDisplay =
-    demoMode && upcoming.length === 0 ? demoUpcomingShortages(today) : upcoming;
+    demoForecast || (demoMode && upcoming.length === 0)
+      ? demoUpcomingShortages(today)
+      : upcoming;
 
   return (
     <div>
