@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import Link from "next/link";
 import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import {
   SortableTable,
-  type SortableColumn,
-  type SortableTableFilter
+  type SortableColumn
 } from "@/components/sortable-table";
 import { formatKg, formatDateLong } from "@/lib/engine";
+import { getHoliday } from "@/lib/holidays";
 import { t, formatNumber, ti, type Lang } from "@/lib/i18n";
 
 const displayCode = (code: string) => code.replace(/^Buah\s*-\s*/i, "");
@@ -29,39 +31,39 @@ export type ScheduleRow = {
 
 export function ScheduleTable({
   rows,
-  lang
+  lang,
+  today
 }: {
   rows: ScheduleRow[];
   lang: Lang;
+  /** ISO date (YYYY-MM-DD) used as the anchor for the default 10-day window. Pass the server's `today` to avoid timezone drift. */
+  today: string;
 }) {
-  const dateBounds = useMemo(() => {
-    if (rows.length === 0) return { min: "", max: "" };
-    let min = rows[0].op_date;
-    let max = rows[0].op_date;
-    for (const r of rows) {
-      if (r.op_date < min) min = r.op_date;
-      if (r.op_date > max) max = r.op_date;
-    }
-    return { min, max };
-  }, [rows]);
+  // Default range: today → today + 10 days. Anchored on the server-computed
+  // `today` prop so the filter applies synchronously on first render (no SSR
+  // flicker showing all 90 rows) and timezone drift between server/client is
+  // irrelevant.
+  const defaultRange = useMemo(() => {
+    const d = new Date(today + "T00:00:00");
+    d.setDate(d.getDate() + 10);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return { from: today, to: `${y}-${m}-${day}` };
+  }, [today]);
 
-  const [from, setFrom] = useState<string>("");
-  const [to, setTo] = useState<string>("");
-
-  const effectiveFrom = from || dateBounds.min;
-  const effectiveTo = to || dateBounds.max;
+  const [from, setFrom] = useState<string>(defaultRange.from);
+  const [to, setTo] = useState<string>(defaultRange.to);
 
   const filteredRows = useMemo(() => {
-    if (!effectiveFrom && !effectiveTo) return rows;
     return rows.filter((r) => {
-      if (effectiveFrom && r.op_date < effectiveFrom) return false;
-      if (effectiveTo && r.op_date > effectiveTo) return false;
+      if (from && r.op_date < from) return false;
+      if (to && r.op_date > to) return false;
       return true;
     });
-  }, [rows, effectiveFrom, effectiveTo]);
+  }, [rows, from, to]);
 
-  const rangeActive =
-    (from && from !== dateBounds.min) || (to && to !== dateBounds.max);
+  const rangeActive = from !== defaultRange.from || to !== defaultRange.to;
 
   const dateToolbar = (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -70,8 +72,7 @@ export function ScheduleTable({
         <input
           type="date"
           value={from}
-          min={dateBounds.min || undefined}
-          max={effectiveTo || dateBounds.max || undefined}
+          max={to || undefined}
           onChange={(e) => setFrom(e.target.value)}
           className="rounded-md border border-ink/10 bg-paper px-2 py-1 font-mono text-[11px] font-semibold text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
         />
@@ -81,8 +82,7 @@ export function ScheduleTable({
         <input
           type="date"
           value={to}
-          min={effectiveFrom || dateBounds.min || undefined}
-          max={dateBounds.max || undefined}
+          min={from || undefined}
           onChange={(e) => setTo(e.target.value)}
           className="rounded-md border border-ink/10 bg-paper px-2 py-1 font-mono text-[11px] font-semibold text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
         />
@@ -91,8 +91,8 @@ export function ScheduleTable({
         <button
           type="button"
           onClick={() => {
-            setFrom("");
-            setTo("");
+            setFrom(defaultRange.from);
+            setTo(defaultRange.to);
           }}
           className="rounded-md border border-ink/10 bg-paper px-2 py-1 text-[11px] font-semibold text-ink2 transition hover:bg-ink/[0.04]"
         >
@@ -113,35 +113,26 @@ export function ScheduleTable({
     setBreakdownOpen({ date: row.op_date, dateLabel: row.dateLabel, tab });
   };
 
-  const clickableCell = (
-    row: ScheduleRow,
-    value: number,
-    tab: BreakdownTab,
-    tone: "ink" | "emerald" | "pink" | "amber"
-  ) => {
-    if (!row.operasional || value === 0) {
+  const plainCell = (value: number, operasional: boolean) => {
+    if (!operasional || value === 0) {
       return (
         <span className="font-mono text-xs text-ink2/60">
           {formatNumber(value, lang)}
         </span>
       );
     }
-    const toneCls = {
-      ink: "text-ink hover:bg-ink/5 hover:text-ink",
-      emerald: "text-emerald-800 hover:bg-emerald-50",
-      pink: "text-pink-800 hover:bg-pink-50",
-      amber: "text-amber-800 hover:bg-amber-50"
-    }[tone];
     return (
-      <button
-        type="button"
-        onClick={() => openBreakdown(row, tab)}
-        className={`rounded px-2 py-0.5 font-mono text-xs font-bold underline-offset-2 transition hover:underline ${toneCls}`}
-        title={t("dashboard.breakdownDownload", lang)}
-      >
+      <span className="font-mono text-xs text-ink">
         {formatNumber(value, lang)}
-      </button>
+      </span>
     );
+  };
+
+  const defaultBreakdownTab = (row: ScheduleRow): BreakdownTab => {
+    if (row.students > 0) return "schools";
+    if (row.pregnant > 0) return "pregnant";
+    if (row.toddler > 0) return "toddler";
+    return "schools";
   };
 
   const columns: SortableColumn<ScheduleRow>[] = [
@@ -202,7 +193,7 @@ export function ScheduleTable({
       exportValue: (r) => r.schools,
       exportHint: "number",
       exportNumFmt: "#,##0",
-      render: (r) => clickableCell(r, r.schools, "schools", "ink")
+      render: (r) => plainCell(r.schools, r.operasional)
     },
     {
       key: "students",
@@ -212,7 +203,7 @@ export function ScheduleTable({
       exportValue: (r) => r.students,
       exportHint: "number",
       exportNumFmt: "#,##0",
-      render: (r) => clickableCell(r, r.students, "schools", "emerald")
+      render: (r) => plainCell(r.students, r.operasional)
     },
     {
       key: "pregnant",
@@ -222,7 +213,7 @@ export function ScheduleTable({
       exportValue: (r) => r.pregnant,
       exportHint: "number",
       exportNumFmt: "#,##0",
-      render: (r) => clickableCell(r, r.pregnant, "pregnant", "pink")
+      render: (r) => plainCell(r.pregnant, r.operasional)
     },
     {
       key: "toddler",
@@ -232,7 +223,7 @@ export function ScheduleTable({
       exportValue: (r) => r.toddler,
       exportHint: "number",
       exportNumFmt: "#,##0",
-      render: (r) => clickableCell(r, r.toddler, "toddler", "amber")
+      render: (r) => plainCell(r.toddler, r.operasional)
     },
     {
       key: "kecil",
@@ -270,11 +261,38 @@ export function ScheduleTable({
       exportValue: (r) => r.total,
       exportHint: "bold",
       exportNumFmt: "#,##0",
-      render: (r) => (
-        <span className="font-mono text-xs font-black">
-          {formatNumber(r.total, lang)}
-        </span>
-      )
+      render: (r) => {
+        const totalText = (
+          <span className="font-mono text-xs font-black">
+            {formatNumber(r.total, lang)}
+          </span>
+        );
+        if (!r.operasional) return totalText;
+        return (
+          <button
+            type="button"
+            onClick={() => openBreakdown(r, defaultBreakdownTab(r))}
+            aria-label={t("dashboard.breakdownOpen", lang)}
+            title={t("dashboard.breakdownOpen", lang)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-ink/10 bg-white px-2 py-0.5 text-ink transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+          >
+            {totalText}
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="h-3 w-3 text-ink2/70"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+        );
+      }
     }
   ];
 
@@ -327,37 +345,15 @@ export function ScheduleTable({
           }
         }}
         toolbarExtra={dateToolbar}
-        footer={
-          <tr className="border-t-2 border-ink bg-ink">
-            <td
-              colSpan={4}
-              className="py-1.5 px-1.5 text-center text-[10.5px] font-black uppercase tracking-wide text-white"
-            >
-              {t("common.grandTotal", lang)}
-            </td>
-            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
-              {formatNumber(totals.schools, lang)}
-            </td>
-            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
-              {formatNumber(totals.students, lang)}
-            </td>
-            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
-              {formatNumber(totals.pregnant, lang)}
-            </td>
-            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
-              {formatNumber(totals.toddler, lang)}
-            </td>
-            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
-              {formatNumber(totals.kecil, lang)}
-            </td>
-            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
-              {formatNumber(totals.besar, lang)}
-            </td>
-            <td className="py-1.5 px-1.5 text-center font-mono text-[11px] font-black text-white">
-              {formatNumber(totals.total, lang)}
-            </td>
-          </tr>
-        }
+        rowClassName={(row) => {
+          if (row.operasional) return "";
+          const d = new Date(row.op_date + "T00:00:00");
+          const dow = d.getDay();
+          const isWeekend = dow === 0 || dow === 6;
+          const holidayName = getHoliday(row.op_date);
+          if (isWeekend || holidayName) return "!bg-rose-50 hover:!bg-rose-100";
+          return "!bg-amber-50 hover:!bg-amber-100";
+        }}
       />
       {breakdownOpen && (
         <ScheduleBreakdownModal
@@ -381,7 +377,10 @@ interface BreakdownData {
     school_id: string;
     school_name: string;
     level: string;
-    qty: number;
+    kecil: number;
+    besar: number;
+    guru: number;
+    total: number;
     students: number;
   }>;
   pregnant: Array<{
@@ -422,6 +421,16 @@ function ScheduleBreakdownModal({
   const [data, setData] = useState<BreakdownData | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -503,15 +512,17 @@ function ScheduleBreakdownModal({
     return rem > 0 ? `${years} thn ${rem} bln` : `${years} thn`;
   };
 
-  return (
+  if (!mounted) return null;
+
+  const overlay = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-ink/50 px-4 pt-[6vh] pb-[6vh] backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-cardlg ring-1 ring-ink/10"
+        className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-cardlg ring-1 ring-ink/10"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-start justify-between gap-4 border-b border-ink/10 bg-primary-gradient px-5 py-3 text-white">
@@ -572,50 +583,92 @@ function ScheduleBreakdownModal({
               {t("dashboard.breakdownEmptyOp", lang)}
             </div>
           ) : tab === "schools" ? (
-            <table className="w-full text-xs tabular-nums">
-              <thead className="border-b border-ink/10 text-[10px] font-bold uppercase tracking-wide text-ink2">
-                <tr>
-                  <th className="px-2 py-1.5 text-left">
-                    {t("dashboard.breakdownColName", lang)}
-                  </th>
-                  <th className="px-2 py-1.5 text-center">
-                    {t("dashboard.breakdownColLevel", lang)}
-                  </th>
-                  <th className="px-2 py-1.5 text-right">
-                    {t("dashboard.breakdownColQty", lang)}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.schools.map((s) => (
-                  <tr key={s.school_id} className="border-b border-ink/5">
-                    <td className="px-2 py-1.5 font-semibold text-ink">
-                      {s.school_name}
-                    </td>
-                    <td className="px-2 py-1.5 text-center text-ink2">
-                      {s.level}
-                    </td>
-                    <td className="px-2 py-1.5 text-right font-mono font-bold">
-                      {formatNumber(s.qty, lang)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-ink/20">
-                  <td className="px-2 py-1.5 text-left text-[10px] font-black uppercase tracking-wide text-ink2">
-                    {t("common.grandTotal", lang)}
-                  </td>
-                  <td />
-                  <td className="px-2 py-1.5 text-right font-mono text-xs font-black text-ink">
-                    {formatNumber(
-                      data.schools.reduce((s, r) => s + r.qty, 0),
-                      lang
-                    )}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+            (() => {
+              const totalKecil = data.schools.reduce((s, r) => s + r.kecil, 0);
+              const totalBesar = data.schools.reduce((s, r) => s + r.besar, 0);
+              const totalGuru = data.schools.reduce((s, r) => s + r.guru, 0);
+              const totalAll = data.schools.reduce((s, r) => s + r.total, 0);
+              const dim = (v: number) =>
+                v === 0 ? "text-ink2/40" : "text-ink";
+              return (
+                <table className="w-full text-xs tabular-nums">
+                  <thead className="border-b border-ink/10 text-[10px] font-bold uppercase tracking-wide text-ink2">
+                    <tr>
+                      <th className="px-2 py-1.5 text-left">
+                        {t("dashboard.breakdownColName", lang)}
+                      </th>
+                      <th className="px-2 py-1.5 text-center">
+                        {t("dashboard.breakdownColLevel", lang)}
+                      </th>
+                      <th className="px-2 py-1.5 text-right">
+                        {t("dashboard.breakdownColKecil", lang)}
+                      </th>
+                      <th className="px-2 py-1.5 text-right">
+                        {t("dashboard.breakdownColBesar", lang)}
+                      </th>
+                      <th className="px-2 py-1.5 text-right">
+                        {t("dashboard.breakdownColGuru", lang)}
+                      </th>
+                      <th className="px-2 py-1.5 text-right">
+                        {t("dashboard.breakdownColTotal", lang)}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.schools.map((s) => (
+                      <tr key={s.school_id} className="border-b border-ink/5">
+                        <td className="px-2 py-1.5 font-semibold text-ink">
+                          {s.school_name}
+                        </td>
+                        <td className="px-2 py-1.5 text-center text-ink2">
+                          {s.level}
+                        </td>
+                        <td
+                          className={`px-2 py-1.5 text-right font-mono ${dim(s.kecil)}`}
+                        >
+                          {formatNumber(s.kecil, lang)}
+                        </td>
+                        <td
+                          className={`px-2 py-1.5 text-right font-mono ${dim(s.besar)}`}
+                        >
+                          {formatNumber(s.besar, lang)}
+                        </td>
+                        <td
+                          className={`px-2 py-1.5 text-right font-mono ${dim(s.guru)}`}
+                        >
+                          {formatNumber(s.guru, lang)}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-mono font-black text-ink">
+                          {formatNumber(s.total, lang)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-ink/20">
+                      <td
+                        colSpan={2}
+                        className="px-2 py-1.5 text-left text-[10px] font-black uppercase tracking-wide text-ink2"
+                      >
+                        {t("common.grandTotal", lang)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono text-xs font-black text-ink">
+                        {formatNumber(totalKecil, lang)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono text-xs font-black text-ink">
+                        {formatNumber(totalBesar, lang)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono text-xs font-black text-ink">
+                        {formatNumber(totalGuru, lang)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono text-xs font-black text-ink">
+                        {formatNumber(totalAll, lang)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              );
+            })()
           ) : tab === "pregnant" ? (
             <table className="w-full text-xs">
               <thead className="border-b border-ink/10 text-[10px] font-bold uppercase tracking-wide text-ink2">
@@ -732,6 +785,8 @@ function ScheduleBreakdownModal({
       </div>
     </div>
   );
+
+  return createPortal(overlay, document.body);
 }
 
 // ============== Volume matrix (commodity × month) ==============
@@ -741,6 +796,15 @@ export type VolumeRow = {
   unit: string;
   total: number;
   monthly: Record<string, number>;
+};
+
+const CATEGORY_ICON: Record<string, string> = {
+  BERAS: "🍚",
+  BUAH: "🍎",
+  HEWANI: "🍗",
+  NABATI: "🫘",
+  SAYUR: "🥬",
+  SEMBAKO: "🧂"
 };
 
 export function VolumeMatrixTable({
@@ -754,6 +818,29 @@ export function VolumeMatrixTable({
   monthLabels: Record<string, string>;
   lang: Lang;
 }) {
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) if (r.category) set.add(r.category);
+    return Array.from(set).sort();
+  }, [rows]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: rows.length };
+    for (const c of categories) counts[c] = 0;
+    for (const r of rows) counts[r.category] = (counts[r.category] ?? 0) + 1;
+    return counts;
+  }, [rows, categories]);
+
+  const filteredRows = useMemo(
+    () =>
+      activeCategory === "all"
+        ? rows
+        : rows.filter((r) => r.category === activeCategory),
+    [rows, activeCategory]
+  );
+
   const monthCols: SortableColumn<VolumeRow>[] = months.map((m) => ({
     key: `m-${m}`,
     label: monthLabels[m] ?? m,
@@ -831,26 +918,73 @@ export function VolumeMatrixTable({
     }
   ];
 
-  const categoryFilter: SortableTableFilter<VolumeRow> = {
-    key: "category",
-    label: t("common.filterCategory", lang),
-    getValue: (r) => r.category
+  const shortCategoryLabel = (raw: string): string => {
+    if (raw === t("common.filterCategory", lang)) {
+      return lang === "EN" ? "All" : "Semua";
+    }
+    const upper = raw.toUpperCase();
+    if (upper === "SAYUR_HIJAU" || upper === "SAYUR HIJAU") return "S. HIJAU";
+    const first = upper.split(/[_\s]/)[0];
+    return first;
   };
 
+  const categoryTabs: Array<{ id: string; label: string; icon: string }> = [
+    { id: "all", label: t("common.filterCategory", lang), icon: "📊" },
+    ...categories.map((c) => ({
+      id: c,
+      label: c,
+      icon: CATEGORY_ICON[c] ?? "🏷️"
+    }))
+  ];
+
   return (
-    <SortableTable<VolumeRow>
-      tableClassName="text-sm tabular-nums"
-      rowKey={(r) => r.code}
-      initialSort={{ key: "total", dir: "desc" }}
-      columns={columns}
-      rows={rows}
-      searchable
-      exportable
-      exportFileName="volume-matrix"
-      exportSheetName="Volume Matrix"
-      exportTitle={t("dashboard.volumeTitle", lang)}
-      filters={[categoryFilter]}
-    />
+    <>
+      <nav
+        aria-label={t("common.filterCategory", lang)}
+        className="mb-4 flex w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-2xl bg-white/80 p-1.5 shadow-card ring-1 ring-primary/5 dark:bg-d-surface/70 dark:ring-d-border/30"
+      >
+        {categoryTabs.map((tab) => {
+          const active = tab.id === activeCategory;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveCategory(tab.id)}
+              aria-pressed={active}
+              title={tab.label}
+              className={`inline-flex flex-1 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-[11px] font-bold transition ${
+                active
+                  ? "bg-primary-gradient text-white shadow-card ring-1 ring-gold/40 dark:bg-primary-gradient-dark"
+                  : "bg-paper/60 text-primary hover:bg-white hover:shadow-card dark:bg-d-surface-2/60 dark:text-d-text dark:hover:bg-d-surface-2"
+              }`}
+            >
+              <span aria-hidden className="text-[11px]">{tab.icon}</span>
+              <span className="truncate">{shortCategoryLabel(tab.label)}</span>
+              <span
+                className={`rounded-full px-1 font-mono text-[9.5px] font-bold leading-tight ${
+                  active ? "bg-white/20 text-white" : "bg-ink/10 text-ink2"
+                }`}
+              >
+                {categoryCounts[tab.id] ?? 0}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <SortableTable<VolumeRow>
+        tableClassName="text-sm tabular-nums"
+        rowKey={(r) => r.code}
+        initialSort={{ key: "total", dir: "desc" }}
+        columns={columns}
+        rows={filteredRows}
+        searchable
+        exportable
+        exportFileName="volume-matrix"
+        exportSheetName="Volume Matrix"
+        exportTitle={t("dashboard.volumeTitle", lang)}
+      />
+    </>
   );
 }
 
@@ -1159,15 +1293,56 @@ export type SupplierSpendRow = {
   supplier_type: string;
   invoice_count: number;
   total_spend: number;
+  monthly: Record<string, number>;
 };
+
+const SUPPLIER_TYPE_COLOR: Record<string, string> = {
+  KOPERASI: "bg-emerald-100 text-emerald-800",
+  UD: "bg-blue-100 text-blue-800",
+  BUMN: "bg-violet-100 text-violet-800",
+  CV: "bg-amber-100 text-amber-900",
+  TOKO: "bg-sky-100 text-sky-800",
+  PT: "bg-rose-100 text-rose-800",
+  INFORMAL: "bg-yellow-100 text-yellow-900",
+  POKTAN: "bg-teal-100 text-teal-800",
+  LOKAL: "bg-lime-100 text-lime-800"
+};
+
+function supplierTypeColor(raw: string): string {
+  const key = (raw ?? "").toUpperCase();
+  return SUPPLIER_TYPE_COLOR[key] ?? "bg-slate-100 text-slate-700";
+}
 
 export function SupplierSpendTable({
   rows,
+  months,
+  monthLabels,
   lang
 }: {
   rows: SupplierSpendRow[];
+  months: string[];
+  monthLabels: Record<string, string>;
   lang: Lang;
 }) {
+  const monthCols: SortableColumn<SupplierSpendRow>[] = months.map((m) => ({
+    key: `m-${m}`,
+    label: monthLabels[m] ?? m,
+    align: "right",
+    sortValue: (r) => r.monthly[m] ?? 0,
+    exportValue: (r) => r.monthly[m] ?? 0,
+    exportLabel: monthLabels[m] ?? m,
+    exportHint: "money",
+    exportNumFmt: '"Rp "#,##0',
+    render: (r) => {
+      const v = r.monthly[m] ?? 0;
+      return v === 0 ? (
+        <span className="font-mono text-[11px] text-ink2/40">—</span>
+      ) : (
+        <IDR value={v} className="text-[11px]" />
+      );
+    }
+  }));
+
   const columns: SortableColumn<SupplierSpendRow>[] = [
     {
       key: "no",
@@ -1183,7 +1358,15 @@ export function SupplierSpendTable({
       sortValue: (r) => r.supplier_name,
       searchValue: (r) => `${r.supplier_name} ${r.supplier_id}`,
       exportValue: (r) => r.supplier_name,
-      render: (r) => <span className="font-semibold">{r.supplier_name}</span>
+      render: (r) => (
+        <Link
+          href={`/suppliers/${encodeURIComponent(r.supplier_id)}`}
+          className="font-semibold text-primary hover:text-accent-strong hover:underline dark:text-d-text"
+          title={r.supplier_name}
+        >
+          {r.supplier_name}
+        </Link>
+      )
     },
     {
       key: "type",
@@ -1192,20 +1375,15 @@ export function SupplierSpendTable({
       sortValue: (r) => r.supplier_type,
       searchValue: (r) => r.supplier_type,
       exportValue: (r) => r.supplier_type,
-      render: (r) => <Badge tone="neutral">{r.supplier_type}</Badge>
-    },
-    {
-      key: "invoices",
-      label: t("dashboard.tblInvoice", lang),
-      align: "center",
-      sortValue: (r) => r.invoice_count,
-      exportValue: (r) => r.invoice_count,
-      exportHint: "number",
-      exportNumFmt: "#,##0",
       render: (r) => (
-        <span className="font-mono text-xs">{r.invoice_count}</span>
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 font-display text-[10.5px] font-bold tracking-[0.02em] ${supplierTypeColor(r.supplier_type)}`}
+        >
+          {r.supplier_type}
+        </span>
       )
     },
+    ...monthCols,
     {
       key: "spend",
       label: t("dashboard.tblTotalSpend", lang),
@@ -1220,8 +1398,13 @@ export function SupplierSpendTable({
     }
   ];
 
-  const totalInvoices = rows.reduce((s, r) => s + r.invoice_count, 0);
   const totalSpend = rows.reduce((s, r) => s + Number(r.total_spend ?? 0), 0);
+  const monthlyTotals: Record<string, number> = Object.fromEntries(
+    months.map((m) => [
+      m,
+      rows.reduce((s, r) => s + Number(r.monthly[m] ?? 0), 0)
+    ])
+  );
 
   return (
     <SortableTable<SupplierSpendRow>
@@ -1230,6 +1413,8 @@ export function SupplierSpendTable({
       initialSort={{ key: "spend", dir: "desc" }}
       columns={columns}
       rows={rows}
+      stickyHeader
+      bodyMaxHeight={480}
       searchable
       exportable
       exportFileName="supplier-spend"
@@ -1239,7 +1424,7 @@ export function SupplierSpendTable({
         labelColSpan: 3,
         labelText: t("common.grandTotal", lang),
         values: {
-          invoices: totalInvoices,
+          ...Object.fromEntries(months.map((m) => [`m-${m}`, monthlyTotals[m]])),
           spend: totalSpend
         }
       }}
@@ -1251,9 +1436,15 @@ export function SupplierSpendTable({
           >
             {t("common.grandTotal", lang)}
           </td>
-          <td className="py-2 px-3 text-center font-mono text-xs font-black text-white">
-            {formatNumber(totalInvoices, lang)}
-          </td>
+          {months.map((m) => (
+            <td key={`ft-${m}`} className="py-2 px-3 text-left">
+              <IDR
+                value={monthlyTotals[m] ?? 0}
+                className="text-[11px] font-black text-white"
+                prefixClassName="text-white/70"
+              />
+            </td>
+          ))}
           <td className="py-2 px-3 text-left">
             <IDR
               value={totalSpend}

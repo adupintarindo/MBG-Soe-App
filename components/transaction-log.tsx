@@ -5,8 +5,7 @@ import { t } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 import {
   SortableTable,
-  type SortableColumn,
-  type SortableTableFilter
+  type SortableColumn
 } from "@/components/sortable-table";
 import { IDR, Section } from "@/components/ui";
 import { formatDateLong } from "@/lib/engine";
@@ -40,17 +39,40 @@ const TYPE_BADGE: Record<TxRow["tx_type"], string> = {
   receipt: "bg-teal-100 text-teal-800"
 };
 
+type TxTypeTab = "all" | TxRow["tx_type"];
+
 export function TransactionLog({ rows }: { rows: TxRow[] }) {
   const { lang } = useLang();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [activeType, setActiveType] = useState<TxTypeTab>("all");
 
   const dateRangeFiltered = useMemo(() => {
     return rows.filter((r) => {
       if (dateFrom && r.tx_date < dateFrom) return false;
       if (dateTo && r.tx_date > dateTo) return false;
+      if (activeType !== "all" && r.tx_type !== activeType) return false;
       return true;
     });
+  }, [rows, dateFrom, dateTo, activeType]);
+
+  const typeCounts = useMemo(() => {
+    const base = rows.filter((r) => {
+      if (dateFrom && r.tx_date < dateFrom) return false;
+      if (dateTo && r.tx_date > dateTo) return false;
+      return true;
+    });
+    const counts: Record<TxTypeTab, number> = {
+      all: base.length,
+      po: 0,
+      grn: 0,
+      invoice: 0,
+      payment: 0,
+      adjustment: 0,
+      receipt: 0
+    };
+    for (const r of base) counts[r.tx_type] += 1;
+    return counts;
   }, [rows, dateFrom, dateTo]);
 
   const totalAmount = dateRangeFiltered.reduce(
@@ -59,6 +81,16 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
   );
 
   const rangeActive = dateFrom !== "" || dateTo !== "";
+
+  const typeTabs: Array<{ id: TxTypeTab; label: string; icon: string }> = [
+    { id: "all", label: t("tx.allTypes", lang), icon: "📋" },
+    { id: "po", label: t("tx.typePO", lang), icon: "📝" },
+    { id: "grn", label: t("tx.typeGRN", lang), icon: "📦" },
+    { id: "invoice", label: t("tx.typeInvoice", lang), icon: "🧾" },
+    { id: "payment", label: t("tx.typePayment", lang), icon: "💸" },
+    { id: "adjustment", label: t("tx.typeAdjustment", lang), icon: "⚙️" },
+    { id: "receipt", label: t("tx.typeReceipt", lang), icon: "🧾" }
+  ];
 
   const dateToolbar = (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -97,59 +129,75 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
     </div>
   );
 
-  const typeFilter: SortableTableFilter<TxRow> = {
-    key: "type",
-    label: t("tx.allTypes", lang),
-    getValue: (r) => r.tx_type,
-    options: [
-      { value: "po", label: t("tx.typePO", lang) },
-      { value: "grn", label: t("tx.typeGRN", lang) },
-      { value: "invoice", label: t("tx.typeInvoice", lang) },
-      { value: "payment", label: t("tx.typePayment", lang) },
-      { value: "adjustment", label: t("tx.typeAdjustment", lang) },
-      { value: "receipt", label: t("tx.typeReceipt", lang) }
-    ]
-  };
-
   return (
     <Section title={t("tx.title", lang)} hint={t("tx.hint", lang)}>
-      {dateRangeFiltered.length === 0 && !rangeActive ? (
+      <nav
+        aria-label={t("tx.allTypes", lang)}
+        className="mb-4 flex w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-2xl bg-white/80 p-1.5 shadow-card ring-1 ring-primary/5 dark:bg-d-surface/70 dark:ring-d-border/30"
+      >
+        {typeTabs.map((tab) => {
+          const active = tab.id === activeType;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveType(tab.id)}
+              aria-pressed={active}
+              className={`inline-flex flex-1 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-[11px] font-bold transition ${
+                active
+                  ? "bg-primary-gradient text-white shadow-card ring-1 ring-gold/40 dark:bg-primary-gradient-dark"
+                  : "bg-paper/60 text-primary hover:bg-white hover:shadow-card dark:bg-d-surface-2/60 dark:text-d-text dark:hover:bg-d-surface-2"
+              }`}
+            >
+              <span aria-hidden className="text-[11px]">{tab.icon}</span>
+              <span className="truncate">{tab.label}</span>
+              <span
+                className={`rounded-full px-1 font-mono text-[9.5px] font-bold leading-tight ${
+                  active ? "bg-white/20 text-white" : "bg-ink/10 text-ink2"
+                }`}
+              >
+                {typeCounts[tab.id]}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {dateRangeFiltered.length === 0 && !rangeActive && activeType === "all" ? (
         <div className="rounded-xl bg-ink/5 p-4 text-center text-sm text-ink2">
           {t("tx.empty", lang)}
         </div>
       ) : (
-        <div className="max-h-[440px] overflow-auto rounded-xl ring-1 ring-ink/10">
-          <SortableTable<TxRow>
-            stickyHeader
-            rowKey={(r) => r.id}
-            initialSort={{ key: "date", dir: "desc" }}
-            columns={txColumns(lang)}
-            rows={dateRangeFiltered}
-            searchable
-            exportable
-            exportFileName="transactions"
-            exportSheetName="Transactions"
-            toolbarExtra={dateToolbar}
-            filters={[typeFilter]}
-            footer={
-              <tr className="border-t-2 border-ink bg-ink font-black">
-                <td
-                  colSpan={6}
-                  className="px-3 py-2 text-center text-[11px] uppercase tracking-wide text-white"
-                >
-                  {t("tx.grandTotal", lang)}
-                </td>
-                <td className="px-3 py-2 text-left">
-                  <IDR
-                    value={totalAmount}
-                    className="text-white"
-                    prefixClassName="text-white/70"
-                  />
-                </td>
-              </tr>
-            }
-          />
-        </div>
+        <SortableTable<TxRow>
+          stickyHeader
+          rowKey={(r) => r.id}
+          initialSort={{ key: "date", dir: "desc" }}
+          columns={txColumns(lang)}
+          rows={dateRangeFiltered}
+          searchable
+          exportable
+          exportFileName="transactions"
+          exportSheetName="Transactions"
+          toolbarExtra={dateToolbar}
+          bodyMaxHeight={440}
+          footer={
+            <tr className="border-t-2 border-ink bg-ink font-black">
+              <td
+                colSpan={6}
+                className="px-3 py-2 text-center text-[11px] uppercase tracking-wide text-white"
+              >
+                {t("tx.grandTotal", lang)}
+              </td>
+              <td className="px-3 py-2 text-left">
+                <IDR
+                  value={totalAmount}
+                  className="text-white"
+                  prefixClassName="text-white/70"
+                />
+              </td>
+            </tr>
+          }
+        />
       )}
     </Section>
   );

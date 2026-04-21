@@ -149,7 +149,7 @@ export function PopulateControls({
 
       {open && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/40 px-4 pt-[8vh] pb-[6vh]"
           onClick={() => setOpen(false)}
         >
           <div
@@ -235,7 +235,7 @@ export function PopulateControls({
 
       {clearOpen && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/40 px-4 pt-[8vh] pb-[6vh]"
           onClick={() => setClearOpen(false)}
         >
           <div

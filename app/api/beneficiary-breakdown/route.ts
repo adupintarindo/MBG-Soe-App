@@ -33,7 +33,10 @@ type SchoolOut = {
   school_id: string;
   school_name: string;
   level: string;
-  qty: number;
+  kecil: number;
+  besar: number;
+  guru: number;
+  total: number;
   students: number;
 };
 
@@ -111,7 +114,10 @@ export async function GET(request: Request) {
         school_id: s.school_id,
         school_name: s.school_name,
         level: s.level,
-        qty: s.qty,
+        kecil: s.kecil,
+        besar: s.besar,
+        guru: s.guru,
+        total: s.total,
         students: s.students
       }))
     : [];
@@ -183,7 +189,10 @@ function ageFromDob(dob: string | null): string {
 async function buildXlsxResponse(
   data: BreakdownResponse
 ): Promise<NextResponse> {
-  const totalQty = data.schools.reduce((a, s) => a + s.qty, 0);
+  const totalKecil = data.schools.reduce((a, s) => a + s.kecil, 0);
+  const totalBesar = data.schools.reduce((a, s) => a + s.besar, 0);
+  const totalGuru = data.schools.reduce((a, s) => a + s.guru, 0);
+  const totalPorsi = data.schools.reduce((a, s) => a + s.total, 0);
   const totalStudents = data.schools.reduce((a, s) => a + s.students, 0);
 
   const buffer = await buildStyledXlsxBuffer({
@@ -198,12 +207,36 @@ async function buildXlsxResponse(
           { key: "name", header: "Nama Sekolah", width: 36, align: "left" },
           { key: "level", header: "Jenjang", width: 12, align: "center" },
           {
-            key: "qty",
-            header: "Jumlah Porsi",
-            width: 14,
+            key: "kecil",
+            header: "Porsi Kecil",
+            width: 12,
             align: "right",
             numFmt: "#,##0",
             hint: "number"
+          },
+          {
+            key: "besar",
+            header: "Porsi Besar",
+            width: 12,
+            align: "right",
+            numFmt: "#,##0",
+            hint: "number"
+          },
+          {
+            key: "guru",
+            header: "Guru",
+            width: 10,
+            align: "right",
+            numFmt: "#,##0",
+            hint: "number"
+          },
+          {
+            key: "total",
+            header: "Total Porsi",
+            width: 12,
+            align: "right",
+            numFmt: "#,##0",
+            hint: "bold"
           },
           {
             key: "students",
@@ -218,13 +251,22 @@ async function buildXlsxResponse(
           no: i + 1,
           name: s.school_name,
           level: s.level,
-          qty: s.qty,
+          kecil: s.kecil,
+          besar: s.besar,
+          guru: s.guru,
+          total: s.total,
           students: s.students
         })),
         totals: {
           labelColSpan: 3,
           labelText: "GRAND TOTAL",
-          values: { qty: totalQty, students: totalStudents }
+          values: {
+            kecil: totalKecil,
+            besar: totalBesar,
+            guru: totalGuru,
+            total: totalPorsi,
+            students: totalStudents
+          }
         },
         zebra: true,
         freezeHeader: true

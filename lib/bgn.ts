@@ -595,7 +595,10 @@ export interface SchoolBreakdownRow {
   school_id: string;
   school_name: string;
   level: string;
-  qty: number;
+  kecil: number;
+  besar: number;
+  guru: number;
+  total: number;
   students: number;
 }
 
@@ -607,13 +610,22 @@ export async function schoolsBreakdown(
     p_date: date
   });
   if (error) throw error;
-  return (data ?? []).map((r: Record<string, unknown>) => ({
-    school_id: String(r.school_id),
-    school_name: String(r.school_name),
-    level: String(r.level),
-    qty: Number(r.qty ?? 0),
-    students: Number(r.students ?? 0)
-  }));
+  return (data ?? []).map((r: Record<string, unknown>) => {
+    const kecil = Number(r.kecil ?? 0);
+    const besar = Number(r.besar ?? 0);
+    const guru = Number(r.guru ?? 0);
+    const totalRaw = r.total !== undefined ? Number(r.total) : kecil + besar + guru;
+    return {
+      school_id: String(r.school_id),
+      school_name: String(r.school_name),
+      level: String(r.level),
+      kecil,
+      besar,
+      guru,
+      total: totalRaw,
+      students: Number(r.students ?? 0)
+    };
+  });
 }
 
 /* ----------------------------- BGN Generation Log ------------------------- */

@@ -6,6 +6,8 @@ import { TransactionLog, type TxRow } from "@/components/transaction-log";
 import {
   Badge,
   EmptyState,
+  KpiGrid,
+  KpiTile,
   NoticeCard,
   PageContainer,
   Section
@@ -28,17 +30,14 @@ import {
   formatKg,
   formatDateID,
   stockShortageForDate,
-  upcomingShortages,
   toISODate,
   monthlyRequirements,
-  topSuppliersBySpend,
   dailyPlanning,
   dashboardKpis,
   monthlyCashflow,
   budgetBurn,
   costPerPortionDaily,
   type MonthlyRequirement,
-  type TopSupplier,
   type DailyPlan,
   type CashflowRow,
   type BudgetBurnRow,
@@ -52,8 +51,7 @@ import {
   demoCashflow,
   demoCommodities,
   demoCostPerPortion,
-  demoSuppliers,
-  demoUpcomingShortages
+  demoSuppliers
 } from "@/lib/demo-analytics";
 import { t, ti, formatNumber, MONTHS, DAYS } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
@@ -64,7 +62,6 @@ type SearchParams = {
   from?: string;
   to?: string;
   demoStock?: string;
-  demoForecast?: string;
   demo?: string;
 };
 
@@ -78,10 +75,6 @@ const DEMO_SHORTAGES: import("@/lib/engine").Shortage[] = [
   { item_code: "Minyak Goreng Curah", required: 25.0, on_hand: 6.5, gap: 18.5, unit: "liter" },
   { item_code: "Buah - Pisang Ambon", required: 220.0, on_hand: 165.0, gap: 55.0, unit: "buah" }
 ];
-
-function isValidIsoDate(s: string | undefined): s is string {
-  return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
-}
 
 export default async function DashboardPage({
   searchParams
@@ -118,17 +111,25 @@ export default async function DashboardPage({
   );
   const mrStart = monthStart; // 4-month matrix starts this month
 
-  // Supplier-spend date range override via URL (?from=&to=)
-  const spendFrom = isValidIsoDate(sp.from) ? sp.from : monthStart;
-  const spendTo = isValidIsoDate(sp.to) ? sp.to : today;
+  // Supplier spend: fixed 5-month window ending with current month (last 5 months)
+  const spendMonths: string[] = [];
+  for (let i = 4; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const y = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, "0");
+    spendMonths.push(`${y}-${mo}`);
+  }
+  const spendRangeStart = `${spendMonths[0]}-01`;
+  const spendRangeEnd = toISODate(
+    new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  );
 
   // ---- parallel fetches ----
   const [
     kpis,
     shortages,
-    upcoming,
     monthly,
-    topSup,
+    supplierInvoices,
     planning,
     txRowsRaw,
     suppliers,
@@ -147,14 +148,16 @@ export default async function DashboardPage({
       suppliers_active: 0
     })),
     stockShortageForDate(supabase, today).catch(() => []),
-    upcomingShortages(supabase, 14).catch(() => []),
     monthlyRequirements(supabase, mrStart, 5).catch(
       () => [] as MonthlyRequirement[]
     ),
-    topSuppliersBySpend(supabase, spendFrom, spendTo, 1000).catch(
-      () => [] as TopSupplier[]
-    ),
-    dailyPlanning(supabase, 10).catch(() => [] as DailyPlan[]),
+    supabase
+      .from("invoices")
+      .select("supplier_id, inv_date, total, status")
+      .gte("inv_date", spendRangeStart)
+      .lte("inv_date", spendRangeEnd)
+      .then((r) => r.data ?? []),
+    dailyPlanning(supabase, 90).catch(() => [] as DailyPlan[]),
     supabase
       .from("transactions")
       .select(
@@ -166,7 +169,7 @@ export default async function DashboardPage({
       .then((r) => r.data ?? []),
     supabase
       .from("suppliers")
-      .select("id, name")
+      .select("id, name, type, active")
       .then((r) => r.data ?? []),
     supabase
       .from("school_attendance")
@@ -249,13 +252,20 @@ export default async function DashboardPage({
   }
 
   // ---- derived ----
+  const demoMode = sp.demo === "1" || sp.demo === "true";
   const demoStock = sp.demoStock === "1" || sp.demoStock === "true";
-  const effectiveShortages = demoStock ? DEMO_SHORTAGES : shortages;
+  const effectiveShortages =
+    demoStock || (demoMode && shortages.length === 0)
+      ? DEMO_SHORTAGES
+      : shortages;
   const shortItems = effectiveShortages.filter((s) => Number(s.gap) > 0);
   const totalGap = shortItems.reduce((s, x) => s + Number(x.gap || 0), 0);
 
   // Transaction log with supplier names
   const supplierMap = new Map(suppliers.map((s) => [s.id, s.name]));
+  const supplierMeta = new Map(
+    suppliers.map((s) => [s.id, { name: s.name, type: s.type, active: s.active }])
+  );
   const txRows: TxRow[] = txRowsRaw.map((r) => ({
     id: r.id,
     tx_date: r.tx_date,
@@ -268,6 +278,47 @@ export default async function DashboardPage({
     amount: r.amount,
     description: r.description
   }));
+
+  // ---- Supplier spend aggregation (5-month matrix) ----
+  const supplierAgg = new Map<
+    string,
+    { monthly: Record<string, number>; total: number; count: number }
+  >();
+  for (const r of supplierInvoices as Array<{
+    supplier_id: string | null;
+    inv_date: string;
+    total: number | string | null;
+    status: string | null;
+  }>) {
+    if (!r.supplier_id) continue;
+    if (r.status === "cancelled") continue;
+    const m = r.inv_date.slice(0, 7);
+    if (!spendMonths.includes(m)) continue;
+    const amt = Number(r.total ?? 0);
+    let row = supplierAgg.get(r.supplier_id);
+    if (!row) {
+      row = { monthly: {}, total: 0, count: 0 };
+      supplierAgg.set(r.supplier_id, row);
+    }
+    row.monthly[m] = (row.monthly[m] ?? 0) + amt;
+    row.total += amt;
+    row.count += 1;
+  }
+  const topSup = [...supplierAgg.entries()]
+    .map(([supplier_id, agg]) => {
+      const meta = supplierMeta.get(supplier_id);
+      return {
+        supplier_id,
+        supplier_name: meta?.name ?? supplier_id,
+        supplier_type: (meta?.type ?? "lokal") as string,
+        active: meta?.active ?? true,
+        total_spend: agg.total,
+        invoice_count: agg.count,
+        monthly: agg.monthly
+      };
+    })
+    .filter((s) => s.active && s.total_spend > 0)
+    .sort((a, b) => b.total_spend - a.total_spend);
 
   // Pivot monthly requirements: item_code × month → qty_kg
   // Force fixed 5-month horizon so every month shows even when data is sparse.
@@ -287,7 +338,6 @@ export default async function DashboardPage({
   }
   const topItems = [...itemTotals.entries()]
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 12)
     .map(([code]) => code);
   const matrix: Record<string, Record<string, number>> = {};
   for (const code of topItems) matrix[code] = {};
@@ -430,8 +480,14 @@ export default async function DashboardPage({
     supplier_name: s.supplier_name,
     supplier_type: s.supplier_type,
     invoice_count: s.invoice_count,
-    total_spend: Number(s.total_spend)
+    total_spend: Number(s.total_spend),
+    monthly: Object.fromEntries(
+      spendMonths.map((m) => [m, s.monthly[m] ?? 0])
+    )
   }));
+  const spendMonthLabels: Record<string, string> = Object.fromEntries(
+    spendMonths.map((m) => [m, monthLabel(m)])
+  );
 
   // ---- Analytics payload (client-side tabbed charts) ----
   const beneficiaryDays = scheduleRows.map((r) => ({
@@ -448,7 +504,7 @@ export default async function DashboardPage({
   const beneficiaryTodayList = (schoolsToday ?? []).map((s) => ({
     school_name: s.school_name,
     level: s.level,
-    qty: s.qty
+    qty: s.total
   }));
 
   const commodityRows = [...itemTotals.entries()].map(([code, total_kg]) => ({
@@ -500,8 +556,6 @@ export default async function DashboardPage({
 
   // ---- demo overlay (activated with ?demo=1) ----
   // Menutupi lubang data untuk screenshot/presentasi tanpa menyentuh DB.
-  const demoMode = sp.demo === "1" || sp.demo === "true";
-
   const analyticsBeneficiary = demoMode
     ? demoBeneficiary(beneficiaryDays)
     : beneficiaryDays;
@@ -531,12 +585,6 @@ export default async function DashboardPage({
       ? demoCostPerPortion(today)
       : costPerPortionRows;
 
-  const demoForecast = sp.demoForecast === "1" || sp.demoForecast === "true";
-  const upcomingDisplay =
-    demoForecast || (demoMode && upcoming.length === 0)
-      ? demoUpcomingShortages(today)
-      : upcoming;
-
   return (
     <div>
       <Nav
@@ -550,6 +598,42 @@ export default async function DashboardPage({
       />
 
       <PageContainer>
+        <KpiGrid>
+          <KpiTile
+            icon="👥"
+            label={t("dashboard.kpiStudents", lang)}
+            value={formatNumber(Number(kpis.students_total ?? 0), lang)}
+            palette="blue"
+          />
+          <KpiTile
+            icon="🏫"
+            label={t("dashboard.kpiSchoolsActive", lang)}
+            value={String(kpis.schools_active ?? 0)}
+            palette="emerald"
+          />
+          <KpiTile
+            icon="🍽️"
+            label={t("dashboard.kpiMenuToday", lang)}
+            value={
+              <span
+                className="block text-[13px] leading-snug"
+                title={kpis.menu_today_name || "—"}
+              >
+                {kpis.menu_today_name || "—"}
+              </span>
+            }
+            size="sm"
+            tone="default"
+            palette="amber"
+          />
+          <KpiTile
+            icon="🤝"
+            label={t("dashboard.kpiSuppliersActive", lang)}
+            value={String(kpis.suppliers_active ?? 0)}
+            palette="violet"
+          />
+        </KpiGrid>
+
         {/* Menu & Portion Schedule · 10 days */}
         <Section
           banner
@@ -559,7 +643,7 @@ export default async function DashboardPage({
           {planning.length === 0 ? (
             <EmptyState message={t("dashboard.scheduleEmpty", lang)} />
           ) : (
-            <ScheduleTable rows={scheduleRows} lang={lang} />
+            <ScheduleTable rows={scheduleRows} lang={lang} today={today} />
           )}
         </Section>
 
@@ -617,88 +701,20 @@ export default async function DashboardPage({
         <Section
           title={t("dashboard.supplierSpendTitle", lang)}
           hint={ti("dashboard.supplierSpendHint", lang, {
-            start: formatDateID(spendFrom),
-            end: formatDateID(spendTo),
+            start: formatDateID(spendRangeStart),
+            end: formatDateID(spendRangeEnd),
             n: topSup.length
           })}
-          actions={
-            <form
-              method="GET"
-              className="flex flex-wrap items-center gap-2"
-            >
-              <label className="flex items-center gap-1.5">
-                <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-white/60">
-                  {lang === "EN" ? "From" : "Dari"}
-                </span>
-                <input
-                  type="date"
-                  name="from"
-                  defaultValue={spendFrom}
-                  className="rounded-md border border-ink/10 bg-paper px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
-                />
-              </label>
-              <label className="flex items-center gap-1.5">
-                <span className="font-display text-[10.5px] font-bold uppercase tracking-[0.1em] text-white/60">
-                  {lang === "EN" ? "To" : "Sampai"}
-                </span>
-                <input
-                  type="date"
-                  name="to"
-                  defaultValue={spendTo}
-                  className="rounded-md border border-ink/10 bg-paper px-2.5 py-1.5 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
-                />
-              </label>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-white/15"
-              >
-                {lang === "EN" ? "Apply" : "Terapkan"}
-              </button>
-            </form>
-          }
         >
           {topSup.length === 0 ? (
             <EmptyState message={t("dashboard.supplierSpendEmpty", lang)} />
           ) : (
-            <SupplierSpendTable rows={supplierSpendRows} lang={lang} />
-          )}
-        </Section>
-
-        {/* 14-day upcoming shortages */}
-        <Section
-          title={t("dashboard.forecastTitle", lang)}
-          hint={t("dashboard.forecastHint", lang)}
-          accent={upcomingDisplay.length > 0 ? "warn" : "ok"}
-        >
-          {upcomingDisplay.length === 0 ? (
-            <EmptyState
-              icon="✅"
-              tone="ok"
-              message={t("dashboard.forecastEmpty", lang)}
+            <SupplierSpendTable
+              rows={supplierSpendRows}
+              months={spendMonths}
+              monthLabels={spendMonthLabels}
+              lang={lang}
             />
-          ) : (
-            <ul className="grid gap-2 sm:grid-cols-2">
-              {upcomingDisplay.map((u) => (
-                <li
-                  key={u.op_date}
-                  className="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200"
-                >
-                  <div>
-                    <div className="font-bold text-amber-900">
-                      {formatDateID(u.op_date)}
-                    </div>
-                    <div className="text-[11px] text-amber-800">
-                      {ti("dashboard.forecastItemsShort", lang, { n: u.short_items })}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs font-bold text-amber-900">
-                      {ti("dashboard.forecastGap", lang, { value: formatKg(Number(u.total_gap_kg)) })}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
           )}
         </Section>
 
@@ -713,10 +729,6 @@ export default async function DashboardPage({
           budget={analyticsBudget}
           costPerPortion={analyticsCostPerPortion}
         />
-
-        <p className="mt-8 text-center text-[11px] text-ink2/60">
-          {t("dashboard.footer", lang)}
-        </p>
       </PageContainer>
     </div>
   );

@@ -99,7 +99,7 @@ export function CsvImportDialog<T>({
 
       {open && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/50 px-4 pt-[6vh] pb-[6vh]"
           role="dialog"
           aria-modal="true"
           onClick={() => !busy && setOpen(false)}

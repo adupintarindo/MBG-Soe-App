@@ -524,7 +524,7 @@ function GrnQcDetail({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 px-4 pt-[5vh] pb-[5vh]">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-paper shadow-2xl">
         <div className="sticky top-0 flex items-center justify-between border-b border-ink/10 bg-paper px-5 py-3">
           <div>
@@ -733,7 +733,7 @@ function NewNcrDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 px-4 pt-[8vh] pb-[6vh]">
       <form
         onSubmit={submit}
         className="w-full max-w-lg space-y-3 rounded-2xl bg-paper p-5 shadow-2xl"

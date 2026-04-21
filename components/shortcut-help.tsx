@@ -135,7 +135,7 @@ export function ShortcutHelp() {
       role="dialog"
       aria-modal="true"
       aria-label="Keyboard shortcuts"
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/50 px-4 pt-[6vh] pb-[6vh] backdrop-blur-sm"
       onClick={() => setOpen(false)}
     >
       <div

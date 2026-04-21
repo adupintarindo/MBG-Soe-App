@@ -584,7 +584,7 @@ function EditModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/50 px-4 pt-[5vh] pb-[5vh] backdrop-blur-sm"
       onClick={onClose}
     >
       <div

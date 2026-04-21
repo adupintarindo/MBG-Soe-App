@@ -78,6 +78,8 @@ export interface SortableTableProps<T> {
       });
   toolbarExtra?: ReactNode;
   filters?: SortableTableFilter<T>[];
+  /** If set, wrap the table body in a scroll container with this max-height (px). Toolbar stays above the scroll area. */
+  bodyMaxHeight?: number;
 }
 
 const ALIGN_CLS: Record<NonNullable<SortableColumn<unknown>["align"]>, string> = {
@@ -266,7 +268,8 @@ export function SortableTable<T>({
   exportSubtitle,
   exportTotals,
   toolbarExtra,
-  filters
+  filters,
+  bodyMaxHeight
 }: SortableTableProps<T>) {
   const { lang } = useLang();
   const [sortKey, setSortKey] = useState<string | null>(
@@ -467,7 +470,10 @@ export function SortableTable<T>({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div
+        className={bodyMaxHeight ? "overflow-auto rounded-xl ring-1 ring-ink/10" : "overflow-x-auto"}
+        style={bodyMaxHeight ? { maxHeight: `${bodyMaxHeight}px` } : undefined}
+      >
         <table
           aria-label={ariaLabel}
           className={`w-full text-xs ${tableClassName}`}

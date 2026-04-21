@@ -227,11 +227,17 @@ export const LANG_KEYS = {
   "dashboard.breakdownColName": { ID: "Nama", EN: "Name" },
   "dashboard.breakdownColLevel": { ID: "Jenjang", EN: "Level" },
   "dashboard.breakdownColQty": { ID: "Porsi", EN: "Portions" },
+  "dashboard.breakdownColKecil": { ID: "Kecil", EN: "Small" },
+  "dashboard.breakdownColBesar": { ID: "Besar", EN: "Large" },
+  "dashboard.breakdownColGuru": { ID: "Guru", EN: "Teachers" },
+  "dashboard.breakdownColTotal": { ID: "Total", EN: "Total" },
   "dashboard.breakdownColPhase": { ID: "Fase", EN: "Phase" },
   "dashboard.breakdownColPosyandu": { ID: "Posyandu", EN: "Posyandu" },
   "dashboard.breakdownColAge": { ID: "Usia", EN: "Age" },
   "dashboard.breakdownColDob": { ID: "Tgl Lahir", EN: "Birth Date" },
   "dashboard.breakdownColMother": { ID: "Nama Ibu", EN: "Mother's Name" },
+  "dashboard.tblActions": { ID: "Rincian", EN: "Details" },
+  "dashboard.breakdownOpen": { ID: "Lihat rincian penerima", EN: "View beneficiary details" },
   "dashboard.stockAlertTitle": { ID: "Alert Stok Hari Ini", EN: "Today's Stock Alert" },
   "dashboard.stockAlertHintOk": { ID: "Semua kebutuhan tercover.", EN: "All requirements covered." },
   "dashboard.stockAlertHintBad": { ID: "{n} item | gap {gap}", EN: "{n} items | gap {gap}" },
@@ -1004,7 +1010,7 @@ export const LANG_KEYS = {
   "menu.kpiAvgCostSub": { ID: "harga bahan saja", EN: "ingredient price only" },
   "menu.kpiCommodity": { ID: "Komoditas", EN: "Commodities" },
   "menu.kpiCommoditySub": { ID: "{n} kategori", EN: "{n} categories" },
-  "menu.cycleTitle": { ID: "Siklus Menu ({n} hari) — BOM per Porsi", EN: "{n}-Day Menu Cycle — BOM per Serving" },
+  "menu.cycleTitle": { ID: "Daftar Menu", EN: "Menu List" },
   "menu.cycleHint": {
     ID: "Tiap kartu menampilkan Bill of Materials per porsi (gram bahan basah).",
     EN: "Each card shows the Bill of Materials per serving (grams of wet ingredient)."
@@ -2246,9 +2252,9 @@ export const LANG_KEYS = {
     EN: "Latest 50 transactions across POs, GRNs, invoices, and payments. Filter by date or type to narrow down."
   },
   "tx.filterDate": { ID: "Filter tanggal:", EN: "Filter date:" },
-  "tx.allTypes": { ID: "Semua tipe", EN: "All types" },
-  "tx.typePO": { ID: "Purchase Order", EN: "Purchase Order" },
-  "tx.typeGRN": { ID: "Goods Receipt", EN: "Goods Receipt" },
+  "tx.allTypes": { ID: "Semua", EN: "All" },
+  "tx.typePO": { ID: "PO", EN: "PO" },
+  "tx.typeGRN": { ID: "GR", EN: "GR" },
   "tx.typeInvoice": { ID: "Invoice", EN: "Invoice" },
   "tx.typePayment": { ID: "Payment", EN: "Payment" },
   "tx.typeAdjustment": { ID: "Adjustment", EN: "Adjustment" },
@@ -2299,11 +2305,12 @@ export function numberLocale(lang: Lang): string {
 }
 
 export function formatNumber(
-  n: number,
+  n: number | null | undefined,
   lang: Lang,
   opts: Intl.NumberFormatOptions = {}
 ): string {
-  return n.toLocaleString(numberLocale(lang), opts);
+  const v = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  return v.toLocaleString(numberLocale(lang), opts);
 }
 
 // Shared month/day arrays for both locales.

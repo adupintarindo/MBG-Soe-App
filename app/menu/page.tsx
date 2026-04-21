@@ -215,18 +215,29 @@ export default async function MenuMasterPage({
             {menuStats.map(({ menu, rows, costPerPorsi }) => (
               <article
                 key={menu.id}
-                className="rounded-2xl bg-paper p-4 ring-1 ring-ink/5 transition hover:shadow-card"
+                className="overflow-hidden rounded-2xl bg-paper ring-1 ring-ink/5 transition hover:shadow-card"
               >
+                <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 flex items-center justify-center text-6xl opacity-60"
+                  >
+                    🍛
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/20 to-transparent" />
+                  <span className="absolute left-3 top-3 inline-flex h-7 items-center justify-center rounded-lg bg-primary-gradient px-2 text-[11px] font-black text-white shadow-card">
+                    H{menu.cycle_day}
+                  </span>
+                  <span className="absolute right-3 top-3 rounded-md bg-white/80 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ink2 backdrop-blur-sm">
+                    {lang === "EN" ? "Placeholder" : "Foto Belum Tersedia"}
+                  </span>
+                </div>
+                <div className="p-4">
                 <header className="mb-3 flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary-gradient text-[11px] font-black text-white shadow-card">
-                        H{menu.cycle_day}
-                      </span>
-                      <h3 className="text-sm font-black text-ink">
-                        {lang === "EN" && menu.name_en ? menu.name_en : menu.name}
-                      </h3>
-                    </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-black leading-snug text-ink">
+                      {lang === "EN" && menu.name_en ? menu.name_en : menu.name}
+                    </h3>
                   </div>
                   <div className="text-right">
                     <div className="font-mono text-sm font-black text-emerald-700">
@@ -258,6 +269,7 @@ export default async function MenuMasterPage({
                     />
                   </div>
                 )}
+                </div>
               </article>
             ))}
           </div>

@@ -123,11 +123,11 @@ export function SupplierDetailModal({
       role="dialog"
       aria-modal="true"
       aria-label={ti("supModal.ariaDetail", lang, { name: supplier.name })}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 px-3 pt-[4vh] pb-[4vh] backdrop-blur-sm sm:px-6 sm:pt-[4vh] sm:pb-[4vh]"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-ink/10 sm:max-h-[calc(100dvh-3rem)]"
+        className="flex max-h-[calc(100dvh-4vh-4vh)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-ink/10"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-ink/10 px-6 py-4">
