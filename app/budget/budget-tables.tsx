@@ -2,6 +2,10 @@
 
 import { Badge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  DateRangeToolbar,
+  useDateRangeFilter
+} from "@/components/date-range-toolbar";
 import { t, type Lang } from "@/lib/i18n";
 import type { BudgetBurnRow, CostPerPortionRow } from "@/lib/engine";
 import { formatDateLong } from "@/lib/engine";
@@ -104,6 +108,10 @@ export function BurnTable({
       initialSort={{ key: "period", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="budget-burn"
+      exportSheetName="Burn"
       stickyHeader
       bodyMaxHeight={440}
     />
@@ -199,15 +207,29 @@ export function CPPTable({
     }
   ];
 
+  const dr = useDateRangeFilter(rows, (r) => r.op_date);
   return (
     <SortableTable<CostPerPortionRow>
       tableClassName="text-sm"
       rowKey={(r) => r.op_date}
       initialSort={{ key: "date", dir: "desc" }}
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
+      searchable
+      exportable
+      exportFileName="cost-per-portion"
+      exportSheetName="CPP"
       stickyHeader
       bodyMaxHeight={460}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
     />
   );
 }
@@ -288,6 +310,10 @@ export function BudgetsTable({
       initialSort={{ key: "period", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="budgets"
+      exportSheetName="Budgets"
       stickyHeader
       bodyMaxHeight={460}
     />

@@ -172,7 +172,7 @@ export default async function PrDetailPage({
         />
 
         {pr.notes && (
-          <Section banner icon="📝" title={t("prDetail.notesTitle", lang)} hint={t("prDetail.notesHint", lang)}>
+          <Section icon="📝" title={t("prDetail.notesTitle", lang)} hint={t("prDetail.notesHint", lang)}>
             <p className="text-sm italic text-ink2">{pr.notes}</p>
           </Section>
         )}

@@ -63,21 +63,19 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
   const hasText = !!title;
   if (!hasText && !actions) return null;
   return (
-    <div
-      className={`mb-6 flex flex-wrap items-end gap-3 ${hasText ? "justify-between" : "justify-end"}`}
-    >
+    <div className="relative mb-6 flex flex-wrap items-center justify-center gap-3 rounded-2xl bg-primary-gradient px-4 py-2.5 text-center shadow-card">
       {hasText && (
-        <div className="min-w-0">
-          <h1 className="flex items-center gap-2 font-display text-2xl font-extrabold tracking-crisp text-ink sm:text-[1.75rem]">
-            {icon && (
-              <span className="shrink-0 text-2xl leading-none">{icon}</span>
-            )}
-            <span className="truncate">{title}</span>
-          </h1>
-        </div>
+        <h1 className="flex items-center gap-2 font-display text-[13px] font-bold uppercase tracking-[0.14em] text-white sm:text-[14px]">
+          {icon && (
+            <span className="shrink-0 text-base leading-none">{icon}</span>
+          )}
+          <span className="truncate">{title}</span>
+        </h1>
       )}
       {actions && (
-        <div className="flex flex-wrap items-center gap-2">{actions}</div>
+        <div className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-wrap items-center gap-2">
+          {actions}
+        </div>
       )}
     </div>
   );
@@ -141,7 +139,7 @@ export function Section({
         </header>
       )}
       {hasHeader && !banner && (
-        <header className="relative z-20 flex flex-wrap items-center justify-center gap-3 rounded-t-2xl bg-ink px-4 py-1.5 text-center">
+        <header className="relative z-20 flex flex-wrap items-center justify-center gap-3 rounded-t-2xl bg-primary-gradient px-4 py-1.5 text-center">
           {title && (
             <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
               <span>{title}</span>

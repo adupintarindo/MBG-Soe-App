@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  DateRangeToolbar,
+  useDateRangeFilter
+} from "@/components/date-range-toolbar";
 import { t, type Lang } from "@/lib/i18n";
 import type { DeliverySummaryRow } from "@/lib/engine";
 import { formatDateShort, formatDateLong } from "@/lib/engine";
@@ -320,16 +324,29 @@ export function DeliveryHistoryTable({
     }
   ];
 
+  const dr = useDateRangeFilter(rows, (r) => r.delivery_date);
   return (
     <SortableTable<DeliveryRow>
       tableClassName="text-sm"
       rowKey={(r) => r.no}
       initialSort={{ key: "date", dir: "desc" }}
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
       searchable
+      exportable
+      exportFileName="deliveries"
+      exportSheetName="Deliveries"
       stickyHeader
       bodyMaxHeight={500}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
     />
   );
 }

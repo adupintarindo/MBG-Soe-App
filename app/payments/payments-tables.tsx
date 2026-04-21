@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { Badge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  DateRangeToolbar,
+  useDateRangeFilter
+} from "@/components/date-range-toolbar";
 import { t, type Lang } from "@/lib/i18n";
 import type {
   OutstandingBySupplier,
@@ -144,6 +148,10 @@ export function OutstandingTable({
       initialSort={{ key: "out", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="ar-outstanding"
+      exportSheetName="Outstanding"
       stickyHeader
       bodyMaxHeight={460}
       footer={
@@ -252,6 +260,10 @@ export function CashflowTable({
       initialSort={{ key: "period", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="cashflow"
+      exportSheetName="Cashflow"
       stickyHeader
       bodyMaxHeight={440}
       footer={
@@ -366,15 +378,29 @@ export function PaymentsTable({
     }
   ];
 
+  const dr = useDateRangeFilter(rows, (r) => r.pay_date);
   return (
     <SortableTable<PaymentRow>
       tableClassName="text-sm"
       rowKey={(r) => r.no}
       initialSort={{ key: "date", dir: "desc" }}
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
+      searchable
+      exportable
+      exportFileName="payments"
+      exportSheetName="Payments"
       stickyHeader
       bodyMaxHeight={480}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
     />
   );
 }
@@ -452,15 +478,29 @@ export function ReceiptsTable({
     }
   ];
 
+  const dr = useDateRangeFilter(rows, (r) => r.receipt_date);
   return (
     <SortableTable<ReceiptRow>
       tableClassName="text-sm"
       rowKey={(r) => r.no}
       initialSort={{ key: "date", dir: "desc" }}
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
+      searchable
+      exportable
+      exportFileName="receipts"
+      exportSheetName="Receipts"
       stickyHeader
       bodyMaxHeight={480}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
     />
   );
 }

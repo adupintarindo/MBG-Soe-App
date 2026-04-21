@@ -132,6 +132,10 @@ export function VariancePerItemTable({
       initialSort={{ key: "pct", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="variance-per-item"
+      exportSheetName="Variance"
       stickyHeader
       bodyMaxHeight={460}
     />
@@ -224,6 +228,10 @@ export function VarianceByMenuTable({
       initialSort={{ key: "cost", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="variance-by-menu"
+      exportSheetName="Menu"
       stickyHeader
       bodyMaxHeight={460}
     />

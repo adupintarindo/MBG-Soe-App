@@ -67,7 +67,7 @@ export default async function AuditPage({
       />
 
       <PageContainer>
-        <Section banner icon="🔍" title={t("audit.listTitle", lang)} hint={t("audit.listHint", lang)}>
+        <Section icon="🔍" title={t("audit.listTitle", lang)} hint={t("audit.listHint", lang)}>
           <AuditFilters initial={filters} />
           {events.length === 0 ? (
             <EmptyState message={t("audit.empty", lang)} />

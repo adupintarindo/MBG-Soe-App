@@ -2,6 +2,10 @@
 
 import { Badge } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  DateRangeToolbar,
+  useDateRangeFilter
+} from "@/components/date-range-toolbar";
 import { t, formatNumber, type Lang } from "@/lib/i18n";
 import { formatDateLong } from "@/lib/engine";
 
@@ -132,15 +136,29 @@ export function ExpiringBatchTable({
     }
   ];
 
+  const dr = useDateRangeFilter(rows, (r) => r.expiry_date);
   return (
     <SortableTable<ExpiringBatchRow>
       tableClassName="text-sm"
       rowKey={(r) => r.id}
       initialSort={{ key: "status", dir: "asc" }}
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
+      searchable
+      exportable
+      exportFileName="expiring-batches"
+      exportSheetName="Expiring"
       stickyHeader
       bodyMaxHeight={460}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
     />
   );
 }
@@ -233,16 +251,29 @@ export function BatchTable({
     }
   ];
 
+  const dr = useDateRangeFilter(rows, (r) => r.received_date);
   return (
     <SortableTable<BatchRow>
       tableClassName="text-sm"
       rowKey={(r) => r.id}
       initialSort={{ key: "expiry", dir: "asc" }}
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
       searchable
+      exportable
+      exportFileName="batches"
+      exportSheetName="Batches"
       stickyHeader
       bodyMaxHeight={500}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
     />
   );
 }

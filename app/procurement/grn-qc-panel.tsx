@@ -4,6 +4,10 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, EmptyState } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  DateRangeToolbar,
+  useDateRangeFilter
+} from "@/components/date-range-toolbar";
 import type {
   GrnQcCheck,
   NcrEntry,
@@ -203,6 +207,8 @@ export function GrnQcPanel({
     ["open", "in_progress"].includes(n.status)
   );
 
+  const grnDr = useDateRangeFilter(grns, (g) => g.grn_date);
+
   return (
     <div className="space-y-6">
       {canWrite && (
@@ -228,7 +234,7 @@ export function GrnQcPanel({
             supplierIds,
             supplierNames
           })}
-          rows={grns}
+          rows={grnDr.filtered}
           rowKey={(g) => g.no}
           onRowClick={(g) => setOpenGrn(g.no)}
           variant="dark"
@@ -239,6 +245,15 @@ export function GrnQcPanel({
           initialSort={{ key: "date", dir: "desc" }}
           stickyHeader
           bodyMaxHeight={500}
+          toolbarExtra={
+            <DateRangeToolbar
+              from={grnDr.from}
+              to={grnDr.to}
+              onChange={grnDr.onChange}
+              onReset={grnDr.reset}
+              rangeActive={grnDr.rangeActive}
+            />
+          }
         />
       )}
 

@@ -200,6 +200,10 @@ export function AuditTable({ rows }: { rows: AuditEvent[] }) {
       initialSort={{ key: "ts", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="audit-log"
+      exportSheetName="Audit"
       stickyHeader
       bodyMaxHeight={520}
     />

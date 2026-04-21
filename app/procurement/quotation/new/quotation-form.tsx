@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { formatIDR } from "@/lib/engine";
 import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
@@ -24,6 +23,22 @@ interface SupplierItemLink {
   item_code: string;
   is_main: boolean;
   price_idr: number | null;
+}
+interface MenuLite {
+  id: number;
+  name: string;
+  name_en: string | null;
+  cycle_day: number | null;
+}
+
+interface MenuPreview {
+  date: string;
+  menu_id: number | null;
+  menu_name: string | null;
+  menu_name_en: string | null;
+  is_custom: boolean;
+  effective_menu_id: number | null;
+  effective_source: "assigned" | "override" | "custom" | "none";
 }
 
 interface DraftRow {
@@ -60,22 +75,32 @@ function plusDays(iso: string, n: number) {
 export function QuotationForm({
   suppliers,
   items,
-  supplierItems
+  supplierItems,
+  menus
 }: {
   suppliers: SupplierLite[];
   items: ItemLite[];
   supplierItems: SupplierItemLink[];
+  menus: MenuLite[];
 }) {
   const { lang } = useLang();
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
 
   const [rows, setRows] = useState<DraftRow[]>([emptyRow()]);
   const [seedDate, setSeedDate] = useState(plusDays(todayIso(), 3));
+  const [menuOverride, setMenuOverride] = useState<number | null>(null);
+  const [preview, setPreview] = useState<MenuPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [, startTransition] = useTransition();
+
+  const menuById = useMemo(() => {
+    const m = new Map<number, MenuLite>();
+    for (const x of menus) m.set(x.id, x);
+    return m;
+  }, [menus]);
 
   const itemByCode = useMemo(() => {
     const m = new Map<string, ItemLite>();
@@ -156,24 +181,59 @@ export function QuotationForm({
     setRows((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  // Preview menu untuk tanggal terpilih (menu terjadwal + apakah custom)
+  useEffect(() => {
+    let cancelled = false;
+    if (!seedDate) {
+      setPreview(null);
+      return;
+    }
+    setPreviewLoading(true);
+    const url = `/api/quotations/seed-preview?date=${encodeURIComponent(seedDate)}`;
+    fetch(url)
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const j = (await res.json()) as { ok: boolean; preview?: MenuPreview };
+        return j.ok ? (j.preview ?? null) : null;
+      })
+      .then((p) => {
+        if (!cancelled) setPreview(p);
+      })
+      .catch(() => {
+        if (!cancelled) setPreview(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [seedDate]);
+
   async function seedFromDate() {
     setError(null);
     setSeeding(true);
     try {
-      const { data, error: err } = await supabase.rpc(
-        "quotation_seed_from_date",
-        { p_date: seedDate }
-      );
-      if (err) {
-        setError(err.message);
+      const params = new URLSearchParams({ date: seedDate });
+      if (menuOverride != null) params.set("menu", String(menuOverride));
+      const res = await fetch(`/api/quotations/seed?${params.toString()}`);
+      const json = (await res.json()) as {
+        ok: boolean;
+        rows?: Array<{
+          item_code: string;
+          qty: number;
+          unit: string;
+          price_suggested: number | null;
+        }>;
+        preview?: MenuPreview;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        setError(json.error ?? t("qtNew.errFail", lang));
         return;
       }
-      const seeded = (data ?? []) as Array<{
-        item_code: string;
-        qty: number;
-        unit: string;
-        price_suggested: number | null;
-      }>;
+      if (json.preview) setPreview(json.preview);
+      const seeded = json.rows ?? [];
       if (seeded.length === 0) {
         setError(t("qtNew.errNoDemand", lang));
         return;
@@ -299,6 +359,7 @@ export function QuotationForm({
           {t("qtNew.step1SeedTitle", lang)}
         </h3>
         <p className="text-[11px] text-ink2/70">{t("qtNew.step2Desc", lang)}</p>
+
         <div className="flex flex-wrap items-end gap-2">
           <label className="block">
             <span className="mb-1 block text-[11px] font-bold text-ink2">
@@ -307,10 +368,36 @@ export function QuotationForm({
             <input
               type="date"
               value={seedDate}
-              onChange={(e) => setSeedDate(e.target.value)}
+              onChange={(e) => {
+                setSeedDate(e.target.value);
+                setMenuOverride(null);
+              }}
               className="rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
             />
           </label>
+
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-bold text-ink2">
+              {t("qtNew.fldMenuPick", lang)}
+            </span>
+            <select
+              value={menuOverride ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                setMenuOverride(v === "" ? null : Number(v));
+              }}
+              className="w-72 rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
+            >
+              <option value="">{t("qtNew.optMenuAuto", lang)}</option>
+              {menus.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.cycle_day != null ? `D${m.cycle_day} · ` : ""}
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <button
             type="button"
             onClick={seedFromDate}
@@ -327,6 +414,16 @@ export function QuotationForm({
             {t("qtNew.btnResetRows", lang)}
           </button>
         </div>
+
+        {/* Preview menu terjadwal + info override */}
+        <MenuPreviewBanner
+          lang={lang}
+          loading={previewLoading}
+          preview={preview}
+          override={
+            menuOverride != null ? (menuById.get(menuOverride) ?? null) : null
+          }
+        />
       </div>
 
       {/* Step 2 · Rows */}
@@ -552,6 +649,69 @@ export function QuotationForm({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function MenuPreviewBanner({
+  lang,
+  loading,
+  preview,
+  override
+}: {
+  lang: "ID" | "EN";
+  loading: boolean;
+  preview: MenuPreview | null;
+  override: MenuLite | null;
+}) {
+  if (loading) {
+    return (
+      <div className="rounded-xl bg-paper px-3 py-2 text-[11px] text-ink2/70 ring-1 ring-ink/10">
+        {t("qtNew.previewLoading", lang)}
+      </div>
+    );
+  }
+  if (!preview) return null;
+
+  // Kalau user pilih override, tampilkan override + info menu terjadwal sebagai context
+  if (override) {
+    const assignedLabel =
+      preview.is_custom
+        ? t("qtNew.previewCustom", lang)
+        : preview.menu_name ?? t("qtNew.previewNone", lang);
+    const name = lang === "EN" ? (override.name_en ?? override.name) : override.name;
+    return (
+      <div className="rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-900 ring-1 ring-amber-200">
+        <span className="font-bold">{t("qtNew.previewOverride", lang)}:</span>{" "}
+        {override.cycle_day != null ? `D${override.cycle_day} · ` : ""}
+        {name}
+        <span className="ml-2 text-amber-900/70">
+          ({t("qtNew.previewAssigned", lang)}: {assignedLabel})
+        </span>
+      </div>
+    );
+  }
+
+  // Auto mode
+  if (preview.is_custom) {
+    return (
+      <div className="rounded-xl bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900 ring-1 ring-emerald-200">
+        <span className="font-bold">{t("qtNew.previewAssigned", lang)}:</span>{" "}
+        {t("qtNew.previewCustom", lang)}
+      </div>
+    );
+  }
+  if (preview.menu_id && preview.menu_name) {
+    return (
+      <div className="rounded-xl bg-emerald-50 px-3 py-2 text-[11px] text-emerald-900 ring-1 ring-emerald-200">
+        <span className="font-bold">{t("qtNew.previewAssigned", lang)}:</span>{" "}
+        {preview.menu_name}
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-xl bg-red-50 px-3 py-2 text-[11px] text-red-800 ring-1 ring-red-200">
+      {t("qtNew.previewNoneHint", lang)}
     </div>
   );
 }

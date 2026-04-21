@@ -6,7 +6,6 @@ import { listNcr, ncrSnapshot } from "@/lib/engine";
 import Link from "next/link";
 import {
   EmptyState,
-  LinkButton,
   PageContainer,
   PageHeader,
   Section
@@ -18,7 +17,6 @@ import { getLang } from "@/lib/i18n-server";
 import {
   InvoiceTable,
   PoTable,
-  PrTable,
   QtTable
 } from "./procurement-tables";
 import {
@@ -48,14 +46,6 @@ const VALID_TABS: readonly ProcTabId[] = [
 interface SearchParams {
   tab?: string;
   month?: string;
-}
-
-interface PrRow {
-  no: string;
-  need_date: string;
-  status: string;
-  notes: string | null;
-  created_at: string;
 }
 
 interface PoRow {
@@ -174,7 +164,6 @@ export default async function ProcurementPage({
     receiptsRes,
     suppliersRes,
     qtsRes,
-    prsRes,
     ncrs,
     ncrStats
   ] = await Promise.all([
@@ -208,11 +197,6 @@ export default async function ProcurementPage({
       )
       .order("quote_date", { ascending: false })
       .limit(50),
-    supabase
-      .from("purchase_requisitions")
-      .select("no, need_date, status, notes, created_at")
-      .order("created_at", { ascending: false })
-      .limit(30),
     listNcr(supabase, { limit: 50 }).catch(() => []),
     ncrSnapshot(supabase).catch(() => ({
       total: 0,
@@ -230,7 +214,6 @@ export default async function ProcurementPage({
   const receipts = (receiptsRes.data ?? []) as ReceiptRow[];
   const suppliers = (suppliersRes.data ?? []) as SupplierLite[];
   const quotations = (qtsRes.data ?? []) as QtRow[];
-  const prs = (prsRes.data ?? []) as PrRow[];
 
   // Stage 2: fetch child tables scoped only to the 50 displayed POs/GRNs
   const poNos = pos.map((p) => p.no);
@@ -448,63 +431,36 @@ export default async function ProcurementPage({
       />
 
       <PageContainer>
-        <PageHeader
-          actions={
-            canWrite ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <LinkButton
-                  href="/procurement/quotation/new"
-                  variant="primary"
-                  size="sm"
-                >
-                  {t("procurement.btnNewQuotation", lang)}
-                </LinkButton>
-              </div>
-            ) : null
-          }
-        />
+        <PageHeader />
 
         <PageTabs tabs={tabs} activeId={activeTab} />
 
         {activeTab === "req-qt" && (
-          <>
-            <Section
-              title={t("procurement.secPRtitle", lang)}
-              hint={t("procurement.secPRhint", lang)}
-            >
-              {prs.length === 0 ? (
-                <EmptyState message={t("procurement.prEmpty", lang)} />
-              ) : (
-                <PrTable rows={prs} />
-              )}
-            </Section>
-
-            <Section
-              title={t("procurement.secQTtitle", lang)}
-              hint={t("procurement.secQThint", lang)}
-              actions={
-                canWrite ? (
-                  <Link
-                    href="/procurement/quotation/new"
-                    className="rounded-lg bg-ink px-3 py-1.5 text-[11px] font-black text-white shadow-card hover:bg-ink2"
-                  >
-                    {t("procurement.btnNewSimple", lang)}
-                  </Link>
-                ) : null
-              }
-            >
-              {quotations.length === 0 ? (
-                <EmptyState message={t("procurement.qtEmpty", lang)} />
-              ) : (
-                <QtTable rows={quotations} supplierNames={supplierNameMap} />
-              )}
-            </Section>
-          </>
+          <Section
+            title={t("procurement.secQTtitle", lang)}
+            hint={t("procurement.secQThint", lang)}
+            actions={
+              canWrite ? (
+                <Link
+                  href="/procurement/quotation/new"
+                  className="rounded-lg bg-ink px-3 py-1.5 text-[11px] font-black text-white shadow-card hover:bg-ink2"
+                >
+                  {t("procurement.btnNewSimple", lang)}
+                </Link>
+              ) : null
+            }
+          >
+            {quotations.length === 0 ? (
+              <EmptyState message={t("procurement.qtEmpty", lang)} />
+            ) : (
+              <QtTable rows={quotations} supplierNames={supplierNameMap} />
+            )}
+          </Section>
         )}
 
         {activeTab === "po" && (
           <>
-            <Section banner icon="📄" title={t("procurement.secPOtitle", lang)} hint={t("procurement.secPOhint", lang)}>
+            <Section icon="📄" title={t("procurement.secPOtitle", lang)} hint={t("procurement.secPOhint", lang)}>
               {pos.length === 0 ? (
                 <EmptyState message={t("procurement.poEmpty", lang)} />
               ) : (
@@ -555,7 +511,7 @@ export default async function ProcurementPage({
 
         {activeTab === "invoice" && (
           <>
-            <Section banner icon="🧾" title={t("procurement.secINVtitle", lang)} hint={t("procurement.secINVhint", lang)}>
+            <Section icon="🧾" title={t("procurement.secINVtitle", lang)} hint={t("procurement.secINVhint", lang)}>
               {invoices.length === 0 ? (
                 <EmptyState message={t("procurement.invEmpty", lang)} />
               ) : (

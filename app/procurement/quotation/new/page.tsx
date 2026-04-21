@@ -34,6 +34,12 @@ interface SupplierItemLink {
   is_main: boolean;
   price_idr: number | null;
 }
+interface MenuLite {
+  id: number;
+  name: string;
+  name_en: string | null;
+  cycle_day: number | null;
+}
 
 export default async function NewQuotationPage() {
   const lang = getLang();
@@ -42,7 +48,7 @@ export default async function NewQuotationPage() {
   if (!profile) redirect("/login");
   if (!WRITE_ROLES.has(profile.role)) redirect("/procurement");
 
-  const [supRes, itemsRes, linksRes] = await Promise.all([
+  const [supRes, itemsRes, linksRes, menusRes] = await Promise.all([
     supabase
       .from("suppliers")
       .select("id, name, status")
@@ -55,12 +61,18 @@ export default async function NewQuotationPage() {
       .order("code"),
     supabase
       .from("supplier_items")
-      .select("supplier_id, item_code, is_main, price_idr")
+      .select("supplier_id, item_code, is_main, price_idr"),
+    supabase
+      .from("menus")
+      .select("id, name, name_en, cycle_day")
+      .eq("active", true)
+      .order("cycle_day")
   ]);
 
   const suppliers = (supRes.data ?? []) as SupplierLite[];
   const items = (itemsRes.data ?? []) as ItemLite[];
   const supplierItems = (linksRes.data ?? []) as SupplierItemLink[];
+  const menus = (menusRes.data ?? []) as MenuLite[];
 
   return (
     <div>
@@ -86,6 +98,7 @@ export default async function NewQuotationPage() {
             suppliers={suppliers}
             items={items}
             supplierItems={supplierItems}
+            menus={menus}
           />
         </Section>
       </PageContainer>

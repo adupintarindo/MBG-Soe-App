@@ -149,7 +149,7 @@ export default async function QuotationDetailPage({
           }
         />
 
-        <Section banner icon="ℹ️" title={t("qtDetail.infoTitle", lang)} hint={t("qtDetail.infoHint", lang)}>
+        <Section icon="ℹ️" title={t("qtDetail.infoTitle", lang)} hint={t("qtDetail.infoHint", lang)}>
           <dl className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <dt className="font-bold text-ink2/70">{t("qtDetail.lblSupplier", lang)}</dt>
@@ -202,7 +202,7 @@ export default async function QuotationDetailPage({
           )}
         </Section>
 
-        <Section banner icon="⚡" title={t("qtDetail.actionsTitle", lang)} hint={t("qtDetail.actionsHint", lang)}>
+        <Section icon="⚡" title={t("qtDetail.actionsTitle", lang)} hint={t("qtDetail.actionsHint", lang)}>
           <div className="flex flex-wrap items-center gap-3">
             <a
               href={`/api/quotations/${encodeURIComponent(qt.no)}/export.xlsx`}

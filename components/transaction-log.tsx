@@ -130,7 +130,7 @@ export function TransactionLog({ rows }: { rows: TxRow[] }) {
   );
 
   return (
-    <Section banner icon="📜" title={t("tx.title", lang)} hint={t("tx.hint", lang)}>
+    <Section icon="📜" title={t("tx.title", lang)} hint={t("tx.hint", lang)}>
       <nav
         aria-label={t("tx.allTypes", lang)}
         className="mb-4 flex w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-2xl bg-white/80 p-1.5 shadow-card ring-1 ring-primary/5 dark:bg-d-surface/70 dark:ring-d-border/30"

@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  DateRangeToolbar,
+  useDateRangeFilter
+} from "@/components/date-range-toolbar";
 import { t, formatNumber } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
 import { formatDateLong } from "@/lib/engine";
@@ -148,10 +152,11 @@ export function PrTable({ rows }: { rows: PrRow[] }) {
     }
   ];
 
+  const dr = useDateRangeFilter(rows, (r) => r.created_at);
   return (
     <SortableTable<PrRow>
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
       rowKey={(r) => r.no}
       variant="dark"
       searchable
@@ -161,6 +166,15 @@ export function PrTable({ rows }: { rows: PrRow[] }) {
       initialSort={{ key: "created", dir: "desc" }}
       stickyHeader
       bodyMaxHeight={500}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
     />
   );
 }
@@ -262,12 +276,13 @@ export function QtTable({
     }
   ];
 
-  const totalQt = rows.reduce((s, r) => s + Number(r.total ?? 0), 0);
+  const dr = useDateRangeFilter(rows, (r) => r.quote_date);
+  const totalQt = dr.filtered.reduce((s, r) => s + Number(r.total ?? 0), 0);
 
   return (
     <SortableTable<QtRow>
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
       rowKey={(r) => r.no}
       variant="dark"
       searchable
@@ -277,6 +292,15 @@ export function QtTable({
       initialSort={{ key: "date", dir: "desc" }}
       stickyHeader
       bodyMaxHeight={500}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td
@@ -403,14 +427,15 @@ export function PoTable({
     }
   ];
 
-  const totalItems = rows.reduce((s, r) => s + (rowCountByPO[r.no] ?? 0), 0);
-  const totalQty = rows.reduce((s, r) => s + (qtyByPO[r.no] ?? 0), 0);
-  const totalPo = rows.reduce((s, r) => s + Number(r.total ?? 0), 0);
+  const dr = useDateRangeFilter(rows, (r) => r.po_date);
+  const totalItems = dr.filtered.reduce((s, r) => s + (rowCountByPO[r.no] ?? 0), 0);
+  const totalQty = dr.filtered.reduce((s, r) => s + (qtyByPO[r.no] ?? 0), 0);
+  const totalPo = dr.filtered.reduce((s, r) => s + Number(r.total ?? 0), 0);
 
   return (
     <SortableTable<PoRow>
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
       rowKey={(r) => r.no}
       variant="dark"
       searchable
@@ -420,6 +445,15 @@ export function PoTable({
       initialSort={{ key: "date", dir: "desc" }}
       stickyHeader
       bodyMaxHeight={500}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td
@@ -530,12 +564,13 @@ export function InvoiceTable({
     }
   ];
 
-  const totalInv = rows.reduce((s, r) => s + Number(r.total ?? 0), 0);
+  const dr = useDateRangeFilter(rows, (r) => r.inv_date);
+  const totalInv = dr.filtered.reduce((s, r) => s + Number(r.total ?? 0), 0);
 
   return (
     <SortableTable<InvoiceRow>
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
       rowKey={(r) => r.no}
       variant="dark"
       searchable
@@ -545,6 +580,15 @@ export function InvoiceTable({
       initialSort={{ key: "date", dir: "desc" }}
       stickyHeader
       bodyMaxHeight={500}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
       footer={
         <tr className="border-t-2 border-ink bg-ink">
           <td

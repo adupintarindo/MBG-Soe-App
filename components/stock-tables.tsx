@@ -3,6 +3,10 @@
 import { useMemo, useState } from "react";
 import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  DateRangeToolbar,
+  useDateRangeFilter
+} from "@/components/date-range-toolbar";
 import { t, ti, formatNumber, type Lang, type LangKey } from "@/lib/i18n";
 import { formatIDR } from "@/lib/engine";
 
@@ -89,6 +93,10 @@ export function StockShortTable({
       initialSort={{ key: "gap", dir: "desc" }}
       columns={columns}
       rows={rows}
+      searchable
+      exportable
+      exportFileName="stock-shortage"
+      exportSheetName="Shortage"
       stickyHeader
       bodyMaxHeight={440}
     />
@@ -265,6 +273,9 @@ export function StockMasterTable({
         columns={columns}
         rows={rows}
         searchable
+        exportable
+        exportFileName="stock-master"
+        exportSheetName="Stock"
         stickyHeader
         bodyMaxHeight={520}
       />
@@ -545,15 +556,29 @@ export function StockMovesTable({
     }
   ];
 
+  const dr = useDateRangeFilter(rows, (r) => r.created_at);
   return (
     <SortableTable<MoveRow>
       tableClassName="text-sm"
       rowKey={(r) => r.id}
       initialSort={{ key: "time", dir: "desc" }}
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
+      searchable
+      exportable
+      exportFileName="stock-moves"
+      exportSheetName="Stock Moves"
       stickyHeader
       bodyMaxHeight={480}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
     />
   );
 }

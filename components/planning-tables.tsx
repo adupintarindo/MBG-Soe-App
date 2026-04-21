@@ -2,6 +2,10 @@
 
 import { Badge, CategoryBadge, IDR } from "@/components/ui";
 import { SortableTable, type SortableColumn } from "@/components/sortable-table";
+import {
+  DateRangeToolbar,
+  useDateRangeFilter
+} from "@/components/date-range-toolbar";
 import { formatDateLong } from "@/lib/engine";
 import { t, formatNumber, type Lang } from "@/lib/i18n";
 
@@ -339,7 +343,9 @@ export function PlanningDailyTable({
     }
   ];
 
-  const totals = rows.reduce(
+  const dr = useDateRangeFilter(rows, (r) => r.op_date);
+
+  const totals = dr.filtered.reduce(
     (acc, r) => ({
       schools: acc.schools + r.schools,
       students: acc.students + r.students,
@@ -398,13 +404,22 @@ export function PlanningDailyTable({
       rowKey={(r) => r.op_date}
       initialSort={{ key: "date", dir: "asc" }}
       columns={columns}
-      rows={rows}
+      rows={dr.filtered}
       footer={footer}
       searchable
       exportable
       exportFileName="planning-daily"
       exportSheetName="Planning Daily"
       exportTitle={t("planning.dailyTitle", lang)}
+      toolbarExtra={
+        <DateRangeToolbar
+          from={dr.from}
+          to={dr.to}
+          onChange={dr.onChange}
+          onReset={dr.reset}
+          rangeActive={dr.rangeActive}
+        />
+      }
       exportTotals={{
         labelColSpan: 6,
         labelText: t("common.grandTotal", lang),

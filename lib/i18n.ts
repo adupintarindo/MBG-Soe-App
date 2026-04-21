@@ -2166,18 +2166,7 @@ export const LANG_KEYS = {
     ID: "Draft harga ke supplier | isi manual atau seed dari tanggal menu | export .xlsx untuk ditandatangani supplier.",
     EN: "Price draft to supplier | fill manually or seed from a menu date | export .xlsx for supplier signature."
   },
-  "qtNew.step1Title": { ID: "1. Info Quotation", EN: "1. Quotation Info" },
-  "qtNew.fldSupplier": { ID: "Supplier", EN: "Supplier" },
   "qtNew.optPickSup": { ID: "— Pilih supplier —", EN: "— Pick a supplier —" },
-  "qtNew.fldQuoteDate": { ID: "Tanggal Quotation", EN: "Quotation Date" },
-  "qtNew.fldValidUntil": { ID: "Berlaku s/d", EN: "Valid Until" },
-  "qtNew.fldNeedDate": { ID: "Tgl Butuh Barang", EN: "Need-By Date" },
-  "qtNew.fldNotes": { ID: "Catatan (opsional)", EN: "Notes (optional)" },
-  "qtNew.phNotes": {
-    ID: "mis. terms pengiriman, kontrak referensi",
-    EN: "e.g. delivery terms, reference contract"
-  },
-  "qtNew.step2Title": { ID: "2. Seed dari Menu (opsional)", EN: "2. Seed from Menu (optional)" },
   "qtNew.step2Desc": {
     ID: "Otomatis mengisi item & qty dari kebutuhan menu tanggal tertentu. Harga saran = harga PO terakhir atau harga katalog sebagai cadangan.",
     EN: "Auto-fills items & qty from menu demand on a given date. Suggested price = last PO price or catalog price as fallback."
@@ -2190,7 +2179,6 @@ export const LANG_KEYS = {
     ID: "Tidak ada kebutuhan untuk tanggal tsb (menu belum assigned / non-op).",
     EN: "No demand for that date (menu not assigned / non-op)."
   },
-  "qtNew.errPickSup": { ID: "Pilih supplier dulu.", EN: "Pick a supplier first." },
   "qtNew.errMinRow": {
     ID: "Minimal satu baris item dengan qty > 0.",
     EN: "At least one item row with qty > 0."
@@ -2200,7 +2188,6 @@ export const LANG_KEYS = {
     ID: "Quotation {no} dibuat tapi rows gagal: {msg}",
     EN: "Quotation {no} created but rows failed: {msg}"
   },
-  "qtNew.step3Title": { ID: "3. Item yang Diminta", EN: "3. Requested Items" },
   "qtNew.btnAddRow": { ID: "+ Tambah Baris", EN: "+ Add Row" },
   "qtNew.colNo": { ID: "No.", EN: "No." },
   "qtNew.colItem": { ID: "Item", EN: "Item" },
@@ -2213,10 +2200,6 @@ export const LANG_KEYS = {
   "qtNew.phPriceSug": { ID: "(kosong=supplier isi)", EN: "(blank = supplier fills)" },
   "qtNew.btnDelete": { ID: "Hapus", EN: "Delete" },
   "qtNew.totalSug": { ID: "Total saran", EN: "Suggested total" },
-  "qtNew.helperSubmit": {
-    ID: "Quotation akan dibuat sebagai draft. Export .xlsx untuk kirim ke supplier, lalu update ke sent.",
-    EN: "Quotation will be created as draft. Export .xlsx to send to the supplier, then update to sent."
-  },
   "qtNew.btnSave": { ID: "💾 Simpan Draft Quotation", EN: "💾 Save Draft Quotation" },
   "qtNew.btnSaving": { ID: "Menyimpan…", EN: "Saving…" },
   "qtNew.step1SeedTitle": {
@@ -2251,6 +2234,23 @@ export const LANG_KEYS = {
   "qtNew.btnSaveMulti": {
     ID: "💾 Simpan + Unduh {n} File",
     EN: "💾 Save + Download {n} Files"
+  },
+  "qtNew.fldMenuPick": { ID: "Pilih Menu (opsional)", EN: "Pick Menu (optional)" },
+  "qtNew.optMenuAuto": {
+    ID: "Auto — ikut menu terjadwal tanggal ini",
+    EN: "Auto — follow menu scheduled for this date"
+  },
+  "qtNew.previewLoading": { ID: "Mengecek menu terjadwal…", EN: "Checking scheduled menu…" },
+  "qtNew.previewAssigned": { ID: "Menu terjadwal", EN: "Scheduled menu" },
+  "qtNew.previewOverride": { ID: "Override menu", EN: "Menu override" },
+  "qtNew.previewCustom": {
+    ID: "Custom menu (ditetapkan ahli gizi untuk tanggal ini)",
+    EN: "Custom menu (set by nutritionist for this date)"
+  },
+  "qtNew.previewNone": { ID: "belum di-assign", EN: "not yet assigned" },
+  "qtNew.previewNoneHint": {
+    ID: "Tanggal ini belum punya menu terjadwal. Pilih menu manual di dropdown di atas untuk tetap seed items.",
+    EN: "No menu scheduled for this date. Pick a menu above to seed items manually."
   },
 
   // ---------------- Quotation detail ----------------

@@ -185,7 +185,7 @@ export default async function PaymentsPage({
 
         {activeTab === "cashflow" && (
           <>
-            <Section banner icon="💸" title={t("pay.cashflowTitle", lang)} hint={t("pay.cashflowHint", lang)}>
+            <Section icon="💸" title={t("pay.cashflowTitle", lang)} hint={t("pay.cashflowHint", lang)}>
               {cashflow.length === 0 ? (
                 <EmptyState message={t("common.noData", lang)} />
               ) : (
@@ -196,7 +196,7 @@ export default async function PaymentsPage({
         )}
 
         {activeTab === "payments" && (
-          <Section banner icon="💳" title={t("pay.recentTitle", lang)} hint={t("pay.recentHint", lang)}>
+          <Section icon="💳" title={t("pay.recentTitle", lang)} hint={t("pay.recentHint", lang)}>
             {payments.length === 0 ? (
               <EmptyState message={t("pay.recentEmpty", lang)} />
             ) : (
@@ -218,7 +218,7 @@ export default async function PaymentsPage({
         )}
 
         {activeTab === "receipts" && (
-          <Section banner icon="🧾" title={t("pay.receiptsTitle", lang)} hint={t("pay.receiptsHint", lang)}>
+          <Section icon="🧾" title={t("pay.receiptsTitle", lang)} hint={t("pay.receiptsHint", lang)}>
             {receipts.length === 0 ? (
               <EmptyState message={t("pay.receiptsEmpty", lang)} />
             ) : (

@@ -311,7 +311,7 @@ export default async function StockPage({
 
         {activeTab === "ledger" && (
           <>
-            <Section banner icon="🗃️" title={ti("batch.allTitle", lang, { n: batchRows.length })} hint={t("batch.allHint", lang)}>
+            <Section icon="🗃️" title={ti("batch.allTitle", lang, { n: batchRows.length })} hint={t("batch.allHint", lang)}>
               {batchRows.length === 0 ? (
                 <EmptyState message={t("batch.allEmpty", lang)} />
               ) : (
@@ -322,7 +322,7 @@ export default async function StockPage({
         )}
 
         {activeTab === "moves" && (
-          <Section banner icon="🔄" title={t("stock.movesTitle", lang)} hint={t("stock.movesHint", lang)}>
+          <Section icon="🔄" title={t("stock.movesTitle", lang)} hint={t("stock.movesHint", lang)}>
             {moves.length === 0 ? (
               <EmptyState message={t("stock.movesEmpty", lang)} />
             ) : (

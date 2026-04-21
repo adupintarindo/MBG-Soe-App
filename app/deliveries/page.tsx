@@ -177,7 +177,7 @@ export default async function DeliveriesPage() {
           }
         />
 
-        <Section banner icon="🚚" title={t("del.todayTitle", lang)} hint={t("del.todayHint", lang)}>
+        <Section icon="🚚" title={t("del.todayTitle", lang)} hint={t("del.todayHint", lang)}>
           {!todayRow ? (
             <EmptyState
               tone="warn"

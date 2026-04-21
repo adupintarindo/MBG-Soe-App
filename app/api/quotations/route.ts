@@ -3,6 +3,10 @@ import { getSessionProfile } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
+// Dev-admin shortcut session uses a fake UUID that doesn't exist in auth.users.
+// Null it out before insert so FK quotations.created_by → auth.users(id) passes.
+const DEV_ADMIN_FAKE_ID = "00000000-0000-0000-0000-000000000001";
+
 type QuotationInsert = Database["public"]["Tables"]["quotations"]["Insert"];
 type QuotationRowInsert =
   Database["public"]["Tables"]["quotation_rows"]["Insert"];
@@ -74,7 +78,7 @@ export async function POST(request: Request) {
     need_date: body.need_date ?? null,
     notes: body.notes ?? null,
     status: body.status ?? "draft",
-    created_by: profile.id
+    created_by: profile.id === DEV_ADMIN_FAKE_ID ? null : profile.id
   } as QuotationInsert;
 
   const { data: qtData, error: qtErr } = await supabase

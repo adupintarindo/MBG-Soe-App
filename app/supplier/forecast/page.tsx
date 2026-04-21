@@ -134,7 +134,7 @@ export default async function SupplierForecastPage({
               </LinkButton>
             }
           />
-          <Section banner icon="🔮" title={t("fcst.pickSupTitle", lang)} hint={t("fcst.pickSupHint", lang)}>
+          <Section icon="🔮" title={t("fcst.pickSupTitle", lang)} hint={t("fcst.pickSupHint", lang)}>
             {suppliers.length === 0 ? (
               <EmptyState message={t("fcst.noActiveSup", lang)} />
             ) : (
