@@ -5,7 +5,6 @@ import { listBeneficiaryToddler, listPosyandu } from "@/lib/bgn";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { BalitaRosterTable, type BalitaRosterRow } from "./tab-balita-table";
-import { DUMMY_BALITA_ROWS } from "@/lib/dummy-beneficiaries";
 
 interface Props {
   supabase: SupabaseClient<Database>;
@@ -52,11 +51,7 @@ export async function TabBalita({ supabase, lang }: Props) {
     active: b.active
   }));
 
-  // Dummy fallback hanya di dev — prod harus pakai data asli dari DB.
-  const rows: BalitaRosterRow[] =
-    mapped.length > 0 || process.env.NODE_ENV === "production"
-      ? mapped
-      : DUMMY_BALITA_ROWS;
+  const rows: BalitaRosterRow[] = mapped;
 
   const active = rows.filter((r) => r.active);
   const laki = active.filter((r) => r.gender === "L");

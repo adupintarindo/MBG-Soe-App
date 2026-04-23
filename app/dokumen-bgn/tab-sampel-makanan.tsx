@@ -15,147 +15,6 @@ import {
 } from "@/lib/bgn";
 import { formatDateLong } from "@/lib/engine";
 
-function isoDaysAgo(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
-
-const DUMMY_SCHOOLS: Array<{ id: string; name: string }> = [
-  { id: "dm-sch-1", name: "SDN Pasir Putih 01" },
-  { id: "dm-sch-2", name: "SDN Pasir Putih 02" },
-  { id: "dm-sch-3", name: "MI Al-Hidayah" },
-  { id: "dm-sch-4", name: "SDN Mekarsari 03" }
-];
-
-const DUMMY_STAFF: SppgStaff[] = [
-  {
-    id: "dm-staff-1",
-    seq_no: 1,
-    full_name: "Siti Nurhaliza",
-    nik: null,
-    phone: null,
-    email: null,
-    role: "distribusi",
-    role_label: "Petugas Distribusi",
-    bank_name: null,
-    bank_account: null,
-    start_date: null,
-    end_date: null,
-    active: true,
-    gaji_pokok: 0,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "dm-staff-2",
-    seq_no: 2,
-    full_name: "Budi Santoso",
-    nik: null,
-    phone: null,
-    email: null,
-    role: "distribusi",
-    role_label: "Petugas Distribusi",
-    bank_name: null,
-    bank_account: null,
-    start_date: null,
-    end_date: null,
-    active: true,
-    gaji_pokok: 0,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "dm-staff-3",
-    seq_no: 3,
-    full_name: "Rini Kartika",
-    nik: null,
-    phone: null,
-    email: null,
-    role: "pengawas_gizi",
-    role_label: "Ahli Gizi",
-    bank_name: null,
-    bank_account: null,
-    start_date: null,
-    end_date: null,
-    active: true,
-    gaji_pokok: 0,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
-const DUMMY_LOGS: FoodSampleLog[] = [
-  {
-    id: "dm-log-1",
-    delivery_date: isoDaysAgo(0),
-    delivery_seq: 1,
-    school_id: "dm-sch-1",
-    menu_assign_date: isoDaysAgo(0),
-    officer_id: "dm-staff-1",
-    officer_signature_url: "https://example.com/sig1.png",
-    sample_kept: true,
-    notes: null,
-    created_at: new Date().toISOString(),
-    created_by: null
-  },
-  {
-    id: "dm-log-2",
-    delivery_date: isoDaysAgo(0),
-    delivery_seq: 2,
-    school_id: "dm-sch-2",
-    menu_assign_date: isoDaysAgo(0),
-    officer_id: "dm-staff-2",
-    officer_signature_url: "https://example.com/sig2.png",
-    sample_kept: true,
-    notes: null,
-    created_at: new Date().toISOString(),
-    created_by: null
-  },
-  {
-    id: "dm-log-3",
-    delivery_date: isoDaysAgo(1),
-    delivery_seq: 1,
-    school_id: "dm-sch-3",
-    menu_assign_date: isoDaysAgo(1),
-    officer_id: "dm-staff-1",
-    officer_signature_url: null,
-    sample_kept: true,
-    notes: null,
-    created_at: new Date().toISOString(),
-    created_by: null
-  },
-  {
-    id: "dm-log-4",
-    delivery_date: isoDaysAgo(1),
-    delivery_seq: 2,
-    school_id: "dm-sch-4",
-    menu_assign_date: isoDaysAgo(1),
-    officer_id: "dm-staff-3",
-    officer_signature_url: "https://example.com/sig3.png",
-    sample_kept: false,
-    notes: "Kotak sampel rusak saat transit",
-    created_at: new Date().toISOString(),
-    created_by: null
-  },
-  {
-    id: "dm-log-5",
-    delivery_date: isoDaysAgo(2),
-    delivery_seq: 1,
-    school_id: "dm-sch-1",
-    menu_assign_date: isoDaysAgo(2),
-    officer_id: "dm-staff-2",
-    officer_signature_url: "https://example.com/sig4.png",
-    sample_kept: true,
-    notes: null,
-    created_at: new Date().toISOString(),
-    created_by: null
-  }
-];
-
 type Client = SupabaseClient<Database>;
 
 interface Props {
@@ -189,13 +48,8 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
     // migrasi belum di-apply
   }
 
-  const isPreview = logs.length === 0;
-  const displayLogs = isPreview ? DUMMY_LOGS : logs;
-  const displayStaff = isPreview ? DUMMY_STAFF : staff;
-  const displaySchools = isPreview ? DUMMY_SCHOOLS : schools;
-
-  const staffLookup = Object.fromEntries(displayStaff.map((s) => [s.id, s]));
-  const schoolLookup = Object.fromEntries(displaySchools.map((s) => [s.id, s]));
+  const staffLookup = Object.fromEntries(staff.map((s) => [s.id, s]));
+  const schoolLookup = Object.fromEntries(schools.map((s) => [s.id, s]));
 
   return (
     <>
@@ -212,11 +66,6 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
         }
         actions={
           <div className="flex items-center gap-2">
-            {isPreview ? (
-              <Badge tone="warn">
-                {lang === "EN" ? "Preview (Dummy)" : "Data Contoh"}
-              </Badge>
-            ) : null}
             {canWrite ? (
               <LinkButton
                 href="/dokumen-bgn/sampel/new"
@@ -256,7 +105,7 @@ export async function SampelMakananTab({ supabase, lang, role }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {displayLogs.map((l) => {
+                {logs.map((l) => {
                   const off = l.officer_id
                     ? staffLookup[l.officer_id]
                     : undefined;

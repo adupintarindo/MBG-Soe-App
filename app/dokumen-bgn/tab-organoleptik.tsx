@@ -16,178 +16,6 @@ import {
   type SppgStaff
 } from "@/lib/bgn";
 
-function isoDaysAgo(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
-
-const DUMMY_SCHOOLS: Array<{ id: string; name: string }> = [
-  { id: "dm-sch-1", name: "SDN Pasir Putih 01" },
-  { id: "dm-sch-2", name: "SDN Pasir Putih 02" },
-  { id: "dm-sch-3", name: "MI Al-Hidayah" },
-  { id: "dm-sch-4", name: "SDN Mekarsari 03" }
-];
-
-const DUMMY_STAFF: SppgStaff[] = [
-  {
-    id: "dm-staff-1",
-    seq_no: 1,
-    full_name: "Rini Kartika",
-    nik: null,
-    phone: null,
-    email: null,
-    role: "pengawas_gizi",
-    role_label: "Ahli Gizi",
-    bank_name: null,
-    bank_account: null,
-    start_date: null,
-    end_date: null,
-    active: true,
-    gaji_pokok: 0,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "dm-staff-2",
-    seq_no: 2,
-    full_name: "Dewi Lestari",
-    nik: null,
-    phone: null,
-    email: null,
-    role: "jurutama_masak",
-    role_label: "Juru Masak Utama",
-    bank_name: null,
-    bank_account: null,
-    start_date: null,
-    end_date: null,
-    active: true,
-    gaji_pokok: 0,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "dm-staff-3",
-    seq_no: 3,
-    full_name: "Agus Wibowo",
-    nik: null,
-    phone: null,
-    email: null,
-    role: "distribusi",
-    role_label: "Petugas Distribusi",
-    bank_name: null,
-    bank_account: null,
-    start_date: null,
-    end_date: null,
-    active: true,
-    gaji_pokok: 0,
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
-const DUMMY_TESTS: OrganolepticTest[] = [
-  {
-    id: "dm-org-1",
-    test_date: isoDaysAgo(0),
-    test_phase: "before_dispatch",
-    school_id: "dm-sch-1",
-    menu_assign_date: isoDaysAgo(0),
-    rasa: 4,
-    warna: 5,
-    aroma: 4,
-    tekstur: 4,
-    verdict: "aman",
-    officer_id: "dm-staff-2",
-    notes: null,
-    created_at: new Date().toISOString(),
-    created_by: null
-  },
-  {
-    id: "dm-org-2",
-    test_date: isoDaysAgo(0),
-    test_phase: "on_arrival",
-    school_id: "dm-sch-1",
-    menu_assign_date: isoDaysAgo(0),
-    rasa: 4,
-    warna: 4,
-    aroma: 4,
-    tekstur: 4,
-    verdict: "aman",
-    officer_id: "dm-staff-3",
-    notes: null,
-    created_at: new Date().toISOString(),
-    created_by: null
-  },
-  {
-    id: "dm-org-3",
-    test_date: isoDaysAgo(0),
-    test_phase: "before_consumption",
-    school_id: "dm-sch-2",
-    menu_assign_date: isoDaysAgo(0),
-    rasa: 5,
-    warna: 4,
-    aroma: 5,
-    tekstur: 5,
-    verdict: "aman",
-    officer_id: "dm-staff-1",
-    notes: null,
-    created_at: new Date().toISOString(),
-    created_by: null
-  },
-  {
-    id: "dm-org-4",
-    test_date: isoDaysAgo(1),
-    test_phase: "before_dispatch",
-    school_id: "dm-sch-3",
-    menu_assign_date: isoDaysAgo(1),
-    rasa: 3,
-    warna: 3,
-    aroma: 2,
-    tekstur: 3,
-    verdict: "tidak_aman",
-    officer_id: "dm-staff-2",
-    notes: "Aroma sayur tidak segar, diganti batch baru",
-    created_at: new Date().toISOString(),
-    created_by: null
-  },
-  {
-    id: "dm-org-5",
-    test_date: isoDaysAgo(1),
-    test_phase: "on_arrival",
-    school_id: "dm-sch-4",
-    menu_assign_date: isoDaysAgo(1),
-    rasa: 4,
-    warna: 5,
-    aroma: 4,
-    tekstur: 4,
-    verdict: "aman",
-    officer_id: "dm-staff-3",
-    notes: null,
-    created_at: new Date().toISOString(),
-    created_by: null
-  },
-  {
-    id: "dm-org-6",
-    test_date: isoDaysAgo(2),
-    test_phase: "before_consumption",
-    school_id: "dm-sch-1",
-    menu_assign_date: isoDaysAgo(2),
-    rasa: 4,
-    warna: 4,
-    aroma: 5,
-    tekstur: 4,
-    verdict: "aman",
-    officer_id: "dm-staff-1",
-    notes: null,
-    created_at: new Date().toISOString(),
-    created_by: null
-  }
-];
-
 type Client = SupabaseClient<Database>;
 
 interface Props {
@@ -247,13 +75,8 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
     // migrasi belum di-apply
   }
 
-  const isPreview = tests.length === 0;
-  const displayTests = isPreview ? DUMMY_TESTS : tests;
-  const displayStaff = isPreview ? DUMMY_STAFF : staff;
-  const displaySchools = isPreview ? DUMMY_SCHOOLS : schools;
-
-  const staffLookup = Object.fromEntries(displayStaff.map((s) => [s.id, s]));
-  const schoolLookup = Object.fromEntries(displaySchools.map((s) => [s.id, s]));
+  const staffLookup = Object.fromEntries(staff.map((s) => [s.id, s]));
+  const schoolLookup = Object.fromEntries(schools.map((s) => [s.id, s]));
 
   // Phase counts
   const phaseCount: Record<OrganolepticPhase, number> = {
@@ -261,7 +84,7 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
     on_arrival: 0,
     before_consumption: 0
   };
-  displayTests.forEach((t) => {
+  tests.forEach((t) => {
     phaseCount[t.test_phase] += 1;
   });
 
@@ -279,11 +102,6 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
         }
       >
         <div className="flex flex-wrap gap-2">
-          {isPreview ? (
-            <Badge tone="warn">
-              {lang === "EN" ? "Preview (Dummy)" : "Data Contoh"}
-            </Badge>
-          ) : null}
           {(Object.keys(phaseCount) as OrganolepticPhase[]).map((p) => (
             <Badge key={p} tone={PHASE_TONE[p]}>
               {phaseLabel(p)} · {phaseCount[p]}
@@ -305,11 +123,6 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
         }
         actions={
           <div className="flex items-center gap-2">
-            {isPreview ? (
-              <Badge tone="warn">
-                {lang === "EN" ? "Preview (Dummy)" : "Data Contoh"}
-              </Badge>
-            ) : null}
             {canWrite ? (
               <LinkButton
                 href="/dokumen-bgn/organoleptik/new"
@@ -357,7 +170,7 @@ export async function OrganoleptikTab({ supabase, lang, role }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {displayTests.map((t) => {
+                {tests.map((t) => {
                   const off = t.officer_id
                     ? staffLookup[t.officer_id]
                     : undefined;

@@ -13,7 +13,6 @@ import { Nav } from "@/components/nav";
 import { PageContainer } from "@/components/ui";
 import { PriceListShell } from "./price-list-shell";
 import type { PriceListMatrixRow, PricePeriod, PriceWeek } from "./types";
-import { demoPeriod, demoWeeks, demoRows } from "./demo-data";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
@@ -33,26 +32,16 @@ export default async function PriceListPage() {
     supabase.from("v_price_list_matrix").select("*").order("commodity", { ascending: true })
   ]);
 
-  let periods = (periodsRes.data ?? []) as PricePeriod[];
-  let weeks = (weeksRes.data ?? []) as PriceWeek[];
-  let rows = (matrixRes.data ?? []) as PriceListMatrixRow[];
-
-  // When DB is empty, inject demo data so stakeholders can preview layout.
-  // Replaced automatically once real price_periods rows exist.
-  const isDemo = periods.length === 0 || rows.length === 0;
-  if (isDemo) {
-    periods = [demoPeriod];
-    weeks = demoWeeks;
-    rows = demoRows;
-  }
+  const periods = (periodsRes.data ?? []) as PricePeriod[];
+  const weeks = (weeksRes.data ?? []) as PriceWeek[];
+  const rows = (matrixRes.data ?? []) as PriceListMatrixRow[];
 
   const activePeriod = periods.find((p) => p.active) ?? periods[0] ?? null;
 
   const canEdit =
-    !isDemo &&
-    (profile.role === "admin" ||
-      profile.role === "operator" ||
-      profile.role === "ahli_gizi");
+    profile.role === "admin" ||
+    profile.role === "operator" ||
+    profile.role === "ahli_gizi";
 
   return (
     <>
