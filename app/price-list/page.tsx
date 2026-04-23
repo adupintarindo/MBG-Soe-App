@@ -27,24 +27,10 @@ export default async function PriceListPage() {
   const supabase = createServerReadClient();
   const lang = getLang();
 
-  // These tables are introduced by migration 0017. The generated
-  // Database type may not yet include them — we cast to `any` and rely on
-  // the local types defined in ./types.ts until `pnpm supabase:types` runs.
-  const sb = supabase as unknown as {
-    from: (table: string) => {
-      select: (cols: string) => {
-        order: (col: string, opts?: { ascending: boolean }) => Promise<{
-          data: unknown[] | null;
-          error: { message: string } | null;
-        }>;
-      };
-    };
-  };
-
   const [periodsRes, weeksRes, matrixRes] = await Promise.all([
-    sb.from("price_periods").select("*").order("start_date", { ascending: false }),
-    sb.from("price_weeks").select("*").order("week_no", { ascending: true }),
-    sb.from("v_price_list_matrix").select("*").order("commodity", { ascending: true })
+    supabase.from("price_periods").select("*").order("start_date", { ascending: false }),
+    supabase.from("price_weeks").select("*").order("week_no", { ascending: true }),
+    supabase.from("v_price_list_matrix").select("*").order("commodity", { ascending: true })
   ]);
 
   let periods = (periodsRes.data ?? []) as PricePeriod[];

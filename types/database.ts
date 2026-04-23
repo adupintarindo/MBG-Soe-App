@@ -1735,7 +1735,29 @@ export type Database = {
           created_by?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stock_batches_item_code_fkey"
+            columns: ["item_code"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "stock_batches_grn_no_fkey"
+            columns: ["grn_no"]
+            isOneToOne: false
+            referencedRelation: "grns"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "stock_batches_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -1780,7 +1802,22 @@ export type Database = {
           created_by?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_no_fkey"
+            columns: ["invoice_no"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "payments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cash_receipts: {
         Row: {
@@ -1876,7 +1913,15 @@ export type Database = {
           created_by?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deliveries_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delivery_stops: {
         Row: {
@@ -1933,7 +1978,29 @@ export type Database = {
           status?: Database["public"]["Enums"]["delivery_status"]
           created_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "delivery_stops_delivery_no_fkey"
+            columns: ["delivery_no"]
+            isOneToOne: false
+            referencedRelation: "deliveries"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "delivery_stops_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_stops_posyandu_id_fkey"
+            columns: ["posyandu_id"]
+            isOneToOne: false
+            referencedRelation: "posyandu"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       posyandu: {
         Row: {
@@ -2013,6 +2080,121 @@ export type Database = {
         }
         Relationships: []
       }
+      beneficiary_pregnant: {
+        Row: {
+          id: string
+          full_name: string
+          nik: string | null
+          phase: Database["public"]["Enums"]["pregnant_phase"]
+          gestational_week: number | null
+          child_age_months: number | null
+          age: number | null
+          posyandu_id: string | null
+          address: string | null
+          phone: string | null
+          notes: string | null
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          nik?: string | null
+          phase?: Database["public"]["Enums"]["pregnant_phase"]
+          gestational_week?: number | null
+          child_age_months?: number | null
+          age?: number | null
+          posyandu_id?: string | null
+          address?: string | null
+          phone?: string | null
+          notes?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          nik?: string | null
+          phase?: Database["public"]["Enums"]["pregnant_phase"]
+          gestational_week?: number | null
+          child_age_months?: number | null
+          age?: number | null
+          posyandu_id?: string | null
+          address?: string | null
+          phone?: string | null
+          notes?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beneficiary_pregnant_posyandu_id_fkey"
+            columns: ["posyandu_id"]
+            isOneToOne: false
+            referencedRelation: "posyandu"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beneficiary_toddler: {
+        Row: {
+          id: string
+          full_name: string
+          nik: string | null
+          dob: string | null
+          gender: string | null
+          mother_name: string | null
+          posyandu_id: string | null
+          address: string | null
+          phone: string | null
+          notes: string | null
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          nik?: string | null
+          dob?: string | null
+          gender?: string | null
+          mother_name?: string | null
+          posyandu_id?: string | null
+          address?: string | null
+          phone?: string | null
+          notes?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          nik?: string | null
+          dob?: string | null
+          gender?: string | null
+          mother_name?: string | null
+          posyandu_id?: string | null
+          address?: string | null
+          phone?: string | null
+          notes?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beneficiary_toddler_posyandu_id_fkey"
+            columns: ["posyandu_id"]
+            isOneToOne: false
+            referencedRelation: "posyandu"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budgets: {
         Row: {
           id: number
@@ -2086,7 +2268,22 @@ export type Database = {
           alt_delivery_date?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "po_acknowledgements_po_no_fkey"
+            columns: ["po_no"]
+            isOneToOne: true
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "po_acknowledgements_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       supplier_messages: {
         Row: {
@@ -2122,7 +2319,22 @@ export type Database = {
           read_at?: string | null
           created_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "supplier_messages_po_no_fkey"
+            columns: ["po_no"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "supplier_messages_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoice_uploads: {
         Row: {
@@ -2173,7 +2385,36 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "invoice_uploads_po_no_fkey"
+            columns: ["po_no"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "invoice_uploads_grn_no_fkey"
+            columns: ["grn_no"]
+            isOneToOne: false
+            referencedRelation: "grns"
+            referencedColumns: ["no"]
+          },
+          {
+            foreignKeyName: "invoice_uploads_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_uploads_approved_invoice_no_fkey"
+            columns: ["approved_invoice_no"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["no"]
+          },
+        ]
       }
     }
     Views: {
@@ -2893,6 +3134,74 @@ export type Database = {
           score: number
         }[]
       }
+      porsi_breakdown: {
+        Args: { p_date: string }
+        Returns: {
+          schools_count: number
+          students_total: number
+          pregnant_count: number
+          toddler_count: number
+          operasional: boolean
+        }[]
+      }
+      schools_breakdown: {
+        Args: { p_date: string }
+        Returns: {
+          school_id: string
+          school_name: string
+          level: string
+          kecil: number
+          besar: number
+          guru: number
+          total: number
+          students: number
+        }[]
+      }
+      invoices_flag_overdue: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      quotations_flag_expired: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      three_way_match_snapshot: {
+        Args: { p_from?: string | null; p_to?: string | null; p_limit?: number }
+        Returns: {
+          invoice_no: string
+          inv_date: string
+          supplier_id: string
+          supplier_name: string
+          po_no: string | null
+          po_total: number
+          grn_value: number
+          grn_count: number
+          invoice_total: number
+          paid: number
+          inv_vs_po: number
+          inv_vs_grn: number
+          match_status: string
+        }[]
+      }
+      delivery_provenance: {
+        Args: { p_delivery_no: string; p_window_days?: number }
+        Returns: {
+          item_code: string
+          item_category: string
+          grams_per_porsi: number
+          porsi_planned: number
+          grn_no: string | null
+          grn_date: string | null
+          grn_status: string | null
+          po_no: string | null
+          supplier_id: string | null
+          supplier_name: string | null
+          qty_received: number | null
+          unit: string | null
+          price: number | null
+          line_value: number | null
+        }[]
+      }
     }
     Enums: {
       action_priority: "low" | "medium" | "high" | "critical"
@@ -2924,6 +3233,7 @@ export type Database = {
         | "qris"
         | "lainnya"
       po_ack_decision: "accepted" | "rejected" | "partial" | "pending"
+      pregnant_phase: "hamil" | "menyusui"
       item_category:
         | "BERAS"
         | "HEWANI"
@@ -3122,8 +3432,12 @@ export const Constants = {
       action_priority: ["low", "medium", "high", "critical"],
       action_source: ["onboarding", "mom", "field", "audit", "ad_hoc"],
       action_status: ["open", "in_progress", "blocked", "done", "cancelled"],
+      audit_action: ["INSERT", "UPDATE", "DELETE"],
+      cash_source: ["dinas", "wfp", "ifsr", "ffi", "donor_swasta", "lainnya"],
+      delivery_status: ["planned", "dispatched", "delivered", "partial", "cancelled"],
       grn_status: ["pending", "ok", "partial", "rejected"],
       invoice_status: ["issued", "paid", "overdue", "cancelled"],
+      invoice_upload_status: ["pending", "approved", "rejected"],
       item_category: [
         "BERAS",
         "HEWANI",
@@ -3148,6 +3462,16 @@ export const Constants = {
       ],
       ncr_severity: ["minor", "major", "critical"],
       ncr_status: ["open", "in_progress", "resolved", "waived"],
+      payment_method: [
+        "transfer",
+        "tunai",
+        "cek",
+        "giro",
+        "virtual_account",
+        "qris",
+        "lainnya",
+      ],
+      po_ack_decision: ["accepted", "rejected", "partial", "pending"],
       po_status: [
         "draft",
         "sent",
@@ -3182,6 +3506,7 @@ export const Constants = {
         "rejected",
         "expired",
       ],
+      pregnant_phase: ["hamil", "menyusui"],
       reval_period: ["quarterly", "semester", "annual", "ad_hoc"],
       school_level: ["PAUD/TK", "SD", "SMP", "SMA", "SMK"],
       stop_kind: ["school", "posyandu"],

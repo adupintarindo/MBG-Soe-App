@@ -26,13 +26,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // RPC names belum ada di generated Database types (migration 0055 baru).
-  // Cast ke loose client agar typecheck pass sampai types di-regenerate.
-  const supabase = createAdminClient() as unknown as {
-    rpc: (
-      fn: string
-    ) => Promise<{ data: number | null; error: { message: string } | null }>;
-  };
+  const supabase = createAdminClient();
   const started = new Date().toISOString();
 
   const [ovRes, qtRes] = await Promise.all([

@@ -52,8 +52,11 @@ export async function TabBalita({ supabase, lang }: Props) {
     active: b.active
   }));
 
+  // Dummy fallback hanya di dev — prod harus pakai data asli dari DB.
   const rows: BalitaRosterRow[] =
-    mapped.length > 0 ? mapped : DUMMY_BALITA_ROWS;
+    mapped.length > 0 || process.env.NODE_ENV === "production"
+      ? mapped
+      : DUMMY_BALITA_ROWS;
 
   const active = rows.filter((r) => r.active);
   const laki = active.filter((r) => r.gender === "L");

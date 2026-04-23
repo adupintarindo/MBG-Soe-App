@@ -33,27 +33,17 @@ export async function upsertSupplierPrice(
   input: UpsertPriceInput
 ): Promise<UpsertPriceResult> {
   const supabase = createClient();
-  // RPC tipe belum ada di generated types sebelum `pnpm supabase:types` jalan
-  // — cast ke any seperti di page.tsx.
-  const rpc = (
-    supabase as unknown as {
-      rpc: (
-        name: string,
-        args: Record<string, unknown>
-      ) => Promise<{ data: unknown; error: { message: string } | null }>;
-    }
-  ).rpc;
 
-  const { error } = await rpc("upsert_supplier_price", {
+  const { error } = await supabase.rpc("upsert_supplier_price", {
     p_week_id: input.weekId,
     p_supplier_id: input.supplierId,
     p_commodity: input.commodity,
     p_ingredient_name: input.ingredientName,
-    p_price_per_kg: input.pricePerKg,
-    p_price_per_item: input.pricePerItem ?? null,
+    p_price_per_kg: input.pricePerKg ?? undefined,
+    p_price_per_item: input.pricePerItem ?? undefined,
     p_unit: input.unit ?? "kg",
-    p_item_code: input.itemCode ?? null,
-    p_notes: input.notes ?? null
+    p_item_code: input.itemCode ?? undefined,
+    p_notes: input.notes ?? undefined
   });
 
   if (error) {
@@ -81,21 +71,11 @@ export async function importPriceListJson(
   input: ImportPriceListInput
 ): Promise<ImportPriceListResult> {
   const supabase = createClient();
-  const rpc = (
-    supabase as unknown as {
-      rpc: (
-        name: string,
-        args: Record<string, unknown>
-      ) => Promise<{
-        data: unknown;
-        error: { message: string } | null;
-      }>;
-    }
-  ).rpc;
 
-  const { data, error } = await rpc("import_price_list_json", {
+  const { data, error } = await supabase.rpc("import_price_list_json", {
     p_period_id: input.periodId,
-    p_payload: input.payload
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    p_payload: input.payload as any
   });
 
   if (error) return { ok: false, error: error.message };

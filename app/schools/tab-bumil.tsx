@@ -40,7 +40,11 @@ export async function TabBumil({ supabase, lang }: Props) {
     active: b.active
   }));
 
-  const rows: BumilRosterRow[] = mapped.length > 0 ? mapped : DUMMY_BUMIL_ROWS;
+  // Dummy fallback hanya di dev — prod harus pakai data asli dari DB.
+  const rows: BumilRosterRow[] =
+    mapped.length > 0 || process.env.NODE_ENV === "production"
+      ? mapped
+      : DUMMY_BUMIL_ROWS;
 
   const active = rows.filter((r) => r.active);
   const hamilRows = active.filter((r) => r.phase === "hamil");
