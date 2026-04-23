@@ -154,30 +154,36 @@ export type Database = {
       }
       grns: {
         Row: {
+          condition_flag: string
           created_at: string
           created_by: string | null
           grn_date: string
           no: string
           po_no: string | null
           qc_note: string | null
+          qc_officer_id: string | null
           status: Database["public"]["Enums"]["grn_status"]
         }
         Insert: {
+          condition_flag?: string
           created_at?: string
           created_by?: string | null
           grn_date: string
           no: string
           po_no?: string | null
           qc_note?: string | null
+          qc_officer_id?: string | null
           status?: Database["public"]["Enums"]["grn_status"]
         }
         Update: {
+          condition_flag?: string
           created_at?: string
           created_by?: string | null
           grn_date?: string
           no?: string
           po_no?: string | null
           qc_note?: string | null
+          qc_officer_id?: string | null
           status?: Database["public"]["Enums"]["grn_status"]
         }
         Relationships: [
@@ -814,6 +820,7 @@ export type Database = {
           notes: string | null
           pay_method: string | null
           po_date: string
+          pr_no: string | null
           ref_contract: string | null
           status: Database["public"]["Enums"]["po_status"]
           supplier_id: string
@@ -828,6 +835,7 @@ export type Database = {
           notes?: string | null
           pay_method?: string | null
           po_date: string
+          pr_no?: string | null
           ref_contract?: string | null
           status?: Database["public"]["Enums"]["po_status"]
           supplier_id: string
@@ -842,6 +850,7 @@ export type Database = {
           notes?: string | null
           pay_method?: string | null
           po_date?: string
+          pr_no?: string | null
           ref_contract?: string | null
           status?: Database["public"]["Enums"]["po_status"]
           supplier_id?: string
@@ -1601,6 +1610,7 @@ export type Database = {
           commodity: string | null
           created_at: string
           email: string | null
+          excel_ref_id: string | null
           id: string
           name: string
           notes: string | null
@@ -1616,6 +1626,7 @@ export type Database = {
           commodity?: string | null
           created_at?: string
           email?: string | null
+          excel_ref_id?: string | null
           id: string
           name: string
           notes?: string | null
@@ -1631,6 +1642,7 @@ export type Database = {
           commodity?: string | null
           created_at?: string
           email?: string | null
+          excel_ref_id?: string | null
           id?: string
           name?: string
           notes?: string | null
