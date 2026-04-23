@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { getLang } from "@/lib/i18n-server";
 import { actionReadinessSnapshot } from "@/lib/engine";
+import { resolveSupplierCommodity } from "@/lib/supplier-commodities";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,11 @@ export default async function SuppliersPage() {
     })
   ]);
 
-  const suppliers = (supRes.data ?? []) as SupplierRow[];
+  const suppliersRaw = (supRes.data ?? []) as SupplierRow[];
+  const suppliers: SupplierRow[] = suppliersRaw.map((s) => ({
+    ...s,
+    commodity: resolveSupplierCommodity(s.id, s.type, s.commodity)
+  }));
   const supItems = (supItemsRes.data ?? []) as SupItemLink[];
   const invoices = (invoicesRes.data ?? []) as InvoiceTx[];
 

@@ -152,9 +152,9 @@ export function DashboardAnalytics(props: DashboardAnalyticsProps) {
 
   return (
     <section className="mb-6 overflow-hidden rounded-2xl bg-white shadow-card">
-      <header className="relative flex flex-wrap items-center justify-center gap-3 bg-ink px-4 py-1.5 text-center">
-        <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
-          Analytics Dashboard
+      <header className="relative z-20 flex items-center justify-center gap-3 rounded-t-2xl bg-primary-gradient px-4 py-2.5 text-center">
+        <h2 className="font-display text-[12px] font-bold tracking-crisp text-white">
+          <span>Analytics Dashboard</span>
         </h2>
       </header>
 

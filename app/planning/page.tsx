@@ -83,7 +83,7 @@ export default async function PlanningPage({
     monthlyRequirements(supabase, monthStart, 5).catch(
       () => [] as MonthlyRequirement[]
     ),
-    dailyPlanning(supabase, 90).catch(() => [] as DailyPlan[]),
+    dailyPlanning(supabase, 180).catch(() => [] as DailyPlan[]),
     supabase.from("items").select("code, unit, category")
   ]);
 
@@ -118,11 +118,20 @@ export default async function PlanningPage({
     return `${MONTHS.short[lang][idx]} ${y.slice(2)}`;
   };
 
-  // ---- Procurement schedule: next 10 operational days × item × qty × price ----
+  const monthOpDays: Record<string, number> = Object.fromEntries(
+    months.map((m) => [m, 0])
+  );
+  for (const p of planning) {
+    if (!p.operasional) continue;
+    const m = p.op_date.slice(0, 7);
+    if (m in monthOpDays) monthOpDays[m] += 1;
+  }
+
+  // ---- Procurement schedule: next 7 operational days × item × qty × price ----
   const procurementDays = planning
     .filter((p) => p.op_date >= today && p.operasional)
     .sort((a, b) => a.op_date.localeCompare(b.op_date))
-    .slice(0, 10);
+    .slice(0, 7);
 
   const porsiByDate = new Map<string, number>();
   const reqsByDate = new Map<string, Requirement[]>();
@@ -165,6 +174,7 @@ export default async function PlanningPage({
       op_date: p.op_date,
       dateLabel,
       dateShort,
+      menu_id: p.menu_id,
       menu_name: p.menu_name,
       porsi_total: porsiByDate.get(p.op_date) ?? p.porsi_total,
       rows,
@@ -212,6 +222,7 @@ export default async function PlanningPage({
                   rows={matrixRows}
                   months={months}
                   monthLabels={monthLabels}
+                  monthOpDays={monthOpDays}
                 />
               )}
             </Section>

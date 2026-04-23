@@ -12,6 +12,7 @@
 import { useMemo, useState, useTransition } from "react";
 import {
   COMMODITY_COLORS,
+  COMMODITY_ICONS,
   COMMODITY_LABELS,
   commodityLabel,
   type PriceCommodity,
@@ -46,6 +47,30 @@ function fmtRp(n: number | null | undefined, lang: "ID" | "EN"): string {
   return prefix + Number(n).toLocaleString(numberLocale(lang), { maximumFractionDigits: 0 });
 }
 
+function RpCell({
+  value,
+  lang,
+  className = ""
+}: {
+  value: number | null | undefined;
+  lang: "ID" | "EN";
+  className?: string;
+}) {
+  if (value == null || Number.isNaN(Number(value))) {
+    return <span className="text-ink2/40">—</span>;
+  }
+  const prefix = lang === "EN" ? "IDR" : "Rp";
+  const num = Number(value).toLocaleString(numberLocale(lang), {
+    maximumFractionDigits: 0
+  });
+  return (
+    <span className={`inline-flex items-baseline gap-1 tabular-nums ${className}`}>
+      <span className="text-[10px] font-medium text-ink2/60">{prefix}</span>
+      <span>{num}</span>
+    </span>
+  );
+}
+
 function computeRowStats(row: PriceListMatrixRow) {
   const vals = WEEK_FIELDS.map((k) => row[k]).filter(
     (v): v is number => v != null && !Number.isNaN(Number(v))
@@ -62,6 +87,7 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
   const [commodity, setCommodity] = useState<PriceCommodity | "">("");
   const [periodId, setPeriodId] = useState<number | null>(currentPeriodId);
   const [rows, setRows] = useState<PriceListMatrixRow[]>(rowsProp);
+  const [query, setQuery] = useState("");
   const [pending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -71,23 +97,24 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
   );
 
   const filteredRows = useMemo(() => {
-    return rows.filter(
-      (r) => r.period_id === periodId && (!commodity || r.commodity === commodity)
-    );
-  }, [rows, commodity, periodId]);
-
-  const summary = useMemo(() => {
-    const totalCells = filteredRows.length * 12;
-    const filled = filteredRows.reduce((acc, r) => {
-      return acc + WEEK_FIELDS.filter((k) => r[k] != null).length;
-    }, 0);
-    return {
-      rows: filteredRows.length,
-      filled,
-      totalCells,
-      pct: totalCells ? Math.round((filled / totalCells) * 100) : 0
-    };
-  }, [filteredRows]);
+    const q = query.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (r.period_id !== periodId) return false;
+      if (commodity && r.commodity !== commodity) return false;
+      if (q) {
+        const hay = [
+          r.supplier_name,
+          r.ingredient_name,
+          commodityLabel(r.commodity, lang),
+          r.item_code ?? ""
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [rows, commodity, periodId, query, lang]);
 
   async function onExportXlsx() {
     const columns: StyledColumn[] = [
@@ -227,41 +254,6 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
 
   const activePeriodName = periods.find((p) => p.id === periodId)?.name;
 
-  const controls = (
-    <>
-      <select
-        value={periodId ?? ""}
-        onChange={(e) => setPeriodId(Number(e.target.value) || null)}
-        className="rounded-md border border-ink/10 bg-white py-1.5 pl-2.5 pr-7 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
-      >
-        {periods.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-      </select>
-      <select
-        value={commodity}
-        onChange={(e) => setCommodity(e.target.value as PriceCommodity | "")}
-        className="rounded-md border border-ink/10 bg-white py-1.5 pl-2.5 pr-7 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
-      >
-        <option value="">{t("priceList.allCommodities", lang)}</option>
-        {(Object.keys(COMMODITY_LABELS) as PriceCommodity[]).map((k) => (
-          <option key={k} value={k}>
-            {commodityLabel(k, lang)}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        onClick={onExportXlsx}
-        className="inline-flex items-center gap-1 rounded-md bg-primary-gradient px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-card transition hover:brightness-110"
-      >
-        ⬇ {t("common.exportExcel", lang)}
-      </button>
-    </>
-  );
-
   return (
     <Section
       title={t("priceList.shellTitle", lang)}
@@ -274,49 +266,125 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
           t("priceList.hint", lang)
         )
       }
-      actions={controls}
-      noPad
     >
+      {/* Toolbar — search + filters + export (matches Jadwal Menu template) */}
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="relative flex min-w-[220px] flex-1 items-center">
+          <span className="pointer-events-none absolute left-2.5 text-ink2/60">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("common.searchPlaceholder", lang)}
+            className="w-full rounded-md border border-ink/10 bg-paper py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+          />
+        </div>
+        <select
+          value={periodId ?? ""}
+          onChange={(e) => setPeriodId(Number(e.target.value) || null)}
+          className="rounded-md border border-ink/10 bg-paper py-1.5 pl-2.5 pr-7 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+        >
+          {periods.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={commodity}
+          onChange={(e) => setCommodity(e.target.value as PriceCommodity | "")}
+          className="rounded-md border border-ink/10 bg-paper py-1.5 pl-2.5 pr-7 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+        >
+          <option value="">{t("priceList.allCommodities", lang)}</option>
+          {(Object.keys(COMMODITY_LABELS) as PriceCommodity[]).map((k) => (
+            <option key={k} value={k}>
+              {COMMODITY_ICONS[k]} {commodityLabel(k, lang)}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={onExportXlsx}
+          disabled={filteredRows.length === 0}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-ink/10 bg-paper px-2.5 py-1.5 text-xs font-semibold text-ink transition hover:bg-ink/[0.04] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M12 3v12" />
+            <path d="m7 10 5 5 5-5" />
+            <path d="M5 21h14" />
+          </svg>
+          <span>{t("common.exportExcel", lang)}</span>
+        </button>
+      </div>
+
       {pending && (
-        <p className="px-5 pt-3 text-xs text-accent-strong">
+        <p className="mb-2 text-xs text-accent-strong">
           {t("priceList.saving", lang)}
         </p>
       )}
       {errorMsg && (
-        <div className="mx-5 mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
+        <div className="mb-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
           ⚠ {errorMsg}
         </div>
       )}
 
-      <div className="mt-3 overflow-auto" style={{ maxHeight: "70vh" }}>
+      <div
+        className="overflow-auto rounded-xl ring-1 ring-ink/10"
+        style={{ maxHeight: "70vh" }}
+      >
         <table className="min-w-[1400px] border-collapse text-xs">
-          <thead className="sticky top-0 z-10 bg-primary-gradient text-white/95 [&>tr]:border-b-2 [&>tr]:border-gold/70">
+          <thead className="text-white/95 [&>tr>th:first-child]:rounded-tl-xl [&>tr>th:last-child]:rounded-tr-xl">
             <tr>
-              <th className="sticky left-0 z-20 bg-primary-gradient px-3 py-2 text-left font-display text-[11px] font-bold uppercase tracking-[0.05em]">
-                {t("priceList.colCommodity", lang)}
-              </th>
-              <th className="sticky left-[120px] z-20 bg-primary-gradient px-3 py-2 text-left font-display text-[11px] font-bold uppercase tracking-[0.05em]">
+              <th className="sticky top-0 left-0 z-30 bg-ink px-3 py-2 text-left font-display text-[11px] font-bold uppercase tracking-[0.05em]">
                 {t("priceList.colIngredient", lang)}
               </th>
-              <th className="sticky left-[260px] z-20 bg-primary-gradient px-3 py-2 text-left font-display text-[11px] font-bold uppercase tracking-[0.05em]">
+              <th className="sticky top-0 left-[140px] z-30 bg-ink px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
+                {t("priceList.colCommodity", lang)}
+              </th>
+              <th className="sticky top-0 left-[260px] z-30 bg-ink px-3 py-2 text-left font-display text-[11px] font-bold uppercase tracking-[0.05em]">
                 {t("priceList.colSupplier", lang)}
               </th>
               {activeWeeks.map((w) => (
                 <th
                   key={w.id}
                   title={`${w.start_date} – ${w.end_date}`}
-                  className="min-w-[72px] px-1 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]"
+                  className="sticky top-0 z-20 min-w-[72px] bg-ink px-1 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]"
                 >
                   {w.label.replace(/^Wk \d+: /, "")}
                 </th>
               ))}
-              <th className="px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
+              <th className="sticky top-0 z-20 min-w-[110px] bg-ink px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
                 {t("priceList.colAvg", lang)}
               </th>
-              <th className="px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
+              <th className="sticky top-0 z-20 min-w-[110px] bg-ink px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
                 {t("priceList.colMin", lang)}
               </th>
-              <th className="px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
+              <th className="sticky top-0 z-20 min-w-[110px] bg-ink px-3 py-2 text-center font-display text-[11px] font-bold uppercase tracking-[0.05em]">
                 {t("priceList.colMax", lang)}
               </th>
             </tr>
@@ -339,13 +407,18 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                   key={`${r.supplier_id}-${r.commodity}-${r.ingredient_name}`}
                   className="border-t border-ink/5"
                 >
-                  <td
-                    className={`sticky left-0 z-10 px-2 py-1.5 font-semibold ring-1 ${COMMODITY_COLORS[r.commodity]}`}
-                  >
-                    {commodityLabel(r.commodity, lang)}
-                  </td>
-                  <td className="sticky left-[120px] z-10 bg-white px-2 py-1.5 font-medium text-ink">
+                  <td className="sticky left-0 z-10 bg-white px-2 py-1.5 font-medium text-ink">
                     {r.ingredient_name.replace(/^Buah\s*-\s*/i, "")}
+                  </td>
+                  <td className="sticky left-[140px] z-10 bg-white px-2 py-1.5 text-center">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-bold ring-1 ${COMMODITY_COLORS[r.commodity]}`}
+                    >
+                      <span aria-hidden className="text-[12px] leading-none">
+                        {COMMODITY_ICONS[r.commodity]}
+                      </span>
+                      {commodityLabel(r.commodity, lang)}
+                    </span>
                   </td>
                   <td className="sticky left-[260px] z-10 bg-white px-2 py-1.5 text-ink2">
                     {r.supplier_name}
@@ -365,29 +438,40 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
                     return (
                       <td
                         key={w.id}
-                        suppressContentEditableWarning
-                        contentEditable={canEdit}
-                        onBlur={(e) =>
-                          onCellBlur(
-                            r,
-                            `w${w.week_no}` as WeekField,
-                            e.currentTarget.textContent ?? ""
-                          )
-                        }
-                        className={`${bg} min-w-[72px] px-1 py-1.5 text-right tabular-nums`}
+                        className={`${bg} min-w-[96px] px-2 py-1.5 text-right align-baseline`}
                       >
-                        {v != null ? formatNumber(v, lang) : ""}
+                        <span
+                          className="inline-flex items-baseline gap-1 tabular-nums"
+                        >
+                          <span className="text-[10px] font-medium text-ink2/60">
+                            {lang === "EN" ? "IDR" : "Rp"}
+                          </span>
+                          <span
+                            suppressContentEditableWarning
+                            contentEditable={canEdit}
+                            onBlur={(e) =>
+                              onCellBlur(
+                                r,
+                                `w${w.week_no}` as WeekField,
+                                e.currentTarget.textContent ?? ""
+                              )
+                            }
+                            className="min-w-[40px] outline-none"
+                          >
+                            {v != null ? formatNumber(v, lang) : ""}
+                          </span>
+                        </span>
                       </td>
                     );
                   })}
-                  <td className="px-2 py-1.5 text-left font-semibold text-ink">
-                    {fmtRp(stats.avg, lang)}
+                  <td className="px-2 py-1.5 font-semibold text-ink">
+                    <RpCell value={stats.avg} lang={lang} />
                   </td>
-                  <td className="px-2 py-1.5 text-left text-emerald-700">
-                    {fmtRp(stats.min, lang)}
+                  <td className="px-2 py-1.5 text-emerald-700">
+                    <RpCell value={stats.min} lang={lang} />
                   </td>
-                  <td className="px-2 py-1.5 text-left text-rose-700">
-                    {fmtRp(stats.max, lang)}
+                  <td className="px-2 py-1.5 text-rose-700">
+                    <RpCell value={stats.max} lang={lang} />
                   </td>
                 </tr>
               );
@@ -396,22 +480,6 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
         </table>
       </div>
 
-      <div className="flex flex-wrap gap-4 border-t border-ink/10 bg-paper px-5 py-2.5 text-[11px] text-ink2/80">
-        <span>
-          <strong className="text-ink">{summary.rows}</strong>{" "}
-          {t("priceList.summaryRows", lang)} ·{" "}
-          <strong className="text-ink">
-            {summary.filled}/{summary.totalCells}
-          </strong>{" "}
-          {t("priceList.summaryFilled", lang)} (
-          <strong className="text-ink">{summary.pct}%</strong>)
-        </span>
-        <span>{ti("priceList.weeksCount", lang, { n: activeWeeks.length })}</span>
-        <span>{t("priceList.legend", lang)}</span>
-        {!canEdit && (
-          <span className="text-ink2/50">{t("priceList.readOnly", lang)}</span>
-        )}
-      </div>
     </Section>
   );
 }

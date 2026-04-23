@@ -18,6 +18,7 @@ const displayCode = (code: string) => code.replace(/^Buah\s*-\s*/i, "");
 export type ScheduleRow = {
   op_date: string;
   dateLabel: string;
+  menu_id: number | null;
   menu_name: string | null;
   operasional: boolean;
   schools: number;
@@ -179,11 +180,26 @@ export function ScheduleTable({
       key: "menu",
       label: t("dashboard.tblMenuName", lang),
       align: "left",
-      sortValue: (r) => r.menu_name ?? "",
-      searchValue: (r) => r.menu_name ?? "",
-      exportValue: (r) => r.menu_name ?? "",
+      sortValue: (r) => (r.menu_id ?? 9999),
+      searchValue: (r) =>
+        r.menu_id ? `M${r.menu_id} ${r.menu_name ?? ""}` : (r.menu_name ?? ""),
+      exportValue: (r) =>
+        r.menu_id
+          ? `M${r.menu_id} · ${r.menu_name ?? ""}`
+          : (r.menu_name ?? ""),
       render: (r) =>
-        r.menu_name ?? <span className="text-ink2/60">—</span>
+        r.menu_name ? (
+          <span className="flex items-baseline gap-1.5">
+            {r.menu_id != null && (
+              <span className="font-mono text-[10.5px] font-bold text-ink2/70">
+                M{r.menu_id}
+              </span>
+            )}
+            <span>{r.menu_name}</span>
+          </span>
+        ) : (
+          <span className="text-ink2/60">—</span>
+        )
     },
     {
       key: "schools",
@@ -813,11 +829,13 @@ export function VolumeMatrixTable({
   rows,
   months,
   monthLabels,
+  monthOpDays,
   lang
 }: {
   rows: VolumeRow[];
   months: string[];
   monthLabels: Record<string, string>;
+  monthOpDays?: Record<string, number>;
   lang: Lang;
 }) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -843,21 +861,42 @@ export function VolumeMatrixTable({
     [rows, activeCategory]
   );
 
-  const monthCols: SortableColumn<VolumeRow>[] = months.map((m) => ({
-    key: `m-${m}`,
-    label: monthLabels[m] ?? m,
-    align: "right",
-    sortValue: (r) => r.monthly[m] ?? 0,
-    exportValue: (r) => r.monthly[m] ?? 0,
-    exportLabel: monthLabels[m] ?? m,
-    exportHint: "number",
-    exportNumFmt: "#,##0.0",
-    render: (r) => (
-      <span className="font-mono text-xs">
-        {formatNumber(r.monthly[m] ?? 0, lang, { maximumFractionDigits: 1 })}
-      </span>
-    )
-  }));
+  const monthCols: SortableColumn<VolumeRow>[] = months.map((m) => {
+    const labelText = monthLabels[m] ?? m;
+    const opDays = monthOpDays?.[m];
+    return {
+      key: `m-${m}`,
+      label:
+        opDays !== undefined ? (
+          <span className="inline-flex items-center gap-1.5">
+            <span>{labelText}</span>
+            <span
+              className={`inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-bold tabular-nums ring-1 ${
+                opDays === 0
+                  ? "bg-red-50 text-red-700 ring-red-200"
+                  : "bg-blue-50 text-blue-700 ring-blue-200"
+              }`}
+              title={`${opDays} hari operasional`}
+            >
+              {opDays}
+            </span>
+          </span>
+        ) : (
+          labelText
+        ),
+      align: "right",
+      sortValue: (r) => r.monthly[m] ?? 0,
+      exportValue: (r) => r.monthly[m] ?? 0,
+      exportLabel: labelText,
+      exportHint: "number",
+      exportNumFmt: "#,##0.0",
+      render: (r) => (
+        <span className="font-mono text-xs">
+          {formatNumber(r.monthly[m] ?? 0, lang, { maximumFractionDigits: 1 })}
+        </span>
+      )
+    };
+  });
 
   const columns: SortableColumn<VolumeRow>[] = [
     {
@@ -995,6 +1034,7 @@ export function VolumeMatrixTable({
 // ============== Planning (short) ==============
 export type PlanRow = {
   op_date: string;
+  menu_id: number | null;
   menu_name: string | null;
   operasional: boolean;
   porsi_total: number;
@@ -1055,11 +1095,26 @@ export function PlanningTable({
       key: "menu",
       label: t("dashboard.tblMenuName", lang),
       align: "left",
-      sortValue: (r) => r.menu_name ?? "",
-      searchValue: (r) => r.menu_name ?? "",
-      exportValue: (r) => r.menu_name ?? "",
+      sortValue: (r) => (r.menu_id ?? 9999),
+      searchValue: (r) =>
+        r.menu_id ? `M${r.menu_id} ${r.menu_name ?? ""}` : (r.menu_name ?? ""),
+      exportValue: (r) =>
+        r.menu_id
+          ? `M${r.menu_id} · ${r.menu_name ?? ""}`
+          : (r.menu_name ?? ""),
       render: (r) =>
-        r.menu_name ?? <span className="text-ink2/60">—</span>
+        r.menu_name ? (
+          <span className="flex items-baseline gap-1.5">
+            {r.menu_id != null && (
+              <span className="font-mono text-[10.5px] font-bold text-ink2/70">
+                M{r.menu_id}
+              </span>
+            )}
+            <span>{r.menu_name}</span>
+          </span>
+        ) : (
+          <span className="text-ink2/60">—</span>
+        )
     },
     {
       key: "porsi",
@@ -1173,6 +1228,7 @@ export type ProcurementDayGroup = {
   op_date: string;
   dateLabel: string;
   dateShort: string;
+  menu_id: number | null;
   menu_name: string | null;
   porsi_total: number;
   rows: ProcurementItemRow[];
@@ -1346,7 +1402,12 @@ export function ProcurementScheduleTable({
         })}
       </nav>
 
-      {active && (
+      {active && (() => {
+        const subtotalSum = active.rows.reduce((s, r) => s + r.subtotal, 0);
+        const bannerName = active.menu_id
+          ? `M${active.menu_id} · ${active.menu_name ?? "—"}`
+          : (active.menu_name ?? "—");
+        return (
         <>
           <div className="mb-3 rounded-xl bg-primary-gradient px-4 py-2.5 text-white">
             <div className="min-w-0">
@@ -1354,7 +1415,7 @@ export function ProcurementScheduleTable({
                 {active.dateLabel}
               </div>
               <div className="truncate text-sm font-black">
-                {active.menu_name ?? "—"}
+                {bannerName}
               </div>
             </div>
           </div>
@@ -1369,29 +1430,33 @@ export function ProcurementScheduleTable({
             exportFileName={`jadwal-belanja-${active.op_date}`}
             exportSheetName="Procurement"
             exportTitle={`${t("dashboard.procurementTitle", lang)} — ${active.dateLabel}`}
-            exportSubtitle={active.menu_name ?? undefined}
+            exportSubtitle={bannerName}
             exportTotals={{
               labelColSpan: 5,
               labelText: t("common.grandTotal", lang),
-              values: { subtotal: active.subtotal }
+              values: { subtotal: subtotalSum }
             }}
             footer={
               <tr className="border-t-2 border-ink bg-ink">
-                <td colSpan={6} className="py-2 px-3">
-                  <div className="flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-wide text-white">
-                    <span>{t("common.grandTotal", lang)}</span>
-                    <IDR
-                      value={active.subtotal}
-                      className="text-xs font-black text-white"
-                      prefixClassName="text-white/70"
-                    />
-                  </div>
+                <td
+                  colSpan={5}
+                  className="py-2 px-3 text-center text-[11px] font-black uppercase tracking-wide text-white"
+                >
+                  {t("common.grandTotal", lang)}
+                </td>
+                <td className="py-2 px-3 text-right">
+                  <IDR
+                    value={subtotalSum}
+                    className="text-xs font-black text-white"
+                    prefixClassName="text-white/70"
+                  />
                 </td>
               </tr>
             }
           />
         </>
-      )}
+        );
+      })()}
     </div>
   );
 }

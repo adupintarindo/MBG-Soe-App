@@ -103,3 +103,13 @@ export const COMMODITY_COLORS: Record<PriceCommodity, string> = {
   BUMBU_KERING: "bg-slate-50 text-slate-900 ring-slate-200",
   MINYAK: "bg-yellow-50 text-yellow-900 ring-yellow-200"
 };
+
+export const COMMODITY_ICONS: Record<PriceCommodity, string> = {
+  BERAS: "🌾",
+  SAYURAN: "🥕",
+  BUAH: "🍎",
+  PROTEIN_HEWANI: "🍗",
+  PROTEIN_NABATI: "🫘",
+  BUMBU_KERING: "🧅",
+  MINYAK: "🫗"
+};

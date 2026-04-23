@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import {
   SortableTable,
-  type SortableColumn,
-  type SortableTableFilter
+  type SortableColumn
 } from "@/components/sortable-table";
 import { Badge } from "@/components/ui";
 import { t, type Lang } from "@/lib/i18n";
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export type BalitaRosterRow = {
   id: string;
@@ -37,6 +41,7 @@ export function BalitaRosterTable({
   rows: BalitaRosterRow[];
   lang: Lang;
 }) {
+  const [pickedDate, setPickedDate] = useState<string>(todayISO());
   const columns: SortableColumn<BalitaRosterRow>[] = [
     {
       key: "no",
@@ -152,18 +157,6 @@ export function BalitaRosterTable({
     }
   ];
 
-  const genderFilter: SortableTableFilter<BalitaRosterRow> = {
-    key: "gender",
-    label: t("penerima.colGender", lang),
-    getValue: (r) =>
-      r.gender === "L" ? "Laki-laki" : r.gender === "P" ? "Perempuan" : "—"
-  };
-  const posyFilter: SortableTableFilter<BalitaRosterRow> = {
-    key: "posyandu",
-    label: t("penerima.colPosyandu", lang),
-    getValue: (r) => r.posyandu_name ?? "—"
-  };
-
   return (
     <SortableTable<BalitaRosterRow>
       tableClassName="text-sm"
@@ -175,9 +168,19 @@ export function BalitaRosterTable({
       exportable
       exportFileName="balita"
       exportSheetName="Balita"
-      filters={[genderFilter, posyFilter]}
       stickyHeader
       bodyMaxHeight={500}
+      toolbarExtra={
+        <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-ink2">
+          <span>{lang === "EN" ? "Date" : "Tanggal"}</span>
+          <input
+            type="date"
+            value={pickedDate}
+            onChange={(e) => setPickedDate(e.target.value || todayISO())}
+            className="rounded-md border border-ink/10 bg-paper px-2 py-1 font-mono text-[11px] font-semibold text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+          />
+        </label>
+      }
     />
   );
 }

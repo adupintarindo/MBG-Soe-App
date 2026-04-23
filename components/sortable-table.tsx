@@ -38,6 +38,12 @@ export interface SortableTableFilter<T> {
   width?: string;
 }
 
+export interface SortableTableHeaderGroup {
+  label: ReactNode;
+  colSpan: number;
+  className?: string;
+}
+
 export interface SortableTableProps<T> {
   columns: SortableColumn<T>[];
   rows: T[];
@@ -80,6 +86,8 @@ export interface SortableTableProps<T> {
   filters?: SortableTableFilter<T>[];
   /** If set, wrap the table body in a scroll container with this max-height (px). Toolbar stays above the scroll area. */
   bodyMaxHeight?: number;
+  /** Optional second header row rendered ABOVE the column headers. Sum of colSpan must equal columns.length. */
+  headerGroups?: SortableTableHeaderGroup[];
 }
 
 const ALIGN_CLS: Record<NonNullable<SortableColumn<unknown>["align"]>, string> = {
@@ -269,7 +277,8 @@ export function SortableTable<T>({
   exportTotals,
   toolbarExtra,
   filters,
-  bodyMaxHeight
+  bodyMaxHeight,
+  headerGroups
 }: SortableTableProps<T>) {
   const { lang } = useLang();
   const [sortKey, setSortKey] = useState<string | null>(
@@ -484,6 +493,22 @@ export function SortableTable<T>({
             </caption>
           )}
           <thead className={theadCls}>
+            {headerGroups && headerGroups.length > 0 && (
+              <tr className="font-display text-[10px] font-black uppercase tracking-[0.12em]">
+                {headerGroups.map((g, gi) => (
+                  <th
+                    key={`hg-${gi}`}
+                    colSpan={g.colSpan}
+                    scope="colgroup"
+                    className={`px-3 py-1.5 text-center ${
+                      g.label ? "border-b border-white/10" : ""
+                    } ${g.className ?? ""}`}
+                  >
+                    {g.label}
+                  </th>
+                ))}
+              </tr>
+            )}
             <tr className="font-display text-[11px] font-bold tracking-wide">
               {columns.map((c) => {
                 const sortable = c.sortable !== false;
@@ -581,7 +606,7 @@ export function SortableTable<T>({
                       return (
                         <td
                           key={c.key}
-                          className={`whitespace-nowrap px-3 ${rowPad} ${ALIGN_CLS[c.align ?? "center"]} ${tdExtra}`}
+                          className={`whitespace-nowrap px-3 ${rowPad} align-middle ${ALIGN_CLS[c.align ?? "center"]} ${tdExtra}`}
                         >
                           {c.render(row, i)}
                         </td>

@@ -154,7 +154,7 @@ export default async function DashboardPage({
       .gte("inv_date", spendRangeStart)
       .lte("inv_date", spendRangeEnd)
       .then((r) => r.data ?? []),
-    dailyPlanning(supabase, 90).catch(() => [] as DailyPlan[]),
+    dailyPlanning(supabase, 180).catch(() => [] as DailyPlan[]),
     supabase
       .from("transactions")
       .select(
@@ -428,6 +428,7 @@ export default async function DashboardPage({
     return {
       op_date: p.op_date,
       dateLabel,
+      menu_id: p.menu_id,
       menu_name: p.menu_name,
       operasional: p.operasional,
       schools: bd?.schools_count ?? schoolsPerDate.get(p.op_date)?.size ?? 0,
@@ -443,6 +444,14 @@ export default async function DashboardPage({
   const monthLabels: Record<string, string> = Object.fromEntries(
     months.map((m) => [m, monthLabel(m)])
   );
+  const monthOpDays: Record<string, number> = Object.fromEntries(
+    months.map((m) => [m, 0])
+  );
+  for (const p of planning) {
+    if (!p.operasional) continue;
+    const m = p.op_date.slice(0, 7);
+    if (m in monthOpDays) monthOpDays[m] += 1;
+  }
   const volumeRows: VolumeRow[] = topItems.map((code) => ({
     code,
     category: commodityCategory(code),
@@ -499,6 +508,7 @@ export default async function DashboardPage({
       op_date: p.op_date,
       dateLabel,
       dateShort,
+      menu_id: p.menu_id,
       menu_name: p.menu_name,
       porsi_total: porsi?.total ?? p.porsi_total,
       rows,
@@ -696,12 +706,13 @@ export default async function DashboardPage({
               rows={volumeRows}
               months={months}
               monthLabels={monthLabels}
+              monthOpDays={monthOpDays}
               lang={lang}
             />
           )}
         </Section>
 
-        <div className="mb-6 grid grid-cols-1 gap-6">
+        <div className="mb-3 grid grid-cols-1 gap-3">
           <Section
             title={t("dashboard.procurementTitle", lang)}
             hint={t("dashboard.procurementHint", lang)}

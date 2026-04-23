@@ -62,18 +62,23 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
   void subtitle;
   const hasText = !!title;
   if (!hasText && !actions) return null;
+  if (!hasText && actions) {
+    return (
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-2">
+        {actions}
+      </div>
+    );
+  }
+  void icon;
   return (
-    <div className="relative mb-6 flex flex-wrap items-center justify-center gap-3 rounded-2xl bg-primary-gradient px-4 py-2.5 text-center shadow-card">
-      {hasText && (
-        <h1 className="flex items-center gap-2 font-display text-[13px] font-bold uppercase tracking-[0.14em] text-white sm:text-[14px]">
-          {icon && (
-            <span className="shrink-0 text-base leading-none">{icon}</span>
-          )}
+    <div className="mb-6">
+      <div className="flex items-center justify-center gap-3 rounded-2xl bg-primary-gradient px-4 py-2.5 text-center shadow-card">
+        <h1 className="font-display text-[12px] font-bold tracking-crisp text-white">
           <span className="truncate">{title}</span>
         </h1>
-      )}
+      </div>
       {actions && (
-        <div className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-wrap items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
           {actions}
         </div>
       )}
@@ -118,17 +123,12 @@ export function Section({
 
   return (
     <section
-      className={`mb-6 rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${className}`}
+      className={`mb-3 rounded-2xl bg-white shadow-card ${ACCENT_BORDER[accent]} ${className}`}
     >
       {hasHeader && banner && (
         <header className="flex flex-wrap items-center justify-between gap-3 rounded-t-2xl border-b border-ink/5 bg-paper px-4 py-3 sm:px-5">
           {title && (
-            <h2 className="flex min-w-0 items-center gap-2 font-display text-[15px] font-extrabold tracking-crisp text-ink">
-              {icon && (
-                <span aria-hidden className="shrink-0 text-lg leading-none">
-                  {icon}
-                </span>
-              )}
+            <h2 className="flex min-w-0 items-center gap-2 font-display text-[12px] font-bold tracking-crisp text-ink">
               <span className="truncate">{title}</span>
               {hint && <InfoBadge tone="light">{hint}</InfoBadge>}
             </h2>
@@ -139,19 +139,25 @@ export function Section({
         </header>
       )}
       {hasHeader && !banner && (
-        <header className="relative z-20 flex flex-wrap items-center justify-center gap-3 rounded-t-2xl bg-primary-gradient px-4 py-1.5 text-center">
-          {title && (
-            <h2 className="font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
-              <span>{title}</span>
-            </h2>
-          )}
-          {(hint || actions) && (
-            <div className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-wrap items-center gap-2">
-              {hint && <InfoBadge tone="dark">{hint}</InfoBadge>}
+        <>
+          <header className="relative z-20 flex items-center justify-center gap-3 rounded-t-2xl bg-primary-gradient px-4 py-2.5 text-center">
+            {title && (
+              <h2 className="font-display text-[12px] font-bold tracking-crisp text-white">
+                <span>{title}</span>
+              </h2>
+            )}
+            {hint && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <InfoBadge tone="dark">{hint}</InfoBadge>
+              </div>
+            )}
+          </header>
+          {actions && (
+            <div className="flex flex-wrap items-center justify-end gap-2 border-b border-ink/5 bg-paper/70 px-4 py-2 sm:px-5">
               {actions}
             </div>
           )}
-        </header>
+        </>
       )}
       <div className={noPad ? "" : "p-5"}>{children}</div>
     </section>
@@ -269,7 +275,7 @@ export function KpiGrid({ children }: { children: ReactNode }) {
   const count = Children.count(decorated);
   const colsMd = count <= 3 ? "md:grid-cols-3" : "md:grid-cols-4";
   return (
-    <section className={`mb-6 grid grid-cols-2 gap-3 ${colsMd}`}>
+    <section className={`mb-3 grid grid-cols-2 gap-3 ${colsMd}`}>
       {decorated}
     </section>
   );

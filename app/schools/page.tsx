@@ -4,7 +4,6 @@ import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import {
   PageContainer,
-  PageHeader,
   Section
 } from "@/components/ui";
 import { PageTabs, type PageTab } from "@/components/page-tabs";
@@ -16,7 +15,6 @@ import {
 import { TabBumil } from "./tab-bumil";
 import { TabBalita } from "./tab-balita";
 import { GenerateManifestButton } from "@/app/deliveries/generate-manifest";
-import { toISODate } from "@/lib/engine";
 import { t, formatNumber } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 
@@ -41,12 +39,12 @@ function nextSevenDateISO(): string[] {
   return arr;
 }
 
-const LEVEL_COLOR: Record<string, string> = {
-  "PAUD/TK": "bg-pink-50 text-pink-900 ring-pink-200",
-  SD: "bg-amber-50 text-amber-900 ring-amber-200",
-  SMP: "bg-sky-50 text-sky-900 ring-sky-200",
-  SMA: "bg-emerald-50 text-emerald-900 ring-emerald-200",
-  SMK: "bg-indigo-50 text-indigo-900 ring-indigo-200"
+const LEVEL_HEADER: Record<string, string> = {
+  "PAUD/TK": "bg-gradient-to-r from-rose-900 to-rose-800",
+  SD: "bg-gradient-to-r from-amber-900 to-orange-800",
+  SMP: "bg-gradient-to-r from-sky-900 to-blue-800",
+  SMA: "bg-gradient-to-r from-emerald-900 to-emerald-800",
+  SMK: "bg-gradient-to-r from-indigo-900 to-indigo-800"
 };
 
 function porsiEff(s: {
@@ -124,17 +122,9 @@ export default async function SchoolsPage({
       />
 
       <PageContainer>
-        <PageHeader
-          icon="🫶"
-          title={t("penerima.pageTitle", lang)}
-          subtitle={t("penerima.pageSubtitle", lang)}
-          actions={
-            activeTab === "sekolah" &&
-            (profile.role === "admin" || profile.role === "operator") ? (
-              <GenerateManifestButton date={toISODate(new Date())} />
-            ) : null
-          }
-        />
+        {(profile.role === "admin" || profile.role === "operator") && (
+          <GenerateManifestButton variant="toolbar" />
+        )}
 
         <PageTabs tabs={tabs} activeId={activeTab} />
 
@@ -163,6 +153,16 @@ async function SekolahTab({
 }) {
   const days = nextSevenDateISO();
   const todayISO = new Date().toISOString().slice(0, 10);
+  const attendancePastStart = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  })();
+  const attendanceFutureEnd = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 60);
+    return d.toISOString().slice(0, 10);
+  })();
   const farFuture = (() => {
     const d = new Date();
     d.setMonth(d.getMonth() + 18);
@@ -179,8 +179,8 @@ async function SekolahTab({
     supabase
       .from("school_attendance")
       .select("school_id, att_date, qty")
-      .gte("att_date", days[0])
-      .lte("att_date", days[days.length - 1]),
+      .gte("att_date", attendancePastStart)
+      .lte("att_date", attendanceFutureEnd),
     supabase
       .from("non_op_days")
       .select("op_date, reason")
@@ -208,32 +208,109 @@ async function SekolahTab({
     { schools: 0, students: 0, guru: 0, kecil: 0, besar: 0, eff: 0 }
   );
 
-  const byLevel = new Map<string, { count: number; students: number }>();
-  for (const s of schools) {
-    const cur = byLevel.get(s.level) ?? { count: 0, students: 0 };
-    cur.count += 1;
-    cur.students += Number(s.students);
-    byLevel.set(s.level, cur);
+  // ---- today's operational status + attendance → byLevel tiles ----
+  const todayDate = new Date(todayISO + "T00:00:00");
+  const todayDow = todayDate.getDay();
+  const todayIsWeekend = todayDow === 0 || todayDow === 6;
+  const todayNonOpRow = nonOpDays.find((r) => r.op_date === todayISO);
+  const todayIsOp = !todayIsWeekend && !todayNonOpRow;
+
+  const qtyToday = new Map<string, number>();
+  for (const r of attendance) {
+    if (r.att_date === todayISO) {
+      qtyToday.set(r.school_id, Number(r.qty ?? 0));
+    }
+  }
+
+  const byLevel = new Map<
+    string,
+    { count: number; students: number; guru: number }
+  >();
+  if (todayIsOp) {
+    for (const s of schools) {
+      if (!s.active) continue;
+      // Use recorded attendance if present (including saved 0), else fall back to roster capacity.
+      const saved = qtyToday.get(s.id);
+      const qty = saved != null ? saved : Number(s.students);
+      if (qty <= 0) continue;
+      const cur =
+        byLevel.get(s.level) ?? { count: 0, students: 0, guru: 0 };
+      cur.count += 1;
+      cur.students += qty;
+      cur.guru += Number(s.guru ?? 0);
+      byLevel.set(s.level, cur);
+    }
   }
 
   return (
     <>
-      <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+      <section className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-5">
         {["PAUD/TK", "SD", "SMP", "SMA", "SMK"].map((lvl) => {
-          const d = byLevel.get(lvl) ?? { count: 0, students: 0 };
+          const d = byLevel.get(lvl) ?? { count: 0, students: 0, guru: 0 };
+          const hasData = todayIsOp && d.count > 0;
           return (
             <div
               key={lvl}
-              className="rounded-2xl bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-cardlg"
+              className="group overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-ink/5 transition hover:-translate-y-0.5 hover:shadow-cardlg"
             >
-              <span
-                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${LEVEL_COLOR[lvl]}`}
+              <div
+                className={`px-4 py-2.5 text-center font-display text-[12px] font-bold tracking-crisp text-white ${LEVEL_HEADER[lvl]}`}
               >
                 {lvl}
-              </span>
-              <div className="mt-2 text-2xl font-black text-ink">{d.count}</div>
-              <div className="text-[11px] font-semibold text-ink2/70">
-                {formatNumber(d.students, lang)} {t("schools.studentsSuffix", lang)}
+              </div>
+              <div className="px-4 py-4 text-center">
+                <div
+                  className={`font-display text-[2rem] font-extrabold leading-none tabular-nums ${
+                    hasData ? "text-ink" : "text-ink2/40"
+                  }`}
+                >
+                  {hasData ? d.count : "—"}
+                </div>
+                {!todayIsOp && (
+                  <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-ink2/60">
+                    {t("schools.tileNonOp", lang)}
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 divide-x divide-ink/5 border-t border-ink/5 bg-paper/40">
+                <div className="flex items-center justify-center gap-1.5 px-2 py-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden
+                    title={lang === "EN" ? "Students" : "Siswa"}
+                    className={`h-4 w-4 ${hasData ? "text-ink2/70" : "text-ink2/30"}`}
+                  >
+                    <path d="M12 3 1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z" />
+                  </svg>
+                  <span
+                    className={`font-display text-[14px] font-extrabold leading-none tabular-nums ${
+                      hasData ? "text-ink" : "text-ink2/40"
+                    }`}
+                  >
+                    {hasData ? formatNumber(d.students, lang) : "—"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-center gap-1.5 px-2 py-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden
+                    title={lang === "EN" ? "Teachers" : "Guru"}
+                    className={`h-4 w-4 ${hasData ? "text-ink2/70" : "text-ink2/30"}`}
+                  >
+                    <path d="M12 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 10c-4.41 0-8 1.79-8 4v4h16v-4c0-2.21-3.59-4-8-4zm7-1.5v2l2-.67V16h1v-5l-3-1.5z" />
+                  </svg>
+                  <span
+                    className={`font-display text-[14px] font-extrabold leading-none tabular-nums ${
+                      hasData ? "text-ink" : "text-ink2/40"
+                    }`}
+                  >
+                    {hasData ? formatNumber(d.guru, lang) : "—"}
+                  </span>
+                </div>
               </div>
             </div>
           );
@@ -249,7 +326,8 @@ async function SekolahTab({
             level: s.level,
             students: Number(s.students),
             kelas13: Number(s.kelas13 ?? 0),
-            kelas46: Number(s.kelas46 ?? 0)
+            kelas46: Number(s.kelas46 ?? 0),
+            guru: Number(s.guru ?? 0)
           }))}
         attendance={attendance.map((a) => ({
           school_id: a.school_id,
@@ -263,10 +341,7 @@ async function SekolahTab({
         canEdit={canEdit}
       />
 
-      <Section
-        title={t("schools.rosterTitle", lang)}
-        hint={t("schools.rosterHint", lang)}
-      >
+      <Section title={t("schools.rosterTitle", lang)}>
         <SchoolsRosterTable
           rows={schools.map<SchoolRosterRow>((s) => {
             const p = porsiEff(s);
@@ -287,10 +362,13 @@ async function SekolahTab({
             };
           })}
           totals={totals}
+          attendance={attendance.map((a) => ({
+            school_id: a.school_id,
+            att_date: a.att_date,
+            qty: Number(a.qty)
+          }))}
+          defaultDate={days[0]}
         />
-        <p className="mt-4 text-[11px] text-ink2/70">
-          {t("schools.footnote", lang)}
-        </p>
       </Section>
     </>
   );

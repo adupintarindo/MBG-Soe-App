@@ -288,8 +288,8 @@ export default async function MenuMasterPage({
                     🍛
                   </div>
                   <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/20 to-transparent" />
-                  <span className="absolute left-3 top-3 inline-flex h-7 items-center justify-center rounded-lg bg-primary-gradient px-2 text-[11px] font-black text-white shadow-card">
-                    H{menu.cycle_day}
+                  <span className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-gradient text-[12px] font-black text-white shadow-card ring-2 ring-white/70">
+                    M{menu.id}
                   </span>
                   <span className="absolute right-3 top-3 rounded-md bg-white/80 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ink2 backdrop-blur-sm">
                     {lang === "EN" ? "Placeholder" : "Foto Belum Tersedia"}

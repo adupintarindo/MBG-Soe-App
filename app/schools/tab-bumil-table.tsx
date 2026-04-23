@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import {
   SortableTable,
-  type SortableColumn,
-  type SortableTableFilter
+  type SortableColumn
 } from "@/components/sortable-table";
 import { Badge } from "@/components/ui";
 import { t, type Lang } from "@/lib/i18n";
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export type BumilRosterRow = {
   id: string;
@@ -29,6 +33,7 @@ export function BumilRosterTable({
   rows: BumilRosterRow[];
   lang: Lang;
 }) {
+  const [pickedDate, setPickedDate] = useState<string>(todayISO());
   const columns: SortableColumn<BumilRosterRow>[] = [
     {
       key: "no",
@@ -141,17 +146,6 @@ export function BumilRosterTable({
     }
   ];
 
-  const phaseFilter: SortableTableFilter<BumilRosterRow> = {
-    key: "phase",
-    label: t("penerima.colPhase", lang),
-    getValue: (r) => r.phase
-  };
-  const posyFilter: SortableTableFilter<BumilRosterRow> = {
-    key: "posyandu",
-    label: t("penerima.colPosyandu", lang),
-    getValue: (r) => r.posyandu_name ?? "—"
-  };
-
   return (
     <SortableTable<BumilRosterRow>
       tableClassName="text-sm"
@@ -163,9 +157,19 @@ export function BumilRosterTable({
       exportable
       exportFileName="ibu-hamil-menyusui"
       exportSheetName="Ibu Hamil & Menyusui"
-      filters={[phaseFilter, posyFilter]}
       stickyHeader
       bodyMaxHeight={500}
+      toolbarExtra={
+        <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-ink2">
+          <span>{lang === "EN" ? "Date" : "Tanggal"}</span>
+          <input
+            type="date"
+            value={pickedDate}
+            onChange={(e) => setPickedDate(e.target.value || todayISO())}
+            className="rounded-md border border-ink/10 bg-paper px-2 py-1 font-mono text-[11px] font-semibold text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+          />
+        </label>
+      }
     />
   );
 }

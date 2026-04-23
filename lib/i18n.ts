@@ -730,7 +730,8 @@ export const LANG_KEYS = {
     ID: "Arsip manifest pengiriman sebelumnya dengan status POD dan catatan lapangan.",
     EN: "Archive of past delivery manifests with POD status and field notes."
   },
-  "del.btnGenerate": { ID: "+ Generate Manifest Hari Ini", EN: "+ Generate Today's Manifest" },
+  "del.btnGenerate": { ID: "+ Generate Manifest", EN: "+ Generate Manifest" },
+  "del.pickDate": { ID: "Tanggal manifest", EN: "Manifest date" },
   "del.btnPOD": { ID: "POD", EN: "POD" },
   "del.statusPlanned": { ID: "Direncanakan", EN: "Planned" },
   "del.statusDispatched": { ID: "Dispatch", EN: "Dispatched" },
@@ -951,7 +952,13 @@ export const LANG_KEYS = {
     EN: "{n} active schools | {students} students | {teachers} teachers | effective servings"
   },
   "schools.studentsSuffix": { ID: "siswa", EN: "students" },
-  "schools.rosterTitle": { ID: "Roster Sekolah (Breakdown Porsi)", EN: "School Roster (Servings Breakdown)" },
+  "schools.teachersSuffix": { ID: "guru", EN: "teachers" },
+  "schools.tileActiveLabel": {
+    ID: "Sekolah aktif hari ini",
+    EN: "Active schools today"
+  },
+  "schools.tileNonOp": { ID: "Libur hari ini", EN: "Non-operational today" },
+  "schools.rosterTitle": { ID: "Rincian Sekolah", EN: "School Details" },
   "schools.rosterHint": {
     ID: "Porsi efektif menentukan volume BOM harian — Kecil (0.7) untuk PAUD/TK + SD kelas 1–3, Besar (1.0) untuk SD kelas 4–6 ke atas.",
     EN: "Effective servings drive daily BOM volume — Small (0.7) for PAUD/TK + SD grades 1–3, Large (1.0) for SD grades 4–6 and above."
@@ -960,10 +967,10 @@ export const LANG_KEYS = {
   "schools.colName": { ID: "Nama", EN: "Name" },
   "schools.colLevel": { ID: "Jenjang", EN: "Level" },
   "schools.colStudents": { ID: "Siswa", EN: "Students" },
-  "schools.colSmall": { ID: "Kecil (0.7)", EN: "Small (0.7)" },
-  "schools.colLarge": { ID: "Besar (1.0)", EN: "Large (1.0)" },
+  "schools.colSmall": { ID: "Kecil", EN: "Small" },
+  "schools.colLarge": { ID: "Besar", EN: "Large" },
   "schools.colTeachers": { ID: "Guru", EN: "Teachers" },
-  "schools.colEff": { ID: "Porsi Eff.", EN: "Eff. Servings" },
+  "schools.colEff": { ID: "Total Penerima Manfaat", EN: "Total Beneficiaries" },
   "schools.colDistance": { ID: "Jarak (km)", EN: "Distance (km)" },
   "schools.colContact": { ID: "Kontak", EN: "Contact" },
   "schools.totalLabel": { ID: "TOTAL ({n} sekolah aktif)", EN: "TOTAL ({n} active schools)" },
@@ -1021,8 +1028,8 @@ export const LANG_KEYS = {
   "penerima.genderP": { ID: "Perempuan", EN: "Female" },
 
   "schools.attTitle": {
-    ID: "Perkiraan Kehadiran Siswa 7 Hari Ke Depan",
-    EN: "Expected Student Attendance Next 7 Days"
+    ID: "Perkiraan Kehadiran Siswa",
+    EN: "Expected Student Attendance"
   },
   "schools.attHint": {
     ID: "Isi angka kehadiran per sekolah per tanggal. SD dipecah jadi Porsi Kecil (kelas 1–3) dan Porsi Besar (kelas 4–6) karena bobot porsi BOM-nya berbeda. Default = kapasitas penuh.",
@@ -1553,7 +1560,7 @@ export const LANG_KEYS = {
   "suppliers.kpiRejectedSub": { ID: "skor < 70", EN: "score < 70" },
   "suppliers.kpiReadiness": { ID: "Onboarding Readiness", EN: "Onboarding Readiness" },
   "suppliers.kpiReadinessSub": { ID: "{done}/{total} done | {overdue} overdue", EN: "{done}/{total} done | {overdue} overdue" },
-  "suppliers.cardsTitle": { ID: "Vendor Cards (Signed + Awaiting)", EN: "Vendor Cards (Signed + Awaiting)" },
+  "suppliers.cardsTitle": { ID: "Daftar Vendor", EN: "Vendor List" },
   "suppliers.cardsHint": {
     ID: "Klik kartu untuk rincian, harga, sertifikasi & histori transaksi.",
     EN: "Click a card for details, pricing, certifications & transaction history."
@@ -1579,9 +1586,16 @@ export const LANG_KEYS = {
   "suppliers.colId": { ID: "ID", EN: "ID" },
   "suppliers.colName": { ID: "Nama", EN: "Name" },
   "suppliers.colType": { ID: "Tipe", EN: "Type" },
+  "suppliers.colPic": { ID: "PIC", EN: "PIC" },
+  "suppliers.colPhone": { ID: "Telepon", EN: "Phone" },
+  "suppliers.colEmail": { ID: "Email", EN: "Email" },
+  "suppliers.colAddress": { ID: "Alamat", EN: "Address" },
   "suppliers.colKomoditas": { ID: "Komoditas", EN: "Commodities" },
   "suppliers.colItems": { ID: "Items", EN: "Items" },
-  "suppliers.colScore": { ID: "Skor", EN: "Score" },
+  "suppliers.colInvoices": { ID: "Invoice", EN: "Invoices" },
+  "suppliers.colNotes": { ID: "Catatan", EN: "Notes" },
+  "suppliers.colAction": { ID: "Aksi", EN: "Action" },
+  "suppliers.colScore": { ID: "Rating", EN: "Rating" },
   "suppliers.colStatus": { ID: "Status", EN: "Status" },
   "suppliers.colSpend": { ID: "Belanja", EN: "Spend" },
   "suppliers.statusSigned": { ID: "signed", EN: "signed" },
@@ -2434,7 +2448,52 @@ export const LANG_KEYS = {
   "tx.totalShown": { ID: "Total ditampilkan", EN: "Total shown" },
   "tx.grandTotal": { ID: "GRAND TOTAL", EN: "GRAND TOTAL" },
   "tx.nRows": { ID: "{n} baris", EN: "{n} rows" },
-  "tx.empty": { ID: "Belum ada transaksi yang cocok.", EN: "No matching transactions." }
+  "tx.empty": { ID: "Belum ada transaksi yang cocok.", EN: "No matching transactions." },
+  "tx.colAction": { ID: "Aksi", EN: "Action" },
+  "tx.detailOpen": { ID: "Lihat rincian transaksi", EN: "View transaction details" },
+  "tx.detailClose": { ID: "Tutup", EN: "Close" },
+  "tx.detailTitle": { ID: "Rincian Transaksi", EN: "Transaction Details" },
+  "tx.detailLoading": { ID: "Memuat rincian…", EN: "Loading details…" },
+  "tx.detailEmpty": {
+    ID: "Data rinci tidak ditemukan untuk transaksi ini.",
+    EN: "No detailed record found for this transaction."
+  },
+  "tx.detailError": {
+    ID: "Gagal memuat rincian. Coba lagi.",
+    EN: "Failed to load details. Please try again."
+  },
+  "tx.detailSummary": { ID: "Ringkasan", EN: "Summary" },
+  "tx.detailLineItems": { ID: "Rincian Barang", EN: "Line Items" },
+  "tx.detailSupplier": { ID: "Supplier", EN: "Supplier" },
+  "tx.detailDate": { ID: "Tanggal", EN: "Date" },
+  "tx.detailRef": { ID: "No. Referensi", EN: "Reference No." },
+  "tx.detailAmount": { ID: "Nilai", EN: "Amount" },
+  "tx.detailStatus": { ID: "Status", EN: "Status" },
+  "tx.detailDueDate": { ID: "Jatuh Tempo", EN: "Due Date" },
+  "tx.detailDeliveryDate": { ID: "Tgl. Pengiriman", EN: "Delivery Date" },
+  "tx.detailPoNo": { ID: "PO Terkait", EN: "Linked PO" },
+  "tx.detailInvoiceNo": { ID: "Invoice Terkait", EN: "Linked Invoice" },
+  "tx.detailInvoiceTotal": { ID: "Total Invoice", EN: "Invoice Total" },
+  "tx.detailMethod": { ID: "Metode", EN: "Method" },
+  "tx.detailPayReference": { ID: "No. Bukti", EN: "Proof No." },
+  "tx.detailContract": { ID: "No. Kontrak", EN: "Contract No." },
+  "tx.detailPayMethod": { ID: "Metode Bayar", EN: "Payment Method" },
+  "tx.detailTop": { ID: "Termin (TOP)", EN: "Term (TOP)" },
+  "tx.detailQcNote": { ID: "Catatan QC", EN: "QC Note" },
+  "tx.detailNote": { ID: "Catatan", EN: "Note" },
+  "tx.detailDescription": { ID: "Keterangan", EN: "Description" },
+  "tx.detailSource": { ID: "Sumber", EN: "Source" },
+  "tx.detailPeriod": { ID: "Periode", EN: "Period" },
+  "tx.detailLineNo": { ID: "No.", EN: "No." },
+  "tx.detailItem": { ID: "Barang", EN: "Item" },
+  "tx.detailQty": { ID: "Qty", EN: "Qty" },
+  "tx.detailQtyOrdered": { ID: "Qty Pesan", EN: "Qty Ordered" },
+  "tx.detailQtyReceived": { ID: "Qty Terima", EN: "Qty Received" },
+  "tx.detailQtyRejected": { ID: "Qty Ditolak", EN: "Qty Rejected" },
+  "tx.detailUnit": { ID: "Satuan", EN: "Unit" },
+  "tx.detailPrice": { ID: "Harga", EN: "Price" },
+  "tx.detailSubtotal": { ID: "Subtotal", EN: "Subtotal" },
+  "tx.detailTotal": { ID: "TOTAL", EN: "TOTAL" }
 } as const satisfies Record<string, Pair>;
 
 export type LangKey = keyof typeof LANG_KEYS;
