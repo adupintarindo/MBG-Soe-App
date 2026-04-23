@@ -453,11 +453,11 @@ export default async function DashboardPage({
     )
   }));
 
-  // ---- Procurement schedule: next 10 operational days × item × qty × price ----
+  // ---- Procurement schedule: next 7 operational days × item × qty × price ----
   const procurementDays = planning
     .filter((p) => p.op_date >= today && p.operasional)
     .sort((a, b) => a.op_date.localeCompare(b.op_date))
-    .slice(0, 10);
+    .slice(0, 7);
 
   const reqsByDate = new Map<string, Requirement[]>();
   await Promise.all(

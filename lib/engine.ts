@@ -993,6 +993,87 @@ export async function paymentSummaryByInvoice(
   return row ?? null;
 }
 
+// ---------- 3-Way Match (PO ↔ GRN ↔ Invoice) ----------
+
+export type ThreeWayMatchStatus =
+  | "matched"
+  | "over_po"
+  | "over_grn"
+  | "under_grn"
+  | "no_grn"
+  | "no_po"
+  | "review";
+
+export interface ThreeWayMatchRow {
+  invoice_no: string;
+  inv_date: string;
+  supplier_id: string;
+  supplier_name: string | null;
+  po_no: string | null;
+  po_total: number;
+  grn_value: number;
+  grn_count: number;
+  invoice_total: number;
+  paid: number;
+  inv_vs_po: number;
+  inv_vs_grn: number;
+  match_status: ThreeWayMatchStatus;
+}
+
+export async function threeWayMatch(
+  supabase: Client,
+  opts?: { from?: string; to?: string; limit?: number }
+): Promise<ThreeWayMatchRow[]> {
+  const args: Record<string, string | number> = {};
+  if (opts?.from) args.p_from = opts.from;
+  if (opts?.to) args.p_to = opts.to;
+  if (opts?.limit) args.p_limit = opts.limit;
+  // RPC name belum ada di generated Database types (migration 0056 baru).
+  const client = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args: Record<string, string | number>
+    ) => Promise<{
+      data: Array<{
+        invoice_no: string;
+        inv_date: string;
+        supplier_id: string;
+        supplier_name: string | null;
+        po_no: string | null;
+        po_total: number | string;
+        grn_value: number | string;
+        grn_count: number;
+        invoice_total: number | string;
+        paid: number | string;
+        inv_vs_po: number | string;
+        inv_vs_grn: number | string;
+        match_status: ThreeWayMatchStatus;
+      }> | null;
+      error: { message: string } | null;
+    }>;
+  };
+  const { data, error } = await client.rpc(
+    "three_way_match_snapshot",
+    args
+  );
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    invoice_no: r.invoice_no,
+    inv_date: r.inv_date,
+    supplier_id: r.supplier_id,
+    supplier_name: r.supplier_name,
+    po_no: r.po_no,
+    po_total: Number(r.po_total),
+    grn_value: Number(r.grn_value),
+    grn_count: r.grn_count,
+    invoice_total: Number(r.invoice_total),
+    paid: Number(r.paid),
+    inv_vs_po: Number(r.inv_vs_po),
+    inv_vs_grn: Number(r.inv_vs_grn),
+    match_status: r.match_status
+  }));
+}
+
 // ---------- Deliveries ----------
 
 export interface DeliverySummaryRow {

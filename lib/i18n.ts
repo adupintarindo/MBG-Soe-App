@@ -399,6 +399,16 @@ export const LANG_KEYS = {
   "procurement.receiptsEmpty": { ID: "Belum ada foto bukti.", EN: "No proof photos yet." },
   "procurement.noPhoto": { ID: "(tanpa foto)", EN: "(no photo)" },
 
+  // ---------------- 3-Way Match (PO ↔ GRN ↔ Invoice) ----------------
+  "match.title": {
+    ID: "3-Way Match — PO ↔ GRN ↔ Invoice",
+    EN: "3-Way Match — PO ↔ GRN ↔ Invoice"
+  },
+  "match.hint": {
+    ID: "Cocokkan nominal kontrak (PO), barang masuk (GRN), dan tagihan (Invoice). Status \"Cocok\" = ketiganya selaras dalam toleransi 0,5%.",
+    EN: "Reconcile contract value (PO), goods received (GRN), and billed amount (Invoice). \"Matched\" = all three align within 0.5% tolerance."
+  },
+
   // ---------------- Jadwal Pengiriman (Delivery Schedule) ----------------
   "procurement.tabJadwal": { ID: "Jadwal Kirim", EN: "Delivery Schedule" },
   "delivery.secTitle": { ID: "Jadwal Pengiriman Bahan Baku", EN: "Inbound Delivery Schedule" },
