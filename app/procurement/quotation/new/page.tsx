@@ -84,8 +84,6 @@ export default async function NewQuotationPage() {
 
       <PageContainer>
         <PageHeader
-          title={t("qtNew.title", lang)}
-          subtitle={t("qtNew.subtitle", lang)}
           actions={
             <LinkButton href="/procurement" variant="secondary" size="sm">
               {t("common.back", lang)}

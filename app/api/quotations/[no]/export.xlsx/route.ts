@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildStyledXlsxBuffer } from "@/lib/excel-export";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export async function GET(
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const [qtRes, rowsRes, itemsRes, supRes] = await Promise.all([
     supabase.from("quotations").select("*").eq("no", qtNo).maybeSingle(),
     supabase

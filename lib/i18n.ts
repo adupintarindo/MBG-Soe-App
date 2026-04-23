@@ -361,7 +361,7 @@ export const LANG_KEYS = {
   "procurement.colPRNo": { ID: "No PR", EN: "PR No." },
   "procurement.colCreated": { ID: "Dibuat", EN: "Created" },
   "procurement.colNeeded": { ID: "Butuh", EN: "Needed" },
-  "procurement.secQTtitle": { ID: "Quotations (RFQ)", EN: "Quotations (RFQ)" },
+  "procurement.secQTtitle": { ID: "Quotations", EN: "Quotations" },
   "procurement.secQThint": {
     ID: "Draft harga ke supplier sebelum PO | export .xlsx untuk supplier tanda tangan/edit, lalu convert ke PO.",
     EN: "Price draft to supplier before PO | export .xlsx for the supplier to sign/edit, then convert to PO."
@@ -741,6 +741,10 @@ export const LANG_KEYS = {
   "del.colDriver": { ID: "Driver", EN: "Driver" },
   "del.colVehicle": { ID: "Kendaraan", EN: "Vehicle" },
   "del.colSchool": { ID: "Sekolah", EN: "School" },
+  "del.colRecipient": { ID: "Tujuan", EN: "Recipient" },
+  "del.colKind": { ID: "Jenis", EN: "Type" },
+  "del.kindSchool": { ID: "Sekolah", EN: "School" },
+  "del.kindPosyandu": { ID: "Posyandu", EN: "Posyandu" },
   "del.colPlanned": { ID: "Direncanakan", EN: "Planned" },
   "del.colDelivered": { ID: "Terkirim", EN: "Delivered" },
   "del.colArrival": { ID: "Tiba", EN: "Arrival" },

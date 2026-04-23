@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui";
 import type { SOP } from "@/lib/sops";
-import type { SopComplianceRow } from "@/lib/engine";
 import { SopRunForm } from "./sop-run-form";
 import { t, ti, numberLocale, type Lang } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
@@ -11,6 +10,11 @@ import { useLang } from "@/lib/prefs-context";
 const CAT_RING: Record<SOP["category"], string> = {
   OPERASIONAL: "bg-sky-50 text-sky-900 ring-sky-200",
   HIGIENE: "bg-emerald-50 text-emerald-900 ring-emerald-200"
+};
+
+const CAT_TOC_BADGE: Record<SOP["category"], string> = {
+  OPERASIONAL: "bg-sky-100 text-sky-900 ring-sky-200",
+  HIGIENE: "bg-emerald-100 text-emerald-900 ring-emerald-200"
 };
 
 type RelatedLabelPair = { ID: string; EN: string };
@@ -46,83 +50,62 @@ function catLabel(cat: SOP["category"], lang: Lang): string {
 
 interface Props {
   sops: SOP[];
-  compliance: SopComplianceRow[];
   canWrite: boolean;
 }
 
-export function SopShell({ sops, compliance, canWrite }: Props) {
+export function SopShell({ sops, canWrite }: Props) {
   const { lang } = useLang();
   const [openId, setOpenId] = useState<string | null>(null);
   const active = openId ? sops.find((s) => s.id === openId) ?? null : null;
 
-  const complianceMap = useMemo(() => {
-    const m = new Map<string, SopComplianceRow>();
-    for (const c of compliance) m.set(c.sop_id, c);
+  const grouped = useMemo(() => {
+    const m = new Map<SOP["category"], SOP[]>();
+    for (const s of sops) {
+      const list = m.get(s.category) ?? [];
+      list.push(s);
+      m.set(s.category, list);
+    }
     return m;
-  }, [compliance]);
+  }, [sops]);
 
   return (
     <>
-      <div className="mb-6 space-y-3">
-        {sops.map((s) => {
-          const c = complianceMap.get(s.id);
-          const related = RELATED_ACTION[s.id];
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {(["OPERASIONAL", "HIGIENE"] as const).map((cat) => {
+          const items = grouped.get(cat) ?? [];
+          if (items.length === 0) return null;
           return (
-            <button
-              key={s.id}
-              id={s.id}
-              type="button"
-              onClick={() => setOpenId(s.id)}
-              className="group flex w-full scroll-mt-20 flex-wrap items-center justify-between gap-3 rounded-2xl bg-white px-5 py-4 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-cardlg focus:outline-none focus:ring-2 focus:ring-accent-strong"
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink/5 text-xs font-black text-ink2 transition group-hover:translate-x-0.5">
-                  ›
-                </span>
-                <span className="font-mono text-[11px] font-bold text-ink2/60">
-                  {s.id}
-                </span>
+            <div key={cat}>
+              <div className="mb-2">
                 <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${CAT_RING[s.category]}`}
+                  className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1 ${CAT_TOC_BADGE[cat]}`}
                 >
-                  {catLabel(s.category, lang)}
+                  {ti("sop.catCount", lang, {
+                    cat: catLabel(cat, lang),
+                    n: items.length
+                  })}
                 </span>
-                <h3 className="truncate text-base font-black text-ink">
-                  {s.title}
-                </h3>
               </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-2 text-[10px] font-semibold text-ink2/70">
-                <Badge tone="neutral">{ti("sop.badgeSteps", lang, { n: s.steps.length })}</Badge>
-                <Badge tone="bad">{ti("sop.badgeRisks", lang, { n: s.risks.length })}</Badge>
-                {c ? (
-                  <Badge
-                    tone={
-                      Number(c.avg_completion) >= 80
-                        ? "ok"
-                        : Number(c.avg_completion) >= 50
-                          ? "warn"
-                          : "bad"
-                    }
-                  >
-                    {c.run_count}× · {Number(c.avg_completion).toFixed(0)}%
-                  </Badge>
-                ) : (
-                  <Badge tone="muted">{t("sop.badgeNotExec", lang)}</Badge>
-                )}
-                {related && (
-                  <span
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.location.href = related.href;
-                    }}
-                    className="hidden cursor-pointer rounded-full bg-accent-strong/10 px-2 py-0.5 text-[10px] font-bold text-accent-strong transition hover:bg-accent-strong hover:text-white md:inline-block"
-                  >
-                    {related.label[lang]}
-                  </span>
-                )}
-                <span className="hidden text-ink2/60 lg:inline">{s.ref}</span>
-              </div>
-            </button>
+              <ol className="space-y-1 text-sm">
+                {items.map((s) => (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => setOpenId(s.id)}
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-ink2 transition hover:bg-paper hover:text-ink focus:outline-none focus:ring-2 focus:ring-accent-strong"
+                    >
+                      <span className="font-mono text-[11px] font-bold text-ink2/60">
+                        {s.id}
+                      </span>
+                      <span className="flex-1 truncate">{s.title}</span>
+                      <span className="shrink-0 text-[10px] font-bold text-ink2/40">
+                        {s.steps.length}↓
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </div>
           );
         })}
       </div>

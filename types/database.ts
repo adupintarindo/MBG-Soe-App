@@ -1883,7 +1883,9 @@ export type Database = {
           id: number
           delivery_no: string
           stop_order: number
-          school_id: string
+          stop_kind: Database["public"]["Enums"]["stop_kind"]
+          school_id: string | null
+          posyandu_id: string | null
           porsi_planned: number
           porsi_delivered: number
           arrival_at: string | null
@@ -1899,7 +1901,9 @@ export type Database = {
           id?: number
           delivery_no: string
           stop_order: number
-          school_id: string
+          stop_kind?: Database["public"]["Enums"]["stop_kind"]
+          school_id?: string | null
+          posyandu_id?: string | null
           porsi_planned?: number
           porsi_delivered?: number
           arrival_at?: string | null
@@ -1915,7 +1919,9 @@ export type Database = {
           id?: number
           delivery_no?: string
           stop_order?: number
-          school_id?: string
+          stop_kind?: Database["public"]["Enums"]["stop_kind"]
+          school_id?: string | null
+          posyandu_id?: string | null
           porsi_planned?: number
           porsi_delivered?: number
           arrival_at?: string | null
@@ -1925,6 +1931,39 @@ export type Database = {
           photo_url?: string | null
           note?: string | null
           status?: Database["public"]["Enums"]["delivery_status"]
+          created_at?: string
+        }
+        Relationships: []
+      }
+      posyandu: {
+        Row: {
+          id: string
+          name: string
+          village: string | null
+          district: string | null
+          lat: number | null
+          lng: number | null
+          active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          village?: string | null
+          district?: string | null
+          lat?: number | null
+          lng?: number | null
+          active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          village?: string | null
+          district?: string | null
+          lat?: number | null
+          lng?: number | null
+          active?: boolean
           created_at?: string
         }
         Relationships: []
@@ -2939,6 +2978,7 @@ export type Database = {
         | "expired"
       reval_period: "quarterly" | "semester" | "annual" | "ad_hoc"
       school_level: "PAUD/TK" | "SD" | "SMP" | "SMA" | "SMK"
+      stop_kind: "school" | "posyandu"
       supplier_status: "signed" | "awaiting" | "rejected" | "draft"
       supplier_type:
         | "BUMN"
@@ -3144,6 +3184,7 @@ export const Constants = {
       ],
       reval_period: ["quarterly", "semester", "annual", "ad_hoc"],
       school_level: ["PAUD/TK", "SD", "SMP", "SMA", "SMK"],
+      stop_kind: ["school", "posyandu"],
       supplier_status: ["signed", "awaiting", "rejected", "draft"],
       supplier_type: [
         "BUMN",

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createServerReadClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import {
@@ -37,6 +37,7 @@ import {
 } from "@/lib/delivery-engine";
 import { getHoliday } from "@/lib/holidays";
 import { DeliveryScheduleView } from "./delivery-schedule-view";
+import { ProcurementDocsModal } from "./procurement-docs-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -123,7 +124,7 @@ export default async function ProcurementPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const supabase = createClient();
+  const supabase = createServerReadClient();
   const lang = getLang();
 
   const profile = await getSessionProfile();
@@ -287,10 +288,8 @@ export default async function ProcurementPage({
     profile.role === "admin" || profile.role === "operator";
 
   const rowCountByPORecord: Record<string, number> = {};
-  const qtyByPORecord: Record<string, number> = {};
   for (const r of poRows) {
     rowCountByPORecord[r.po_no] = (rowCountByPORecord[r.po_no] ?? 0) + 1;
-    qtyByPORecord[r.po_no] = (qtyByPORecord[r.po_no] ?? 0) + Number(r.qty);
   }
 
   // --------------------------------------------------------------------------
@@ -457,7 +456,17 @@ export default async function ProcurementPage({
       />
 
       <PageContainer>
-        <PageHeader />
+        <PageHeader
+          actions={
+            <ProcurementDocsModal
+              lang={lang}
+              pos={pos}
+              grns={grns}
+              invoices={invoices}
+              supplierNames={supplierNameMap}
+            />
+          }
+        />
 
         <PageTabs tabs={tabs} activeId={activeTab} />
 
@@ -486,7 +495,21 @@ export default async function ProcurementPage({
 
         {activeTab === "po" && (
           <>
-            <Section icon="📄" title={t("procurement.secPOtitle", lang)} hint={t("procurement.secPOhint", lang)}>
+            <Section
+              icon="📄"
+              title={t("procurement.secPOtitle", lang)}
+              hint={t("procurement.secPOhint", lang)}
+              actions={
+                canWrite ? (
+                  <Link
+                    href="/procurement/po/new"
+                    className="rounded-lg bg-ink px-3 py-1.5 text-[11px] font-black text-white shadow-card hover:bg-ink2"
+                  >
+                    {t("procurement.btnNewSimple", lang)}
+                  </Link>
+                ) : null
+              }
+            >
               {pos.length === 0 ? (
                 <EmptyState message={t("procurement.poEmpty", lang)} />
               ) : (
@@ -494,7 +517,6 @@ export default async function ProcurementPage({
                   rows={pos}
                   supplierNames={supplierNameMap}
                   rowCountByPO={rowCountByPORecord}
-                  qtyByPO={qtyByPORecord}
                 />
               )}
             </Section>

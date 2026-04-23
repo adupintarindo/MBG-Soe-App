@@ -340,10 +340,12 @@ export function QuotationForm({
         const only = createdNos[0];
         startTransition(() => {
           router.push(`/procurement/quotation/${encodeURIComponent(only)}`);
+          router.refresh();
         });
       } else {
         startTransition(() => {
           router.push("/procurement?tab=quotations");
+          router.refresh();
         });
       }
     } finally {
@@ -391,7 +393,7 @@ export function QuotationForm({
               <option value="">{t("qtNew.optMenuAuto", lang)}</option>
               {menus.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.cycle_day != null ? `D${m.cycle_day} · ` : ""}
+                  {m.cycle_day != null ? `M${m.cycle_day} · ` : ""}
                   {m.name}
                 </option>
               ))}
@@ -602,34 +604,6 @@ export function QuotationForm({
 
       {/* Step 3 · Submit */}
       <div className="space-y-3 bg-paper/40 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[11px] text-ink2/70">
-            {supplierGroups.size > 0
-              ? ti("qtNew.helperGroup", lang, {
-                  n: String(supplierGroups.size)
-                })
-              : t("qtNew.helperSubmitNew", lang)}
-          </div>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={saving || supplierGroups.size === 0}
-            className="rounded-xl bg-ink px-5 py-3 text-sm font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
-          >
-            {saving
-              ? t("qtNew.btnSaving", lang)
-              : supplierGroups.size > 1
-                ? ti("qtNew.btnSaveMulti", lang, {
-                    n: String(supplierGroups.size)
-                  })
-                : t("qtNew.btnSave", lang)}
-          </button>
-        </div>
-        {error && (
-          <div className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-800 ring-1 ring-red-200">
-            {error}
-          </div>
-        )}
         {supplierGroups.size > 0 && (
           <div className="flex flex-wrap gap-2">
             {Array.from(supplierGroups.entries()).map(([supId, supRows]) => {
@@ -648,6 +622,27 @@ export function QuotationForm({
             })}
           </div>
         )}
+        {error && (
+          <div className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-800 ring-1 ring-red-200">
+            {error}
+          </div>
+        )}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={submit}
+            disabled={saving || supplierGroups.size === 0}
+            className="rounded-xl bg-ink px-5 py-3 text-sm font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
+          >
+            {saving
+              ? t("qtNew.btnSaving", lang)
+              : supplierGroups.size > 1
+                ? ti("qtNew.btnSaveMulti", lang, {
+                    n: String(supplierGroups.size)
+                  })
+                : t("qtNew.btnSave", lang)}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -683,7 +678,7 @@ function MenuPreviewBanner({
     return (
       <div className="rounded-xl bg-amber-50 px-3 py-2 text-[11px] text-amber-900 ring-1 ring-amber-200">
         <span className="font-bold">{t("qtNew.previewOverride", lang)}:</span>{" "}
-        {override.cycle_day != null ? `D${override.cycle_day} · ` : ""}
+        {override.cycle_day != null ? `M${override.cycle_day} · ` : ""}
         {name}
         <span className="ml-2 text-amber-900/70">
           ({t("qtNew.previewAssigned", lang)}: {assignedLabel})

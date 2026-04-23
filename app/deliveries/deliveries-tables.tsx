@@ -15,8 +15,9 @@ export type StopRow = {
   id: number;
   delivery_no: string;
   stop_order: number;
-  school_id: string;
-  school_name: string;
+  kind: "school" | "posyandu";
+  recipient_id: string;
+  recipient_name: string;
   porsi_planned: number;
   porsi_delivered: number;
   arrival_at: string | null;
@@ -79,15 +80,35 @@ export function DeliveryManifestTable({
       render: (r) => <span className="font-mono text-xs">{r.stop_order}</span>
     },
     {
-      key: "school",
-      label: t("del.colSchool", lang),
+      key: "kind",
+      label: t("del.colKind", lang),
+      align: "center",
+      width: "84px",
+      sortValue: (r) => r.kind,
+      render: (r) => (
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+            r.kind === "posyandu"
+              ? "bg-amber-100 text-amber-900 ring-1 ring-amber-300"
+              : "bg-sky-100 text-sky-900 ring-1 ring-sky-300"
+          }`}
+        >
+          {r.kind === "posyandu"
+            ? t("del.kindPosyandu", lang)
+            : t("del.kindSchool", lang)}
+        </span>
+      )
+    },
+    {
+      key: "recipient",
+      label: t("del.colRecipient", lang),
       align: "left",
-      sortValue: (r) => r.school_name,
+      sortValue: (r) => r.recipient_name,
       render: (r) => (
         <div>
-          <div className="font-semibold">{r.school_name}</div>
+          <div className="font-semibold">{r.recipient_name}</div>
           <div className="font-mono text-[10px] text-ink2/60">
-            {r.school_id}
+            {r.recipient_id}
           </div>
         </div>
       )

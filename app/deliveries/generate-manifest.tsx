@@ -18,8 +18,9 @@ function tomorrowISO(): string {
 
 type ManifestStop = {
   stop_order: number;
-  school_id: string;
-  school_name: string;
+  kind: "school" | "posyandu";
+  recipient_id: string;
+  recipient_name: string;
   porsi_planned: number;
   status: string | null;
 };
@@ -65,30 +66,57 @@ export function GenerateManifestButton({
       return { date: iso, delivery_no: null, stops: [], total: 0 };
     }
 
-    const [{ data: stopsData }, { data: schoolsData }] = await Promise.all([
+    const [
+      { data: stopsData },
+      { data: schoolsData },
+      { data: posyanduData }
+    ] = await Promise.all([
       supabase
         .from("delivery_stops")
         .select(
-          "delivery_no, stop_order, school_id, porsi_planned, status"
+          "delivery_no, stop_order, stop_kind, school_id, posyandu_id, porsi_planned, status"
         )
         .in("delivery_no", nos)
         .order("delivery_no", { ascending: true })
         .order("stop_order", { ascending: true }),
-      supabase.from("schools").select("id, name")
+      supabase.from("schools").select("id, name"),
+      supabase.from("posyandu").select("id, name")
     ]);
 
-    const nameById = new Map<string, string>();
+    const schoolNameById = new Map<string, string>();
     for (const s of schoolsData ?? []) {
-      nameById.set(s.id as string, s.name as string);
+      schoolNameById.set(s.id as string, s.name as string);
+    }
+    const posyanduNameById = new Map<string, string>();
+    for (const p of posyanduData ?? []) {
+      posyanduNameById.set(p.id as string, p.name as string);
     }
 
-    const stops: ManifestStop[] = (stopsData ?? []).map((s) => ({
-      stop_order: Number(s.stop_order),
-      school_id: s.school_id as string,
-      school_name: nameById.get(s.school_id as string) ?? (s.school_id as string),
-      porsi_planned: Number(s.porsi_planned ?? 0),
-      status: (s.status as string) ?? null
-    }));
+    const stops: ManifestStop[] = (stopsData ?? []).map((s) => {
+      const kind = ((s.stop_kind as string) ?? "school") as
+        | "school"
+        | "posyandu";
+      if (kind === "posyandu") {
+        const pid = (s.posyandu_id as string) ?? "";
+        return {
+          stop_order: Number(s.stop_order),
+          kind,
+          recipient_id: pid,
+          recipient_name: posyanduNameById.get(pid) ?? pid,
+          porsi_planned: Number(s.porsi_planned ?? 0),
+          status: (s.status as string) ?? null
+        };
+      }
+      const sid = (s.school_id as string) ?? "";
+      return {
+        stop_order: Number(s.stop_order),
+        kind: "school",
+        recipient_id: sid,
+        recipient_name: schoolNameById.get(sid) ?? sid,
+        porsi_planned: Number(s.porsi_planned ?? 0),
+        status: (s.status as string) ?? null
+      };
+    });
     const total = stops.reduce((acc, s) => acc + s.porsi_planned, 0);
     return {
       date: iso,
@@ -105,11 +133,13 @@ export function GenerateManifestButton({
       await deliveryGenerateForDate(supabase, selectedDate);
       const detail = await fetchManifestForDate(selectedDate);
       setResult(detail);
+      const schoolCount = detail.stops.filter((s) => s.kind === "school").length;
+      const posyanduCount = detail.stops.filter((s) => s.kind === "posyandu").length;
       toast.success(
         lang === "EN" ? "Manifest generated" : "Manifest berhasil dibuat",
         lang === "EN"
-          ? `${detail.stops.length} stops, ${detail.total.toLocaleString()} portions.`
-          : `${detail.stops.length} sekolah, ${detail.total.toLocaleString("id-ID")} porsi.`
+          ? `${schoolCount} schools, ${posyanduCount} posyandu, ${detail.total.toLocaleString()} portions.`
+          : `${schoolCount} sekolah, ${posyanduCount} posyandu, ${detail.total.toLocaleString("id-ID")} porsi.`
       );
       router.refresh();
     } catch (e) {
@@ -217,13 +247,18 @@ function ManifestResultModal({
     const columns: StyledColumn[] = [
       { key: "no", header: "No", align: "center" },
       {
-        key: "school_id",
-        header: lang === "EN" ? "School ID" : "ID Sekolah",
+        key: "kind",
+        header: lang === "EN" ? "Type" : "Jenis",
+        align: "center"
+      },
+      {
+        key: "recipient_id",
+        header: "ID",
         align: "left"
       },
       {
-        key: "school_name",
-        header: lang === "EN" ? "School" : "Sekolah",
+        key: "recipient_name",
+        header: lang === "EN" ? "Recipient" : "Tujuan",
         align: "left"
       },
       {
@@ -241,8 +276,16 @@ function ManifestResultModal({
     ];
     const rows = result.stops.map((s) => ({
       no: s.stop_order,
-      school_id: s.school_id,
-      school_name: s.school_name,
+      kind:
+        s.kind === "posyandu"
+          ? lang === "EN"
+            ? "Posyandu"
+            : "Posyandu"
+          : lang === "EN"
+            ? "School"
+            : "Sekolah",
+      recipient_id: s.recipient_id,
+      recipient_name: s.recipient_name,
       porsi: s.porsi_planned,
       status: s.status ?? "—"
     }));
@@ -331,11 +374,14 @@ function ManifestResultModal({
                     <th className="px-3 py-2 text-center text-[11px] font-bold uppercase tracking-wide">
                       No
                     </th>
-                    <th className="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide">
-                      {lang === "EN" ? "School ID" : "ID Sekolah"}
+                    <th className="px-3 py-2 text-center text-[11px] font-bold uppercase tracking-wide">
+                      {lang === "EN" ? "Type" : "Jenis"}
                     </th>
                     <th className="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide">
-                      {lang === "EN" ? "School" : "Sekolah"}
+                      ID
+                    </th>
+                    <th className="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide">
+                      {lang === "EN" ? "Recipient" : "Tujuan"}
                     </th>
                     <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wide">
                       {lang === "EN" ? "Portions" : "Porsi"}
@@ -348,17 +394,28 @@ function ManifestResultModal({
                 <tbody>
                   {result.stops.map((s) => (
                     <tr
-                      key={`${s.school_id}-${s.stop_order}`}
+                      key={`${s.kind}-${s.recipient_id}-${s.stop_order}`}
                       className="border-t border-ink/5"
                     >
                       <td className="px-3 py-2 text-center font-mono text-xs tabular-nums">
                         {s.stop_order}
                       </td>
+                      <td className="px-3 py-2 text-center">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                            s.kind === "posyandu"
+                              ? "bg-amber-100 text-amber-900 ring-1 ring-amber-300"
+                              : "bg-sky-100 text-sky-900 ring-1 ring-sky-300"
+                          }`}
+                        >
+                          {s.kind === "posyandu" ? "Posyandu" : lang === "EN" ? "School" : "Sekolah"}
+                        </span>
+                      </td>
                       <td className="px-3 py-2 font-mono text-xs text-ink2">
-                        {s.school_id}
+                        {s.recipient_id}
                       </td>
                       <td className="px-3 py-2 font-semibold text-ink">
-                        {s.school_name}
+                        {s.recipient_name}
                       </td>
                       <td className="px-3 py-2 text-right font-mono text-xs font-bold tabular-nums">
                         {formatNumber(s.porsi_planned, lang)}
@@ -372,7 +429,7 @@ function ManifestResultModal({
                 <tfoot>
                   <tr className="border-t-2 border-ink/20 bg-paper">
                     <td
-                      colSpan={3}
+                      colSpan={4}
                       className="px-3 py-2 text-right text-[11px] font-black uppercase tracking-wide text-ink"
                     >
                       Total
@@ -382,7 +439,7 @@ function ManifestResultModal({
                     </td>
                     <td className="px-3 py-2 text-center text-[11px] text-ink2">
                       {result.stops.length}{" "}
-                      {lang === "EN" ? "stops" : "sekolah"}
+                      {lang === "EN" ? "stops" : "titik"}
                     </td>
                   </tr>
                 </tfoot>

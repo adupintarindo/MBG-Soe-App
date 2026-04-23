@@ -91,10 +91,11 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
   const [pending, startTransition] = useTransition();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const activeWeeks = useMemo(
-    () => weeks.filter((w) => w.period_id === periodId).sort((a, b) => a.week_no - b.week_no),
-    [weeks, periodId]
-  );
+  const activeWeeks = useMemo(() => {
+    return weeks
+      .filter((w) => w.period_id === periodId)
+      .sort((a, b) => a.week_no - b.week_no);
+  }, [weeks, periodId]);
 
   const filteredRows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -294,17 +295,22 @@ export function PriceListShell({ periods, weeks, rows: rowsProp, currentPeriodId
             className="w-full rounded-md border border-ink/10 bg-paper py-1.5 pl-8 pr-3 text-xs outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
           />
         </div>
-        <select
-          value={periodId ?? ""}
-          onChange={(e) => setPeriodId(Number(e.target.value) || null)}
-          className="rounded-md border border-ink/10 bg-paper py-1.5 pl-2.5 pr-7 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
-        >
-          {periods.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        {periods.length > 0 && (
+          <select
+            value={periodId ?? ""}
+            onChange={(e) =>
+              setPeriodId(e.target.value ? Number(e.target.value) : null)
+            }
+            className="rounded-md border border-ink/10 bg-paper py-1.5 pl-2.5 pr-7 text-xs text-ink outline-none transition focus:border-accent-strong/60 focus:ring-2 focus:ring-accent-strong/20"
+          >
+            {periods.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+                {p.active ? " · Aktif" : ""}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           value={commodity}
           onChange={(e) => setCommodity(e.target.value as PriceCommodity | "")}

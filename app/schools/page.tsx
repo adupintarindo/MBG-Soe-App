@@ -278,8 +278,8 @@ async function SekolahTab({
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                     fill="currentColor"
-                    aria-hidden
-                    title={lang === "EN" ? "Students" : "Siswa"}
+                    aria-label={lang === "EN" ? "Students" : "Siswa"}
+                    role="img"
                     className={`h-4 w-4 ${hasData ? "text-ink2/70" : "text-ink2/30"}`}
                   >
                     <path d="M12 3 1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z" />
@@ -297,8 +297,8 @@ async function SekolahTab({
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                     fill="currentColor"
-                    aria-hidden
-                    title={lang === "EN" ? "Teachers" : "Guru"}
+                    aria-label={lang === "EN" ? "Teachers" : "Guru"}
+                    role="img"
                     className={`h-4 w-4 ${hasData ? "text-ink2/70" : "text-ink2/30"}`}
                   >
                     <path d="M12 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 10c-4.41 0-8 1.79-8 4v4h16v-4c0-2.21-3.59-4-8-4zm7-1.5v2l2-.67V16h1v-5l-3-1.5z" />

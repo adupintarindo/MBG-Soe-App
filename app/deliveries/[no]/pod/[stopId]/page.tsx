@@ -31,26 +31,44 @@ export default async function PODPage({
   if (!Number.isFinite(stopId)) notFound();
 
   const supabase = createClient();
-  const [stopRes, schoolsRes] = await Promise.all([
-    supabase
-      .from("delivery_stops")
-      .select(
-        "id, delivery_no, stop_order, school_id, porsi_planned, porsi_delivered, arrival_at, temperature_c, receiver_name, signature_url, photo_url, note, status"
-      )
-      .eq("id", stopId)
-      .eq("delivery_no", deliveryNo)
-      .maybeSingle(),
-    supabase.from("schools").select("id, name")
-  ]);
+  const stopRes = await supabase
+    .from("delivery_stops")
+    .select(
+      "id, delivery_no, stop_order, stop_kind, school_id, posyandu_id, porsi_planned, porsi_delivered, arrival_at, temperature_c, receiver_name, signature_url, photo_url, note, status"
+    )
+    .eq("id", stopId)
+    .eq("delivery_no", deliveryNo)
+    .maybeSingle();
 
   const stop = stopRes.data;
   if (!stop) notFound();
-  const schools = (schoolsRes.data ?? []) as Array<{
-    id: string;
-    name: string;
-  }>;
-  const schoolName =
-    schools.find((s) => s.id === stop.school_id)?.name ?? stop.school_id;
+
+  const kind: "school" | "posyandu" =
+    stop.stop_kind === "posyandu" ? "posyandu" : "school";
+
+  let recipientName: string;
+  if (kind === "posyandu") {
+    const posyanduId = stop.posyandu_id ?? "";
+    const { data: p } = await supabase
+      .from("posyandu")
+      .select("name")
+      .eq("id", posyanduId)
+      .maybeSingle();
+    recipientName = p?.name ?? posyanduId;
+  } else {
+    const schoolId = stop.school_id ?? "";
+    const { data: s } = await supabase
+      .from("schools")
+      .select("name")
+      .eq("id", schoolId)
+      .maybeSingle();
+    recipientName = s?.name ?? schoolId;
+  }
+
+  const kindLabel =
+    kind === "posyandu"
+      ? t("del.kindPosyandu", lang)
+      : t("del.kindSchool", lang);
 
   return (
     <div>
@@ -63,7 +81,7 @@ export default async function PODPage({
       <PageContainer>
         <PageHeader
           title={ti("del.podTitle", lang, { no: deliveryNo })}
-          subtitle={`${schoolName} · Stop #${stop.stop_order}`}
+          subtitle={`${kindLabel} · ${recipientName} · Stop #${stop.stop_order}`}
           actions={
             <LinkButton href="/deliveries" variant="secondary" size="sm">
               {t("common.back", lang)}

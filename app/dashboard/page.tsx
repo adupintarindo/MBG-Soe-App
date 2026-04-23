@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createServerReadClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
 import { TransactionLog, type TxRow } from "@/components/transaction-log";
@@ -78,7 +78,7 @@ export default async function DashboardPage({
 }: {
   searchParams?: Promise<SearchParams> | SearchParams;
 }) {
-  const supabase = createClient();
+  const supabase = createServerReadClient();
   const lang = getLang();
   const sp = (searchParams
     ? await Promise.resolve(searchParams)

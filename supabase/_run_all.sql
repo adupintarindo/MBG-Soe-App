@@ -8817,4 +8817,1818 @@ end $$;
 grant execute on function public.notification_feed(int) to authenticated;
 
 
+-- >>> 0043_fix_ambiguous_rpcs.sql ===========================================
+-- ============================================================================
+-- 0043 · Fix ambiguous column references in porsi_counts & daily_planning
+-- Root cause: RETURN TABLE kolom bentrok dgn alias CTE / kolom schools.*.
+-- Fix: pakai alias tabel eksplisit (s.guru, s.kelas13, s.kelas46) dan
+-- hindari nama kolom `operasional` yg bentrok dgn RETURN TABLE di
+-- daily_planning saat memanggil porsi_counts().
+-- ============================================================================
+
+create or replace function public.porsi_counts(p_date date)
+returns table(kecil int, besar int, guru int, total int, operasional boolean)
+language plpgsql stable as $$
+declare
+  v_kecil int := 0;
+  v_besar int := 0;
+  v_guru  int := 0;
+  v_nonop boolean := false;
+begin
+  select true into v_nonop from public.non_op_days where op_date = p_date;
+  if coalesce(v_nonop, false) then
+    return query select 0,0,0,0,false;
+    return;
+  end if;
+
+  if extract(dow from p_date) in (0,6) then
+    return query select 0,0,0,0,false;
+    return;
+  end if;
+
+  with roster as (
+    select
+      s.id              as sid,
+      s.level           as slevel,
+      s.students        as sstudents,
+      s.kelas13         as skelas13,
+      s.kelas46         as skelas46,
+      s.guru            as sguru,
+      a.qty             as att_qty,
+      case
+        when a.qty is null then 1.0
+        when s.students <= 0 then 0.0
+        else least(a.qty::numeric / nullif(s.students,0)::numeric, 1.0)
+      end as ratio
+    from public.schools s
+    left join public.school_attendance a
+      on a.school_id = s.id and a.att_date = p_date
+    where s.active = true
+  )
+  select
+    coalesce(sum(
+      case
+        when slevel = 'PAUD/TK' then round(sstudents * ratio)
+        when slevel = 'SD'      then round(skelas13 * ratio)
+        else 0
+      end
+    ), 0)::int,
+    coalesce(sum(
+      case
+        when slevel = 'SD'                 then round(skelas46 * ratio)
+        when slevel in ('SMP','SMA','SMK') then round(sstudents * ratio)
+        else 0
+      end
+    ), 0)::int,
+    coalesce(sum(round(sguru * ratio)), 0)::int
+  into v_kecil, v_besar, v_guru
+  from roster;
+
+  return query select v_kecil, v_besar, v_guru, (v_kecil + v_besar + v_guru), true;
+end; $$;
+
+
+create or replace function public.daily_planning(p_horizon int default 10)
+returns table(
+  op_date date,
+  menu_id smallint,
+  menu_name text,
+  porsi_total int,
+  porsi_eff numeric,
+  total_kg numeric,
+  short_items int,
+  operasional boolean
+)
+language plpgsql stable as $$
+declare
+  d date;
+  i int := 0;
+  v_kecil int;
+  v_besar int;
+  v_guru  int;
+  v_op    boolean;
+  v_menu  smallint;
+  v_menu_name text;
+  v_eff numeric;
+  v_kg  numeric;
+  v_short int;
+begin
+  d := current_date;
+  while i < greatest(p_horizon, 1) loop
+    -- porsi counts & operasional (hindari SELECT INTO record utk cegah name-clash)
+    select pc.kecil, pc.besar, pc.guru, pc.operasional
+      into v_kecil, v_besar, v_guru, v_op
+      from public.porsi_counts(d) as pc;
+
+    v_op  := coalesce(v_op, false);
+    v_eff := public.porsi_effective(d);
+
+    select ma.menu_id into v_menu
+      from public.menu_assign ma
+     where ma.assign_date = d;
+    if v_menu is not null then
+      select m.name into v_menu_name from public.menus m where m.id = v_menu;
+    else
+      v_menu_name := null;
+    end if;
+
+    select coalesce(sum(r.qty), 0) into v_kg
+      from public.requirement_for_date(d) as r;
+
+    select coalesce(count(*) filter (where s.gap > 0), 0)::int into v_short
+      from public.stock_shortage_for_date(d) as s;
+
+    op_date     := d;
+    menu_id     := v_menu;
+    menu_name   := v_menu_name;
+    porsi_total := coalesce(v_kecil,0) + coalesce(v_besar,0) + coalesce(v_guru,0);
+    porsi_eff   := v_eff;
+    total_kg    := v_kg;
+    short_items := v_short;
+    operasional := v_op;
+    return next;
+
+    d := d + 1;
+    i := i + 1;
+  end loop;
+end; $$;
+
+
+-- >>> 0050_bgn_forms.sql ====================================================
+-- =============================================================================
+-- 0050 · BGN MBG Forms (SK Ka BGN 401.1 Tahun 2025)
+-- -----------------------------------------------------------------------------
+-- Goal: single-input → multi-output (PDF/Word/Excel) untuk 13 lampiran BGN
+-- + payroll + daily cash. Semua data 1× masuk ke Postgres → generator stream
+-- ke template .docx/.xlsx di Supabase Storage bucket 'bgn-templates'.
+--
+-- Tables baru (15):
+--   sppg_staff             · Tim SPPG (Ka, Pengawas, Cook, Relawan)
+--   food_sample_log        · Lamp 21 checklist sampel makanan
+--   organoleptic_test      · Lamp 22 uji organoleptik
+--   posyandu               · Master posyandu distribusi
+--   kader_incentive        · Lamp 26 insentif kader
+--   pic_school             · PIC per satuan pendidikan
+--   pic_incentive          · Lamp 27 insentif PIC
+--   daily_cash_log         · Lamp 30b + LAPORAN KEUANGAN
+--   chart_of_accounts      · COA untuk buku besar
+--   gl_entry               · Lamp 30e buku neraca besar
+--   petty_cash             · Lamp 30f kas kecil
+--   payroll_period         · Periode penggajian 2-mingguan
+--   payroll_attendance     · Absensi harian per period
+--   payroll_slip           · Slip gaji per karyawan per period
+--   bgn_generation_log     · Audit trail generator dokumen
+--
+-- Enrichment ke tabel existing:
+--   schools: + recipient_group, + pic_school_id
+--   grns:    + condition_flag, + qc_officer_id (sudah ada qc_note)
+--
+-- Idempoten via IF NOT EXISTS / DROP IF EXISTS.
+-- =============================================================================
+
+-- =============================================================================
+-- ENUMS
+-- =============================================================================
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'sppg_role') then
+    create type public.sppg_role as enum (
+      'kepala_sppg',
+      'pengawas_gizi',
+      'pengawas_keuangan',
+      'jurutama_masak',
+      'asisten_lapangan',
+      'persiapan_makanan',
+      'pemrosesan_makanan',
+      'pengemasan',
+      'pemorsian',
+      'distribusi',
+      'pencucian_alat',
+      'pencucian',
+      'sanitasi',
+      'kader_posyandu'
+    );
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'recipient_group') then
+    create type public.recipient_group as enum (
+      'peserta_didik',
+      'pendidik_nakes',
+      'non_peserta_posyandu'
+    );
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'organoleptic_phase') then
+    create type public.organoleptic_phase as enum (
+      'before_dispatch',
+      'on_arrival',
+      'before_consumption'
+    );
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'organoleptic_verdict') then
+    create type public.organoleptic_verdict as enum ('aman', 'tidak_aman');
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'cash_flow_direction') then
+    create type public.cash_flow_direction as enum ('masuk', 'keluar');
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'coa_category') then
+    create type public.coa_category as enum ('asset', 'liability', 'equity', 'revenue', 'expense');
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'payroll_status') then
+    create type public.payroll_status as enum ('draft', 'finalized', 'paid');
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'attendance_status') then
+    create type public.attendance_status as enum ('H', 'S', 'I', 'A', 'OFF');
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'grn_condition') then
+    create type public.grn_condition as enum ('baik', 'rusak', 'expired', 'other');
+  end if;
+end $$;
+
+-- =============================================================================
+-- 1. SPPG Staff (Tim SPPG + 48 Relawan)
+-- =============================================================================
+
+create table if not exists public.sppg_staff (
+  id           uuid primary key default gen_random_uuid(),
+  seq_no       int,
+  full_name    text not null,
+  nik          text,
+  phone        text,
+  email        text,
+  role         public.sppg_role not null default 'persiapan_makanan',
+  role_label   text,
+  bank_name    text,
+  bank_account text,
+  start_date   date default current_date,
+  end_date     date,
+  active       boolean not null default true,
+  gaji_pokok   numeric(12,2) default 0,
+  notes        text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists sppg_staff_role_idx on public.sppg_staff(role);
+create index if not exists sppg_staff_active_idx on public.sppg_staff(active) where active = true;
+
+-- =============================================================================
+-- 2. Schools enrichment
+-- =============================================================================
+
+alter table public.schools
+  add column if not exists recipient_group public.recipient_group not null default 'peserta_didik';
+
+-- pic_school_id FK akan dibuat setelah pic_school tabelnya ada (section 4).
+
+-- =============================================================================
+-- 3. QC: Food Sample Log (Lamp 21)
+-- =============================================================================
+
+create table if not exists public.food_sample_log (
+  id                   uuid primary key default gen_random_uuid(),
+  delivery_date        date not null,
+  delivery_seq         smallint not null check (delivery_seq between 1 and 3),
+  school_id            text references public.schools(id) on delete set null,
+  menu_assign_date     date, -- FK ke menu_assign(assign_date), nullable
+  officer_id           uuid references public.sppg_staff(id) on delete set null,
+  officer_signature_url text,
+  sample_kept          boolean not null default true,
+  notes                text,
+  created_at           timestamptz not null default now(),
+  created_by           uuid references auth.users(id)
+);
+create index if not exists food_sample_date_idx on public.food_sample_log(delivery_date);
+create index if not exists food_sample_school_idx on public.food_sample_log(school_id);
+
+-- =============================================================================
+-- 4. QC: Organoleptic Test (Lamp 22)
+-- =============================================================================
+
+create table if not exists public.organoleptic_test (
+  id             uuid primary key default gen_random_uuid(),
+  test_date      date not null,
+  test_phase     public.organoleptic_phase not null,
+  school_id      text references public.schools(id) on delete set null,
+  menu_assign_date date,
+  rasa           smallint check (rasa between 1 and 5),
+  warna          smallint check (warna between 1 and 5),
+  aroma          smallint check (aroma between 1 and 5),
+  tekstur        smallint check (tekstur between 1 and 5),
+  verdict        public.organoleptic_verdict not null default 'aman',
+  officer_id     uuid references public.sppg_staff(id) on delete set null,
+  notes          text,
+  created_at     timestamptz not null default now(),
+  created_by     uuid references auth.users(id)
+);
+create index if not exists organoleptic_date_idx on public.organoleptic_test(test_date);
+
+-- =============================================================================
+-- 5. Posyandu + Kader Incentive (Lamp 26)
+-- =============================================================================
+
+create table if not exists public.posyandu (
+  id        uuid primary key default gen_random_uuid(),
+  name      text not null,
+  village   text,
+  district  text default 'Amanuban Tengah',
+  lat       numeric,
+  lng       numeric,
+  active    boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.kader_incentive (
+  id             uuid primary key default gen_random_uuid(),
+  posyandu_id    uuid references public.posyandu(id) on delete set null,
+  kader_staff_id uuid references public.sppg_staff(id) on delete set null,
+  period_start   date not null,
+  period_end     date not null,
+  porsi_senin    int not null default 0,
+  porsi_kamis    int not null default 0,
+  unit_cost      numeric(12,2) not null default 0,
+  total_amount   numeric(14,2) generated always as
+                   ((porsi_senin + porsi_kamis) * unit_cost) stored,
+  paid           boolean not null default false,
+  paid_at        timestamptz,
+  created_at     timestamptz not null default now()
+);
+create index if not exists kader_incentive_period_idx on public.kader_incentive(period_start, period_end);
+
+-- =============================================================================
+-- 6. PIC per Satuan Pendidikan + Insentif (Lamp 27)
+-- =============================================================================
+
+create table if not exists public.pic_school (
+  id            uuid primary key default gen_random_uuid(),
+  school_id     text references public.schools(id) on delete cascade,
+  pic_staff_id  uuid references public.sppg_staff(id) on delete restrict,
+  active        boolean not null default true,
+  start_date    date default current_date,
+  end_date      date,
+  created_at    timestamptz not null default now()
+);
+create unique index if not exists pic_school_unique_active
+  on public.pic_school(school_id) where active = true;
+
+-- Backfill FK ke schools (null-safe).
+alter table public.schools
+  add column if not exists pic_school_id uuid references public.pic_school(id);
+
+create table if not exists public.pic_incentive (
+  id              uuid primary key default gen_random_uuid(),
+  pic_school_id   uuid references public.pic_school(id) on delete cascade,
+  period_start    date not null,
+  period_end      date not null,
+  total_porsi     int not null default 0,
+  unit_cost       numeric(12,2) not null default 0,
+  total_amount    numeric(14,2) generated always as (total_porsi * unit_cost) stored,
+  paid            boolean not null default false,
+  paid_at         timestamptz,
+  created_at      timestamptz not null default now()
+);
+create index if not exists pic_incentive_period_idx on public.pic_incentive(period_start, period_end);
+
+-- =============================================================================
+-- 7. Daily Cash Log (Lamp 30b + LAPORAN KEUANGAN)
+-- =============================================================================
+
+create table if not exists public.daily_cash_log (
+  id             uuid primary key default gen_random_uuid(),
+  log_date       date not null,
+  log_time       time,
+  uang_masuk     numeric(14,2) not null default 0,
+  uang_keluar    numeric(14,2) not null default 0,
+  saldo_akhir    numeric(14,2),
+  keterangan     text,
+  bukti_nota_url text,
+  category       text, -- maps ke chart_of_accounts.code (nullable)
+  po_no          text references public.purchase_orders(no) on delete set null,
+  po_line_no     smallint, -- composite ref to po_rows (no FK, soft link)
+  created_at     timestamptz not null default now(),
+  created_by     uuid references auth.users(id)
+);
+create index if not exists daily_cash_date_idx on public.daily_cash_log(log_date);
+create index if not exists daily_cash_category_idx on public.daily_cash_log(category);
+create index if not exists daily_cash_po_idx on public.daily_cash_log(po_no);
+
+-- =============================================================================
+-- 8. Chart of Accounts + General Ledger (Lamp 30e)
+-- =============================================================================
+
+create table if not exists public.chart_of_accounts (
+  code        text primary key,
+  name        text not null,
+  category    public.coa_category not null,
+  parent_code text references public.chart_of_accounts(code),
+  active      boolean not null default true,
+  notes       text
+);
+
+create table if not exists public.gl_entry (
+  id             uuid primary key default gen_random_uuid(),
+  entry_date     date not null,
+  description    text,
+  debit_account  text references public.chart_of_accounts(code),
+  credit_account text references public.chart_of_accounts(code),
+  amount         numeric(14,2) not null check (amount >= 0),
+  source_type    text, -- 'po'|'grn'|'invoice'|'payroll'|'cash'|'petty'|'manual'
+  source_id      uuid,
+  created_at     timestamptz not null default now(),
+  created_by     uuid references auth.users(id)
+);
+create index if not exists gl_entry_date_idx on public.gl_entry(entry_date);
+create index if not exists gl_entry_source_idx on public.gl_entry(source_type, source_id);
+
+-- =============================================================================
+-- 9. Petty Cash (Lamp 30f)
+-- =============================================================================
+
+create table if not exists public.petty_cash (
+  id             uuid primary key default gen_random_uuid(),
+  tx_date        date not null,
+  tx_time        time,
+  direction      public.cash_flow_direction not null,
+  amount         numeric(12,2) not null check (amount > 0),
+  description    text,
+  bukti_url      text,
+  balance_after  numeric(12,2),
+  created_at     timestamptz not null default now(),
+  created_by     uuid references auth.users(id)
+);
+create index if not exists petty_cash_date_idx on public.petty_cash(tx_date);
+
+-- =============================================================================
+-- 10. Payroll (Gaji Karyawan SPPG)
+-- =============================================================================
+
+create table if not exists public.payroll_period (
+  id           uuid primary key default gen_random_uuid(),
+  period_label text not null, -- e.g. "19 Jan - 01 Feb 2026"
+  start_date   date not null,
+  end_date     date not null,
+  status       public.payroll_status not null default 'draft',
+  finalized_at timestamptz,
+  paid_at      timestamptz,
+  created_at   timestamptz not null default now(),
+  created_by   uuid references auth.users(id)
+);
+create index if not exists payroll_period_range_idx on public.payroll_period(start_date, end_date);
+
+create table if not exists public.payroll_attendance (
+  id              uuid primary key default gen_random_uuid(),
+  period_id       uuid references public.payroll_period(id) on delete cascade,
+  staff_id        uuid references public.sppg_staff(id) on delete cascade,
+  attendance_date date not null,
+  status          public.attendance_status not null default 'OFF',
+  lembur_hours    numeric(4,2) not null default 0,
+  notes           text,
+  created_at      timestamptz not null default now()
+);
+create unique index if not exists payroll_attendance_unique
+  on public.payroll_attendance(period_id, staff_id, attendance_date);
+
+create table if not exists public.payroll_slip (
+  id                     uuid primary key default gen_random_uuid(),
+  period_id              uuid references public.payroll_period(id) on delete cascade,
+  staff_id               uuid references public.sppg_staff(id) on delete restrict,
+  gaji_pokok             numeric(12,2) not null default 0,
+  hari_kerja             int not null default 0,
+  upah_per_hari          numeric(10,2) not null default 0,
+  nilai_gaji             numeric(12,2) not null default 0,
+  tunjangan              numeric(10,2) not null default 0,
+  insentif_kehadiran     numeric(10,2) not null default 0,
+  insentif_kinerja       numeric(10,2) not null default 0,
+  lain_lain              numeric(10,2) not null default 0,
+  lembur_jam             numeric(5,2)  not null default 0,
+  upah_lembur_jam        numeric(10,2) not null default 0,
+  total_lembur           numeric(12,2) not null default 0,
+  potongan_kehadiran     numeric(10,2) not null default 0,
+  potongan_bpjs_kes      numeric(10,2) not null default 0,
+  potongan_bpjs_tk       numeric(10,2) not null default 0,
+  potongan_lain          numeric(10,2) not null default 0,
+  penerimaan_kotor       numeric(14,2) not null default 0,
+  penerimaan_bersih      numeric(14,2) not null default 0,
+  paid                   boolean not null default false,
+  paid_at                timestamptz,
+  transfer_ref           text,
+  created_at             timestamptz not null default now()
+);
+create unique index if not exists payroll_slip_unique
+  on public.payroll_slip(period_id, staff_id);
+
+-- =============================================================================
+-- 11. BGN Generation Log (audit trail dokumen)
+-- =============================================================================
+
+create table if not exists public.bgn_generation_log (
+  id             uuid primary key default gen_random_uuid(),
+  lampiran_code  text not null, -- '19','20','21','22','26','27','30a','30b','30c','30d','30e','30f','30g','30h','30i','payroll'
+  format         text not null check (format in ('pdf','docx','xlsx')),
+  period_start   date,
+  period_end     date,
+  scope_school_id text references public.schools(id),
+  generated_at   timestamptz not null default now(),
+  generated_by   uuid references auth.users(id),
+  file_url       text,
+  file_size_bytes bigint
+);
+create index if not exists bgn_gen_log_lampiran_idx on public.bgn_generation_log(lampiran_code, generated_at desc);
+
+-- =============================================================================
+-- 12. GRN enrichment (Lamp 20 support)
+-- =============================================================================
+
+alter table public.grns
+  add column if not exists condition_flag public.grn_condition default 'baik';
+
+alter table public.grns
+  add column if not exists qc_officer_id uuid references public.sppg_staff(id);
+
+-- =============================================================================
+-- 13. Views untuk generator
+-- =============================================================================
+
+-- Rekap porsi per bulan (Lamp 30a)
+-- menu_assign di SPPG ini SPPG-wide (1 menu per tanggal, disajikan ke semua sekolah aktif)
+create or replace view public.v_bgn_rekap_porsi as
+select
+  date_trunc('month', ma.assign_date)::date as month,
+  s.id as school_id,
+  s.name as school_name,
+  s.recipient_group,
+  count(distinct ma.assign_date) as total_days,
+  sum(s.students) as total_porsi
+from public.menu_assign ma
+cross join public.schools s
+where s.active = true
+group by 1, 2, 3, 4;
+
+-- Laporan bulanan penerima manfaat (Lamp 30d)
+create or replace view public.v_bgn_penerima_bulanan as
+select
+  date_trunc('month', ma.assign_date)::date as month,
+  s.recipient_group,
+  count(distinct s.id) as jumlah_sekolah,
+  count(distinct ma.assign_date) * sum(s.students) / greatest(count(distinct s.id), 1) as total_porsi
+from public.menu_assign ma
+cross join public.schools s
+where s.active = true
+group by 1, 2;
+
+-- Cash daily dengan saldo berjalan (Lamp 30b)
+create or replace view public.v_bgn_cash_daily as
+select
+  dcl.*,
+  sum(uang_masuk - uang_keluar) over (
+    order by log_date, log_time, id
+    rows between unbounded preceding and current row
+  ) as running_balance
+from public.daily_cash_log dcl;
+
+-- =============================================================================
+-- 14. Audit trigger hooks (memakai admin.log_event yang sudah ada di 0034)
+-- =============================================================================
+
+-- Trigger log INSERT/UPDATE/DELETE di tabel sensitive ke audit_events.
+-- Fungsi public.audit_trigger() sudah eksis di 0034_audit_events.sql.
+
+do $$ begin
+  if exists (select 1 from pg_proc where proname = 'audit_trigger' and pronamespace = 'public'::regnamespace) then
+    if not exists (select 1 from pg_trigger where tgname = 'audit_sppg_staff') then
+      create trigger audit_sppg_staff after insert or update or delete on public.sppg_staff
+        for each row execute function public.audit_trigger();
+    end if;
+    if not exists (select 1 from pg_trigger where tgname = 'audit_payroll_slip') then
+      create trigger audit_payroll_slip after insert or update or delete on public.payroll_slip
+        for each row execute function public.audit_trigger();
+    end if;
+    if not exists (select 1 from pg_trigger where tgname = 'audit_daily_cash_log') then
+      create trigger audit_daily_cash_log after insert or update or delete on public.daily_cash_log
+        for each row execute function public.audit_trigger();
+    end if;
+    if not exists (select 1 from pg_trigger where tgname = 'audit_gl_entry') then
+      create trigger audit_gl_entry after insert or update or delete on public.gl_entry
+        for each row execute function public.audit_trigger();
+    end if;
+  end if;
+end $$;
+
+-- =============================================================================
+-- END 0050
+-- =============================================================================
+
+
+-- >>> 0051_bgn_rls.sql ======================================================
+-- =============================================================================
+-- 0051 · RLS policies untuk tabel BGN (0050)
+-- -----------------------------------------------------------------------------
+-- Matriks akses (mirror 0029_rls_tighten.sql):
+--
+--   Tabel                 admin ahli_gizi operator viewer supplier
+--   sppg_staff            RW    R         R        R      DENY
+--   food_sample_log       RW    RW        RW       R      DENY
+--   organoleptic_test     RW    RW        RW       R      DENY
+--   posyandu              RW    R         R        R      DENY
+--   kader_incentive       RW    R         R        R      DENY
+--   pic_school            RW    R         R        R      DENY
+--   pic_incentive         RW    R         R        R      DENY
+--   daily_cash_log        RW    R         RW       R      DENY
+--   chart_of_accounts     RW    R         R        R      DENY
+--   gl_entry              RW    R         RW       R      DENY
+--   petty_cash            RW    R         RW       R      DENY
+--   payroll_period        RW    R         R        R      DENY
+--   payroll_attendance    RW    R         RW       R      DENY
+--   payroll_slip          RW    R         R        R      DENY
+--   bgn_generation_log    RW    RW        RW       R      DENY
+--
+-- Idempoten via drop policy if exists.
+-- =============================================================================
+
+-- Helper macro (inline SQL) tidak ada di PG, jadi policy ditulis eksplisit.
+
+-- =============================================================================
+-- 1. SPPG Staff
+-- =============================================================================
+alter table public.sppg_staff enable row level security;
+
+drop policy if exists "sppg_staff: staff read" on public.sppg_staff;
+drop policy if exists "sppg_staff: staff read" on public.sppg_staff;
+create policy "sppg_staff: staff read" on public.sppg_staff
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "sppg_staff: admin write" on public.sppg_staff;
+drop policy if exists "sppg_staff: admin write" on public.sppg_staff;
+create policy "sppg_staff: admin write" on public.sppg_staff
+  for all using (public.current_role() = 'admin')
+  with check (public.current_role() = 'admin');
+
+-- =============================================================================
+-- 2. Food Sample Log (Lamp 21)
+-- =============================================================================
+alter table public.food_sample_log enable row level security;
+
+drop policy if exists "food_sample_log: staff read" on public.food_sample_log;
+drop policy if exists "food_sample_log: staff read" on public.food_sample_log;
+create policy "food_sample_log: staff read" on public.food_sample_log
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "food_sample_log: ops write" on public.food_sample_log;
+drop policy if exists "food_sample_log: ops write" on public.food_sample_log;
+create policy "food_sample_log: ops write" on public.food_sample_log
+  for all using (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  )
+  with check (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  );
+
+-- =============================================================================
+-- 3. Organoleptic Test (Lamp 22)
+-- =============================================================================
+alter table public.organoleptic_test enable row level security;
+
+drop policy if exists "organoleptic_test: staff read" on public.organoleptic_test;
+drop policy if exists "organoleptic_test: staff read" on public.organoleptic_test;
+create policy "organoleptic_test: staff read" on public.organoleptic_test
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "organoleptic_test: ops write" on public.organoleptic_test;
+drop policy if exists "organoleptic_test: ops write" on public.organoleptic_test;
+create policy "organoleptic_test: ops write" on public.organoleptic_test
+  for all using (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  )
+  with check (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  );
+
+-- =============================================================================
+-- 4. Posyandu + Kader Incentive (Lamp 26)
+-- =============================================================================
+alter table public.posyandu enable row level security;
+
+drop policy if exists "posyandu: staff read" on public.posyandu;
+drop policy if exists "posyandu: staff read" on public.posyandu;
+create policy "posyandu: staff read" on public.posyandu
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "posyandu: admin write" on public.posyandu;
+drop policy if exists "posyandu: admin write" on public.posyandu;
+create policy "posyandu: admin write" on public.posyandu
+  for all using (public.current_role() = 'admin')
+  with check (public.current_role() = 'admin');
+
+alter table public.kader_incentive enable row level security;
+
+drop policy if exists "kader_incentive: staff read" on public.kader_incentive;
+drop policy if exists "kader_incentive: staff read" on public.kader_incentive;
+create policy "kader_incentive: staff read" on public.kader_incentive
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "kader_incentive: admin write" on public.kader_incentive;
+drop policy if exists "kader_incentive: admin write" on public.kader_incentive;
+create policy "kader_incentive: admin write" on public.kader_incentive
+  for all using (public.current_role() = 'admin')
+  with check (public.current_role() = 'admin');
+
+-- =============================================================================
+-- 5. PIC School + PIC Incentive (Lamp 27)
+-- =============================================================================
+alter table public.pic_school enable row level security;
+
+drop policy if exists "pic_school: staff read" on public.pic_school;
+drop policy if exists "pic_school: staff read" on public.pic_school;
+create policy "pic_school: staff read" on public.pic_school
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "pic_school: admin write" on public.pic_school;
+drop policy if exists "pic_school: admin write" on public.pic_school;
+create policy "pic_school: admin write" on public.pic_school
+  for all using (public.current_role() = 'admin')
+  with check (public.current_role() = 'admin');
+
+alter table public.pic_incentive enable row level security;
+
+drop policy if exists "pic_incentive: staff read" on public.pic_incentive;
+drop policy if exists "pic_incentive: staff read" on public.pic_incentive;
+create policy "pic_incentive: staff read" on public.pic_incentive
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "pic_incentive: admin write" on public.pic_incentive;
+drop policy if exists "pic_incentive: admin write" on public.pic_incentive;
+create policy "pic_incentive: admin write" on public.pic_incentive
+  for all using (public.current_role() = 'admin')
+  with check (public.current_role() = 'admin');
+
+-- =============================================================================
+-- 6. Daily Cash Log (Lamp 30b)
+-- =============================================================================
+alter table public.daily_cash_log enable row level security;
+
+drop policy if exists "daily_cash_log: staff read" on public.daily_cash_log;
+drop policy if exists "daily_cash_log: staff read" on public.daily_cash_log;
+create policy "daily_cash_log: staff read" on public.daily_cash_log
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "daily_cash_log: ops write" on public.daily_cash_log;
+drop policy if exists "daily_cash_log: ops write" on public.daily_cash_log;
+create policy "daily_cash_log: ops write" on public.daily_cash_log
+  for all using (
+    public.current_role() in ('admin','operator')
+  )
+  with check (
+    public.current_role() in ('admin','operator')
+  );
+
+-- =============================================================================
+-- 7. Chart of Accounts + GL Entry (Lamp 30e)
+-- =============================================================================
+alter table public.chart_of_accounts enable row level security;
+
+drop policy if exists "coa: staff read" on public.chart_of_accounts;
+drop policy if exists "coa: staff read" on public.chart_of_accounts;
+create policy "coa: staff read" on public.chart_of_accounts
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "coa: admin write" on public.chart_of_accounts;
+drop policy if exists "coa: admin write" on public.chart_of_accounts;
+create policy "coa: admin write" on public.chart_of_accounts
+  for all using (public.current_role() = 'admin')
+  with check (public.current_role() = 'admin');
+
+alter table public.gl_entry enable row level security;
+
+drop policy if exists "gl_entry: staff read" on public.gl_entry;
+drop policy if exists "gl_entry: staff read" on public.gl_entry;
+create policy "gl_entry: staff read" on public.gl_entry
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "gl_entry: ops write" on public.gl_entry;
+drop policy if exists "gl_entry: ops write" on public.gl_entry;
+create policy "gl_entry: ops write" on public.gl_entry
+  for all using (
+    public.current_role() in ('admin','operator')
+  )
+  with check (
+    public.current_role() in ('admin','operator')
+  );
+
+-- =============================================================================
+-- 8. Petty Cash (Lamp 30f)
+-- =============================================================================
+alter table public.petty_cash enable row level security;
+
+drop policy if exists "petty_cash: staff read" on public.petty_cash;
+drop policy if exists "petty_cash: staff read" on public.petty_cash;
+create policy "petty_cash: staff read" on public.petty_cash
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "petty_cash: ops write" on public.petty_cash;
+drop policy if exists "petty_cash: ops write" on public.petty_cash;
+create policy "petty_cash: ops write" on public.petty_cash
+  for all using (
+    public.current_role() in ('admin','operator')
+  )
+  with check (
+    public.current_role() in ('admin','operator')
+  );
+
+-- =============================================================================
+-- 9. Payroll Period + Attendance + Slip
+-- =============================================================================
+alter table public.payroll_period enable row level security;
+
+drop policy if exists "payroll_period: staff read" on public.payroll_period;
+drop policy if exists "payroll_period: staff read" on public.payroll_period;
+create policy "payroll_period: staff read" on public.payroll_period
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "payroll_period: admin write" on public.payroll_period;
+drop policy if exists "payroll_period: admin write" on public.payroll_period;
+create policy "payroll_period: admin write" on public.payroll_period
+  for all using (public.current_role() = 'admin')
+  with check (public.current_role() = 'admin');
+
+alter table public.payroll_attendance enable row level security;
+
+drop policy if exists "payroll_attendance: staff read" on public.payroll_attendance;
+drop policy if exists "payroll_attendance: staff read" on public.payroll_attendance;
+create policy "payroll_attendance: staff read" on public.payroll_attendance
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "payroll_attendance: ops write" on public.payroll_attendance;
+drop policy if exists "payroll_attendance: ops write" on public.payroll_attendance;
+create policy "payroll_attendance: ops write" on public.payroll_attendance
+  for all using (
+    public.current_role() in ('admin','operator')
+  )
+  with check (
+    public.current_role() in ('admin','operator')
+  );
+
+alter table public.payroll_slip enable row level security;
+
+drop policy if exists "payroll_slip: staff read" on public.payroll_slip;
+drop policy if exists "payroll_slip: staff read" on public.payroll_slip;
+create policy "payroll_slip: staff read" on public.payroll_slip
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "payroll_slip: admin write" on public.payroll_slip;
+drop policy if exists "payroll_slip: admin write" on public.payroll_slip;
+create policy "payroll_slip: admin write" on public.payroll_slip
+  for all using (public.current_role() = 'admin')
+  with check (public.current_role() = 'admin');
+
+-- =============================================================================
+-- 10. BGN Generation Log
+-- =============================================================================
+alter table public.bgn_generation_log enable row level security;
+
+drop policy if exists "bgn_gen_log: staff read" on public.bgn_generation_log;
+drop policy if exists "bgn_gen_log: staff read" on public.bgn_generation_log;
+create policy "bgn_gen_log: staff read" on public.bgn_generation_log
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "bgn_gen_log: ops write" on public.bgn_generation_log;
+drop policy if exists "bgn_gen_log: ops write" on public.bgn_generation_log;
+create policy "bgn_gen_log: ops write" on public.bgn_generation_log
+  for all using (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  )
+  with check (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  );
+
+-- =============================================================================
+-- END 0051
+-- =============================================================================
+
+
+-- >>> 0052_beneficiaries.sql ================================================
+-- =============================================================================
+-- 0052 · Beneficiaries (Ibu Hamil/Menyusui + Balita)
+-- -----------------------------------------------------------------------------
+-- Konteks: SPPG tidak hanya distribusi ke sekolah, tapi juga ke posyandu untuk
+--          ibu hamil/menyusui (porsi besar) dan balita (porsi kecil).
+-- Scope:
+--   1. Tabel beneficiary_pregnant, beneficiary_toddler
+--   2. RPC porsi_counts diperluas utk ikut-sertakan bumil/busui & balita
+--   3. RPC porsi_breakdown(p_date): sekolah, siswa, bumil, balita per-date
+--   4. RPC beneficiary_list(): daftar nama utk fitur rincian/download
+--   5. RLS policies (read: staff+viewer, write: admin/operator)
+--   6. Seed demo: 4 posyandu tambahan + 25 bumil/busui + 45 balita
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. Enums & tables
+-- -----------------------------------------------------------------------------
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'pregnant_phase') then
+    create type public.pregnant_phase as enum ('hamil', 'menyusui');
+  end if;
+end $$;
+
+create table if not exists public.beneficiary_pregnant (
+  id                uuid primary key default gen_random_uuid(),
+  full_name         text not null,
+  nik               text,
+  phase             public.pregnant_phase not null default 'hamil',
+  gestational_week  smallint,           -- trimester/minggu kehamilan (kalau fase 'hamil')
+  child_age_months  smallint,           -- usia anak (kalau fase 'menyusui')
+  age               smallint,           -- usia ibu
+  posyandu_id       uuid references public.posyandu(id) on delete set null,
+  address           text,
+  phone             text,
+  notes             text,
+  active            boolean not null default true,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
+);
+create index if not exists beneficiary_pregnant_active_idx
+  on public.beneficiary_pregnant(active) where active = true;
+create index if not exists beneficiary_pregnant_posyandu_idx
+  on public.beneficiary_pregnant(posyandu_id);
+
+create table if not exists public.beneficiary_toddler (
+  id                uuid primary key default gen_random_uuid(),
+  full_name         text not null,
+  nik               text,
+  dob               date,                -- tanggal lahir balita
+  gender            text check (gender in ('L','P')),
+  mother_name       text,
+  posyandu_id       uuid references public.posyandu(id) on delete set null,
+  address           text,
+  phone             text,
+  notes             text,
+  active            boolean not null default true,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
+);
+create index if not exists beneficiary_toddler_active_idx
+  on public.beneficiary_toddler(active) where active = true;
+create index if not exists beneficiary_toddler_posyandu_idx
+  on public.beneficiary_toddler(posyandu_id);
+
+-- -----------------------------------------------------------------------------
+-- 2. Update porsi_counts — ikut-sertakan bumil (besar) + balita (kecil).
+-- -----------------------------------------------------------------------------
+-- Backward compat: signature identik dengan 0043, hanya body diperluas.
+-- Bumil/busui & balita dianggap hadir pada setiap hari operasional (active=true).
+
+create or replace function public.porsi_counts(p_date date)
+returns table(kecil int, besar int, guru int, total int, operasional boolean)
+language plpgsql stable as $$
+declare
+  v_kecil   int := 0;
+  v_besar   int := 0;
+  v_guru    int := 0;
+  v_bumil   int := 0;
+  v_balita  int := 0;
+  v_nonop   boolean := false;
+begin
+  select true into v_nonop from public.non_op_days where op_date = p_date;
+  if coalesce(v_nonop, false) then
+    return query select 0,0,0,0,false;
+    return;
+  end if;
+
+  if extract(dow from p_date) in (0,6) then
+    return query select 0,0,0,0,false;
+    return;
+  end if;
+
+  -- Porsi dari sekolah (sama dgn 0043, pakai alias eksplisit)
+  with roster as (
+    select
+      s.id              as sid,
+      s.level           as slevel,
+      s.students        as sstudents,
+      s.kelas13         as skelas13,
+      s.kelas46         as skelas46,
+      s.guru            as sguru,
+      a.qty             as att_qty,
+      case
+        when a.qty is null then 1.0
+        when s.students <= 0 then 0.0
+        else least(a.qty::numeric / nullif(s.students,0)::numeric, 1.0)
+      end as ratio
+    from public.schools s
+    left join public.school_attendance a
+      on a.school_id = s.id and a.att_date = p_date
+    where s.active = true
+  )
+  select
+    coalesce(sum(
+      case
+        when slevel = 'PAUD/TK' then round(sstudents * ratio)
+        when slevel = 'SD'      then round(skelas13 * ratio)
+        else 0
+      end
+    ), 0)::int,
+    coalesce(sum(
+      case
+        when slevel = 'SD'                 then round(skelas46 * ratio)
+        when slevel in ('SMP','SMA','SMK') then round(sstudents * ratio)
+        else 0
+      end
+    ), 0)::int,
+    coalesce(sum(round(sguru * ratio)), 0)::int
+  into v_kecil, v_besar, v_guru
+  from roster;
+
+  -- Porsi dari posyandu: bumil=besar, balita=kecil
+  select coalesce(count(*),0)::int into v_bumil
+    from public.beneficiary_pregnant bp where bp.active = true;
+  select coalesce(count(*),0)::int into v_balita
+    from public.beneficiary_toddler bt where bt.active = true;
+
+  v_kecil := v_kecil + v_balita;
+  v_besar := v_besar + v_bumil;
+
+  return query select v_kecil, v_besar, v_guru, (v_kecil + v_besar + v_guru), true;
+end; $$;
+
+-- -----------------------------------------------------------------------------
+-- 3. Breakdown per-date utk tabel dashboard (sekolah/siswa/bumil/balita count)
+-- -----------------------------------------------------------------------------
+
+create or replace function public.porsi_breakdown(p_date date)
+returns table(
+  schools_count    int,
+  students_total   int,
+  pregnant_count   int,
+  toddler_count    int,
+  operasional      boolean
+)
+language plpgsql stable as $$
+declare
+  v_nonop boolean := false;
+  v_op    boolean := true;
+begin
+  select true into v_nonop from public.non_op_days where op_date = p_date;
+  if coalesce(v_nonop, false) or extract(dow from p_date) in (0,6) then
+    v_op := false;
+  end if;
+
+  if not v_op then
+    return query select 0, 0, 0, 0, false;
+    return;
+  end if;
+
+  return query
+  with sch as (
+    select
+      count(distinct s.id) filter (
+        where coalesce(a.qty, s.students) > 0
+      )::int as sc,
+      coalesce(sum(
+        case when a.qty is null then s.students else a.qty end
+      ), 0)::int as st
+    from public.schools s
+    left join public.school_attendance a
+      on a.school_id = s.id and a.att_date = p_date
+    where s.active = true
+  ),
+  bumil as (
+    select count(*)::int as bc
+    from public.beneficiary_pregnant where active = true
+  ),
+  balita as (
+    select count(*)::int as tc
+    from public.beneficiary_toddler where active = true
+  )
+  select sch.sc, sch.st, bumil.bc, balita.tc, true
+  from sch, bumil, balita;
+end; $$;
+
+-- -----------------------------------------------------------------------------
+-- 4. Rincian daftar utk modal/Excel download per-tanggal
+-- -----------------------------------------------------------------------------
+-- Mengembalikan 1 row per sekolah (dgn qty utk tanggal itu).
+create or replace function public.schools_breakdown(p_date date)
+returns table(
+  school_id    text,
+  school_name  text,
+  level        text,
+  qty          int,
+  students     int
+)
+language sql stable as $$
+  select
+    s.id,
+    s.name,
+    s.level,
+    case
+      when a.qty is not null then a.qty::int
+      else s.students::int
+    end,
+    s.students::int
+  from public.schools s
+  left join public.school_attendance a
+    on a.school_id = s.id and a.att_date = p_date
+  where s.active = true
+    and (a.qty is null or a.qty > 0)
+  order by s.name;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- 5. RLS
+-- -----------------------------------------------------------------------------
+
+alter table public.beneficiary_pregnant enable row level security;
+
+drop policy if exists "beneficiary_pregnant: staff read" on public.beneficiary_pregnant;
+drop policy if exists "beneficiary_pregnant: staff read" on public.beneficiary_pregnant;
+create policy "beneficiary_pregnant: staff read" on public.beneficiary_pregnant
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "beneficiary_pregnant: ops write" on public.beneficiary_pregnant;
+drop policy if exists "beneficiary_pregnant: ops write" on public.beneficiary_pregnant;
+create policy "beneficiary_pregnant: ops write" on public.beneficiary_pregnant
+  for all using (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  )
+  with check (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  );
+
+alter table public.beneficiary_toddler enable row level security;
+
+drop policy if exists "beneficiary_toddler: staff read" on public.beneficiary_toddler;
+drop policy if exists "beneficiary_toddler: staff read" on public.beneficiary_toddler;
+create policy "beneficiary_toddler: staff read" on public.beneficiary_toddler
+  for select using (
+    public.current_role() in ('admin','operator','ahli_gizi','viewer')
+  );
+
+drop policy if exists "beneficiary_toddler: ops write" on public.beneficiary_toddler;
+drop policy if exists "beneficiary_toddler: ops write" on public.beneficiary_toddler;
+create policy "beneficiary_toddler: ops write" on public.beneficiary_toddler
+  for all using (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  )
+  with check (
+    public.current_role() in ('admin','operator','ahli_gizi')
+  );
+
+grant execute on function public.porsi_breakdown(date) to authenticated;
+grant execute on function public.schools_breakdown(date) to authenticated;
+
+-- -----------------------------------------------------------------------------
+-- 6. Seed demo (idempoten — skip kalau sudah ada data)
+-- -----------------------------------------------------------------------------
+
+-- Seed posyandu hanya kalau tabel masih kosong
+insert into public.posyandu (name, village, district)
+select name, village, district
+from (values
+  ('Posyandu Melati',   'Desa Nunkolo',   'Amanuban Tengah'),
+  ('Posyandu Mawar',    'Desa Polen',     'Amanuban Tengah'),
+  ('Posyandu Anggrek',  'Desa Bisene',    'Amanuban Tengah'),
+  ('Posyandu Kenanga',  'Desa Oekiu',     'Amanuban Tengah')
+) as t(name, village, district)
+where not exists (
+  select 1 from public.posyandu where name = t.name
+);
+
+-- Seed bumil/busui — 25 data dummy
+insert into public.beneficiary_pregnant
+  (full_name, nik, phase, gestational_week, child_age_months, age, posyandu_id, address, phone, active)
+select
+  src.full_name, src.nik, src.phase::public.pregnant_phase, src.gw, src.cam, src.age,
+  (select id from public.posyandu where name = src.posyandu_name limit 1),
+  src.address, src.phone, true
+from (values
+  ('Maria Selan',        '5301234501010001', 'hamil',     24,  null, 27, 'Posyandu Melati',   'RT 01 Nunkolo',  '08231111111'),
+  ('Yuliana Tefa',       '5301234501010002', 'hamil',     32,  null, 24, 'Posyandu Melati',   'RT 02 Nunkolo',  '08232222222'),
+  ('Martha Banunaek',    '5301234501010003', 'menyusui',  null, 4,   29, 'Posyandu Melati',   'RT 03 Nunkolo',  '08233333333'),
+  ('Hendrika Taneo',     '5301234501010004', 'hamil',     12,  null, 22, 'Posyandu Melati',   'RT 01 Nunkolo',  '08234444444'),
+  ('Sofia Nubatonis',    '5301234501010005', 'menyusui',  null, 2,   31, 'Posyandu Melati',   'RT 04 Nunkolo',  '08235555555'),
+  ('Elisabeth Takoy',    '5301234501010006', 'hamil',     28,  null, 26, 'Posyandu Melati',   'RT 02 Nunkolo',  '08236666666'),
+  ('Agustina Benu',      '5301234502020001', 'hamil',     20,  null, 25, 'Posyandu Mawar',    'RT 01 Polen',    '08237777777'),
+  ('Dorcas Kolo',        '5301234502020002', 'menyusui',  null, 6,   30, 'Posyandu Mawar',    'RT 02 Polen',    '08238888888'),
+  ('Juliana Boymau',     '5301234502020003', 'hamil',     16,  null, 23, 'Posyandu Mawar',    'RT 03 Polen',    '08239999999'),
+  ('Risda Tusi',         '5301234502020004', 'menyusui',  null, 10,  34, 'Posyandu Mawar',    'RT 01 Polen',    '08231010101'),
+  ('Frederika Nenohai',  '5301234502020005', 'hamil',     36,  null, 28, 'Posyandu Mawar',    'RT 04 Polen',    '08231212121'),
+  ('Yuliana Lomi',       '5301234502020006', 'menyusui',  null, 3,   27, 'Posyandu Mawar',    'RT 02 Polen',    '08231313131'),
+  ('Martha Sakan',       '5301234503030001', 'hamil',     8,   null, 21, 'Posyandu Anggrek',  'RT 01 Bisene',   '08231414141'),
+  ('Anastasia Kause',    '5301234503030002', 'hamil',     24,  null, 26, 'Posyandu Anggrek',  'RT 02 Bisene',   '08231515151'),
+  ('Melkiana Fallo',     '5301234503030003', 'menyusui',  null, 5,   29, 'Posyandu Anggrek',  'RT 03 Bisene',   '08231616161'),
+  ('Ofiria Tafetin',     '5301234503030004', 'hamil',     30,  null, 25, 'Posyandu Anggrek',  'RT 01 Bisene',   '08231717171'),
+  ('Yustina Mnao',       '5301234503030005', 'menyusui',  null, 8,   32, 'Posyandu Anggrek',  'RT 04 Bisene',   '08231818181'),
+  ('Bernadete Nenobahan','5301234503030006', 'hamil',     18,  null, 24, 'Posyandu Anggrek',  'RT 02 Bisene',   '08231919191'),
+  ('Theresia Nomleni',   '5301234504040001', 'hamil',     14,  null, 22, 'Posyandu Kenanga',  'RT 01 Oekiu',    '08232020202'),
+  ('Veronika Saunoah',   '5301234504040002', 'menyusui',  null, 1,   28, 'Posyandu Kenanga',  'RT 02 Oekiu',    '08232121212'),
+  ('Pauline Bureni',     '5301234504040003', 'hamil',     22,  null, 26, 'Posyandu Kenanga',  'RT 03 Oekiu',    '08232222111'),
+  ('Yovita Nabu',        '5301234504040004', 'menyusui',  null, 7,   31, 'Posyandu Kenanga',  'RT 01 Oekiu',    '08232323232'),
+  ('Klara Mella',        '5301234504040005', 'hamil',     26,  null, 24, 'Posyandu Kenanga',  'RT 04 Oekiu',    '08232424242'),
+  ('Serafina Faot',      '5301234504040006', 'menyusui',  null, 9,   33, 'Posyandu Kenanga',  'RT 02 Oekiu',    '08232525252'),
+  ('Dominika Sopaheluwakan','5301234504040007','hamil',   34,  null, 27, 'Posyandu Kenanga',  'RT 03 Oekiu',    '08232626262')
+) as src(full_name, nik, phase, gw, cam, age, posyandu_name, address, phone)
+where not exists (select 1 from public.beneficiary_pregnant where nik = src.nik);
+
+-- Seed balita — 45 data dummy
+insert into public.beneficiary_toddler
+  (full_name, nik, dob, gender, mother_name, posyandu_id, address, phone, active)
+select
+  src.full_name, src.nik, src.dob::date, src.gender, src.mother_name,
+  (select id from public.posyandu where name = src.posyandu_name limit 1),
+  src.address, src.phone, true
+from (values
+  ('Adrianus Selan',      '5301234511110001', '2023-08-12','L','Maria Selan',        'Posyandu Melati',  'RT 01 Nunkolo','08234141111'),
+  ('Beatrix Tefa',        '5301234511110002', '2024-01-05','P','Yuliana Tefa',       'Posyandu Melati',  'RT 02 Nunkolo','08234141112'),
+  ('Clementius Banunaek', '5301234511110003', '2023-11-18','L','Martha Banunaek',    'Posyandu Melati',  'RT 03 Nunkolo','08234141113'),
+  ('Daniela Taneo',       '5301234511110004', '2022-06-23','P','Hendrika Taneo',     'Posyandu Melati',  'RT 01 Nunkolo','08234141114'),
+  ('Emanuel Nubatonis',   '5301234511110005', '2024-03-09','L','Sofia Nubatonis',    'Posyandu Melati',  'RT 04 Nunkolo','08234141115'),
+  ('Fransiska Takoy',     '5301234511110006', '2022-09-14','P','Elisabeth Takoy',    'Posyandu Melati',  'RT 02 Nunkolo','08234141116'),
+  ('Gabriel Kanai',       '5301234511110007', '2023-02-28','L','Rina Kanai',         'Posyandu Melati',  'RT 01 Nunkolo','08234141117'),
+  ('Helena Saunoa',       '5301234511110008', '2023-12-03','P','Rosa Saunoa',        'Posyandu Melati',  'RT 03 Nunkolo','08234141118'),
+  ('Ignatius Boro',       '5301234511110009', '2024-05-22','L','Lena Boro',          'Posyandu Melati',  'RT 04 Nunkolo','08234141119'),
+  ('Jacinta Nokas',       '5301234511110010', '2022-11-08','P','Ria Nokas',          'Posyandu Melati',  'RT 02 Nunkolo','08234141120'),
+  ('Kornelius Benu',      '5301234512220001', '2023-07-17','L','Agustina Benu',      'Posyandu Mawar',   'RT 01 Polen',  '08234141121'),
+  ('Lidwina Kolo',        '5301234512220002', '2023-10-02','P','Dorcas Kolo',        'Posyandu Mawar',   'RT 02 Polen',  '08234141122'),
+  ('Maksimus Boymau',     '5301234512220003', '2024-02-14','L','Juliana Boymau',     'Posyandu Mawar',   'RT 03 Polen',  '08234141123'),
+  ('Norbertha Tusi',      '5301234512220004', '2022-04-30','P','Risda Tusi',         'Posyandu Mawar',   'RT 01 Polen',  '08234141124'),
+  ('Oktavianus Nenohai',  '5301234512220005', '2023-09-11','L','Frederika Nenohai',  'Posyandu Mawar',   'RT 04 Polen',  '08234141125'),
+  ('Pamela Lomi',         '5301234512220006', '2024-06-07','P','Yuliana Lomi',       'Posyandu Mawar',   'RT 02 Polen',  '08234141126'),
+  ('Quirinus Tnunai',     '5301234512220007', '2023-01-24','L','Siti Tnunai',        'Posyandu Mawar',   'RT 03 Polen',  '08234141127'),
+  ('Rosalina Abi',        '5301234512220008', '2023-05-16','P','Maria Abi',          'Posyandu Mawar',   'RT 01 Polen',  '08234141128'),
+  ('Stefanus Liu',        '5301234512220009', '2022-12-29','L','Yanti Liu',          'Posyandu Mawar',   'RT 04 Polen',  '08234141129'),
+  ('Theresa Ndun',        '5301234512220010', '2024-04-11','P','Ani Ndun',           'Posyandu Mawar',   'RT 02 Polen',  '08234141130'),
+  ('Urbanus Sakan',       '5301234513330001', '2023-03-19','L','Martha Sakan',       'Posyandu Anggrek', 'RT 01 Bisene', '08234141131'),
+  ('Veronika Kause',      '5301234513330002', '2024-01-27','P','Anastasia Kause',    'Posyandu Anggrek', 'RT 02 Bisene', '08234141132'),
+  ('Wilibrordus Fallo',   '5301234513330003', '2023-08-05','L','Melkiana Fallo',     'Posyandu Anggrek', 'RT 03 Bisene', '08234141133'),
+  ('Xaverine Tafetin',    '5301234513330004', '2022-10-20','P','Ofiria Tafetin',     'Posyandu Anggrek', 'RT 01 Bisene', '08234141134'),
+  ('Yoseph Mnao',         '5301234513330005', '2024-07-14','L','Yustina Mnao',       'Posyandu Anggrek', 'RT 04 Bisene', '08234141135'),
+  ('Zita Nenobahan',      '5301234513330006', '2023-04-02','P','Bernadete Nenobahan','Posyandu Anggrek', 'RT 02 Bisene', '08234141136'),
+  ('Alfonsius Manek',     '5301234513330007', '2023-11-28','L','Eva Manek',          'Posyandu Anggrek', 'RT 03 Bisene', '08234141137'),
+  ('Brigitta Nikolaus',   '5301234513330008', '2024-05-01','P','Dewi Nikolaus',      'Posyandu Anggrek', 'RT 04 Bisene', '08234141138'),
+  ('Caesario Boy',        '5301234513330009', '2022-08-17','L','Nur Boy',            'Posyandu Anggrek', 'RT 01 Bisene', '08234141139'),
+  ('Damaris Toy',         '5301234513330010', '2023-02-04','P','Nona Toy',           'Posyandu Anggrek', 'RT 02 Bisene', '08234141140'),
+  ('Egidius Nomleni',     '5301234514440001', '2023-06-21','L','Theresia Nomleni',   'Posyandu Kenanga', 'RT 01 Oekiu',  '08234141141'),
+  ('Filomena Saunoah',    '5301234514440002', '2024-02-08','P','Veronika Saunoah',   'Posyandu Kenanga', 'RT 02 Oekiu',  '08234141142'),
+  ('Gerardus Bureni',     '5301234514440003', '2023-09-29','L','Pauline Bureni',     'Posyandu Kenanga', 'RT 03 Oekiu',  '08234141143'),
+  ('Hildegardis Nabu',    '5301234514440004', '2022-12-12','P','Yovita Nabu',        'Posyandu Kenanga', 'RT 01 Oekiu',  '08234141144'),
+  ('Isidorus Mella',      '5301234514440005', '2024-06-25','L','Klara Mella',        'Posyandu Kenanga', 'RT 04 Oekiu',  '08234141145'),
+  ('Juliana Faot',        '5301234514440006', '2023-10-18','P','Serafina Faot',      'Posyandu Kenanga', 'RT 02 Oekiu',  '08234141146'),
+  ('Kristoforus Sopaheluwakan','5301234514440007','2023-03-06','L','Dominika Sopaheluwakan','Posyandu Kenanga','RT 03 Oekiu','08234141147'),
+  ('Laurensia Nelci',     '5301234514440008', '2024-04-19','P','Sinta Nelci',        'Posyandu Kenanga', 'RT 04 Oekiu',  '08234141148'),
+  ('Modestus Bria',       '5301234514440009', '2022-07-03','L','Sara Bria',          'Posyandu Kenanga', 'RT 01 Oekiu',  '08234141149'),
+  ('Noberta Leton',       '5301234514440010', '2023-05-26','P','Lusia Leton',        'Posyandu Kenanga', 'RT 02 Oekiu',  '08234141150'),
+  ('Oliverius Bait',      '5301234514440011', '2024-01-13','L','Yanti Bait',         'Posyandu Kenanga', 'RT 03 Oekiu',  '08234141151'),
+  ('Paulina Uli',         '5301234514440012', '2023-12-20','P','Mince Uli',          'Posyandu Kenanga', 'RT 04 Oekiu',  '08234141152'),
+  ('Quido Manikin',       '5301234514440013', '2022-05-09','L','Dorkas Manikin',     'Posyandu Kenanga', 'RT 01 Oekiu',  '08234141153'),
+  ('Renata Tameon',       '5301234514440014', '2024-03-24','P','Wilhelmina Tameon',  'Posyandu Kenanga', 'RT 02 Oekiu',  '08234141154'),
+  ('Servatius Finit',     '5301234514440015', '2023-07-31','L','Agata Finit',        'Posyandu Kenanga', 'RT 03 Oekiu',  '08234141155')
+) as src(full_name, nik, dob, gender, mother_name, posyandu_name, address, phone)
+where not exists (select 1 from public.beneficiary_toddler where nik = src.nik);
+
+-- =============================================================================
+-- END 0052
+-- =============================================================================
+
+
+-- >>> 0053_schools_breakdown_detail.sql =====================================
+-- =============================================================================
+-- 0053 · schools_breakdown — perinci porsi kecil / besar / guru / total
+-- -----------------------------------------------------------------------------
+-- Konteks: Modal "Rincian Sekolah" sebelumnya hanya menampilkan kolom Porsi (qty
+--          attendance). Untuk dashboard SPPG, operator perlu melihat breakdown
+--          per-sekolah: kecil (PAUD/TK & SD kelas 1-3), besar (SD kelas 4-6 +
+--          SMP/SMA/SMK), guru, dan total porsi (kecil+besar+guru). Logika di sini
+--          mengikuti rumus pada porsi_counts (0052) supaya konsisten.
+-- =============================================================================
+
+drop function if exists public.schools_breakdown(date);
+
+create or replace function public.schools_breakdown(p_date date)
+returns table(
+  school_id    text,
+  school_name  text,
+  level        text,
+  kecil        int,
+  besar        int,
+  guru         int,
+  total        int,
+  students     int
+)
+language sql stable as $$
+  with roster as (
+    select
+      s.id, s.name, s.level, s.students, s.kelas13, s.kelas46, s.guru as guru_count,
+      a.qty,
+      case
+        when a.qty is null then 1.0
+        when s.students <= 0 then 0.0
+        else least(a.qty::numeric / nullif(s.students,0)::numeric, 1.0)
+      end as ratio
+    from public.schools s
+    left join public.school_attendance a
+      on a.school_id = s.id and a.att_date = p_date
+    where s.active = true
+      and (a.qty is null or a.qty > 0)
+  ),
+  computed as (
+    select
+      id, name, level, students,
+      case
+        when level = 'PAUD/TK' then round(students * ratio)::int
+        when level = 'SD'      then round(kelas13 * ratio)::int
+        else 0
+      end as kecil,
+      case
+        when level = 'SD'                 then round(kelas46 * ratio)::int
+        when level in ('SMP','SMA','SMK') then round(students * ratio)::int
+        else 0
+      end as besar,
+      round(guru_count * ratio)::int as guru
+    from roster
+  )
+  select
+    id, name, level,
+    kecil, besar, guru,
+    (kecil + besar + guru)::int as total,
+    students::int
+  from computed
+  order by name;
+$$;
+
+grant execute on function public.schools_breakdown(date) to authenticated;
+
+
+-- >>> 0054_quotation_seed_menu_override.sql =================================
+-- ============================================================================
+-- 0054 · Quotation seed with explicit menu override
+-- ----------------------------------------------------------------------------
+-- Motivasi: user ingin fleksibilitas — default seed pakai menu_assign(p_date),
+-- tapi bisa override pakai menu_id lain (misal kalau tanggal belum di-assign
+-- atau user memang mau quotation untuk menu berbeda).
+-- Logika qty: sama dengan requirement_for_date tapi paksa menu_id yang dikirim,
+-- tetap pakai porsi_counts_tiered(p_date) sebagai basis tier.
+-- ============================================================================
+
+create or replace function public.quotation_seed_from_menu(
+  p_date date,
+  p_menu_id smallint
+)
+returns table(item_code text, qty numeric, unit text, price_suggested numeric)
+language plpgsql stable as $$
+declare
+  v_tier record;
+begin
+  if p_menu_id is null then
+    return;
+  end if;
+
+  select paud, sd13, sd46, smp_plus, operasional
+    into v_tier from public.porsi_counts_tiered(p_date);
+
+  -- Kalau non-operasional, fallback 1 porsi saja supaya user tetap dapat
+  -- shape BOM (qty kecil, tinggal diedit manual). Total porsi real = 0
+  -- bakal bikin qty kosong dan tidak berguna.
+  if not coalesce(v_tier.operasional, false) then
+    v_tier.paud     := 0;
+    v_tier.sd13     := 0;
+    v_tier.sd46     := 1;
+    v_tier.smp_plus := 0;
+  end if;
+
+  return query
+    select
+      b.item_code,
+      round(
+        (
+          case
+            when (coalesce(b.grams_paud,0) + coalesce(b.grams_sd13,0)
+                + coalesce(b.grams_sd46,0) + coalesce(b.grams_smp,0)) > 0 then
+              (coalesce(b.grams_paud,0) * v_tier.paud
+             + coalesce(b.grams_sd13,0) * v_tier.sd13
+             + coalesce(b.grams_sd46,0) * v_tier.sd46
+             + coalesce(b.grams_smp,0)  * v_tier.smp_plus) / 1000.0
+            else
+              b.grams_per_porsi
+              * (v_tier.paud + v_tier.sd13 + v_tier.sd46 + v_tier.smp_plus)
+              / 1000.0
+          end
+        )::numeric, 3
+      ) as qty,
+      it.unit,
+      coalesce(
+        (select pr.price
+           from public.po_rows pr
+           join public.purchase_orders po on po.no = pr.po_no
+          where pr.item_code = b.item_code
+          order by po.po_date desc
+          limit 1),
+        it.price_idr
+      ) as price_suggested
+    from public.menu_bom b
+    join public.items it on it.code = b.item_code
+   where b.menu_id = p_menu_id
+   order by b.item_code;
+end; $$;
+
+grant execute on function public.quotation_seed_from_menu(date, smallint) to authenticated;
+
+
+-- >>> 0055_invoice_qt_maintenance.sql =======================================
+-- 0055_invoice_qt_maintenance.sql
+-- Scheduled maintenance RPCs:
+--   1) invoices_flag_overdue()   → flip 'issued' → 'overdue' jika due_date < today
+--   2) quotations_flag_expired() → flip draft|sent|responded → 'expired' jika valid_until < today
+-- Idempotent, stateless, aman dipanggil berulang.
+
+create or replace function public.invoices_flag_overdue()
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  n int;
+begin
+  update public.invoices
+     set status = 'overdue'
+   where status = 'issued'
+     and due_date is not null
+     and due_date < current_date;
+  get diagnostics n = row_count;
+  return n;
+end;
+$$;
+
+create or replace function public.quotations_flag_expired()
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  n int;
+begin
+  update public.quotations
+     set status = 'expired'
+   where status in ('draft','sent','responded')
+     and valid_until is not null
+     and valid_until < current_date
+     and converted_po_no is null;
+  get diagnostics n = row_count;
+  return n;
+end;
+$$;
+
+revoke all on function public.invoices_flag_overdue()   from public;
+revoke all on function public.quotations_flag_expired() from public;
+
+grant execute on function public.invoices_flag_overdue()   to authenticated, service_role;
+grant execute on function public.quotations_flag_expired() to authenticated, service_role;
+
+comment on function public.invoices_flag_overdue()
+  is 'Flip invoice issued → overdue ketika due_date sudah lewat. Return jumlah baris terupdate.';
+comment on function public.quotations_flag_expired()
+  is 'Flip quotation draft/sent/responded → expired ketika valid_until lewat dan belum converted. Return jumlah baris terupdate.';
+
+
+-- >>> 0056_three_way_match.sql ==============================================
+-- 0056_three_way_match.sql
+-- 3-Way Match RPC: cocokkan PO ↔ GRN ↔ Invoice per invoice.
+-- Output: nominal PO, nilai GRN aktual, nominal invoice, varians, match_status.
+--
+-- Match_status:
+--   matched   → invoice = po = grn dalam toleransi 0.5%
+--   over_po   → invoice > PO  (overbilling vs kontrak)
+--   over_grn  → invoice > GRN (overbilling vs barang masuk)
+--   under_grn → invoice < GRN (underbilling, mungkin partial)
+--   no_grn    → belum ada GRN
+--   no_po     → invoice tanpa PO link
+--   review    → kasus mixed lain
+
+create or replace function public.three_way_match_snapshot(
+  p_from date default null,
+  p_to   date default null,
+  p_limit int default 100
+)
+returns table (
+  invoice_no    text,
+  inv_date      date,
+  supplier_id   text,
+  supplier_name text,
+  po_no         text,
+  po_total      numeric,
+  grn_value     numeric,
+  grn_count     int,
+  invoice_total numeric,
+  paid          numeric,
+  inv_vs_po     numeric,
+  inv_vs_grn    numeric,
+  match_status  text
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+with grn_value_per_po as (
+  select g.po_no,
+         count(*) filter (where g.status in ('ok','partial'))::int as grn_count,
+         coalesce(sum(
+           case
+             when g.status not in ('ok','partial') then 0
+             when exists (select 1 from public.grn_rows gr where gr.grn_no = g.no)
+               then (
+                 select coalesce(sum(gr.qty_received * pr.price), 0)
+                   from public.grn_rows gr
+                   join public.po_rows pr
+                     on pr.po_no = g.po_no and pr.item_code = gr.item_code
+                  where gr.grn_no = g.no
+               )
+             else
+               -- fallback: tanpa grn_rows asumsikan ok=100%, partial=50% nilai PO
+               (
+                 select case g.status
+                          when 'ok'      then coalesce(sum(pr.qty * pr.price), 0)
+                          when 'partial' then coalesce(sum(pr.qty * pr.price), 0) / 2
+                          else 0
+                        end
+                   from public.po_rows pr
+                  where pr.po_no = g.po_no
+               )
+           end
+         ), 0)::numeric(14,2) as grn_value
+    from public.grns g
+   where g.po_no is not null
+   group by g.po_no
+),
+paid_per_inv as (
+  select p.invoice_no, sum(p.amount)::numeric(14,2) as paid
+    from public.payments p
+   where p.invoice_no is not null
+   group by p.invoice_no
+)
+select
+  i.no                            as invoice_no,
+  i.inv_date                      as inv_date,
+  i.supplier_id                   as supplier_id,
+  s.name                          as supplier_name,
+  i.po_no                         as po_no,
+  coalesce(po.total, 0)::numeric(14,2)  as po_total,
+  coalesce(gv.grn_value, 0)::numeric(14,2) as grn_value,
+  coalesce(gv.grn_count, 0)::int        as grn_count,
+  i.total::numeric(14,2)               as invoice_total,
+  coalesce(pp.paid, 0)::numeric(14,2)   as paid,
+  (i.total - coalesce(po.total, 0))::numeric(14,2)    as inv_vs_po,
+  (i.total - coalesce(gv.grn_value, 0))::numeric(14,2) as inv_vs_grn,
+  case
+    when i.po_no is null then 'no_po'
+    when coalesce(gv.grn_count, 0) = 0 then 'no_grn'
+    when abs(i.total - coalesce(po.total, 0))     <= greatest(po.total, 1) * 0.005
+     and abs(i.total - coalesce(gv.grn_value, 0)) <= greatest(coalesce(gv.grn_value, 0), 1) * 0.005
+      then 'matched'
+    when i.total > coalesce(po.total, 0)     * 1.005 then 'over_po'
+    when i.total > coalesce(gv.grn_value, 0) * 1.005 then 'over_grn'
+    when i.total < coalesce(gv.grn_value, 0) * 0.995 then 'under_grn'
+    else 'review'
+  end as match_status
+from public.invoices i
+left join public.purchase_orders po on po.no = i.po_no
+left join public.suppliers s        on s.id  = i.supplier_id
+left join grn_value_per_po gv       on gv.po_no = i.po_no
+left join paid_per_inv pp           on pp.invoice_no = i.no
+where (p_from is null or i.inv_date >= p_from)
+  and (p_to   is null or i.inv_date <= p_to)
+  and i.status <> 'cancelled'
+order by i.inv_date desc, i.no desc
+limit greatest(p_limit, 1);
+$$;
+
+revoke all on function public.three_way_match_snapshot(date, date, int) from public;
+grant execute on function public.three_way_match_snapshot(date, date, int)
+  to authenticated, service_role;
+
+comment on function public.three_way_match_snapshot(date, date, int)
+  is '3-way match per invoice: PO total vs nilai GRN aktual vs invoice total + status match.';
+
+
+-- >>> 0057_deliveries_posyandu_stops.sql ====================================
+-- =============================================================================
+-- 0057 · Deliveries to Posyandu (Bumil + Balita)
+-- -----------------------------------------------------------------------------
+-- Konteks:
+--   Manifest pengiriman (delivery_stops) sebelumnya hanya berisi stops ke
+--   sekolah. SPPG juga mendistribusikan porsi ke posyandu (untuk ibu hamil/
+--   menyusui dan balita). Migrasi ini memperluas delivery_stops supaya satu
+--   stop bisa berupa sekolah ATAU posyandu, tanpa memecah tabel.
+--
+-- Scope:
+--   1. Enum `stop_kind` ('school' | 'posyandu')
+--   2. delivery_stops: tambah posyandu_id + stop_kind, school_id jadi nullable,
+--      CHECK exactly-one recipient, ganti unique menjadi partial-unique per kind
+--   3. RPC `delivery_generate_for_date` diperluas: setelah loop sekolah, loop
+--      juga posyandu aktif — porsi = count(bumil aktif) + count(balita aktif).
+--      Posyandu dengan 0 penerima aktif dilewati.
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. Enum stop_kind
+-- -----------------------------------------------------------------------------
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'stop_kind') then
+    create type public.stop_kind as enum ('school', 'posyandu');
+  end if;
+end $$;
+
+-- -----------------------------------------------------------------------------
+-- 2. delivery_stops: tambah kolom, relax constraint, tambah partial-unique
+-- -----------------------------------------------------------------------------
+alter table public.delivery_stops
+  add column if not exists stop_kind   public.stop_kind not null default 'school';
+
+alter table public.delivery_stops
+  add column if not exists posyandu_id uuid references public.posyandu(id) on delete restrict;
+
+-- school_id tidak wajib lagi (posyandu stops tidak punya school_id)
+alter table public.delivery_stops
+  alter column school_id drop not null;
+
+-- Drop unique (delivery_no, school_id) lama — diganti partial-unique
+do $$
+declare
+  v_con text;
+begin
+  select constraint_name into v_con
+    from information_schema.table_constraints
+   where table_schema = 'public'
+     and table_name   = 'delivery_stops'
+     and constraint_type = 'UNIQUE'
+     and constraint_name like '%school_id%';
+  if v_con is not null then
+    execute format('alter table public.delivery_stops drop constraint %I', v_con);
+  end if;
+end $$;
+
+-- Partial-unique: per-delivery tidak boleh duplikasi school yang sama
+create unique index if not exists idx_stop_delivery_school_uniq
+  on public.delivery_stops(delivery_no, school_id)
+  where school_id is not null;
+
+-- Partial-unique: per-delivery tidak boleh duplikasi posyandu yang sama
+create unique index if not exists idx_stop_delivery_posyandu_uniq
+  on public.delivery_stops(delivery_no, posyandu_id)
+  where posyandu_id is not null;
+
+-- Index lookup per posyandu
+create index if not exists idx_stop_posyandu on public.delivery_stops(posyandu_id);
+
+-- CHECK exactly-one (school XOR posyandu, konsisten dengan stop_kind)
+-- Drop dulu kalau sudah ada (idempotent re-run)
+alter table public.delivery_stops
+  drop constraint if exists delivery_stops_recipient_check;
+
+alter table public.delivery_stops
+  add constraint delivery_stops_recipient_check
+  check (
+    (stop_kind = 'school'   and school_id is not null and posyandu_id is null) or
+    (stop_kind = 'posyandu' and posyandu_id is not null and school_id is null)
+  );
+
+-- -----------------------------------------------------------------------------
+-- 3. RPC delivery_generate_for_date — tambah loop posyandu
+-- -----------------------------------------------------------------------------
+create or replace function public.delivery_generate_for_date(p_date date)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_role public.user_role;
+  v_no text;
+  v_menu_id smallint;
+  v_existing int;
+  r record;
+  v_order smallint := 1;
+begin
+  v_role := public.current_role();
+  if v_role not in ('admin','operator') then
+    raise exception 'role % tidak berwenang', v_role;
+  end if;
+
+  -- Idempotent: kalau sudah ada, kembalikan yang ada
+  select count(*) into v_existing
+    from public.deliveries where delivery_date = p_date;
+  if v_existing > 0 then
+    select no into v_no from public.deliveries
+      where delivery_date = p_date order by created_at limit 1;
+    return v_no;
+  end if;
+
+  select menu_id into v_menu_id from public.menu_assign where assign_date = p_date;
+  v_no := 'DLV-' || to_char(p_date, 'YYYY-MM-DD') || '-01';
+
+  insert into public.deliveries(no, delivery_date, menu_id, status, created_by)
+  values (v_no, p_date, v_menu_id, 'planned', auth.uid());
+
+  -- Stops ke sekolah (sama seperti sebelumnya)
+  for r in
+    select s.id as school_id,
+           coalesce(a.qty, s.students) as porsi
+      from public.schools s
+      left join public.school_attendance a
+        on a.school_id = s.id and a.att_date = p_date
+     where s.active = true
+     order by s.id
+  loop
+    insert into public.delivery_stops(
+      delivery_no, stop_order, stop_kind, school_id, porsi_planned, status
+    ) values (
+      v_no, v_order, 'school', r.school_id, r.porsi::int, 'planned'
+    );
+    v_order := v_order + 1;
+  end loop;
+
+  -- Stops ke posyandu: porsi = bumil aktif + balita aktif per posyandu
+  for r in
+    select p.id as posyandu_id,
+           (
+             coalesce((select count(*)::int from public.beneficiary_pregnant bp
+                        where bp.active = true and bp.posyandu_id = p.id), 0)
+             +
+             coalesce((select count(*)::int from public.beneficiary_toddler bt
+                        where bt.active = true and bt.posyandu_id = p.id), 0)
+           ) as porsi
+      from public.posyandu p
+     where p.active = true
+     order by p.name
+  loop
+    if r.porsi > 0 then
+      insert into public.delivery_stops(
+        delivery_no, stop_order, stop_kind, posyandu_id, porsi_planned, status
+      ) values (
+        v_no, v_order, 'posyandu', r.posyandu_id, r.porsi::int, 'planned'
+      );
+      v_order := v_order + 1;
+    end if;
+  end loop;
+
+  return v_no;
+end; $$;
+
+grant execute on function public.delivery_generate_for_date(date) to authenticated;
+
+
 commit;

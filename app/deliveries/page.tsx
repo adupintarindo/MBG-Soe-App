@@ -44,7 +44,9 @@ interface StopDb {
   id: number;
   delivery_no: string;
   stop_order: number;
-  school_id: string;
+  stop_kind: string | null;
+  school_id: string | null;
+  posyandu_id: string | null;
   porsi_planned: number | string;
   porsi_delivered: number | string;
   arrival_at: string | null;
@@ -67,27 +69,29 @@ export default async function DeliveriesPage() {
   const canWrite = profile.role === "admin" || profile.role === "operator";
   const today = toISODate(new Date());
 
-  const [delsRes, stopsRes, schoolsRes, summaryRes] = await Promise.all([
-    supabase
-      .from("deliveries")
-      .select(
-        "no, delivery_date, menu_id, driver_name, vehicle, dispatched_at, completed_at, status, total_porsi_planned, total_porsi_delivered, note"
+  const [delsRes, stopsRes, schoolsRes, posyanduRes, summaryRes] =
+    await Promise.all([
+      supabase
+        .from("deliveries")
+        .select(
+          "no, delivery_date, menu_id, driver_name, vehicle, dispatched_at, completed_at, status, total_porsi_planned, total_porsi_delivered, note"
+        )
+        .order("delivery_date", { ascending: false })
+        .order("no", { ascending: false })
+        .limit(60),
+      supabase
+        .from("delivery_stops")
+        .select(
+          "id, delivery_no, stop_order, stop_kind, school_id, posyandu_id, porsi_planned, porsi_delivered, arrival_at, temperature_c, receiver_name, signature_url, photo_url, note, status"
+        )
+        .order("delivery_no", { ascending: false })
+        .order("stop_order", { ascending: true }),
+      supabase.from("schools").select("id, name"),
+      supabase.from("posyandu").select("id, name"),
+      dailyDeliverySummary(supabase).catch(
+        () => [] as DeliverySummaryRow[]
       )
-      .order("delivery_date", { ascending: false })
-      .order("no", { ascending: false })
-      .limit(60),
-    supabase
-      .from("delivery_stops")
-      .select(
-        "id, delivery_no, stop_order, school_id, porsi_planned, porsi_delivered, arrival_at, temperature_c, receiver_name, signature_url, photo_url, note, status"
-      )
-      .order("delivery_no", { ascending: false })
-      .order("stop_order", { ascending: true }),
-    supabase.from("schools").select("id, name"),
-    dailyDeliverySummary(supabase).catch(
-      () => [] as DeliverySummaryRow[]
-    )
-  ]);
+    ]);
 
   const dels = (delsRes.data ?? []) as DeliveryDb[];
   const stops = (stopsRes.data ?? []) as StopDb[];
@@ -95,17 +99,31 @@ export default async function DeliveriesPage() {
     id: string;
     name: string;
   }>;
+  const posyanduList = (posyanduRes.data ?? []) as Array<{
+    id: string;
+    name: string;
+  }>;
   const summary = summaryRes;
 
   const schoolName = new Map(schools.map((s) => [s.id, s.name]));
+  const posyanduName = new Map(posyanduList.map((p) => [p.id, p.name]));
   const stopsByDelivery = new Map<string, StopRow[]>();
   for (const s of stops) {
+    const kind: "school" | "posyandu" =
+      s.stop_kind === "posyandu" ? "posyandu" : "school";
+    const recipientId =
+      kind === "posyandu" ? (s.posyandu_id ?? "") : (s.school_id ?? "");
+    const recipientName =
+      kind === "posyandu"
+        ? (posyanduName.get(recipientId) ?? recipientId)
+        : (schoolName.get(recipientId) ?? recipientId);
     const row: StopRow = {
       id: s.id,
       delivery_no: s.delivery_no,
       stop_order: s.stop_order,
-      school_id: s.school_id,
-      school_name: schoolName.get(s.school_id) ?? s.school_id,
+      kind,
+      recipient_id: recipientId,
+      recipient_name: recipientName,
       porsi_planned: Number(s.porsi_planned),
       porsi_delivered: Number(s.porsi_delivered),
       arrival_at: s.arrival_at,

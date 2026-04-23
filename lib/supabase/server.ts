@@ -38,6 +38,11 @@ export function createClient() {
 // perlu bypass RLS (mis. create invite, lihat auth.users).
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
+// Duplicated from ./auth.ts to avoid circular import (auth.ts imports this file).
+// Keep in sync with the constants there.
+const DEV_ADMIN_COOKIE_NAME = "mbg-dev-admin";
+const DEV_ADMIN_COOKIE_VAL = "1";
+
 export function createAdminClient() {
   return createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,4 +54,30 @@ export function createAdminClient() {
       }
     }
   );
+}
+
+/**
+ * Auto-escalating server client.
+ *
+ * - Normal session → regular client (RLS tetap berlaku = aman)
+ * - Dev-admin cookie aktif → admin client (bypass RLS)
+ *
+ * Kenapa: dev-admin pakai fake UUID yang tidak ada di auth.users/profiles,
+ * jadi `auth.uid()` di Postgres = NULL → RLS policy "auth.uid() is not null"
+ * memblokir semua SELECT. Akibatnya data yang di-insert via admin-client di
+ * POST tidak kelihatan di listing (`Belum ada quotation`, dst).
+ *
+ * Pakai ini untuk SELECT di server component yang menampilkan data yang
+ * mungkin di-insert via admin path. Untuk operasi destructive (DELETE/UPDATE
+ * skala besar) tetap pakai `createAdminClient()` eksplisit.
+ */
+export function createServerReadClient() {
+  try {
+    const isDevAdmin =
+      cookies().get(DEV_ADMIN_COOKIE_NAME)?.value === DEV_ADMIN_COOKIE_VAL;
+    if (isDevAdmin) return createAdminClient();
+  } catch {
+    // cookies() can throw outside request scope — fall back to regular client
+  }
+  return createClient();
 }

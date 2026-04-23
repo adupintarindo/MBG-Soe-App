@@ -326,13 +326,11 @@ export function QtTable({
 export function PoTable({
   rows,
   supplierNames,
-  rowCountByPO,
-  qtyByPO
+  rowCountByPO
 }: {
   rows: PoRow[];
   supplierNames: Record<string, string>;
   rowCountByPO: Record<string, number>;
-  qtyByPO: Record<string, number>;
 }) {
   const { lang } = useLang();
   const supName = (id: string) => supplierNames[id] ?? id;
@@ -385,17 +383,6 @@ export function PoTable({
       )
     },
     {
-      key: "qty",
-      label: t("procurement.colTotalQty", lang),
-      align: "right",
-      sortValue: (r) => qtyByPO[r.no] ?? 0,
-      render: (r) => (
-        <span className="font-mono text-xs">
-          {formatNumber(qtyByPO[r.no] ?? 0, lang, { maximumFractionDigits: 1 })}
-        </span>
-      )
-    },
-    {
       key: "total",
       label: t("procurement.colAmount", lang),
       align: "left",
@@ -429,7 +416,6 @@ export function PoTable({
 
   const dr = useDateRangeFilter(rows, (r) => r.po_date);
   const totalItems = dr.filtered.reduce((s, r) => s + (rowCountByPO[r.no] ?? 0), 0);
-  const totalQty = dr.filtered.reduce((s, r) => s + (qtyByPO[r.no] ?? 0), 0);
   const totalPo = dr.filtered.reduce((s, r) => s + Number(r.total ?? 0), 0);
 
   return (
@@ -464,9 +450,6 @@ export function PoTable({
           </td>
           <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
             {formatNumber(totalItems, lang)}
-          </td>
-          <td className="py-2 px-3 text-right font-mono text-xs font-black text-white">
-            {formatNumber(totalQty, lang, { maximumFractionDigits: 1 })}
           </td>
           <td className="py-2 px-3 text-left">
             <IDR

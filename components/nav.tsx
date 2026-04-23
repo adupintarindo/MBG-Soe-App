@@ -81,7 +81,7 @@ const TABS: TabCard[] = [
     labelKey: "tabKeuangan",
     icon: "💰",
     group: "run",
-    show: (r) => r === "admin" || r === "operator" || r === "viewer"
+    show: () => false
   },
 
   // Personalia — tim SPPG, gaji, insentif
@@ -90,7 +90,7 @@ const TABS: TabCard[] = [
     labelKey: "tabPersonalia",
     icon: "👥",
     group: "run",
-    show: (r) => r === "admin" || r === "operator" || r === "viewer"
+    show: () => false
   },
 
   // Dokumen BGN — QC sampel, uji organoleptik, generator Lampiran
@@ -99,8 +99,7 @@ const TABS: TabCard[] = [
     labelKey: "tabDokumenBgn",
     icon: "📄",
     group: "audit",
-    show: (r) =>
-      r === "admin" || r === "operator" || r === "viewer" || r === "ahli_gizi"
+    show: () => false
   },
 
   // Supplier portal (only visible to supplier role)
@@ -120,7 +119,7 @@ const TABS: TabCard[] = [
   },
 
   // Docs & SOP
-  { href: "/docgen", labelKey: "tabDocgen", icon: "🖨️", group: "audit", show: () => true },
+  { href: "/docgen", labelKey: "tabDocgen", icon: "🖨️", group: "audit", show: () => false },
   { href: "/sop", labelKey: "tabSOP", icon: "📚", group: "audit", show: () => true }
 ];
 
