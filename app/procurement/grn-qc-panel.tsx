@@ -413,16 +413,17 @@ function NcrStatusCell({
   const { lang } = useLang();
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [caDialog, setCaDialog] = useState<{
+    nextStatus: NcrStatus;
+  } | null>(null);
 
-  const setStatus = (status: NcrStatus) => {
+  const applyStatus = (
+    status: NcrStatus,
+    correctiveAction?: string | null
+  ) => {
     const body: Record<string, unknown> = { status };
-    if (status === "resolved" || status === "waived") {
-      const ca = window.prompt(
-        t("grnQc.promptCa", lang),
-        n.corrective_action ?? ""
-      );
-      if (ca === null) return;
-      body.corrective_action = ca.trim() || null;
+    if (correctiveAction !== undefined) {
+      body.corrective_action = correctiveAction;
     }
     start(async () => {
       await fetch(`/api/ncr/${n.id}`, {
@@ -432,6 +433,15 @@ function NcrStatusCell({
       });
       router.refresh();
     });
+  };
+
+  const setStatus = (status: NcrStatus) => {
+    if (status === n.status) return;
+    if (status === "resolved" || status === "waived") {
+      setCaDialog({ nextStatus: status });
+      return;
+    }
+    applyStatus(status);
   };
 
   if (!canWrite) {
@@ -444,17 +454,116 @@ function NcrStatusCell({
     );
   }
   return (
-    <select
-      disabled={pending}
-      value={n.status}
-      onChange={(e) => setStatus(e.target.value as NcrStatus)}
-      className="rounded-md border border-ink/10 bg-white px-2 py-0.5 text-[10px] font-bold"
-    >
-      <option value="open">open</option>
-      <option value="in_progress">in_progress</option>
-      <option value="resolved">resolved</option>
-      <option value="waived">waived</option>
-    </select>
+    <>
+      <select
+        disabled={pending}
+        value={n.status}
+        onChange={(e) => setStatus(e.target.value as NcrStatus)}
+        className="rounded-md border border-ink/10 bg-white px-2 py-0.5 text-[10px] font-bold"
+      >
+        <option value="open">open</option>
+        <option value="in_progress">in_progress</option>
+        <option value="resolved">resolved</option>
+        <option value="waived">waived</option>
+      </select>
+      {caDialog && (
+        <CorrectiveActionDialog
+          ncrLabel={n.ncr_no ?? `#${n.id}`}
+          nextStatus={caDialog.nextStatus}
+          initial={n.corrective_action ?? ""}
+          onCancel={() => setCaDialog(null)}
+          onSubmit={(ca) => {
+            setCaDialog(null);
+            applyStatus(caDialog.nextStatus, ca.trim() || null);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function CorrectiveActionDialog({
+  ncrLabel,
+  nextStatus,
+  initial,
+  onCancel,
+  onSubmit
+}: {
+  ncrLabel: string;
+  nextStatus: NcrStatus;
+  initial: string;
+  onCancel: () => void;
+  onSubmit: (ca: string) => void;
+}) {
+  const { lang } = useLang();
+  const [value, setValue] = useState(initial);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 px-4 pt-[10vh] pb-[6vh]">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(value);
+        }}
+        className="w-full max-w-lg space-y-3 rounded-2xl bg-paper p-5 shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-black">
+              {ti("grnQc.caDialogTitle", lang, { ncr: ncrLabel })}
+            </h3>
+            <p className="mt-0.5 text-[11px] text-ink2/70">
+              {t("grnQc.caDialogHint", lang)}
+            </p>
+            <p className="mt-1 text-[11px]">
+              <span
+                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_TONE[nextStatus]}`}
+              >
+                {ti("grnQc.caDialogStatus", lang, { status: nextStatus })}
+              </span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-ink2 hover:text-ink"
+            aria-label={t("common.close", lang)}
+          >
+            ✕
+          </button>
+        </div>
+
+        <label className="block">
+          <span className="mb-1 block text-[11px] font-bold text-ink2">
+            {t("grnQc.promptCa", lang)}
+          </span>
+          <textarea
+            autoFocus
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={4}
+            placeholder={t("grnQc.caPlaceholder", lang)}
+            className="w-full rounded-lg border border-ink/10 px-2 py-1.5 text-xs"
+          />
+        </label>
+
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg bg-ink/5 px-3 py-1.5 text-xs font-bold text-ink"
+          >
+            {t("common.cancel", lang)}
+          </button>
+          <button
+            type="submit"
+            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+          >
+            {t("grnQc.btnCaSave", lang)}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 

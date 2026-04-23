@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatIDR } from "@/lib/engine";
-import { t } from "@/lib/i18n";
+import { t, ti } from "@/lib/i18n";
 import { useLang } from "@/lib/prefs-context";
+
+const OVERPAY_TOLERANCE = 0.01; // rounding tolerance (Rp 0.01)
 
 interface OpenInvoice {
   no: string;
@@ -65,16 +67,29 @@ export function NewPaymentForm({ invoices }: { invoices: OpenInvoice[] }) {
   const [error, setError] = useState<string | null>(null);
 
   const selected = invoices.find((i) => i.no === invoiceNo);
+  const amt = Number(amount);
+  const overpayBy =
+    selected && amt > 0 ? amt - selected.outstanding : 0;
+  const isOverpay = overpayBy > OVERPAY_TOLERANCE;
 
   async function submit() {
     setError(null);
-    const amt = Number(amount);
-    if (!invoiceNo) {
-      setError("Pilih invoice");
+    if (!invoiceNo || !selected) {
+      setError(t("pay.errPickInvoice", lang));
       return;
     }
     if (!(amt > 0)) {
-      setError("Jumlah harus > 0");
+      setError(t("pay.errAmountZero", lang));
+      return;
+    }
+    if (selected.outstanding <= 0) {
+      setError(t("pay.errNoOutstanding", lang));
+      return;
+    }
+    if (isOverpay) {
+      setError(
+        ti("pay.errOverpay", lang, { max: formatIDR(selected.outstanding) })
+      );
       return;
     }
     setBusy(true);
@@ -154,10 +169,31 @@ export function NewPaymentForm({ invoices }: { invoices: OpenInvoice[] }) {
             inputMode="decimal"
             min="0"
             step="0.01"
+            max={selected ? selected.outstanding : undefined}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full rounded-xl border border-ink/20 bg-white px-3 py-2 text-sm"
+            aria-invalid={isOverpay || undefined}
+            className={`w-full rounded-xl border bg-white px-3 py-2 text-sm ${
+              isOverpay
+                ? "border-red-400 ring-1 ring-red-200"
+                : "border-ink/20"
+            }`}
           />
+          {selected && selected.outstanding > 0 && (
+            <span
+              className={`mt-1 block text-[11px] ${
+                isOverpay ? "font-bold text-red-700" : "text-ink2/70"
+              }`}
+            >
+              {isOverpay
+                ? ti("pay.errOverpay", lang, {
+                    max: formatIDR(selected.outstanding)
+                  })
+                : ti("pay.hintMaxOutstanding", lang, {
+                    max: formatIDR(selected.outstanding)
+                  })}
+            </span>
+          )}
         </label>
         <label className="block">
           <span className="mb-1 block text-[11px] font-bold text-ink2">
@@ -211,7 +247,13 @@ export function NewPaymentForm({ invoices }: { invoices: OpenInvoice[] }) {
         <button
           type="button"
           onClick={submit}
-          disabled={busy}
+          disabled={
+            busy ||
+            !selected ||
+            selected.outstanding <= 0 ||
+            !(amt > 0) ||
+            isOverpay
+          }
           className="rounded-xl bg-ink px-5 py-3 text-sm font-black text-white shadow-card hover:bg-ink2 disabled:opacity-50"
         >
           {busy ? t("common.saving", lang) : t("common.save", lang)}

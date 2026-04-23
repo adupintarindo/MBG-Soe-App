@@ -459,6 +459,23 @@ export const LANG_KEYS = {
   "grnQc.colIssue": { ID: "Issue", EN: "Issue" },
   "grnQc.colReported": { ID: "Dilaporkan", EN: "Reported" },
   "grnQc.promptCa": { ID: "Corrective action (singkat, muncul di log):", EN: "Corrective action (short, shows in the log):" },
+  "grnQc.caDialogTitle": {
+    ID: "Corrective Action — {ncr}",
+    EN: "Corrective Action — {ncr}"
+  },
+  "grnQc.caDialogHint": {
+    ID: "Singkat namun jelas. Tindakan ini masuk ke log audit NCR.",
+    EN: "Short but clear. This entry goes into the NCR audit log."
+  },
+  "grnQc.caDialogStatus": {
+    ID: "Tandai sebagai: {status}",
+    EN: "Mark as: {status}"
+  },
+  "grnQc.caPlaceholder": {
+    ID: "mis. Retur 2 karung, supplier ganti Rabu H+1. Foto tersimpan.",
+    EN: "e.g. Returned 2 sacks, supplier replaces Wed H+1. Photo logged."
+  },
+  "grnQc.btnCaSave": { ID: "Simpan", EN: "Save" },
   "grnQc.detailHead": { ID: "QC Checklist", EN: "QC Checklist" },
   "grnQc.closeAria": { ID: "Tutup", EN: "Close" },
   "grnQc.draftTitle": { ID: "Draft Pemeriksaan ({n} checkpoint)", EN: "Inspection Draft ({n} checkpoints)" },
@@ -657,6 +674,20 @@ export const LANG_KEYS = {
   "pay.formMethod": { ID: "Metode", EN: "Method" },
   "pay.formReference": { ID: "No Referensi", EN: "Reference No" },
   "pay.formNote": { ID: "Catatan", EN: "Note" },
+  "pay.errPickInvoice": { ID: "Pilih invoice dulu.", EN: "Pick an invoice first." },
+  "pay.errAmountZero": { ID: "Jumlah harus lebih dari 0.", EN: "Amount must be greater than 0." },
+  "pay.errNoOutstanding": {
+    ID: "Invoice ini sudah lunas.",
+    EN: "This invoice is fully paid."
+  },
+  "pay.errOverpay": {
+    ID: "Jumlah melebihi sisa tagihan (max {max}).",
+    EN: "Amount exceeds outstanding (max {max})."
+  },
+  "pay.hintMaxOutstanding": {
+    ID: "Maksimal: {max}",
+    EN: "Max: {max}"
+  },
   "pay.receiptFormTitle": { ID: "Catat Penerimaan Kas", EN: "Record Cash Receipt" },
   "pay.receiptFormSource": { ID: "Sumber Dana", EN: "Funding Source" },
   "pay.receiptFormSourceName": { ID: "Nama Detail (ops)", EN: "Source Name (opt)" },
