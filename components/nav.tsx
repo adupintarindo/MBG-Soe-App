@@ -59,14 +59,6 @@ const TABS: TabCard[] = [
     group: "buy",
     show: () => true
   },
-  {
-    href: "/payments",
-    labelKey: "tabPayments",
-    icon: "💳",
-    group: "buy",
-    show: (r) => r === "admin" || r === "operator" || r === "viewer"
-  },
-
   // Run — receive, cook, deliver
   {
     href: "/stock",

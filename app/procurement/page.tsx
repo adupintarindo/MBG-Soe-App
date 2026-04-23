@@ -2,12 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerReadClient } from "@/lib/supabase/server";
 import { getSessionProfile } from "@/lib/supabase/auth";
 import { Nav } from "@/components/nav";
-import {
-  listNcr,
-  ncrSnapshot,
-  threeWayMatch,
-  type ThreeWayMatchRow
-} from "@/lib/engine";
+import { listNcr, ncrSnapshot } from "@/lib/engine";
 import Link from "next/link";
 import {
   EmptyState,
@@ -17,7 +12,6 @@ import {
 } from "@/components/ui";
 import { PageTabs, type PageTab } from "@/components/page-tabs";
 import { GrnQcPanel } from "./grn-qc-panel";
-import { ThreeWayMatchTable } from "./three-way-match-table";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/i18n-server";
 import {
@@ -46,14 +40,12 @@ type ProcTabId =
   | "po"
   | "grn"
   | "invoice"
-  | "match"
   | "jadwal";
 const VALID_TABS: readonly ProcTabId[] = [
   "req-qt",
   "po",
   "grn",
   "invoice",
-  "match",
   "jadwal"
 ];
 
@@ -161,12 +153,6 @@ export default async function ProcurementPage({
       icon: "💳",
       label: lang === "EN" ? "Invoices & Receipts" : "Invoice & Kwitansi",
       href: "/procurement?tab=invoice"
-    },
-    {
-      id: "match",
-      icon: "🔗",
-      label: lang === "EN" ? "3-Way Match" : "3-Way Match",
-      href: "/procurement?tab=match"
     },
     {
       id: "jadwal",
@@ -302,13 +288,6 @@ export default async function ProcurementPage({
     groups: ReturnType<typeof groupLinesByDelivery>;
     daySummaries: Array<ReturnType<typeof summarizeByDay> extends Map<string, infer V> ? V : never>;
   } | null = null;
-
-  let matchRows: ThreeWayMatchRow[] = [];
-  if (activeTab === "match") {
-    matchRows = await threeWayMatch(supabase, { limit: 100 }).catch(
-      () => [] as ThreeWayMatchRow[]
-    );
-  }
 
   if (activeTab === "jadwal") {
     const now = new Date();
@@ -540,20 +519,6 @@ export default async function ProcurementPage({
               />
             </Section>
           </>
-        )}
-
-        {activeTab === "match" && (
-          <Section
-            icon="🔗"
-            title={t("match.title", lang)}
-            hint={t("match.hint", lang)}
-          >
-            {matchRows.length === 0 ? (
-              <EmptyState message={t("common.noData", lang)} />
-            ) : (
-              <ThreeWayMatchTable rows={matchRows} />
-            )}
-          </Section>
         )}
 
         {activeTab === "jadwal" && jadwalPayload && (
