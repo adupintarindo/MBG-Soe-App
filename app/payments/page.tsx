@@ -78,6 +78,47 @@ export default async function PaymentsPage({
     ? (searchParams.tab as PayTabId)
     : "outstanding";
 
+  // Top-level nav mirrors procurement so user sees Pembayaran sebagai sub-menu Pengadaan.
+  const procTabs: PageTab[] = [
+    {
+      id: "req-qt",
+      icon: "📝",
+      label: lang === "EN" ? "Requisition & Quotation" : "PR & Penawaran",
+      href: "/procurement?tab=req-qt"
+    },
+    {
+      id: "po",
+      icon: "📦",
+      label: lang === "EN" ? "Purchase Orders" : "Purchase Order",
+      href: "/procurement?tab=po"
+    },
+    {
+      id: "grn",
+      icon: "🚚",
+      label: lang === "EN" ? "Goods Receipt" : "Penerimaan",
+      href: "/procurement?tab=grn"
+    },
+    {
+      id: "invoice",
+      icon: "💳",
+      label: lang === "EN" ? "Invoices & Receipts" : "Invoice & Kwitansi",
+      href: "/procurement?tab=invoice"
+    },
+    {
+      id: "jadwal",
+      icon: "🗓️",
+      label: lang === "EN" ? "Delivery Schedule" : "Jadwal Kirim",
+      href: "/procurement?tab=jadwal"
+    },
+    {
+      id: "pembayaran",
+      icon: "💳",
+      label: lang === "EN" ? "Payments" : "Pembayaran",
+      href: "/payments"
+    }
+  ];
+
+  // Inner sub-tabs untuk section Pembayaran
   const tabs: PageTab[] = [
     {
       id: "outstanding",
@@ -165,7 +206,10 @@ export default async function PaymentsPage({
           }
         />
 
-        <PageTabs tabs={tabs} activeId={activeTab} />
+        <PageTabs tabs={procTabs} activeId="pembayaran" />
+        <div className="mt-3">
+          <PageTabs tabs={tabs} activeId={activeTab} />
+        </div>
 
         {activeTab === "outstanding" && (
           <>

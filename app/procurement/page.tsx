@@ -159,6 +159,12 @@ export default async function ProcurementPage({
       icon: "🗓️",
       label: t("procurement.tabJadwal", lang),
       href: "/procurement?tab=jadwal"
+    },
+    {
+      id: "pembayaran",
+      icon: "💳",
+      label: lang === "EN" ? "Payments" : "Pembayaran",
+      href: "/payments"
     }
   ];
 
